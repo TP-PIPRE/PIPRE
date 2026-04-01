@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# Stack Actual
+### React TS
+> Librería para crear componentes con typescript.
+### Vite
+> Bundler para la construcción rápida del proyecto.
+### pnpm
+> Gestor de instalación y actualización de paquetes.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### Plugins Actuales
+- Tailwind CSS
+- React Icons
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Uso de pnpm
+Instalar pnpm (si no lo tienes):
+``` Bash
+npm install -g pnpm
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Acción                          | Comando npm              | Comando pnpm        |
+|---------------------------------|--------------------------|---------------------|
+| Instalar dependencias           | npm install              | pnpm i              |
+| Levantar proyecto               | npm run dev              | pnpm dev            |
+| Construir para prod             | npm run build            | pnpm build          |
+| Agregar un paquete              | npm install <pkg>        | pnpm add <pkg>      |
+| Agregar como dev dependency     | npm install -D <pkg>     | pnpm add -D <pkg>   |
+| Quitar un paquete               | npm uninstall <pkg>      | pnpm remove <pkg>   |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Agregar Nuevos plugins
+Para instalar nuevos plugins buscarlos con **pnpm** en internet o pedírselo a la IA.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Uso rutas absolutas(Aliases)
+Para evitar imports con multiples anidaciones como ".../../modules/domain", vamos a configurar los alias.
+
+Por ejemplo, vamos a configurar la ruta "./src/modules/domain" para usar "@domain/" en su lugar.
+En el archivo **tsconfig.json** en paths, añadir la línea debajo de src:
+``` json
+    "paths": {
+      "@/*": ["src/*"],
+      "@domain/*": ["src/modules/domain/*"],
+    }
 ```
+Con esto tenemos 2 rutas:
+> "@/" reemplaza a "./src/"
+
+> "@domain/" reemplaza a "./src/modules/domain/" 
+
+Estas rutas solo las usaremos para carpetas importantes.
