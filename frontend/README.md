@@ -45,3 +45,9 @@ Con esto tenemos 2 rutas:
 > "@domain/" reemplaza a "./src/modules/domain/" 
 
 Estas rutas solo las usaremos para carpetas importantes.
+
+# Para comenzar
+```shell
+pnpm i
+pnpm dev
+```
