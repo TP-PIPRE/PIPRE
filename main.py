@@ -7,10 +7,9 @@ from models.ria08_anomalias import DetectorAnomalias
 from models.ria11_tiempo import PrediccionTiempo
 from models.ria12_codigo import EvaluadorCodigo
 
-
 def main():
     # 🔥 Cargar datos SIN preprocess global
-    df = load_data("data/dataset.xlsx")
+    df = load_data("PIPRE-ML-IA/data/dataset.xlsx")
 
     print("✅ Datos cargados\n")
 

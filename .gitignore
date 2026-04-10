@@ -1,1 +1,17 @@
 venv/
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entorno virtual
+venv/
+.env/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de VS Code
+.vscode/
