@@ -10,9 +10,8 @@ class ClasificadorTiempo:
 
     def __init__(self, verbose=False):
         self.model = RandomForestClassifier(
-            n_estimators=400,
-            max_depth=12,
-            min_samples_split=5,
+            n_estimators=200,
+            max_depth=10,
             class_weight="balanced",
             random_state=42
         )
@@ -25,40 +24,33 @@ class ClasificadorTiempo:
         self.precision = 0
         self.recall = 0
 
-        # 🔥 FEATURES MEJORADAS (SIN LEAK)
+        # 🔥 FEATURES NUEVAS (NO DIRECTAMENTE LAS MISMAS DEL TARGET)
         self.feature_columns = [
-            "intentos",
-            "errores",
-            "interacciones_ia",
-            "uso_codigo",
-            "nivel_logico",
             "ratio_error",
-            "dependencia_ia",
-            "actividad_total",
-            "eficiencia",
-            "carga_error",
-            "uso_relativo"
+            "ratio_codigo",
+            "interaccion_relativa",
+            "complejidad",
+            "nivel_logico"
         ]
 
-    def construir_clases_tiempo(self, df):
+    def construir_target(self, df):
         df = df.copy()
 
-        # 🔥 mejor separación
-        q1 = df["tiempo_sesion_min"].quantile(0.25)
-        q2 = df["tiempo_sesion_min"].quantile(0.75)
+        df["tiempo_score"] = (
+            df["intentos"] * 2 +
+            df["errores"] * 3 +
+            df["interacciones_ia"] * 1.5 -
+            df["uso_codigo"] * 1.5 -
+            df["nivel_logico"] * 2
+        )
 
-        condiciones = [
-            df["tiempo_sesion_min"] <= q1,
-            (df["tiempo_sesion_min"] > q1) & (df["tiempo_sesion_min"] <= q2),
-            df["tiempo_sesion_min"] > q2
-        ]
+        q1 = df["tiempo_score"].quantile(0.33)
+        q2 = df["tiempo_score"].quantile(0.66)
 
-        categorias = ["rapido", "normal", "lento"]
-
-        df["categoria_tiempo"] = np.select(
-            condiciones,
-            categorias,
-            default="normal"
+        df["categoria_tiempo"] = pd.cut(
+            df["tiempo_score"],
+            bins=[-np.inf, q1, q2, np.inf],
+            labels=["corto", "medio", "largo"]
         ).astype(str)
 
         return df
@@ -71,45 +63,33 @@ class ClasificadorTiempo:
             "errores",
             "interacciones_ia",
             "uso_codigo",
-            "nivel_logico",
-            "tiempo_sesion_min"
+            "nivel_logico"
         ]
 
-        # 🔧 asegurar columnas
+        # asegurar columnas
         for col in base_cols:
             if col not in df.columns:
                 df[col] = 0
 
-        # 🔧 asegurar tipo numérico
-        numeric_cols = [
-            "intentos",
-            "errores",
-            "interacciones_ia",
-            "uso_codigo",
-            "tiempo_sesion_min"
-        ]
-
-        for col in numeric_cols:
+        # asegurar numéricos
+        for col in base_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # 🎯 crear target SOLO en entrenamiento
+        # 🔥 TARGET (solo en entrenamiento)
         if is_training:
-            df = self.construir_clases_tiempo(df)
+            df = self.construir_target(df)
 
-        # 🔥 FEATURES DERIVADAS (SIN LEAK)
+        # 🔥 FEATURES TRANSFORMADAS (NO SON LA MISMA FÓRMULA)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
-        df["dependencia_ia"] = df["interacciones_ia"] / (df["intentos"] + 1)
+        df["ratio_codigo"] = df["uso_codigo"] / (df["interacciones_ia"] + 1)
+        df["interaccion_relativa"] = df["interacciones_ia"] / (df["intentos"] + 1)
+        df["complejidad"] = df["errores"] * df["interacciones_ia"]
 
-        df["actividad_total"] = df["uso_codigo"] + df["interacciones_ia"]
-        df["eficiencia"] = df["intentos"] / (df["errores"] + 1)
-        df["carga_error"] = df["errores"] / (df["intentos"] + 1)
-        df["uso_relativo"] = df["uso_codigo"] / (df["interacciones_ia"] + 1)
-
-        # 🔧 limpiar valores
+        # limpieza
         df.replace([np.inf, -np.inf], 0, inplace=True)
         df.fillna(0, inplace=True)
 
-        # 🔧 encoding
+        # encoding
         df["nivel_logico"] = df["nivel_logico"].astype(str)
 
         if is_training:
@@ -130,7 +110,7 @@ class ClasificadorTiempo:
         y = df["categoria_tiempo"]
 
         if self.verbose:
-            print("Distribución clases:")
+            print("\n📊 Distribución clases tiempo:")
             print(pd.Series(y).value_counts())
 
         X_train, X_test, y_train, y_test = train_test_split(
@@ -142,8 +122,12 @@ class ClasificadorTiempo:
         y_pred = self.model.predict(X_test)
 
         self.accuracy = accuracy_score(y_test, y_pred)
-        self.precision = precision_score(y_test, y_pred, average="weighted", zero_division=0)
-        self.recall = recall_score(y_test, y_pred, average="weighted", zero_division=0)
+        self.precision = precision_score(
+            y_test, y_pred, average="weighted", zero_division=0
+        )
+        self.recall = recall_score(
+            y_test, y_pred, average="weighted", zero_division=0
+        )
 
     def predict(self, data):
         data = self.preprocess(data, is_training=False)

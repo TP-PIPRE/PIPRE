@@ -78,8 +78,9 @@ def main():
     tiempo_input = tiempo.preprocess(input_data.copy(), is_training=False)
 
     print("RIA-11 Tiempo:", tiempo.predict(tiempo_input))
-  
-
+    print(f"Accuracy: {tiempo.accuracy:.2f}")
+    print(f"Precision: {tiempo.precision:.2f}")
+ 
    # =========================
     # RIA-12 CÓDIGO
     # =========================

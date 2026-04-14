@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
+import numpy as np
 
 
 class EvaluadorCodigo:
@@ -14,17 +15,19 @@ class EvaluadorCodigo:
             random_state=42
         )
 
-        # 🔥 Encoder
         self.le_nivel = LabelEncoder()
 
-        # 🔥 COLUMNAS FIJAS
+        # 🔥 FEATURES TRANSFORMADAS (sin leak)
         self.feature_columns = [
-            "errores",
-            "intentos",
-            "uso_codigo",
-            "uso_bloques",
+            "ratio_error",
+            "ratio_codigo",
+            "intentos_normalizados",
+            "complejidad",
             "nivel_logico"
         ]
+
+        self.accuracy = 0
+        self.precision = 0
 
     # =========================
     # 🔥 PREPROCESS
@@ -33,15 +36,26 @@ class EvaluadorCodigo:
 
         df = df.copy()
 
-        # 🔧 asegurar columnas necesarias
-        for col in self.feature_columns:
+        base_cols = [
+            "errores",
+            "intentos",
+            "uso_codigo",
+            "uso_bloques",
+            "nivel_logico"
+        ]
+
+        # 🔧 asegurar columnas
+        for col in base_cols:
             if col not in df.columns:
                 df[col] = 0
 
-        # 🔥 asegurar tipo string
+        # 🔧 asegurar numéricos
+        for col in base_cols[:-1]:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+        # 🔥 encoding nivel lógico (ANTES del target)
         df["nivel_logico"] = df["nivel_logico"].astype(str)
 
-        # 🔥 encoding
         if is_training:
             df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
         else:
@@ -49,6 +63,31 @@ class EvaluadorCodigo:
                 lambda x: x if x in self.le_nivel.classes_ else self.le_nivel.classes_[0]
             )
             df["nivel_logico"] = self.le_nivel.transform(df["nivel_logico"])
+
+        # 🔥 TARGET (sin error ahora)
+        if is_training:
+            df["calidad_codigo"] = (
+                df["uso_codigo"] * 2 -
+                df["errores"] * 3 +
+                df["intentos"] * 1.5 +
+                df["nivel_logico"] * 5
+            )
+
+            df["calidad_codigo"] = pd.cut(
+                df["calidad_codigo"],
+                bins=3,
+                labels=[0, 1, 2]
+            )
+
+        # 🔥 FEATURES DERIVADAS (sin copiar fórmula)
+        df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
+        df["ratio_codigo"] = df["uso_codigo"] / (df["intentos"] + 1)
+        df["intentos_normalizados"] = df["intentos"] / (df["errores"] + 1)
+        df["complejidad"] = df["errores"] * df["uso_codigo"]
+
+        # 🔧 limpieza
+        df.replace([np.inf, -np.inf], 0, inplace=True)
+        df.fillna(0, inplace=True)
 
         return df
 
@@ -58,20 +97,6 @@ class EvaluadorCodigo:
     def train(self, df):
 
         df = self.preprocess_data(df, is_training=True)
-
-        # 🔥 TARGET (sin leakage real)
-        df["calidad_codigo"] = (
-            df["uso_codigo"] * 2 -
-            df["errores"] * 3 +
-            df["intentos"] * 1.5 +
-            df["nivel_logico"] * 5
-        )
-
-        df["calidad_codigo"] = pd.cut(
-            df["calidad_codigo"],
-            bins=3,
-            labels=[0, 1, 2]
-        )
 
         X = df[self.feature_columns]
         y = df["calidad_codigo"]
@@ -96,11 +121,14 @@ class EvaluadorCodigo:
 
         data = self.preprocess_data(data, is_training=False)
 
+        for col in self.feature_columns:
+            if col not in data.columns:
+                data[col] = 0
+
         X = data[self.feature_columns]
 
         pred = self.model.predict(X)[0]
 
-        # 🔥 interpretación
         if pred == 0:
             return "Código básico"
         elif pred == 1:
