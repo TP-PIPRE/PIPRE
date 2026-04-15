@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 
 class AppResultados:
 
-    def __init__(self, root, resultados):
+    def __init__(self, root, resultados, evaluar_otro=None):
         self.root = root
         self.root.title("Resultados del Sistema IA")
-        self.root.geometry("1000x700")  # 🔥 más grande
+        self.root.geometry("1200x800")
 
         self.resultados = resultados
+        self.evaluar_otro = evaluar_otro  # 🔥 importante mover aquí
 
         self.crear_interfaz()
 
@@ -35,64 +36,176 @@ class AppResultados:
 
     def crear_panel(self, frame, ria, data):
 
-        # 🔹 Resultado
-        tk.Label(frame, text="Resultado:", font=("Arial", 12, "bold")).pack(pady=5)
-        tk.Label(frame, text=data.get("resultado", "N/A"), font=("Arial", 12)).pack()
+        # =========================
+        # 🔥 SCROLL
+        # =========================
+        canvas = tk.Canvas(frame)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
 
-        # 🔹 RIA8 (solo anomalías)
+        container = tk.Frame(canvas)
+
+        container.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=container, anchor="n")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # =========================
+        # 🎯 FRAME CENTRAL (CENTRADO REAL)
+        # =========================
+        wrapper = tk.Frame(container)
+        wrapper.pack(expand=True)
+
+        center_frame = tk.Frame(wrapper)
+        center_frame.pack()
+
+        # =========================
+        # 🔝 DATOS
+        # =========================
+        input_data = data.get("input_data", None)
+
+        if input_data:
+            box = tk.LabelFrame(center_frame, text="Datos evaluados", font=("Arial", 11, "bold"))
+            box.pack(pady=10)
+
+            tabla = ttk.Treeview(
+                box,
+                columns=("Variable", "Valor"),
+                show="headings",
+                height=6
+            )
+
+            tabla.heading("Variable", text="Variable")
+            tabla.heading("Valor", text="Valor")
+
+            tabla.column("Variable", width=250, anchor="center")
+            tabla.column("Valor", width=150, anchor="center")
+
+            for k, v in input_data.items():
+                tabla.insert("", "end", values=(k, v))
+
+            tabla.pack(padx=20, pady=10)
+
+        # =========================
+        # 🧠 RESULTADO
+        # =========================
+        box_result = tk.LabelFrame(center_frame, text="Resultado", font=("Arial", 11, "bold"))
+        box_result.pack(pady=10)
+
+        tk.Label(
+            box_result,
+            text=data.get("resultado", "N/A"),
+            font=("Arial", 14, "bold"),
+            fg="#2c3e50"
+        ).pack(padx=20, pady=10)
+
+        # =========================
+        # 🔹 RIA8
+        # =========================
         if "RIA8" in ria:
-            tk.Label(frame, text="Tasa de anomalías:", font=("Arial", 12, "bold")).pack(pady=5)
-            tk.Label(frame, text=data.get("anomalias", "N/A")).pack()
+            box_anom = tk.LabelFrame(center_frame, text="Análisis de anomalías", font=("Arial", 11, "bold"))
+            box_anom.pack(pady=10)
 
-            # 🔥 gráfico de importancia también
+            tk.Label(
+                box_anom,
+                text=data.get("anomalias", "N/A"),
+                font=("Arial", 11)
+            ).pack(padx=20, pady=10)
+
             importancias = data.get("importancias", None)
-
             if importancias:
-                self.crear_grafico_importancia(frame, importancias)
+                self.crear_grafico_importancia(center_frame, importancias)
 
-            return
+        else:
+            # =========================
+            # 📊 MÉTRICAS
+            # =========================
+            box_metricas = tk.LabelFrame(center_frame, text="Métricas", font=("Arial", 11, "bold"))
+            box_metricas.pack(pady=10)
 
-        # 🔹 MÉTRICAS SIMPLES
-        accuracy = data.get("accuracy", 0)
-        precision = data.get("precision", 0)
+            accuracy = data.get("accuracy", 0)
+            precision = data.get("precision", 0)
 
-        tk.Label(frame, text="Métricas:", font=("Arial", 12, "bold")).pack(pady=5)
-        tk.Label(frame, text=f"Accuracy: {accuracy:.2f}").pack()
-        tk.Label(frame, text=f"Precision: {precision:.2f}").pack()
+            frame_metrics = tk.Frame(box_metricas)
+            frame_metrics.pack()
 
-        # 🔥 GRÁFICO DE IMPORTANCIA
-        importancias = data.get("importancias", None)
+            tk.Label(
+                frame_metrics,
+                text=f"Accuracy: {accuracy:.2f}",
+                width=20
+            ).grid(row=0, column=0, padx=20, pady=5)
 
-        if importancias:
-            self.crear_grafico_importancia(frame, importancias)
+            tk.Label(
+                frame_metrics,
+                text=f"Precision: {precision:.2f}",
+                width=20
+            ).grid(row=0, column=1, padx=20, pady=5)
 
+            # =========================
+            # 📈 GRÁFICO
+            # =========================
+            importancias = data.get("importancias", None)
+            if importancias:
+                self.crear_grafico_importancia(center_frame, importancias)
+
+        # =========================
+        # 🔘 BOTÓN (AHORA SÍ FUNCIONA)
+        # =========================
+        if self.evaluar_otro:
+            btn_frame = tk.Frame(center_frame)
+            btn_frame.pack(pady=20)
+
+            tk.Button(
+                btn_frame,
+                text="🔄 Evaluar otra fila",
+                font=("Arial", 11, "bold"),
+                bg="#3498db",
+                fg="white",
+                padx=15,
+                pady=6,
+                command=self.ejecutar_evaluacion
+            ).pack()
+
+    # =========================
+    # 🔁 REEVALUAR
+    # =========================
+    def ejecutar_evaluacion(self):
+        nuevos_resultados = self.evaluar_otro()
+        self.root.destroy()
+        mostrar_resultados(nuevos_resultados, self.evaluar_otro)
+
+    # =========================
+    # 📈 GRÁFICO
+    # =========================
     def crear_grafico_importancia(self, frame, importancias):
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
-        # 🔥 eliminar nivel_logico si existe
         importancias_filtradas = {
             k: v for k, v in importancias.items()
             if k != "nivel_logico"
         }
 
+        if not importancias_filtradas:
+            return
+
         columnas = list(importancias_filtradas.keys())
         valores = list(importancias_filtradas.values())
 
-        # 🔥 ordenar de mayor a menor
         columnas_valores = sorted(zip(valores, columnas), reverse=True)
         valores_ordenados, columnas_ordenadas = zip(*columnas_valores)
 
-        # 🔥 gráfico horizontal (mejor para muchas variables)
         ax.barh(columnas_ordenadas, valores_ordenados)
 
         ax.set_title("Importancia de Variables", fontsize=12, fontweight="bold")
         ax.set_xlabel("Importancia")
 
-        # 🔥 invertir eje para que el más importante esté arriba
         ax.invert_yaxis()
-
-        # 🔥 grid suave
         ax.grid(axis='x', linestyle='--', alpha=0.5)
 
         fig.tight_layout()
@@ -102,8 +215,10 @@ class AppResultados:
         canvas.get_tk_widget().pack(pady=10)
 
 
-# 🔥 función launcher
-def mostrar_resultados(resultados):
+# =========================
+# 🚀 LAUNCHER
+# =========================
+def mostrar_resultados(resultados, evaluar_otro=None):
     root = tk.Tk()
-    app = AppResultados(root, resultados)
+    app = AppResultados(root, resultados, evaluar_otro)
     root.mainloop()

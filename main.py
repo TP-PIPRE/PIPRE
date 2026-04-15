@@ -10,6 +10,9 @@ from models.ria12_codigo import EvaluadorCodigo
 # 🔥 UI
 from ui.ui_resultados import mostrar_resultados
 
+# 🔥 LÓGICA EXTERNA
+from ui.evaluador import generar_resultados
+
 
 def main():
 
@@ -38,71 +41,20 @@ def main():
     ria12.train(df)
 
     # =========================
-    # 🔹 INPUT DE PRUEBA
+    # 🔥 GENERAR RESULTADOS INICIALES
     # =========================
-    data = df.sample(1)
-
-    # =========================
-    # 📊 RESULTADOS
-    # =========================
-    resultados = {
-
-        # 🔥 RIA 1
-        "RIA1 - Desempeño": {
-            "resultado": ria1.predict(data),
-            "accuracy": ria1.accuracy,
-            "precision": ria1.precision,
-            "importancias": dict(zip(
-                ria1.feature_columns,
-                ria1.model.feature_importances_
-            ))
-        },
-
-        # 🔥 RIA 3
-        "RIA3 - Recomendación": {
-            "resultado": ria3.predict(data),
-            "accuracy": ria3.accuracy,
-            "precision": ria3.precision,
-            "importancias": dict(zip(
-                ria3.feature_columns,
-                ria3.model_stage1.feature_importances_
-            ))
-        },
-
-        # 🔥 RIA 8 (anomalias con importancia)
-        "RIA8 - Anomalías": {
-            "resultado": ria8.predict(data),
-            "anomalias": f"{ria8.anomaly_ratio:.2%} del dataset detectado como anómalo",
-            "importancias": ria8.calcular_importancia(df)
-        },
-
-        # 🔥 RIA 11
-        "RIA11 - Tiempo": {
-            "resultado": ria11.predict(data),
-            "accuracy": ria11.accuracy,
-            "precision": ria11.precision,
-            "importancias": dict(zip(
-                ria11.feature_columns,
-                ria11.model.feature_importances_
-            ))
-        },
-
-        # 🔥 RIA 12
-        "RIA12 - Código": {
-            "resultado": ria12.predict(data),
-            "accuracy": ria12.accuracy,
-            "precision": ria12.precision,
-            "importancias": dict(zip(
-                ria12.feature_columns,
-                ria12.model.feature_importances_
-            ))
-        }
-    }
+    resultados = generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
 
     # =========================
-    # MOSTRAR UI
+    # 🔄 CALLBACK BOTÓN
     # =========================
-    mostrar_resultados(resultados)
+    def evaluar_otro():
+        return generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
+
+    # =========================
+    # 🖥️ MOSTRAR UI
+    # =========================
+    mostrar_resultados(resultados, evaluar_otro)
 
 
 if __name__ == "__main__":

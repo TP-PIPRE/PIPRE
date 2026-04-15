@@ -139,5 +139,14 @@ class ClasificadorTiempo:
         X = data[self.feature_columns]
 
         pred = self.model.predict(X)[0]
+        label = self.le_target.inverse_transform([pred])[0]
 
-        return self.le_target.inverse_transform([pred])[0]
+        # 🔥 MENSAJES INTERPRETADOS
+        if label == "corto":
+            return "Tiempo corto:"
+        
+        elif label == "medio":
+            return "Tiempo medio"
+        
+        else:  # largo
+            return "Tiempo largo"

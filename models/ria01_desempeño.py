@@ -136,5 +136,11 @@ class ClasificadorDesempeno:
         data = data[self.feature_columns]
 
         pred = self.model.predict(data)[0]
+        label = self.le_target.inverse_transform([pred])[0]
 
-        return self.le_target.inverse_transform([pred])[0]
+        if label == "bajo":
+            return "Desempeño bajo"
+        elif label == "medio":
+            return "Desempeño medio"
+        else:
+            return "Desempeño alto"
