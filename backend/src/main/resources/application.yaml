@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: PipreBackend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/pipre_database}
+    username: ${POSTGRES_USER:pipre_user}
+    password: ${POSTGRES_PASSWORD:pipre_password}
+    hikari:
+      connection-timeout: 5000
+      initialization-fail-timeout: 5000
+  jpa:
+    show-sql: true
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true

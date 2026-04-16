@@ -3,7 +3,8 @@
 Thumbs.db
 *.swp
 
-# IDEs (VS Code, IntelliJ, etc.)
+# IDEs
+.vs/
 .vscode/
 .idea/
 *.suo
@@ -13,3 +14,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Secretos
+.env
