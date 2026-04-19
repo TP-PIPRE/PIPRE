@@ -1,4 +1,105 @@
-# BACKEND.
+# BACKEND
+## Estructura de ejemplo
+```
+backend/
+│
+├── src/
+│   ├── main/
+│   │   ├── java/com/tuapp/
+│   │   │   │
+│   │   │   ├── domain/                         # Núcleo puro — CERO dependencias de Spring
+│   │   │   │   ├── model/                      # Entidades y Value Objects del negocio
+│   │   │   │   │   ├── User.java               #   Entidad raíz del agregado usuario
+│   │   │   │   │   ├── Prediction.java         #   Resultado de una predicción ML
+│   │   │   │   │   └── valueobjects/
+│   │   │   │   │       ├── Email.java          #   Value Object con validación propia
+│   │   │   │   │       └── PredictionScore.java
+│   │   │   │   │
+│   │   │   │   ├── ports/
+│   │   │   │   │   ├── in/                     # Lo que el exterior puede pedirle al dominio
+│   │   │   │   │   │   ├── CreateUserUseCase.java       # Interface del caso de uso
+│   │   │   │   │   │   └── RequestPredictionUseCase.java
+│   │   │   │   │   │
+│   │   │   │   │   └── out/                    # Lo que el dominio necesita del exterior
+│   │   │   │   │       ├── UserRepository.java         # Interface de persistencia
+│   │   │   │   │       └── MLServicePort.java          # Interface para llamar al módulo ML
+│   │   │   │   │
+│   │   │   │   ├── events/                     # Domain Events (DDD)
+│   │   │   │   │   └── PredictionRequestedEvent.java
+│   │   │   │   │
+│   │   │   │   └── exceptions/                 # Excepciones del dominio
+│   │   │   │       ├── UserNotFoundException.java
+│   │   │   │       └── PredictionFailedException.java
+│   │   │   │
+│   │   │   ├── application/                    # Casos de uso: orquesta domain + ports
+│   │   │   │   ├── service/
+│   │   │   │   │   ├── CreateUserService.java          # Implementa CreateUserUseCase
+│   │   │   │   │   └── RequestPredictionService.java   # Implementa RequestPredictionUseCase
+│   │   │   │   │                                       # Llama a MLServicePort (port out)
+│   │   │   │   └── dto/                        # DTOs internos entre capas
+│   │   │   │       ├── CreateUserCommand.java
+│   │   │   │       └── PredictionRequest.java
+│   │   │   │
+│   │   │   ├── adapters/                       # Implementaciones concretas de los ports
+│   │   │   │   │
+│   │   │   │   ├── in/                         # Adapters de entrada (driving adapters)
+│   │   │   │   │   └── rest/
+│   │   │   │   │       ├── UserController.java         # @RestController → llama al port in
+│   │   │   │   │       ├── PredictionController.java   # Recibe petición del Frontend
+│   │   │   │   │       ├── dto/                        # Request/Response bodies (Jackson)
+│   │   │   │   │       │   ├── UserRequest.java
+│   │   │   │   │       │   ├── UserResponse.java
+│   │   │   │   │       │   └── PredictionResponse.java
+│   │   │   │   │       └── mapper/
+│   │   │   │   │           └── UserMapper.java         # DTO ↔ Domain model
+│   │   │   │   │
+│   │   │   │   └── out/                        # Adapters de salida (driven adapters)
+│   │   │   │       ├── persistence/
+│   │   │   │       │   ├── JpaUserRepository.java      # Implementa UserRepository (port out)
+│   │   │   │       │   ├── entity/
+│   │   │   │       │   │   └── UserEntity.java         # @Entity JPA (no es domain model)
+│   │   │   │       │   └── mapper/
+│   │   │   │       │       └── UserEntityMapper.java   # Domain ↔ JPA Entity
+│   │   │   │       │
+│   │   │   │       └── ml/
+│   │   │   │           ├── MLServiceAdapter.java       # Implementa MLServicePort
+│   │   │   │           │                               # Hace HTTP call al módulo Python
+│   │   │   │           └── dto/
+│   │   │   │               ├── MLRequest.java          # Payload enviado al módulo ML
+│   │   │   │               └── MLResponse.java         # Respuesta recibida del módulo ML
+│   │   │   │
+│   │   │   └── infrastructure/                 # Configuración e integración con frameworks
+│   │   │       ├── config/
+│   │   │       │   ├── BeanConfig.java         # @Configuration: registra servicios como beans
+│   │   │       │   ├── SecurityConfig.java     # Spring Security: JWT, CORS, rutas públicas
+│   │   │       │   ├── OpenApiConfig.java      # Swagger / OpenAPI docs
+│   │   │       │   └── MLClientConfig.java     # RestTemplate/WebClient para el módulo ML
+│   │   │       │
+│   │   │       ├── persistence/
+│   │   │       │   └── DatabaseConfig.java     # DataSource, JPA properties
+│   │   │       │
+│   │   │       ├── security/
+│   │   │       │   ├── JwtProvider.java        # Generación y validación de tokens JWT
+│   │   │       │   └── JwtFilter.java          # Filtro que intercepta requests
+│   │   │       │
+│   │   │       └── exception/
+│   │   │           └── GlobalExceptionHandler.java  # @ControllerAdvice: errores → HTTP status
+│   │   │
+│   │   └── resources/
+│   │       ├── application.yml                 # DB URL, ML_SERVICE_URL, JWT secret
+│   │       ├── application-dev.yml
+│   │       └── application-prod.yml
+│   │
+│   └── test/
+│       └── java/com/tuapp/
+│           ├── domain/                         # Tests unitarios de dominio puro
+│           ├── application/                    # Tests de casos de uso (Mockito)
+│           ├── adapters/                       # Tests de controllers (@WebMvcTest)
+│           └── integration/                   # Tests de integración (@SpringBootTest)
+│
+├── pom.xml                                     # o build.gradle
+└── Dockerfile
+```
 ## Guía de ejecución
 1. Se requiere la instalación de las siguientes herramientas:
     - JAVA 21
