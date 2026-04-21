@@ -1042,57 +1042,6 @@ export const Simulador = () => {
 
   return (
     <div className="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container overflow-hidden">
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-10 h-20 bg-white/70 backdrop-blur-[20px] shadow-[0_40px_40px_rgba(39,48,52,0.06)] rounded-b-[2.5rem]">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-black text-pink-600 font-headline tracking-tight">
-            CodeAtelier
-          </h1>
-          <nav className="hidden md:flex gap-8 items-center">
-            <a
-              className="text-slate-500 font-medium hover:text-pink-500 transition-colors"
-              href="#"
-            >
-              Explorar
-            </a>
-            <a
-              className="text-pink-600 font-bold border-b-2 border-pink-500 pb-1"
-              href="#"
-            >
-              Desafíos
-            </a>
-            <a
-              className="text-slate-500 font-medium hover:text-pink-500 transition-colors"
-              href="#"
-            >
-              Tutoriales
-            </a>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex gap-2">
-            <button className="p-2 text-slate-500 hover:text-pink-500 transition-transform scale-95 active:scale-90">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
-            <button className="p-2 text-slate-500 hover:text-pink-500 transition-transform scale-95 active:scale-90">
-              <span className="material-symbols-outlined">settings</span>
-            </button>
-          </div>
-          <button
-            id="runBtn"
-            className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold px-6 py-2 rounded-full transition-transform scale-95 active:scale-90"
-            onClick={runProgram}
-          >
-            ▶ Ejecutar
-          </button>
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
-            <img
-              alt="Student avatar"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyPEM20O_a39l16FmyGYuYHKj-zUB7CuDidOvgwgN_4loBGUN9l5ySc2JDGjeBL3pKN75El2toe8eOvR18-8wg51KReuL0eeMbYrBqIXSiOCd0JLFhLblA2XJSbc8ttAOs98S9cj-dqvk2ctWXB3gOlXN6LXyOn4WXuMmLxFVcr9thB0ESzSNK15bNxiRzwk_LHY6pSMQfw34AwUQxhL1Fv4ufX4hYC5VffEcsJYsqaTy8p3L2Jptc5u36cHNQ6c35aRmLkmNJjzc"
-            />
-          </div>
-        </div>
-      </header>
-
       <main className="pt-24 h-screen flex">
         <aside className="flex flex-col py-8 gap-4 h-screen w-64 rounded-r-[3rem] sticky left-0 bg-sky-50 shadow-xl">
           <div className="px-8 mb-4">
