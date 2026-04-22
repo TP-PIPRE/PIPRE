@@ -37,7 +37,7 @@ pipeline {
             steps {
                 echo 'Notificando a Portainer para actualizar el Stack...'
                 // Usamos la variable inyectada
-                sh "curl -X POST '${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}'"
+                sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
             }
         }
     }
