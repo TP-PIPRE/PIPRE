@@ -29,10 +29,12 @@ pipeline {
             }
         }
         stage('Smart Deploy') {
-            when { expression { return backendChanged || frontendChanged } }
+            //when { expression { return backendChanged || frontendChanged } }
             steps {
                 script {
                     echo 'Iniciando actualización...'
+
+                    sh 'docker compose up --help'
 
                     // Probamos con los flags largos para evitar el error de 'shorthand'
                     if (backendChanged) {
