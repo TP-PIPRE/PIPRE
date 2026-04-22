@@ -27,7 +27,7 @@ public class HomeController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("name", "Pripre Backend en OCI");
-        response.put("version", "0.0.3");
+        response.put("version", "0.1");
         response.put("status", health.getStatus().getCode());
         response.put("timestamp", LocalDateTime.now());
         response.put("endpoint_docs", "/swagger-ui/index.html");
