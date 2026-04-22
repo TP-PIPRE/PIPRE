@@ -3,8 +3,10 @@ pipeline {
     agent any
 
     environment {
-        // 1. Aquí pegas la URL exacta que sacaste de Portainer (Stack Webhook)
-        PORTAINER_WEBHOOK = "https://portainer.yoshua-cloud.dedyn.io/api/webhooks/tu-token-aqui"
+        // Esto asocia el secreto de Jenkins a una variable de entorno del script
+        PORTAINER_TOKEN = credentials('PORTAINER_STACK_WEBHOOK_TOKEN')
+        // URL base sin el token
+        PORTAINER_BASE_URL = "https://portainer.yoshua-cloud.dedyn.io/api/webhooks"
     }
 
     stages {
@@ -33,9 +35,9 @@ pipeline {
 
         stage('Deploy to Production') {
             steps {
-                echo 'Notificando a Portainer para refrescar los contenedores...'
-                // Portainer recibirá esto, hará un "docker pull" (o recreará con las nuevas imágenes locales)
-                sh "curl -X POST '${PORTAINER_WEBHOOK}'"
+                echo 'Notificando a Portainer para actualizar el Stack...'
+                // Usamos la variable inyectada
+                sh "curl -X POST '${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}'"
             }
         }
     }
