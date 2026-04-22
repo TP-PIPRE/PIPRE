@@ -5,10 +5,12 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { Header } from "./ui/components/Header";
+import { Header } from "./ui/components/common/Header";
+import { HeaderDocente } from "./ui/components/common/HeaderDocente";
 import { PaginaInicio } from "./ui/pages/PaginaInicio";
 import { Simulador } from "./ui/pages/Simulador";
 import { LoginPage } from "./ui/pages/LoginPage";
+import { DocenteDashboard } from "./ui/pages/DocenteDashboard";
 import { useAuthStore } from "./infrastructure/store/authStore";
 
 // Componente para rutas protegidas
@@ -17,6 +19,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
   return <>{children}</>;
 };
 
@@ -30,6 +33,27 @@ const MainLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
+// Componente que envuelve las rutas de docentes que deben mostrar el HeaderDocente
+const DocenteLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <>
+      <HeaderDocente />
+      {children}
+    </>
+  );
+};
+
+// Componente para redirigir a docentes
+const DocenteRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuthStore();
+
+  if (user?.role !== "docente") {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 const App = () => {
   return (
     <Router>
@@ -37,7 +61,7 @@ const App = () => {
         {/* Ruta para el Login */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Rutas protegidas */}
+        {/* Rutas protegidas para estudiantes */}
         <Route
           path="/"
           element={
@@ -59,7 +83,23 @@ const App = () => {
           }
         />
 
-        {/* Redirigir a /login si la ruta no existe o no está autenticado */}
+        {/* Rutas protegidas para docentes */}
+        <Route
+          path="/docente/*"
+          element={
+            <ProtectedRoute>
+              <DocenteRoute>
+                <DocenteLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<DocenteDashboard />} />
+                  </Routes>
+                </DocenteLayout>
+              </DocenteRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Redirigir a /login si la ruta no existe */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

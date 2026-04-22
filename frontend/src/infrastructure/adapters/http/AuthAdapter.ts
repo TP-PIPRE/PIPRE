@@ -1,20 +1,31 @@
 import type { IAuthRepository } from "../../../domain/ports/IAuthRepository";
 import type { User } from "../../../domain/models/User";
 
-// Credenciales temporales (comentadas para reemplazar con API real)
-const MOCK_USER = {
-  email: "admin@pipre.com",
-  password: "123456",
-};
+// Credenciales temporales
+const MOCK_USERS = [
+  {
+    email: "admin@pipre.com",
+    password: "123456",
+    role: "admin" as const,
+  },
+  {
+    email: "docente@pipre.com",
+    password: "123456",
+    role: "docente" as const,
+  },
+];
 
 export class AuthAdapter implements IAuthRepository {
   async login(email: string, password: string): Promise<User> {
     // Simulación de autenticación con credenciales estáticas
-    if (email === MOCK_USER.email && password === MOCK_USER.password) {
+    const user = MOCK_USERS.find(
+      (u) => u.email === email && u.password === password,
+    );
+    if (user) {
       return {
-        id: "1",
-        email: MOCK_USER.email,
-        role: "admin",
+        id: user.role === "admin" ? "1" : "2",
+        email: user.email,
+        role: user.role,
       };
     } else {
       throw new Error("Credenciales incorrectas");
@@ -31,6 +42,7 @@ export class AuthAdapter implements IAuthRepository {
     return response.json();
     */
   }
+
   async register(
     name: string,
     lastname: string,
@@ -39,6 +51,7 @@ export class AuthAdapter implements IAuthRepository {
     age: number,
     grade: string,
   ): Promise<User> {
+    // Endpoint real
     const response = await fetch("https://api.pipre.com/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,7 +62,7 @@ export class AuthAdapter implements IAuthRepository {
         password,
         age,
         grade,
-        role: "student",
+        role: "student" as const,
       }),
     });
 

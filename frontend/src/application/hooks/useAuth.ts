@@ -13,7 +13,13 @@ export const useAuth = () => {
       const userData = await loginUserUseCase.execute(email, password);
       setUser(userData);
       setError(null);
-      navigate("/");
+
+      // Redirigir según el rol del usuario
+      if (userData.role === "docente") {
+        navigate("/docente/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(
         "Credenciales incorrectas: " +
