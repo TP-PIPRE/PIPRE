@@ -7,64 +7,61 @@ pipeline {
         PORTAINER_TOKEN = credentials('PORTAINER_STACK_WEBHOOK_TOKEN')
         // URL base sin el token
         PORTAINER_BASE_URL = "https://portainer.yoshua-cloud.dedyn.io/api/stacks/webhooks"
+        BACKEND_CHANGED = 'false'
+        FRONTEND_CHANGED = 'false'
     }
-
 stages {
         stage('Build & Check SHA') {
             steps {
                 script {
-                    // 1. Capturar SHA actual antes del build (si no existe, devolverá vacío)
-                    def oldBackendSha = sh(script: "docker images -q pipre-backend:latest", returnStdout: true).trim()
-                    def oldFrontendSha = sh(script: "docker images -q pipre-frontend:latest", returnStdout: true).trim()
+                    // Usamos -q --no-trunc para obtener el ID largo y evitar errores de comparación
+                    def oldBackendSha = sh(script: "docker images -q --no-trunc pipre-backend:latest", returnStdout: true).trim()
+                    def oldFrontendSha = sh(script: "docker images -q --no-trunc pipre-frontend:latest", returnStdout: true).trim()
 
-                    echo "SHA previo Backend: ${oldBackendSha ?: 'Ninguno'}"
-                    echo "SHA previo Frontend: ${oldFrontendSha ?: 'Ninguno'}"
+                    echo "SHA previo Backend: ${oldBackendSha}"
 
-                    // 2. Ejecutar las construcciones
                     sh 'DOCKER_BUILDKIT=1 docker build -t pipre-backend ./backend'
                     sh 'DOCKER_BUILDKIT=1 docker build -t pipre-frontend --build-arg REACT_APP_API_URL=https://api.yoshua-cloud.dedyn.io ./frontend'
 
-                    // 3. Capturar nuevo SHA post-build
-                    def newBackendSha = sh(script: "docker images -q pipre-backend:latest", returnStdout: true).trim()
-                    def newFrontendSha = sh(script: "docker images -q pipre-frontend:latest", returnStdout: true).trim()
+                    def newBackendSha = sh(script: "docker images -q --no-trunc pipre-backend:latest", returnStdout: true).trim()
+                    def newFrontendSha = sh(script: "docker images -q --no-trunc pipre-frontend:latest", returnStdout: true).trim()
 
-                    // 4. Comparar
+                    // Comparación estricta
                     if (oldBackendSha != newBackendSha && oldBackendSha != "") {
-                        BACKEND_CHANGED = "true"
+                        env.BACKEND_CHANGED = 'true'
+                        echo "Backend ha cambiado."
                     } else {
-                        echo "Backend sin cambios. SHA sigue siendo ${newBackendSha}"
-                        BACKEND_CHANGED = "false" // Aseguramos que sea false
+                        env.BACKEND_CHANGED = 'false'
+                        echo "Backend sin cambios."
                     }
+
                     if (oldFrontendSha != newFrontendSha && oldFrontendSha != "") {
-                        FRONTEND_CHANGED = "true"
+                        env.FRONTEND_CHANGED = 'true'
+                        echo "Frontend ha cambiado."
                     } else {
-                        echo "Frontend sin cambios. SHA sigue siendo ${newFrontendSha}"
-                        FRONTEND_CHANGED = "false" // Aseguramos que sea false
+                        env.FRONTEND_CHANGED = 'false'
+                        echo "Frontend sin cambios."
                     }
-                    
                 }
             }
         }
 
         stage('Smart Deploy') {
             when {
-                expression { BACKEND_CHANGED == "true" || FRONTEND_CHANGED == "true" }
+                expression { env.BACKEND_CHANGED == 'true' || env.FRONTEND_CHANGED == 'true' }
             }
             steps {
                 script {
                     echo 'Iniciando actualización selectiva...'
 
-                    // Si el backend cambió, lo recreamos
-                    if (BACKEND_CHANGED == "true") {
-                        sh 'docker-compose up -d --force-recreate backend'
+                    if (env.BACKEND_CHANGED == 'true') {
+                        sh 'docker compose up --detach --force-recreate backend'
                     }
 
-                    // Si el frontend cambió, lo recreamos
-                    if (FRONTEND_CHANGED == "true") {
-                        sh 'docker-compose up -d --force-recreate frontend'
+                    if (env.FRONTEND_CHANGED == 'true') {
+                        sh 'docker compose up --detach --force-recreate frontend'
                     }
 
-                    // Notificar a Portainer para sincronizar el estado del Stack
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
                 }
             }
