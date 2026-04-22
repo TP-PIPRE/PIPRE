@@ -35,10 +35,10 @@ pipeline {
                     echo 'Iniciando actualización...'
                     if (backendChanged) {
                         // Sintaxis directa. Si falla, prueba: sh 'docker compose up -d backend'
-                        sh 'docker compose up -d --force-recreate backend'
+                        sh 'docker compose up -d backend'
                     }
                     if (frontendChanged) {
-                        sh 'docker compose up -d --force-recreate frontend'
+                        sh 'docker compose up -d frontend'
                     }
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
                 }
