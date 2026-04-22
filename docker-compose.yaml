@@ -3,15 +3,12 @@
 services:
 
   postgres:
-    profiles: ["service"]
     image: postgres:16-alpine
     container_name: PipreDatabase
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
       - POSTGRES_DB=${POSTGRES_DB:-pipre_database}
-    ports:
-      - "5432:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pipre_user} -d ${POSTGRES_DB:-pipre_database}" ]
       interval: 5s
@@ -22,12 +19,9 @@ services:
       - pipre-network
 
   backend:
-    profiles: ["backend"]
     build: ./backend
     image: pipre-backend
     container_name: PipreBackend
-    ports:
-      - "8080:8080"
     environment:
       - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
@@ -37,21 +31,22 @@ services:
         condition: service_healthy
     networks:
       - pipre-network
+      - devops_network
 
   frontend:
-    profiles: ["frontend"]
     build:
       context: ./frontend
       args:
         - REACT_APP_API_URL=http://backend:8080
     image: pipre-frontend
     container_name: PipreFrontend
-    ports:
-      - "3000:3000"
     environment:
       - REACT_APP_API_URL=http://backend:8080
     networks:
       - pipre-network
+      - devops_network
 networks:
   pipre-network:
     driver: bridge
+  devops_network:
+    external: true
