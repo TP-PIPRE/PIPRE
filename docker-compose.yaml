@@ -21,7 +21,7 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "2"
 
   backend:
     build: ./backend
@@ -41,7 +41,7 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "2"
 
   frontend:
     build:
@@ -58,7 +58,7 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-        max-file: "3"
+        max-file: "2"
 networks:
   database-network:
     internal: true
