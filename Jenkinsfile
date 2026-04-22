@@ -16,7 +16,7 @@ pipeline {
                 script {
                     // 1. DETECCIÓN POR HUELLA DIGITAL (MD5)
                     // Calculamos el hash actual del archivo
-                    def currentHash = sh(script: "md5sum docker-compose.yml | cut -d ' ' -f 1", returnStdout: true).trim()
+                    def currentHash = sh(script: "md5sum docker-compose.yaml | cut -d ' ' -f 1", returnStdout: true).trim()
 
                     // Leemos el hash de la última vez que el pipeline tuvo éxito
                     def lastHash = ""
@@ -26,7 +26,7 @@ pipeline {
 
                     if (currentHash != lastHash) {
                         composeChanged = true
-                        echo "¡Cambio detectado en docker-compose.yml! (Hash: ${currentHash})"
+                        echo "¡Cambio detectado en docker-compose.yaml! (Hash: ${currentHash})"
                         // Guardamos el nuevo hash para la próxima vez
                         writeFile file: 'last_compose_hash.txt', text: currentHash
                     }
