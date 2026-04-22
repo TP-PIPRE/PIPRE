@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #b00d6a;
+  --color-secondary: #0057bd;
+  --color-tertiary: #3f6600;
+  --color-background: #eff8fe;
+  --color-surface: #eff8fe;
+  --color-on-surface: #273034;
+  --color-surface-container-lowest: #ffffff;
+}
+
+body {
+  @apply bg-[var(--color-background)] text-[var(--color-on-surface)];
+  font-family: "Be Vietnam Pro", sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.btn-gradient {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #ff6daf 100%);
+}
+
+.geometric-bg {
+  background-color: #ffffff;
+  background-image: radial-gradient(
+    var(--color-background) 2px,
+    transparent 2px
+  );
+  background-size: 32px 32px;
+}

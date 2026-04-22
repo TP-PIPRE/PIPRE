@@ -154,3 +154,9 @@ añadi axios
 ```shell
 pnpm add axios
 ```
+
+añadi zustand
+
+```shell
+pnpm add zustand
+```
