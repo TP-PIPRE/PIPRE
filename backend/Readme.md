@@ -1,104 +1,64 @@
 # BACKEND
-## Estructura de ejemplo
+## Estructura de carpetas
 ```
-backend/
+backend/src/main/java/com.pipre.backend/
+├── application/                   # Orquestación de casos de uso (capa de aplicación)
+│   ├── dto/                       # Modelos de entrada/salida de la aplicación
+│   │   ├── request/               # Requests internos del sistema
+│   │   └── response/              # Responses internos del sistema
+│   ├── mapper/                    # Conversión entre dominio ↔ DTO
+│   └── usecase/                   # Implementación de casos de uso
 │
-├── src/
-│   ├── main/
-│   │   ├── java/com/tuapp/
-│   │   │   │
-│   │   │   ├── domain/                         # Núcleo puro — CERO dependencias de Spring
-│   │   │   │   ├── model/                      # Entidades y Value Objects del negocio
-│   │   │   │   │   ├── User.java               #   Entidad raíz del agregado usuario
-│   │   │   │   │   ├── Prediction.java         #   Resultado de una predicción ML
-│   │   │   │   │   └── valueobjects/
-│   │   │   │   │       ├── Email.java          #   Value Object con validación propia
-│   │   │   │   │       └── PredictionScore.java
-│   │   │   │   │
-│   │   │   │   ├── ports/
-│   │   │   │   │   ├── in/                     # Lo que el exterior puede pedirle al dominio
-│   │   │   │   │   │   ├── CreateUserUseCase.java       # Interface del caso de uso
-│   │   │   │   │   │   └── RequestPredictionUseCase.java
-│   │   │   │   │   │
-│   │   │   │   │   └── out/                    # Lo que el dominio necesita del exterior
-│   │   │   │   │       ├── UserRepository.java         # Interface de persistencia
-│   │   │   │   │       └── MLServicePort.java          # Interface para llamar al módulo ML
-│   │   │   │   │
-│   │   │   │   ├── events/                     # Domain Events (DDD)
-│   │   │   │   │   └── PredictionRequestedEvent.java
-│   │   │   │   │
-│   │   │   │   └── exceptions/                 # Excepciones del dominio
-│   │   │   │       ├── UserNotFoundException.java
-│   │   │   │       └── PredictionFailedException.java
-│   │   │   │
-│   │   │   ├── application/                    # Casos de uso: orquesta domain + ports
-│   │   │   │   ├── service/
-│   │   │   │   │   ├── CreateUserService.java          # Implementa CreateUserUseCase
-│   │   │   │   │   └── RequestPredictionService.java   # Implementa RequestPredictionUseCase
-│   │   │   │   │                                       # Llama a MLServicePort (port out)
-│   │   │   │   └── dto/                        # DTOs internos entre capas
-│   │   │   │       ├── CreateUserCommand.java
-│   │   │   │       └── PredictionRequest.java
-│   │   │   │
-│   │   │   ├── adapters/                       # Implementaciones concretas de los ports
-│   │   │   │   │
-│   │   │   │   ├── in/                         # Adapters de entrada (driving adapters)
-│   │   │   │   │   └── rest/
-│   │   │   │   │       ├── UserController.java         # @RestController → llama al port in
-│   │   │   │   │       ├── PredictionController.java   # Recibe petición del Frontend
-│   │   │   │   │       ├── dto/                        # Request/Response bodies (Jackson)
-│   │   │   │   │       │   ├── UserRequest.java
-│   │   │   │   │       │   ├── UserResponse.java
-│   │   │   │   │       │   └── PredictionResponse.java
-│   │   │   │   │       └── mapper/
-│   │   │   │   │           └── UserMapper.java         # DTO ↔ Domain model
-│   │   │   │   │
-│   │   │   │   └── out/                        # Adapters de salida (driven adapters)
-│   │   │   │       ├── persistence/
-│   │   │   │       │   ├── JpaUserRepository.java      # Implementa UserRepository (port out)
-│   │   │   │       │   ├── entity/
-│   │   │   │       │   │   └── UserEntity.java         # @Entity JPA (no es domain model)
-│   │   │   │       │   └── mapper/
-│   │   │   │       │       └── UserEntityMapper.java   # Domain ↔ JPA Entity
-│   │   │   │       │
-│   │   │   │       └── ml/
-│   │   │   │           ├── MLServiceAdapter.java       # Implementa MLServicePort
-│   │   │   │           │                               # Hace HTTP call al módulo Python
-│   │   │   │           └── dto/
-│   │   │   │               ├── MLRequest.java          # Payload enviado al módulo ML
-│   │   │   │               └── MLResponse.java         # Respuesta recibida del módulo ML
-│   │   │   │
-│   │   │   └── infrastructure/                 # Configuración e integración con frameworks
-│   │   │       ├── config/
-│   │   │       │   ├── BeanConfig.java         # @Configuration: registra servicios como beans
-│   │   │       │   ├── SecurityConfig.java     # Spring Security: JWT, CORS, rutas públicas
-│   │   │       │   ├── OpenApiConfig.java      # Swagger / OpenAPI docs
-│   │   │       │   └── MLClientConfig.java     # RestTemplate/WebClient para el módulo ML
-│   │   │       │
-│   │   │       ├── persistence/
-│   │   │       │   └── DatabaseConfig.java     # DataSource, JPA properties
-│   │   │       │
-│   │   │       ├── security/
-│   │   │       │   ├── JwtProvider.java        # Generación y validación de tokens JWT
-│   │   │       │   └── JwtFilter.java          # Filtro que intercepta requests
-│   │   │       │
-│   │   │       └── exception/
-│   │   │           └── GlobalExceptionHandler.java  # @ControllerAdvice: errores → HTTP status
+├── domain/                        # Núcleo del negocio puro (sin Spring, sin BD, sin HTTP)
+│   ├── exception/                 # Excepciones de negocio
+│   ├── model/                     # Entidades y agregados del dominio
+│   ├── port/
+│   │   ├── in/                    # Contratos de entrada (casos de uso del sistema)
+│   │   └── out/                   # Contratos de salida (repositorios, servicios externos)
+│   ├── service/                   # Lógica de dominio compleja (reglas de negocio puras)
+│   └── valueobject/               # Objetos de valor (Email, UserId, etc.)
+│
+├── infrastructure/                # Implementaciones técnicas (frameworks, IO, APIs, BD)
+│   ├── adapter/
+│   │   ├── in/                    # Adaptadores de entrada (HTTP, messaging)
+│   │   │   └── rest/              # API REST
+│   │   │       ├── controller/    # Controladores HTTP
+│   │   │       ├── dto/           # DTOs de API REST (externos)
+│   │   │       │   ├── request/
+│   │   │       │   └── response/
+│   │   │       ├── mapper/        # Mapeo REST ↔ aplicación
+│   │   │       └── security/      # Componentes que interceptan requests HTTP
 │   │   │
-│   │   └── resources/
-│   │       ├── application.yml                 # DB URL, ML_SERVICE_URL, JWT secret
-│   │       ├── application-dev.yml
-│   │       └── application-prod.yml
-│   │
-│   └── test/
-│       └── java/com/tuapp/
-│           ├── domain/                         # Tests unitarios de dominio puro
-│           ├── application/                    # Tests de casos de uso (Mockito)
-│           ├── adapters/                       # Tests de controllers (@WebMvcTest)
-│           └── integration/                   # Tests de integración (@SpringBootTest)
+│   │   └── out/                   # Adaptadores de salida (persistencia, APIs externas)
+│   │       ├── ml/                # Integración con servicios externos (ej: ML API)
+│   │       │   ├── client/        # Cliente HTTP o SDK externo
+│   │       │   └── mapper/        # Mapeo dominio ↔ API externa
+│   │       │   
+│   │       └── persistence/       # Implementación de base de datos
+│   │           ├── entity/        # Entidades JPA (modelo persistente)
+│   │           ├── mapper/        # Mapeo dominio ↔ persistencia
+│   │           └── repository/    # Repositorios Spring Data
+│   │       
+│   └── config/                    # Configuración de Spring (wiring de dependencias)
 │
-├── pom.xml                                     # o build.gradle
-└── Dockerfile
+└── shared/                        # Utilidades transversales (sin lógica de negocio)
+    ├── util/                      # Helpers genéricos (fechas, strings, etc.)
+    └── exception/                 # Excepciones técnicas reutilizables
+
+backend/src/main/resources/
+├── application.yml                # Configuración base (DB, JWT, APIs externas)
+├── application-dev.yml            # Configuración entorno desarrollo
+└── application-prod.yml           # Configuración entorno producción
+
+backend/src/test/java/com.pipre.backend/
+├── domain/                        # Tests unitarios del dominio (sin Spring)
+├── application/                   # Tests de casos de uso (Mockito)
+├── infrastructure/                # Tests de adapters (REST, DB mocks)
+└── integration/                   # Tests end-to-end con Spring context
+
+backend/
+├── pom.xml                        # Gestión de dependencias
+└── Dockerfile                     # Contenerización de la aplicación
 ```
 ## Guía de ejecución
 1. Se requiere la instalación de las siguientes herramientas:
