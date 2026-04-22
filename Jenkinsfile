@@ -1,5 +1,6 @@
 def backendChanged = false
 def frontendChanged = false
+def composeChanged = false
 
 pipeline {
     agent any
@@ -13,43 +14,53 @@ pipeline {
         stage('Build & Check SHA') {
             steps {
                 script {
-                    // 1. SHAs actuales (Identidad matemática de la imagen)
+                    // 1. Detectar si el docker-compose.yml ha cambiado en este commit
+                    composeChanged = sh(script: "git diff --name-only HEAD^ HEAD | grep 'docker-compose.yml' || true", returnStdout: true).trim() != ""
+
+                    // 2. SHAs actuales
                     def oldBackendSha = sh(script: "docker images -q --no-trunc pipre-backend:latest", returnStdout: true).trim()
                     def oldFrontendSha = sh(script: "docker images -q --no-trunc pipre-frontend:latest", returnStdout: true).trim()
 
-                    // 2. Construcción (Desactivamos provenance para evitar SHAs variables por metadatos)
+                    // 3. Construcción
                     sh 'DOCKER_BUILDKIT=1 docker build --provenance=false -t pipre-backend ./backend'
                     sh 'DOCKER_BUILDKIT=1 docker build --provenance=false -t pipre-frontend --build-arg REACT_APP_API_URL=https://api.yoshua-cloud.dedyn.io ./frontend'
 
-                    // 3. Nuevos SHAs
+                    // 4. Nuevos SHAs
                     def newBackendSha = sh(script: "docker images -q --no-trunc pipre-backend:latest", returnStdout: true).trim()
                     def newFrontendSha = sh(script: "docker images -q --no-trunc pipre-frontend:latest", returnStdout: true).trim()
 
-                    // 4. Lógica de cambio
+                    // 5. Lógica de cambio
                     backendChanged = (oldBackendSha != newBackendSha && oldBackendSha != "")
                     frontendChanged = (oldFrontendSha != newFrontendSha && oldFrontendSha != "")
 
-                    echo "Resumen de cambios - Backend: ${backendChanged}, Frontend: ${frontendChanged}"
+                    echo "Resumen: Compose: ${composeChanged}, Backend: ${backendChanged}, Frontend: ${frontendChanged}"
                 }
             }
         }
 
         stage('Smart Deploy') {
             when {
-                expression { return backendChanged || frontendChanged }
+                expression { return backendChanged || frontendChanged || composeChanged }
             }
             steps {
                 script {
-                    echo 'Iniciando despliegue optimizado...'
+                    echo 'Iniciando despliegue...'
 
+                    // PRIORIDAD 1: Si cambió el compose, sincronizamos el stack entero primero
+                    if (composeChanged) {
+                        echo "Cambio en docker-compose.yml detectado. Sincronizando infraestructura completa..."
+                        sh 'docker compose -p pipre-application up -d --remove-orphans'
+                    }
+
+                    // PRIORIDAD 2: Actualización de imágenes
                     if (backendChanged) {
-                        echo "Actualizando Backend"
-                        sh 'docker compose -p pipre-application up -d --force-recreate backend'
+                        echo "Recreando contenedor Backend con nueva imagen..."
+                        sh 'docker compose -p pipre-application up -d --no-deps --force-recreate backend'
                     }
 
                     if (frontendChanged) {
-                        echo "Actualizando Frontend"
-                        sh 'docker compose -p pipre-application up -d --force-recreate frontend'
+                        echo "Recreando contenedor Frontend con nueva imagen..."
+                        sh 'docker compose -p pipre-application up -d --no-deps --force-recreate frontend'
                     }
 
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
@@ -61,9 +72,6 @@ pipeline {
     post {
         always {
             sh 'docker image prune -f'
-        }
-        success {
-            echo '¡Pipeline completado con éxito!'
         }
     }
 }
