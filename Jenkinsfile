@@ -23,8 +23,8 @@ pipeline {
                     backendChanged = (oldBackendSha != newBackendSha && oldBackendSha != "")
                     frontendChanged = (oldFrontendSha != newFrontendSha && oldFrontendSha != "")
 
-                    echo "Backend cambió: ${backendChanged}"
-                    echo "Frontend cambió: ${frontendChanged}"
+                    echo "El Backend cambió: ${backendChanged}"
+                    echo "El Frontend cambió: ${frontendChanged}"
                 }
             }
         }
@@ -33,13 +33,16 @@ pipeline {
             steps {
                 script {
                     echo 'Iniciando actualización...'
+
+                    // Probamos con los flags largos para evitar el error de 'shorthand'
                     if (backendChanged) {
-                        // Sintaxis directa. Si falla, prueba: sh 'docker compose up -d backend'
-                        sh 'docker compose up -d backend'
+                        sh 'docker compose up --force-recreate --detach backend'
                     }
+
                     if (frontendChanged) {
-                        sh 'docker compose up -d frontend'
+                        sh 'docker compose up --force-recreate --detach frontend'
                     }
+
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
                 }
             }
