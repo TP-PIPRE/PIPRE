@@ -9,45 +9,70 @@ pipeline {
         PORTAINER_BASE_URL = "https://portainer.yoshua-cloud.dedyn.io/api/stacks/webhooks"
     }
 
-    stages {
-        stage('Checkout') {
+stages {
+        stage('Build & Check SHA') {
             steps {
-                // Descarga el código usando la credencial SSH que configuramos
-                checkout scmGit(branches: [[name: 'refs/heads/backend/scheme']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-ssh-key', url: 'https://github.com/TP-PIPRE/PIPRE']])
+                script {
+                    // 1. Capturar SHA actual antes del build (si no existe, devolverá vacío)
+                    def oldBackendSha = sh(script: "docker images -q pipre-backend:latest", returnStdout: true).trim()
+                    def oldFrontendSha = sh(script: "docker images -q pipre-frontend:latest", returnStdout: true).trim()
+
+                    echo "SHA previo Backend: ${oldBackendSha ?: 'Ninguno'}"
+                    echo "SHA previo Frontend: ${oldFrontendSha ?: 'Ninguno'}"
+
+                    // 2. Ejecutar las construcciones
+                    sh 'DOCKER_BUILDKIT=1 docker build -t pipre-backend ./backend'
+                    sh 'DOCKER_BUILDKIT=1 docker build -t pipre-frontend --build-arg REACT_APP_API_URL=https://api.yoshua-cloud.dedyn.io ./frontend'
+
+                    // 3. Capturar nuevo SHA post-build
+                    def newBackendSha = sh(script: "docker images -q pipre-backend:latest", returnStdout: true).trim()
+                    def newFrontendSha = sh(script: "docker images -q pipre-frontend:latest", returnStdout: true).trim()
+
+                    // 4. Comparar
+                    if (oldBackendSha != newBackendSha) {
+                        echo "¡Cambio detectado en Backend!"
+                        BACKEND_CHANGED = "true"
+                    }
+                    if (oldFrontendSha != newFrontendSha) {
+                        echo "¡Cambio detectado en Frontend!"
+                        FRONTEND_CHANGED = "true"
+                    }
+                }
             }
         }
 
-        stage('Build Backend') {
-            steps {
-                echo 'Iniciando construcción del Backend con BuildKit...'
-                // Añadimos DOCKER_BUILDKIT=1 antes del comando
-                sh 'DOCKER_BUILDKIT=1 docker build -t pipre-backend ./backend'
+        stage('Smart Deploy') {
+            when {
+                expression { BACKEND_CHANGED == "true" || FRONTEND_CHANGED == "true" }
             }
-        }
-
-        stage('Build Frontend') {
             steps {
-                echo 'Iniciando construcción del Frontend (React)...'
-                // Construye el frontend pasando la URL de la API como argumento
-                sh 'docker build -t pipre-frontend --build-arg REACT_APP_API_URL=https://api.yoshua-cloud.dedyn.io ./frontend'
-            }
-        }
+                script {
+                    echo 'Iniciando actualización selectiva...'
 
-        stage('Deploy to Production') {
-            steps {
-                echo 'Notificando a Portainer para actualizar el Stack...'
-                // Usamos la variable inyectada
-                sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
+                    // Si el backend cambió, lo recreamos
+                    if (BACKEND_CHANGED == "true") {
+                        sh 'docker compose up -d --force-recreate backend'
+                    }
+
+                    // Si el frontend cambió, lo recreamos
+                    if (FRONTEND_CHANGED == "true") {
+                        sh 'docker compose up -d --force-recreate frontend'
+                    }
+
+                    // Notificar a Portainer para sincronizar el estado del Stack
+                    sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
+                }
             }
         }
     }
 
     post {
-        success {
-            echo '¡Despliegue exitoso! Tu app ya está actualizada en Oracle Cloud.'
+        always {
+            // Limpieza de imágenes intermedias para no saturar el disco de la instancia Ampere
+            sh 'docker image prune -f'
         }
-        failure {
-            echo 'Hubo un error en el Pipeline. Revisa los logs de arriba.'
+        success {
+            echo 'Pipeline finalizado con éxito.'
         }
     }
 }
