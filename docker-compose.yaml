@@ -14,10 +14,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 5s
     networks:
       - database-network
-    logging:
+    logging: &default-logging
       driver: "json-file"
       options:
         max-size: "10m"
@@ -37,28 +36,21 @@ services:
     networks:
       - database-network
       - devops_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
 
   frontend:
     build:
       context: ./frontend
       args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL:-https://pipre-backend.yoshua-cloud.dedyn.io/}
+        - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
     image: pipre-frontend
     container_name: PipreFrontend
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-https://pipre-backend.yoshua-cloud.dedyn.io/}
+      - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
     networks:
       - devops_network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *default-logging
+
 networks:
   database-network:
     internal: true

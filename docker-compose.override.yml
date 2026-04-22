@@ -2,8 +2,6 @@ services:
   backend:
     ports:
       - "${PORT_BACK:-8080}:8080"
-    networks:
-      - devops_network
 
   frontend:
     ports:
