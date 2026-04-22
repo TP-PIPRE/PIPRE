@@ -44,12 +44,12 @@ pipeline {
 
                     if (backendChanged) {
                         echo "Actualizando Backend"
-                        sh 'docker compose -p pipre-application up -d --no-deps --force-recreate backend'
+                        sh 'docker compose -p pipre-application up -d --force-recreate backend'
                     }
 
                     if (frontendChanged) {
                         echo "Actualizando Frontend"
-                        sh 'docker compose -p pipre-application up -d --no-deps --force-recreate frontend'
+                        sh 'docker compose -p pipre-application up -d --force-recreate frontend'
                     }
 
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
