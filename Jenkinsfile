@@ -43,16 +43,15 @@ pipeline {
                     echo 'Iniciando despliegue optimizado...'
 
                     if (backendChanged) {
-                        echo "Actualizando Backend..."
-                        sh 'docker compose up -d --force-recreate backend'
+                        echo "Actualizando Backend"
+                        sh 'docker compose -p pipre-application up -d --no-deps --force-recreate backend'
                     }
 
                     if (frontendChanged) {
-                        echo "Actualizando Frontend..."
-                        sh 'docker compose up -d --force-recreate frontend'
+                        echo "Actualizando Frontend"
+                        sh 'docker compose -p pipre-application up -d --no-deps --force-recreate frontend'
                     }
 
-                    // Notificamos a Portainer para sincronizar el panel visual
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
                 }
             }

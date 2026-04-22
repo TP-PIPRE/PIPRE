@@ -26,7 +26,7 @@ public class HomeController {
         HealthComponent health = healthEndpoint.health();
 
         Map<String, Object> response = new HashMap<>();
-        response.put("name", "Pripre Backend en OCI");
+        response.put("name", "Pripre Backend");
         response.put("version", "0.2");
         response.put("status", health.getStatus().getCode());
         response.put("timestamp", LocalDateTime.now());
