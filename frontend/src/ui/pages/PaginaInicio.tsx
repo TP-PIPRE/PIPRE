@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { FaRobot, FaCode, FaGamepad, FaSearch } from "react-icons/fa";
 import { getCourses } from "../../infrastructure/adapters/http/CourseApiAdapter";
 import type { Course } from "../../domain/models/Course";
-import "../../assets/styles/pages/PaginaInicio.css";
 
 export const PaginaInicio = () => {
   const [cursos, setCursos] = useState<Course[]>([]);
@@ -33,19 +32,12 @@ export const PaginaInicio = () => {
   };
 
   return (
-    <main className="pt-32 pb-40 px-6 max-w-7xl mx-auto min-h-screen">
+    <main className="pt-32 pb-40 px-6 max-w-7xl mx-auto min-h-screen bg-surface text-on-surface">
       {/* Hero Section */}
       <header className="text-center mb-16 space-y-8">
-        <h1 className="font-headline text-5xl md:text-7xl font-extrabold tracking-tight text-on-surface drop-shadow-sm">
+        <h1 className="font-headline text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-sm">
           ¡Explora y{" "}
-          <span
-            style={{
-              background:
-                "linear-gradient(to right, var(--primary), var(--secondary))",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)]">
             Aprende Robótica!
           </span>
         </h1>
@@ -77,7 +69,7 @@ export const PaginaInicio = () => {
 
       {/* Content Grid */}
       <section className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        {/* Dato de ejemplo */}
+        {/* Curso de ejemplo */}
         <div className="md:col-span-8 bg-surface-container-lowest rounded-xl p-2 shadow-xl hover:-translate-y-2 transition-transform duration-300 group cursor-pointer relative overflow-hidden">
           <div className="aspect-video w-full overflow-hidden rounded-lg relative">
             <img
@@ -105,7 +97,7 @@ export const PaginaInicio = () => {
                 {cursoEjemplo.descripcion}
               </p>
             </div>
-            <button className="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed-variant px-8 py-4 rounded-full font-bold shadow-lg hover:scale-110 active:scale-95 transition-all">
+            <button className="bg-gradient-to-br from-[var(--color-primary)] to-[var(--primary-container)] text-on-primary-fixed-variant px-8 py-4 rounded-full font-bold shadow-lg hover:scale-110 active:scale-95 transition-all">
               ¡Explorar!
             </button>
           </div>
