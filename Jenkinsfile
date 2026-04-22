@@ -1,64 +1,57 @@
+def backendChanged = false
+def frontendChanged = false
 
 pipeline {
     agent any
 
     environment {
-        // Esto asocia el secreto de Jenkins a una variable de entorno del script
         PORTAINER_TOKEN = credentials('PORTAINER_STACK_WEBHOOK_TOKEN')
-        // URL base sin el token
         PORTAINER_BASE_URL = "https://portainer.yoshua-cloud.dedyn.io/api/stacks/webhooks"
-        BACKEND_CHANGED = 'false'
-        FRONTEND_CHANGED = 'false'
     }
-stages {
+
+    stages {
         stage('Build & Check SHA') {
             steps {
                 script {
-                    // Usamos -q --no-trunc para obtener el ID largo y evitar errores de comparación
+                    // 1. Obtener SHAs actuales
                     def oldBackendSha = sh(script: "docker images -q --no-trunc pipre-backend:latest", returnStdout: true).trim()
                     def oldFrontendSha = sh(script: "docker images -q --no-trunc pipre-frontend:latest", returnStdout: true).trim()
 
-                    echo "SHA previo Backend: ${oldBackendSha}"
-
+                    // 2. Construir
                     sh 'DOCKER_BUILDKIT=1 docker build -t pipre-backend ./backend'
                     sh 'DOCKER_BUILDKIT=1 docker build -t pipre-frontend --build-arg REACT_APP_API_URL=https://api.yoshua-cloud.dedyn.io ./frontend'
 
+                    // 3. Obtener nuevos SHAs
                     def newBackendSha = sh(script: "docker images -q --no-trunc pipre-backend:latest", returnStdout: true).trim()
                     def newFrontendSha = sh(script: "docker images -q --no-trunc pipre-frontend:latest", returnStdout: true).trim()
 
-                    // Comparación estricta
-                    if (oldBackendSha != newBackendSha && oldBackendSha != "") {
-                        env.BACKEND_CHANGED = 'true'
-                        echo "Backend ha cambiado."
-                    } else {
-                        env.BACKEND_CHANGED = 'false'
-                        echo "Backend sin cambios."
-                    }
+                    // 4. Actualizar variables lógicas
+                    // Si el SHA cambió O si la imagen no existía antes, marcamos como true
+                    backendChanged = (oldBackendSha != newBackendSha)
+                    frontendChanged = (oldFrontendSha != newFrontendSha)
 
-                    if (oldFrontendSha != newFrontendSha && oldFrontendSha != "") {
-                        env.FRONTEND_CHANGED = 'true'
-                        echo "Frontend ha cambiado."
-                    } else {
-                        env.FRONTEND_CHANGED = 'false'
-                        echo "Frontend sin cambios."
-                    }
+                    echo "Backend cambió: ${backendChanged} (Prev: ${oldBackendSha} -> New: ${newBackendSha})"
+                    echo "Frontend cambió: ${frontendChanged} (Prev: ${oldFrontendSha} -> New: ${newFrontendSha})"
                 }
             }
         }
 
         stage('Smart Deploy') {
             when {
-                expression { env.BACKEND_CHANGED == 'true' || env.FRONTEND_CHANGED == 'true' }
+                // Usamos la expresión de Groovy directamente sobre las variables definidas arriba
+                expression { return backendChanged || frontendChanged }
             }
             steps {
                 script {
                     echo 'Iniciando actualización selectiva...'
 
-                    if (env.BACKEND_CHANGED == 'true') {
+                    if (backendChanged) {
+                        echo "Recreando contenedor Backend..."
                         sh 'docker compose up --detach --force-recreate backend'
                     }
 
-                    if (env.FRONTEND_CHANGED == 'true') {
+                    if (frontendChanged) {
+                        echo "Recreando contenedor Frontend..."
                         sh 'docker compose up --detach --force-recreate frontend'
                     }
 
@@ -70,7 +63,6 @@ stages {
 
     post {
         always {
-            // Limpieza de imágenes intermedias para no saturar el disco de la instancia Ampere
             sh 'docker image prune -f'
         }
         success {
