@@ -15,10 +15,8 @@ pipeline {
             steps {
                 script {
                     // 1. DETECCIÓN POR HUELLA DIGITAL (MD5)
-                    // Calculamos el hash actual del archivo
                     def currentHash = sh(script: "md5sum docker-compose.yaml | cut -d ' ' -f 1", returnStdout: true).trim()
 
-                    // Leemos el hash de la última vez que el pipeline tuvo éxito
                     def lastHash = ""
                     if (fileExists('last_compose_hash.txt')) {
                         lastHash = readFile('last_compose_hash.txt').trim()
@@ -51,16 +49,17 @@ pipeline {
 
         stage('Smart Deploy') {
             when {
-                expression { return backendChanged || frontendChanged || composeChanged }
+                allOf {
+                    branch 'main'
+                    expression { return backendChanged || frontendChanged || composeChanged }
+                }
             }
             steps {
                 script {
-                    // Si el compose cambió, actualizamos TODO el stack primero para sincronizar redes/logs
                     if (composeChanged) {
-                        echo "Sincronizando stack completo por cambios en YAML..."
+                        echo "Sincronizando stack completo por cambios en compose.yaml..."
                         sh 'docker compose -p pipre-application up -d --remove-orphans'
                     }
-                    // Si el compose NO cambió, pero sí las imágenes, hacemos el up quirúrgico
                     else {
                         if (backendChanged) {
                             echo "Actualizando solo Backend..."
