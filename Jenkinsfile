@@ -6,7 +6,7 @@ pipeline {
         // Esto asocia el secreto de Jenkins a una variable de entorno del script
         PORTAINER_TOKEN = credentials('PORTAINER_STACK_WEBHOOK_TOKEN')
         // URL base sin el token
-        PORTAINER_BASE_URL = "https://portainer.yoshua-cloud.dedyn.io/api/stacks/webhooks/"
+        PORTAINER_BASE_URL = "https://portainer.yoshua-cloud.dedyn.io/api/stacks/webhooks"
     }
 
     stages {
