@@ -36,11 +36,11 @@ pipeline {
 
                     // Probamos con los flags largos para evitar el error de 'shorthand'
                     if (backendChanged) {
-                        sh 'docker compose up --force-recreate --detach backend'
+                        sh 'docker compose up backend --detach --force-recreate'
                     }
 
                     if (frontendChanged) {
-                        sh 'docker compose up --force-recreate --detach frontend'
+                        sh 'docker compose upfrontend --detach --force-recreate '
                     }
 
                     sh 'curl -X POST "${PORTAINER_BASE_URL}/${PORTAINER_TOKEN}"'
