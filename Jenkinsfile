@@ -17,9 +17,9 @@ pipeline {
 
         stage('Build Backend') {
             steps {
-                echo 'Iniciando construcción del Backend (Maven + Docker)...'
-                // Jenkins entrará a la carpeta backend y ejecutará el Dockerfile que me mostraste
-                sh 'docker build -t pipre-backend ./backend'
+                echo 'Iniciando construcción del Backend con BuildKit...'
+                // Añadimos DOCKER_BUILDKIT=1 antes del comando
+                sh 'DOCKER_BUILDKIT=1 docker build -t pipre-backend ./backend'
             }
         }
 
