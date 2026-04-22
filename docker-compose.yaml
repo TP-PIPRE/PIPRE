@@ -16,7 +16,12 @@ services:
       retries: 5
       start_period: 5s
     networks:
-      - pipre-network
+      - database-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   backend:
     build: ./backend
@@ -30,23 +35,32 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - pipre-network
+      - database-network
       - devops_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   frontend:
     build:
       context: ./frontend
       args:
-        - REACT_APP_API_URL=http://backend:8080
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-https://pipre-backend.yoshua-cloud.dedyn.io/}
     image: pipre-frontend
     container_name: PipreFrontend
     environment:
-      - REACT_APP_API_URL=http://backend:8080
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-https://pipre-backend.yoshua-cloud.dedyn.io/}
     networks:
-      - pipre-network
       - devops_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 networks:
-  pipre-network:
-    driver: bridge
+  database-network:
+    internal: true
   devops_network:
     external: true
