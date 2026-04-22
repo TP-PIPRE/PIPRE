@@ -1,0 +1,19 @@
+﻿# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docupdates
+
+# Logs
+*.log
+
+# Secretos
+.env

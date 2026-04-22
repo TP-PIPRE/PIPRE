@@ -1,0 +1,58 @@
+﻿name: pipre-application
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: PipreDatabase
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
+      - POSTGRES_DB=${POSTGRES_DB:-pipre_database}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pipre_user} -d ${POSTGRES_DB:-pipre_database}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - database-network
+    logging: &default-logging
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build: ./backend
+    image: pipre-backend
+    container_name: PipreBackend
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
+      - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - database-network
+      - devops_network
+    logging: *default-logging
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
+    image: pipre-frontend
+    container_name: PipreFrontend
+    environment:
+      - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
+    networks:
+      - devops_network
+    logging: *default-logging
+
+networks:
+  database-network:
+    internal: true
+  devops_network:
+    external: true
