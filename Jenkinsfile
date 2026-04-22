@@ -29,14 +29,19 @@ stages {
                     def newFrontendSha = sh(script: "docker images -q pipre-frontend:latest", returnStdout: true).trim()
 
                     // 4. Comparar
-                    if (oldBackendSha != newBackendSha) {
-                        echo "¡Cambio detectado en Backend!"
+                    if (oldBackendSha != newBackendSha && oldBackendSha != "") {
                         BACKEND_CHANGED = "true"
+                    } else {
+                        echo "Backend sin cambios. SHA sigue siendo ${newBackendSha}"
+                        BACKEND_CHANGED = "false" // Aseguramos que sea false
                     }
-                    if (oldFrontendSha != newFrontendSha) {
-                        echo "¡Cambio detectado en Frontend!"
+                    if (oldFrontendSha != newFrontendSha && oldFrontendSha != "") {
                         FRONTEND_CHANGED = "true"
+                    } else {
+                        echo "Frontend sin cambios. SHA sigue siendo ${newFrontendSha}"
+                        FRONTEND_CHANGED = "false" // Aseguramos que sea false
                     }
+                    
                 }
             }
         }
@@ -51,12 +56,12 @@ stages {
 
                     // Si el backend cambió, lo recreamos
                     if (BACKEND_CHANGED == "true") {
-                        sh 'docker compose up -d --force-recreate backend'
+                        sh 'docker-compose up -d --force-recreate backend'
                     }
 
                     // Si el frontend cambió, lo recreamos
                     if (FRONTEND_CHANGED == "true") {
-                        sh 'docker compose up -d --force-recreate frontend'
+                        sh 'docker-compose up -d --force-recreate frontend'
                     }
 
                     // Notificar a Portainer para sincronizar el estado del Stack
