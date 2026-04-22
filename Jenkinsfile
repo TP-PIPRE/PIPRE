@@ -58,17 +58,17 @@ pipeline {
                 script {
                     if (composeChanged) {
                         echo "Sincronizando stack completo por cambios en compose.yaml..."
-                        sh 'docker compose -p pipre-application up -d --remove-orphans'
+                        sh 'docker compose -p pipre-application -f docker-compose.yaml up -d --remove-orphans'
                     }
                     else {
                         if (backendChanged) {
                             echo "Actualizando solo Backend..."
-                            sh 'docker compose -p pipre-application up -d --no-deps --force-recreate backend'
+                            sh 'docker compose -p pipre-application -f docker-compose.yaml up -d --no-deps --force-recreate backend'
                         }
 
                         if (frontendChanged) {
                             echo "Actualizando solo Frontend..."
-                            sh 'docker compose -p pipre-application up -d --no-deps --force-recreate frontend'
+                            sh 'docker compose -p pipre-application -f docker-compose.yaml up -d --no-deps --force-recreate frontend'
                         }
                     }
 
