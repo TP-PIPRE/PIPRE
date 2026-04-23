@@ -11,7 +11,7 @@ CREATE TABLE users (
     age INT,
     grade VARCHAR(50),
     email VARCHAR(255) UNIQUE NOT NULL,
-    passwordHash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     institution VARCHAR(255),
     zone VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,

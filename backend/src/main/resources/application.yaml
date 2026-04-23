@@ -18,6 +18,9 @@ spring:
         format_sql: true
   flyway:
     enabled: true
+  docker:
+    compose:
+      file: docker-compose.yaml,docker-compose.override.yml
 management:
   endpoints:
     web:
