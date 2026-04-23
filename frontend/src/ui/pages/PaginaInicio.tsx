@@ -23,14 +23,14 @@ const DEMO_RETOS: Course[] = [
     nombre: "Navegación Autónoma",
     descripcion: "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
     imagen: "",
-    tipo: "reto",
+    tipo: "simulador",
   },
   {
     id: "demo-3",
     nombre: "Brazo Robótico v2",
     descripcion: "Controla una garra mecánica para clasificar objetos por color.",
     imagen: "",
-    tipo: "reto",
+    tipo: "simulador",
   },
 ];
 

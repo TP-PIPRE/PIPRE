@@ -1,14 +1,13 @@
-import React from 'react';
 import { useSimulador } from '../../../application/context/SimuladorProvider';
 
 export const MissionsPanel = () => {
-  const { 
-    energy, 
-    score, 
-    missions, 
-    currentMissionIndex, 
-    blocks, 
-    completeMission 
+  const {
+    energy,
+    score,
+    missions,
+    currentMissionIndex,
+    blocks,
+    completeMission
   } = useSimulador();
 
   const currentMission = missions[currentMissionIndex];
@@ -16,7 +15,7 @@ export const MissionsPanel = () => {
 
   return (
     <div className="bg-surface border-r border-border p-4 flex flex-col gap-6 h-full font-mono text-text-muted">
-      
+
       {/* HEADER */}
       <div className="pb-4 border-b border-border">
         <h2 className="text-base font-bold tracking-[0.15em] uppercase text-text mb-1">
@@ -36,7 +35,7 @@ export const MissionsPanel = () => {
             <span className={energy < 20 ? 'text-red-400 font-bold' : ''}>{Math.round(energy)}%</span>
           </div>
           <div className="h-2 w-full bg-bg border border-border overflow-hidden">
-            <div 
+            <div
               className={`h-full transition-all duration-500 ${energy > 50 ? 'bg-primary' : energy > 20 ? 'bg-yellow-400' : 'bg-red-500'}`}
               style={{ width: `${energy}%` }}
             />
@@ -65,7 +64,7 @@ export const MissionsPanel = () => {
               ACTIVA
             </span>
           </div>
-          
+
           <div className="bg-surface-brighter p-4 border border-border flex-1">
             <h4 className="font-bold text-sm text-text mb-2">{currentMission.title}</h4>
             <p className="text-sm text-text-muted leading-relaxed mb-6">
@@ -82,7 +81,7 @@ export const MissionsPanel = () => {
                 </div>
                 {currentMission.maxBlocks > 0 && (
                   <div className="h-1 w-full bg-bg overflow-hidden">
-                    <div 
+                    <div
                       className={`h-full ${blocks.length <= currentMission.maxBlocks ? 'bg-primary' : 'bg-red-500'}`}
                       style={{ width: `${Math.min(100, (blocks.length / currentMission.maxBlocks) * 100)}%` }}
                     />
@@ -91,9 +90,9 @@ export const MissionsPanel = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Debug/Dev button to simulate mission completion */}
-          <button 
+          <button
             onClick={completeMission}
             className="mt-4 py-3 bg-surface-brighter hover:bg-surface border border-border text-xs font-bold tracking-widest uppercase transition-colors"
           >
