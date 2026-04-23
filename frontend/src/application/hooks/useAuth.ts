@@ -10,12 +10,12 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string) => {
     try {
-      const userData = await loginUserUseCase.execute(email, password);
-      setUser(userData);
+      const { user, token } = await loginUserUseCase.execute(email, password);
+      setUser(user, token);
       setError(null);
 
       // Redirigir según el rol del usuario
-      if (userData.role === "docente") {
+      if (user.role === "docente") {
         navigate("/docente/dashboard");
       } else {
         navigate("/");

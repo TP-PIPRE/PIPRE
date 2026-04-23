@@ -8,7 +8,7 @@ export class LoginUserUseCase {
     this.authRepository = authRepository;
   }
 
-  async execute(email: string, password: string): Promise<User> {
+  async execute(email: string, password: string): Promise<{ user: User; token: string }> {
     return this.authRepository.login(email, password);
   }
 }

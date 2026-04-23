@@ -16,16 +16,22 @@ const MOCK_USERS = [
 ];
 
 export class AuthAdapter implements IAuthRepository {
-  async login(email: string, password: string): Promise<User> {
+  async login(email: string, password: string): Promise<{ user: User; token: string }> {
     // Simulación de autenticación con credenciales estáticas
     const user = MOCK_USERS.find(
       (u) => u.email === email && u.password === password,
     );
     if (user) {
+      // Mock JWT token (base64 header.payload.signature)
+      const mockToken = btoa(JSON.stringify({ email: user.email, role: user.role, exp: Date.now() + 3600000 }));
       return {
-        id: user.role === "admin" ? "1" : "2",
-        email: user.email,
-        role: user.role,
+        user: {
+          id: user.role === "admin" ? "1" : "2",
+          name: user.role === "docente" ? "Prof. García" : "Admin",
+          email: user.email,
+          role: user.role,
+        },
+        token: mockToken,
       };
     } else {
       throw new Error("Credenciales incorrectas");

@@ -46,7 +46,7 @@ export const Toolbox = () => {
   return (
     <div className="bg-slate-900 border-r border-slate-800 flex flex-col h-full">
       <div className="p-4 border-b border-slate-800 bg-slate-900/50 sticky top-0 z-10">
-        <h3 className="font-mono text-slate-400 text-xs tracking-[0.2em] uppercase">
+        <h3 className="font-mono text-slate-300 text-xs tracking-[0.15em] uppercase">
           Librería de Bloques
         </h3>
       </div>

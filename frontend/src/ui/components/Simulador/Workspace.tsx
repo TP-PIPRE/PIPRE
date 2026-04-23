@@ -33,7 +33,7 @@ export const Workspace = () => {
     <div className="flex flex-col h-full bg-[#0b0f19]">
       {/* Header / Toolbar */}
       <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-        <h3 className="font-mono text-slate-400 text-xs tracking-[0.2em] uppercase">
+        <h3 className="font-mono text-slate-300 text-xs tracking-[0.15em] uppercase">
           Ensamblaje Lógico
         </h3>
         <div className="flex gap-2">

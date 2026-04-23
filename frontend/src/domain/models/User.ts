@@ -1,5 +1,6 @@
 export interface User {
   id: string;
+  name?: string;
   email: string;
-  role: "admin" | "docente" | "student"; // Asegúrate de que "docente" esté incluido
+  role: "admin" | "docente" | "student";
 }
