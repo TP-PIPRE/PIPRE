@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +19,6 @@ public class LessonService {
         List<Lesson> lessons = lessonRepository.findAll();
         return lessons.stream()
                 .map( lesson -> new LessonsRequestDTO(
-                        lesson.getIdLesson(),
                         lesson.getTitle()
 
                 ))
@@ -26,8 +26,8 @@ public class LessonService {
     }
 
     @Transactional
-    public void updateLesson(LessonsRequestDTO requestDTO) {
-        Lesson lesson = lessonRepository.findById(requestDTO.idLesson())
+    public void updateLesson(UUID idLesson, LessonsRequestDTO requestDTO) {
+        Lesson lesson = lessonRepository.findById(idLesson)
                 .orElseThrow(() -> new RuntimeException("Lección no existe"));
 
         lesson.setTitle(requestDTO.title());

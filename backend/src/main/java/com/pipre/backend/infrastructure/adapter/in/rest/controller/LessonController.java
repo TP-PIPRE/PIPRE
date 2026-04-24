@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/lesson")
@@ -21,10 +22,9 @@ public class LessonController {
         return ResponseEntity.ok().body(lessonService.getLessons());
     }
 
-    @PutMapping("")
-    public ResponseEntity<Void> postLesson(@RequestBody LessonsRequestDTO requestDTO) {
-        lessonService.updateLesson(requestDTO);
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> postLesson(@RequestBody  @PathVariable UUID id, LessonsRequestDTO requestDTO) {
+        lessonService.updateLesson(id, requestDTO);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
 }

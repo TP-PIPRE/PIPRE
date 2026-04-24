@@ -1,8 +1,7 @@
 package com.pipre.backend.application.usecase;
 
 import com.pipre.backend.domain.model.Course;
-import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestPostDTO;
-import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestPutDTO;
+import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestDTO;
 import com.pipre.backend.infrastructure.adapter.in.rest.dto.response.CourseResponseDTO;
 import com.pipre.backend.infrastructure.adapter.out.persistence.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class CourseService {
     }
 
     @Transactional
-    public void postCourse(CourseRequestPostDTO requestDTO) {
+    public void postCourse(CourseRequestDTO requestDTO) {
         Course course = new Course(
                 null,
                 requestDTO.name(),
@@ -43,8 +43,8 @@ public class CourseService {
     }
 
     @Transactional
-    public void updateCourse(CourseRequestPutDTO requestDTO) {
-        Course course = courseRepository.findById(requestDTO.idCourse())
+    public void updateCourse(UUID idCourse, CourseRequestDTO requestDTO) {
+        Course course = courseRepository.findById(idCourse)
                 .orElseThrow(() -> new RuntimeException("Curso no existe"));
 
         course.setName(requestDTO.name());
