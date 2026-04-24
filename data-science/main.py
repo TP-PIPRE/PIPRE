@@ -1,61 +1,83 @@
+from fastapi import FastAPI
 import pandas as pd
+from contextlib import asynccontextmanager
+import os
+import joblib
 
-# 🔥 IMPORTAR MODELOS
-from models.ria01_desempeño import ClasificadorDesempeno
-from models.ria03_recomendador import RecomendadorActividades
-from models.ria08_anomalias import DetectorAnomalias
-from models.ria11_tiempo import ClasificadorTiempo
-from models.ria12_codigo import EvaluadorCodigo
+from schemas.ria01_schema import RIA01Input
+from services.ria01_service import RIA01Service
 
-# 🔥 UI
-from ui.ui_resultados import mostrar_resultados
+# =========================
+# 📦 CONFIG
+# =========================
+MODEL_PATH = "models/ria01_model.pkl"
 
-# 🔥 LÓGICA EXTERNA
-from ui.evaluador import generar_resultados
-
-
-def main():
-
-    # =========================
-    # 📊 CARGAR DATASET
-    # =========================
-    df = pd.read_excel("data/dataset.xlsx")
-
-    # =========================
-    # 🔹 ENTRENAR MODELOS
-    # =========================
-    ria1 = ClasificadorDesempeno()
-    ria1.train(df)
-
-    ria3 = RecomendadorActividades()
-    ria3.train(df)
-    ria3.evaluar(df)
-
-    ria8 = DetectorAnomalias()
-    ria8.train(df)
-
-    ria11 = ClasificadorTiempo()
-    ria11.train(df)
-
-    ria12 = EvaluadorCodigo()
-    ria12.train(df)
-
-    # =========================
-    # 🔥 GENERAR RESULTADOS INICIALES
-    # =========================
-    resultados = generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
-
-    # =========================
-    # 🔄 CALLBACK BOTÓN
-    # =========================
-    def evaluar_otro():
-        return generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
-
-    # =========================
-    # 🖥️ MOSTRAR UI
-    # =========================
-    mostrar_resultados(resultados, evaluar_otro)
+# instancia global
+ria01_service = RIA01Service()
 
 
-if __name__ == "__main__":
-    main()
+# =========================
+# 🚀 LIFESPAN
+# =========================
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    # 🔹 SI EXISTE MODELO → CARGAR
+    if os.path.exists(MODEL_PATH):
+        print("📦 Cargando modelo existente...")
+        ria01_service.model = joblib.load(MODEL_PATH)
+        ria01_service._trained = True
+        print("✅ Modelo cargado correctamente")
+
+    else:
+        print("🧠 Entrenando modelo desde cero...")
+        df = pd.read_excel("data/dataset.xlsx")
+
+        ria01_service.train(df)
+
+        # 🔥 guardar TODO el modelo (incluye encoders)
+        joblib.dump(ria01_service.model, MODEL_PATH)
+
+        print("💾 Modelo entrenado y guardado")
+
+    yield
+
+    print("🛑 Cerrando API...")
+
+
+# =========================
+# 🌐 APP
+# =========================
+app = FastAPI(
+    title="API IA - RIA01",
+    lifespan=lifespan
+)
+
+
+# =========================
+# 📊 ENDPOINT PREDICT
+# =========================
+@app.post("/ria01/predict")
+def predict_ria01(data: RIA01Input):
+    return ria01_service.predict(data.dict())
+
+
+# =========================
+# 🔍 ENDPOINT INFO
+# =========================
+@app.get("/ria01/info")
+def info():
+    return {
+        "trained": ria01_service._trained,
+        "features": ria01_service.model.feature_columns if ria01_service._trained else [],
+        "accuracy": getattr(ria01_service.model, "accuracy", None),
+        "precision": getattr(ria01_service.model, "precision", None)
+    }
+
+
+# =========================
+# ❤️ HEALTH CHECK
+# =========================
+@app.get("/health")
+def health():
+    return {"status": "ok"}
