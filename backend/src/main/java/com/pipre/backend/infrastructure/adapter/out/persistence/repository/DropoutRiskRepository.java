@@ -1,4 +1,4 @@
-package com.pipre.backend.infrastructure.config.seed;
+package com.pipre.backend.infrastructure.adapter.out.persistence.repository;
 
 import com.pipre.backend.domain.model.DropoutRisk;
 import org.springframework.data.jpa.repository.JpaRepository;

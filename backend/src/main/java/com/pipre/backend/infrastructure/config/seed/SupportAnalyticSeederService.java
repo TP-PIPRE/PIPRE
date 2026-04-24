@@ -3,6 +3,8 @@ package com.pipre.backend.infrastructure.config.seed;
 import com.pipre.backend.domain.model.DropoutRisk;
 import com.pipre.backend.domain.model.HelpRequest;
 import com.pipre.backend.domain.model.User;
+import com.pipre.backend.infrastructure.adapter.out.persistence.repository.DropoutRiskRepository;
+import com.pipre.backend.infrastructure.adapter.out.persistence.repository.HelpRequestRepository;
 import com.pipre.backend.infrastructure.adapter.out.persistence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
