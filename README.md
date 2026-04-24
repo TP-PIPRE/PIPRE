@@ -25,7 +25,7 @@ Plataforma Inteligente de Programación y Robótica Escolar con feedback de IA. 
     ```
 3. Ingresar el siguiente comando en la consola en la raiz del proyecto:
     ```bash
-    docker-compose up -f docker-compose.yaml -d
+    sudo docker compose -f docker-compose.yaml up -d
     ```
 4. Ingresar a las url traducidas por DNS en:
     ```bash
