@@ -49,10 +49,7 @@ pipeline {
 
         stage('Smart Deploy') {
             when {
-                allOf {
-                    branch 'main'
-                    expression { return backendChanged || frontendChanged || composeChanged }
-                }
+                expression { return backendChanged || frontendChanged || composeChanged }
             }
             steps {
                 script {
