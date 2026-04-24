@@ -1,33 +1,42 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../../infrastructure/store/authStore';
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../../infrastructure/store/authStore";
+import { useTheme } from "../../../application/hooks/useTheme";
+import { THEMES } from "../../../shared/constants/themes";
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuthStore();
+  const { currentTheme, setTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
-  const isDocente = user?.role === 'docente';
+  const isDocente = user?.role === "docente";
 
   const navLinks = isDocente
     ? [
-        { name: 'Dashboard', path: '/docente/dashboard' },
-        { name: 'Métricas', path: '/docente/metricas' },
-        { name: 'Retos', path: '/docente/retos' },
-        { name: 'Estudiantes', path: '/docente/estudiantes' },
+        { name: "Dashboard", path: "/docente/dashboard" },
+        { name: "Métricas", path: "/docente/metricas" },
+        { name: "Retos", path: "/docente/retos" },
+        { name: "Estudiantes", path: "/docente/estudiantes" },
       ]
     : [
-        { name: 'Inicio', path: '/' },
-        { name: 'Cursos', path: '/cursos' },
-        { name: 'Simulador', path: '/simulador' },
-        { name: 'Resultados', path: '/resultados' },
-        { name: 'Ranking', path: '/ranking' },
+        { name: "Inicio", path: "/" },
+        { name: "Cursos", path: "/cursos" },
+        { name: "Simulador", path: "/simulador" },
+        { name: "Resultados", path: "/resultados" },
+        { name: "Ranking", path: "/ranking" },
       ];
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
+  };
+
+  const handleThemeChange = (themeName: string) => {
+    setTheme(themeName);
+    setIsThemeMenuOpen(false);
   };
 
   return (
@@ -56,9 +65,11 @@ export const Navbar: React.FC = () => {
                 key={link.path}
                 to={link.path}
                 className={`flex items-center px-5 font-mono text-[11px] uppercase tracking-[0.15em] border-b-2 transition-colors
-                  ${isActive
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-text-muted hover:text-text hover:bg-surface/40'}`}
+                  ${
+                    isActive
+                      ? "border-primary text-primary bg-primary/5"
+                      : "border-transparent text-text-muted hover:text-text hover:bg-surface/40"
+                  }`}
               >
                 {link.name}
               </Link>
@@ -73,14 +84,44 @@ export const Navbar: React.FC = () => {
       {/* Right: User + Actions */}
       <div className="flex items-stretch font-mono text-[10px] uppercase tracking-[0.12em]">
         {/* User info */}
-        <div className="hidden sm:flex items-center gap-3 px-5 border-l border-border">
+        <div className="hidden sm:flex items-center gap-3 px-5 border-l border-border relative">
           <div className="flex flex-col items-end leading-tight">
             <span className="text-text text-[11px] font-semibold normal-case truncate max-w-[120px]">
-              {user?.name || user?.email || 'Guest'}
+              {user?.name || user?.email || "Guest"}
             </span>
             <span className="text-text-muted text-[9px]">
-              {isDocente ? 'Instructor' : 'Estudiante'}
+              {isDocente ? "Instructor" : "Estudiante"}
             </span>
+          </div>
+
+          {/* Menú de temas */}
+          <div className="relative">
+            <button
+              onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+              className="flex items-center justify-center w-10 h-10 text-text-muted hover:text-primary hover:bg-surface/60 transition-colors rounded"
+              title="Cambiar tema"
+            >
+              <span className="material-symbols-outlined text-lg">palette</span>
+            </button>
+            {isThemeMenuOpen && (
+              <div className="absolute right-0 mt-2 w-32 bg-bg rounded-md shadow-lg border border-border z-50">
+                <div className="p-1">
+                  {Object.keys(THEMES).map((themeName) => (
+                    <button
+                      key={themeName}
+                      onClick={() => handleThemeChange(themeName)}
+                      className={`block w-full text-left p-2 text-[11px] uppercase tracking-[0.1em] rounded hover:bg-surface/40 transition-colors ${
+                        currentTheme.name === themeName
+                          ? "bg-primary/10 text-primary"
+                          : "text-text-muted"
+                      }`}
+                    >
+                      {themeName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -99,7 +140,7 @@ export const Navbar: React.FC = () => {
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           <span className="material-symbols-outlined text-lg">
-            {isMenuOpen ? 'close' : 'menu'}
+            {isMenuOpen ? "close" : "menu"}
           </span>
         </button>
       </div>
@@ -113,9 +154,11 @@ export const Navbar: React.FC = () => {
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
               className={`px-6 py-3 font-mono text-sm uppercase tracking-widest border-b border-border/30 transition-colors
-                ${location.pathname === link.path
-                  ? 'text-primary bg-primary/5'
-                  : 'text-text-muted hover:text-text hover:bg-surface/40'}`}
+                ${
+                  location.pathname === link.path
+                    ? "text-primary bg-primary/5"
+                    : "text-text-muted hover:text-text hover:bg-surface/40"
+                }`}
             >
               {link.name}
             </Link>
@@ -125,4 +168,3 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
-

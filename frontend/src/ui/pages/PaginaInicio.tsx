@@ -14,21 +14,25 @@ const DEMO_RETOS: Course[] = [
   {
     id: "demo-1",
     nombre: "Introducción a la Robótica",
-    descripcion: "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
-    imagen: "https://lh3.googleusercontent.com/aida-public/AB6AXuAe-fnR0Qj_GfTf88xQ4Dms2aLibPWG91i_YhOmCqlpJrEoJA7WZCCjs96HQT8PGA96-7Yv_O_k-AL9Iu06JYXjHRmW6peg9e2LCwKi96K5VrPlkyBaBIb1h8GinhlSdQla8o4zSykiDZ8L_KaJn3r8kCuJxXoyuugFmv3MkBGPhkHVS1zjwQlH00Zg275MmwUpxh1HeGWnopxYuy4TJZLfR6a6XNMp3eAvjnpy9HjakYM_2s1fMPb47DAsDJDoR8rod6BaDoc6_KM=w600-h400",
+    descripcion:
+      "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
+    imagen:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAe-fnR0Qj_GfTf88xQ4Dms2aLibPWG91i_YhOmCqlpJrEoJA7WZCCjs96HQT8PGA96-7Yv_O_k-AL9Iu06JYXjHRmW6peg9e2LCwKi96K5VrPlkyBaBIb1h8GinhlSdQla8o4zSykiDZ8L_KaJn3r8kCuJxXoyuugFmv3MkBGPhkHVS1zjwQlH00Zg275MmwUpxh1HeGWnopxYuy4TJZLfR6a6XNMp3eAvjnpy9HjakYM_2s1fMPb47DAsDJDoR8rod6BaDoc6_KM=w600-h400",
     tipo: "curso",
   },
   {
     id: "demo-2",
     nombre: "Navegación Autónoma",
-    descripcion: "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
+    descripcion:
+      "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
     imagen: "",
     tipo: "simulador",
   },
   {
     id: "demo-3",
     nombre: "Brazo Robótico v2",
-    descripcion: "Controla una garra mecánica para clasificar objetos por color.",
+    descripcion:
+      "Controla una garra mecánica para clasificar objetos por color.",
     imagen: "",
     tipo: "simulador",
   },
@@ -64,7 +68,8 @@ export const PaginaInicio = () => {
           Plataforma de <span className="text-primary">Retos</span>
         </h1>
         <p className="text-text-muted text-sm max-w-lg">
-          Explora los retos y cursos disponibles. Instala hardware, programa lógica y pon a prueba tu bot.
+          Explora los retos y cursos disponibles. Instala hardware, programa
+          lógica y pon a prueba tu bot.
         </p>
       </div>
 
@@ -78,9 +83,11 @@ export const PaginaInicio = () => {
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-wider border transition-colors
-                ${isActive
-                  ? "border-primary text-primary bg-primary/5"
-                  : "border-border text-text-muted hover:text-text hover:border-text-muted"}`}
+                ${
+                  isActive
+                    ? "border-primary text-primary bg-primary/5"
+                    : "border-border text-text-muted hover:text-text hover:border-text-muted"
+                }`}
             >
               {Icon && <Icon className="text-[10px]" />}
               {cat.label}
