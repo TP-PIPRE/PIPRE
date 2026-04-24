@@ -17,7 +17,7 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping("")
+    @PostMapping
     public ResponseEntity<UUID> getUser(UserRequestDTO requestDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.getUserUuid(requestDTO));
     }

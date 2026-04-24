@@ -17,7 +17,7 @@ public class UserService {
 
     public UUID getUserUuid(UserRequestDTO requestDTO) {
         User newUser = new User(
-                UUID.randomUUID(),
+                null,
                 requestDTO.firstName(),
                 requestDTO.lastName(),
                 requestDTO.age(),
