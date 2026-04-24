@@ -3,7 +3,8 @@ package com.pipre.backend.infrastructure.adapter.in.rest.controller;
 import com.pipre.backend.application.usecase.CourseService;
 import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestPostDTO;
 import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestPutDTO;
-import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseResponseDTO;
+import com.pipre.backend.infrastructure.adapter.in.rest.dto.response.CourseResponseDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,13 +13,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/courses")
+@RequiredArgsConstructor
 public class CourseController {
-
     private final CourseService courseService;
-
-    public CourseController(CourseService courseService) {
-        this.courseService = courseService;
-    }
 
     @GetMapping
     public ResponseEntity<List<CourseResponseDTO>> getCourse() {

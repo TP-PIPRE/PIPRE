@@ -3,7 +3,7 @@ package com.pipre.backend.application.usecase;
 import com.pipre.backend.domain.model.Course;
 import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestPostDTO;
 import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseRequestPutDTO;
-import com.pipre.backend.infrastructure.adapter.in.rest.dto.request.CourseResponseDTO;
+import com.pipre.backend.infrastructure.adapter.in.rest.dto.response.CourseResponseDTO;
 import com.pipre.backend.infrastructure.adapter.out.persistence.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,7 +50,6 @@ public class CourseService {
         course.setName(requestDTO.name());
         course.setDescription(requestDTO.description());
         course.setLevel(requestDTO.level());
-        course.setObjective("Aprendizaje de robótica");
 
         courseRepository.save(course);
     }
