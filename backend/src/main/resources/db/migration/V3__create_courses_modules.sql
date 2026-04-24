@@ -39,7 +39,7 @@ CREATE TABLE activities (
     name VARCHAR(255) NOT NULL,
     complexity VARCHAR(50),
     difficulty VARCHAR(50),
-    logicLevel INTEGER,
+    logic_level INTEGER,
     type VARCHAR(100),
 
     CONSTRAINT fk_activities_lesson FOREIGN KEY (id_lesson)

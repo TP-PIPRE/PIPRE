@@ -27,7 +27,8 @@ public class UserService {
                 requestDTO.institution(),
                 requestDTO.zone(),
                 true,
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                null
         );
         userRepository.save(newUser);
         return newUser.getIdUser();
