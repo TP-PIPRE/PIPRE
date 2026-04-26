@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
-@theme {
+:root {
+  /* Variables de uso común (se asignan desde App.tsx) */
+  --bg: var(--theme-bg);
+  --surface: var(--theme-surface);
+  --surface-brighter: var(--theme-surface-brighter);
+  --primary: var(--theme-primary);
+  --primary-low: var(--theme-primary-low);
+  --primary-glow: var(--theme-primary-glow);
+  --border: var(--theme-border);
+  --text: var(--theme-text);
+  --text-muted: var(--theme-text-muted);
+  --text-inverted: var(--theme-text-inverted);
+
+  /* Fuentes */
   --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
   --font-sans: "Inter", system-ui, sans-serif;
 }
 
-/* Variables genéricas (sin valores estáticos) */
-:root {
-  --bg: var(--theme-bg);
-  --surface: var(--theme-surface);
-  --primary: var(--theme-primary);
-  --primary-low: var(--theme-primary-low);
-  --border: var(--theme-border);
-  --text: var(--theme-text);
-  --text-muted: var(--theme-text-muted);
-  --text-inverted: var(
-    --theme-text-inverted
-  ); /* Nuevo: Para textos sobre fondos oscuros */
-}
-
 body {
+  position: relative;
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -27,23 +27,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
   overflow-x: hidden;
-  position: relative;
-}
-
-/* Asegurar contraste en textos */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-span,
-button,
-a,
-li,
-div {
-  color: var(--text) !important; /* Forzar el color del texto */
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
 /* Industrial Grid Pattern */
@@ -79,6 +65,16 @@ body::after {
   opacity: 0.2;
 }
 
+@keyframes scan {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Tipografía */
 h1,
 h2,
 h3,
@@ -91,7 +87,7 @@ h6 {
   font-weight: 700;
 }
 
-/* Typographic scale */
+/* Escala tipográfica */
 h1 {
   font-size: clamp(1.5rem, 3vw + 0.5rem, 2.25rem);
 }
@@ -111,7 +107,7 @@ h6 {
   font-size: 0.625rem;
 }
 
-/* Industrial Scrollbars */
+/* Scrollbars industriales */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -131,13 +127,16 @@ h6 {
   background: var(--text-muted);
 }
 
-/* Utility Classes */
+/* Clases de utilidad */
 .panel-border {
   border: 1px solid var(--border);
   position: relative;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s;
 }
 
-/* Corner highlights for panels */
+/* Resaltado de esquinas para paneles */
 .panel-border::before {
   content: "";
   position: absolute;
@@ -155,15 +154,37 @@ h6 {
   opacity: 1;
 }
 
+/* Efecto de brillo para botones y paneles */
+.panel-border:hover {
+  border-color: var(--primary);
+  background-color: var(--surface-brighter);
+}
+
+/* Clase para botones de categoría */
+.category-button {
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-muted);
+}
+
+.category-button:hover,
+.category-button.active {
+  border-color: var(--primary);
+  background-color: var(--primary-low);
+  color: var(--primary);
+}
+
+/* Efecto glow para textos */
 .glow-text {
-  text-shadow: 0 0 10px var(--primary-low);
+  text-shadow: 0 0 10px var(--primary-glow);
 }
 
 .mono {
   font-family: var(--font-mono);
 }
 
-/* Material Symbols Adjustments */
+/* Ajustes para Material Symbols */
 .material-symbols-outlined {
   font-variation-settings:
     "FILL" 0,

@@ -1,5 +1,5 @@
-import type { IAuthRepository } from "../../../domain/ports/IAuthRepository";
-import type { User } from "../../../domain/models/User";
+import type { IAuthRepository } from "../../ports/IAuthRepository";
+import type { User } from "../../../shared/types/User";
 
 // Credenciales temporales
 const MOCK_USERS = [
@@ -16,14 +16,23 @@ const MOCK_USERS = [
 ];
 
 export class AuthAdapter implements IAuthRepository {
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{ user: User; token: string }> {
     // Simulación de autenticación con credenciales estáticas
     const user = MOCK_USERS.find(
       (u) => u.email === email && u.password === password,
     );
     if (user) {
       // Mock JWT token (base64 header.payload.signature)
-      const mockToken = btoa(JSON.stringify({ email: user.email, role: user.role, exp: Date.now() + 3600000 }));
+      const mockToken = btoa(
+        JSON.stringify({
+          email: user.email,
+          role: user.role,
+          exp: Date.now() + 3600000,
+        }),
+      );
       return {
         user: {
           id: user.role === "admin" ? "1" : "2",

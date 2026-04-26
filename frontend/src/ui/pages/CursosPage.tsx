@@ -28,21 +28,18 @@ export const CursosPage: React.FC = () => {
   return (
     <main
       className="flex-1 p-6 max-w-7xl mx-auto w-full"
-      style={{
-        backgroundColor: "var(--theme-bg)",
-        color: "var(--theme-text)",
-      }}
+      style={{ backgroundColor: "var(--bg)" }}
     >
       <header className="mb-10">
         <h1
           className="text-xl font-mono font-bold tracking-tight mb-2"
-          style={{ color: "var(--theme-text)" }}
+          style={{ color: "var(--text)" }}
         >
           Mis Cursos
         </h1>
         <p
           className="text-sm font-medium"
-          style={{ color: "var(--theme-text-muted)" }}
+          style={{ color: "var(--text-muted)" }}
         >
           Explora tus módulos, lecciones y actividades de simulación.
         </p>
@@ -52,49 +49,42 @@ export const CursosPage: React.FC = () => {
         {MOCK_COURSES.map((course) => (
           <div
             key={course.id}
-            className="border border-border overflow-hidden group"
-            style={{
-              backgroundColor: "rgba(var(--theme-surface-rgb), 0.4)",
-            }}
+            className="border border-border overflow-hidden group hover:shadow-lg transition-shadow duration-300"
+            style={{ backgroundColor: "var(--bg)" }}
           >
             {/* Header del curso */}
             <div
-              className="p-6 border-b border-border"
-              style={{
-                backgroundColor: "rgba(var(--theme-surface-rgb), 0.6)",
-              }}
+              className="p-6 border-b border-border transition-colors duration-300"
+              style={{ backgroundColor: "var(--bg)" }}
             >
               <div className="flex justify-between items-start mb-4">
                 <h2
-                  className="text-lg font-mono font-bold transition-colors"
-                  style={{ color: "var(--theme-text)" }}
+                  className="text-lg font-mono font-bold"
+                  style={{ color: "var(--text)" }}
                 >
                   {course.title}
                 </h2>
                 <span
                   className="font-mono text-xs"
-                  style={{ color: "var(--theme-primary)" }}
+                  style={{ color: "var(--primary)" }}
                 >
                   {course.progress}%
                 </span>
               </div>
               <p
                 className="text-xs mb-6 line-clamp-2"
-                style={{ color: "var(--theme-text-muted)" }}
+                style={{ color: "var(--text-muted)" }}
               >
                 {course.desc}
               </p>
 
               {/* Barra de progreso */}
-              <div
-                className="h-1.5 w-full border border-border overflow-hidden"
-                style={{ backgroundColor: "var(--theme-secondary)" }}
-              >
+              <div className="h-1.5 w-full border border-border overflow-hidden">
                 <div
                   className="h-full transition-all duration-500"
                   style={{
                     width: `${course.progress}%`,
-                    backgroundColor: "var(--theme-primary)",
+                    backgroundColor: "var(--primary)",
                   }}
                 />
               </div>
@@ -103,42 +93,46 @@ export const CursosPage: React.FC = () => {
             {/* Módulos del curso */}
             <div
               className="p-6 space-y-4"
-              style={{ backgroundColor: "rgba(var(--theme-bg-rgb), 0.2)" }}
+              style={{ backgroundColor: "var(--bg)" }}
             >
               <h3
                 className="text-[10px] font-mono font-bold uppercase tracking-widest mb-4"
-                style={{ color: "var(--theme-text-muted)" }}
+                style={{ color: "var(--text-muted)" }}
               >
                 Módulos del Curso
               </h3>
               {course.modules.map((module) => (
                 <div
                   key={module.id}
-                  className="flex items-center justify-between p-3 border border-border/50 hover:border-primary/30 transition-all cursor-pointer"
-                  style={{
-                    borderColor: "rgba(var(--theme-border-rgb), 0.5)",
+                  className="flex items-center justify-between p-3 border border-border/50 transition-all cursor-pointer"
+                  style={{ borderColor: "rgba(var(--border-rgb), 0.5)" }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--surface)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className="w-2 h-2 rounded-full"
+                      className="w-2 h-2 rounded-full transition-colors duration-300"
                       style={{
                         backgroundColor:
                           module.completed === module.lessons
-                            ? "var(--theme-primary)"
-                            : "var(--theme-border)",
+                            ? "var(--primary)"
+                            : "var(--border)",
                       }}
                     />
                     <div>
                       <p
                         className="text-xs font-semibold"
-                        style={{ color: "var(--theme-text)" }}
+                        style={{ color: "var(--text)" }}
                       >
                         {module.name}
                       </p>
                       <p
                         className="text-[10px]"
-                        style={{ color: "var(--theme-text-muted)" }}
+                        style={{ color: "var(--text-muted)" }}
                       >
                         {module.completed} de {module.lessons} lecciones
                         completadas
@@ -146,8 +140,17 @@ export const CursosPage: React.FC = () => {
                     </div>
                   </div>
                   <span
-                    className="material-symbols-outlined text-lg"
-                    style={{ color: "var(--theme-text-muted)" }}
+                    className="material-symbols-outlined text-lg transition-colors duration-300"
+                    style={{
+                      color: "var(--text-muted)",
+                      transition: "color 0.3s ease, transform 0.3s ease",
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.color = "var(--primary)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.color = "var(--text-muted)";
+                    }}
                   >
                     chevron_right
                   </span>
@@ -157,12 +160,18 @@ export const CursosPage: React.FC = () => {
 
             {/* Botón de acción */}
             <div
-              className="p-4 border-t border-border flex justify-end"
-              style={{ borderColor: "rgba(var(--theme-border-rgb), 0.4)" }}
+              className="p-4 border-t border-border flex justify-end transition-colors duration-300"
+              style={{ borderColor: "rgba(var(--border-rgb), 0.4)" }}
             >
               <button
-                className="text-[10px] font-mono font-bold uppercase tracking-widest hover:underline transition-colors"
-                style={{ color: "var(--theme-primary)" }}
+                className="text-[10px] font-mono font-bold uppercase tracking-widest hover:underline transition-colors duration-300"
+                style={{ color: "var(--primary)" }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.color = "var(--primary-glow)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.color = "var(--primary)";
+                }}
               >
                 Continuar Aprendizaje
               </button>

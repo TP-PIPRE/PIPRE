@@ -1,4 +1,4 @@
-import type { DashboardDocenteData } from "../../../domain/models/DashboardDocente";
+import type { DashboardDocenteData } from "../../../shared/types/DashboardDocente";
 
 const API_URL = "https://api.pipre.com"; // URL de tu API
 

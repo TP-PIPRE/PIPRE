@@ -39,22 +39,19 @@ export const ResultadosPage: React.FC = () => {
   return (
     <main
       className="flex-1 p-6 max-w-7xl mx-auto w-full"
-      style={{
-        backgroundColor: "var(--theme-bg)",
-        color: "var(--theme-text)",
-      }}
+      style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
     >
       {/* Header */}
       <header className="mb-10">
         <h1
           className="text-xl font-mono font-bold tracking-tight mb-2"
-          style={{ color: "var(--theme-text)" }}
+          style={{ color: "var(--text)" }}
         >
           Mis Resultados
         </h1>
         <p
           className="text-sm font-medium"
-          style={{ color: "var(--theme-text-muted)" }}
+          style={{ color: "var(--text-muted)" }}
         >
           Seguimiento de desempeño en actividades y simulaciones robóticas.
         </p>
@@ -64,26 +61,21 @@ export const ResultadosPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
         {/* Promedio General */}
         <div
-          className="border border-border p-6 flex flex-col justify-between"
-          style={{
-            backgroundColor: "rgba(var(--theme-surface-rgb), 0.4)",
-          }}
+          className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
+          style={{ backgroundColor: "var(--bg)" }}
         >
-          <span
-            className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2"
-            style={{ color: "var(--theme-text-muted)" }}
-          >
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
             Promedio General
           </span>
           <span
             className="text-3xl font-mono font-bold"
-            style={{ color: "var(--theme-primary)" }}
+            style={{ color: "var(--primary)" }}
           >
             88.2
           </span>
           <span
             className="text-[10px] mt-2 font-mono"
-            style={{ color: "rgba(var(--theme-primary-rgb), 0.6)" }}
+            style={{ color: "rgba(var(--primary-rgb), 0.6)" }}
           >
             ↑ 4.5% vs mes anterior
           </span>
@@ -91,54 +83,38 @@ export const ResultadosPage: React.FC = () => {
 
         {/* Actividades Completadas */}
         <div
-          className="border border-border p-6 flex flex-col justify-between"
-          style={{
-            backgroundColor: "rgba(var(--theme-surface-rgb), 0.4)",
-          }}
+          className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
+          style={{ backgroundColor: "var(--bg)" }}
         >
-          <span
-            className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2"
-            style={{ color: "var(--theme-text-muted)" }}
-          >
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
             Actividades Completadas
           </span>
           <span
             className="text-3xl font-mono font-bold"
-            style={{ color: "var(--theme-text)" }}
+            style={{ color: "var(--text)" }}
           >
             14
           </span>
-          <span
-            className="text-[10px] mt-2 font-mono"
-            style={{ color: "rgba(var(--theme-text-rgb), 0.6)" }}
-          >
+          <span className="text-[10px] mt-2 font-mono">
             De 20 totales este periodo
           </span>
         </div>
 
         {/* Rango Actual */}
         <div
-          className="border border-border p-6 flex flex-col justify-between"
-          style={{
-            backgroundColor: "rgba(var(--theme-surface-rgb), 0.4)",
-          }}
+          className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
+          style={{ backgroundColor: "var(--bg)" }}
         >
-          <span
-            className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2"
-            style={{ color: "var(--theme-text-muted)" }}
-          >
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
             Rango Actual
           </span>
           <span
             className="text-3xl font-mono font-bold"
-            style={{ color: "var(--theme-text)" }}
+            style={{ color: "var(--text)" }}
           >
             ORO II
           </span>
-          <span
-            className="text-[10px] mt-2 font-mono"
-            style={{ color: "rgba(var(--theme-text-rgb), 0.6)" }}
-          >
+          <span className="text-[10px] mt-2 font-mono">
             Próximo nivel en 450 XP
           </span>
         </div>
@@ -147,26 +123,22 @@ export const ResultadosPage: React.FC = () => {
       {/* Tabla de historial */}
       <div
         className="border border-border"
-        style={{
-          backgroundColor: "rgba(var(--theme-surface-rgb), 0.2)",
-        }}
+        style={{ backgroundColor: "var(--bg)" }}
       >
         {/* Header de la tabla */}
         <div
           className="p-6 border-b border-border flex justify-between items-center"
-          style={{
-            backgroundColor: "rgba(var(--theme-surface-rgb), 0.4)",
-          }}
+          style={{ backgroundColor: "var(--bg)" }}
         >
           <h2
             className="text-xs font-mono font-bold uppercase tracking-widest"
-            style={{ color: "var(--theme-text)" }}
+            style={{ color: "var(--text)" }}
           >
             Historial de Actividades
           </h2>
           <button
-            className="text-[10px] font-mono uppercase tracking-widest hover:underline transition-colors"
-            style={{ color: "var(--theme-text-muted)" }}
+            className="text-[10px] font-mono uppercase tracking-widest transition-all duration-200 hover:text-primary hover:underline"
+            style={{ color: "var(--text-muted)" }}
           >
             Descargar Reporte
           </button>
@@ -179,8 +151,8 @@ export const ResultadosPage: React.FC = () => {
               <tr
                 className="text-[10px] uppercase tracking-widest border-b"
                 style={{
-                  borderColor: "rgba(var(--theme-border-rgb), 0.5)",
-                  color: "var(--theme-text-muted)",
+                  borderColor: "rgba(var(--border-rgb), 0.5)",
+                  color: "var(--text-muted)",
                 }}
               >
                 <th className="px-6 py-4 font-normal">Actividad</th>
@@ -194,27 +166,27 @@ export const ResultadosPage: React.FC = () => {
               {MOCK_RESULTS.map((res) => (
                 <tr
                   key={res.id}
-                  className="border-b hover:bg-surface/30 transition-colors cursor-pointer"
+                  className="border-b transition-colors duration-200 hover:bg-surface"
                   style={{
-                    borderColor: "rgba(var(--theme-border-rgb), 0.3)",
-                    backgroundColor: "rgba(var(--theme-bg-rgb), 0.1)",
+                    borderColor: "rgba(var(--border-rgb), 0.3)",
+                    backgroundColor: "rgba(var(--bg-rgb), 0.1)",
                   }}
                 >
                   <td
                     className="px-6 py-4 font-semibold"
-                    style={{ color: "var(--theme-text)" }}
+                    style={{ color: "var(--text)" }}
                   >
                     {res.activity}
                   </td>
                   <td
                     className="px-6 py-4"
-                    style={{ color: "var(--theme-text-muted)" }}
+                    style={{ color: "var(--text-muted)" }}
                   >
                     {res.type}
                   </td>
                   <td
                     className="px-6 py-4"
-                    style={{ color: "var(--theme-text-muted)" }}
+                    style={{ color: "var(--text-muted)" }}
                   >
                     {res.date}
                   </td>
@@ -222,21 +194,19 @@ export const ResultadosPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <div
                         className="flex-1 h-1 w-12 overflow-hidden"
-                        style={{
-                          backgroundColor: "rgba(var(--theme-border-rgb), 0.3)",
-                        }}
+                        style={{ backgroundColor: "var(--surface)" }}
                       >
                         <div
                           className="h-full transition-all duration-500"
                           style={{
                             width: `${res.score}%`,
-                            backgroundColor: "var(--theme-primary)",
+                            backgroundColor: "var(--primary)",
                           }}
                         />
                       </div>
                       <span
                         className="font-bold"
-                        style={{ color: "var(--theme-primary)" }}
+                        style={{ color: "var(--primary)" }}
                       >
                         {res.score}
                       </span>
@@ -246,22 +216,22 @@ export const ResultadosPage: React.FC = () => {
                     <span
                       className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider ${
                         res.status === "Excelente"
-                          ? "border-primary/50 text-primary"
-                          : "border-border text-text-muted"
+                          ? "border-primary/50"
+                          : "border-border"
                       }`}
                       style={{
                         backgroundColor:
                           res.status === "Excelente"
-                            ? "rgba(var(--theme-primary-rgb), 0.05)"
+                            ? "rgba(var(--primary-rgb), 0.05)"
                             : "transparent",
                         borderColor:
                           res.status === "Excelente"
-                            ? "rgba(var(--theme-primary-rgb), 0.5)"
-                            : "var(--theme-border)",
+                            ? "rgba(var(--primary-rgb), 0.5)"
+                            : "var(--border)",
                         color:
                           res.status === "Excelente"
-                            ? "var(--theme-primary)"
-                            : "var(--theme-text-muted)",
+                            ? "var(--primary)"
+                            : "var(--text-muted)",
                       }}
                     >
                       {res.status}

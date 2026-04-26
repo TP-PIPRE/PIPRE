@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../infrastructure/store/authStore";
-import { useTheme } from "../../../application/hooks/useTheme";
-import { THEMES } from "../../../shared/constants/themes";
+import { useThemeStore } from "../../../infrastructure/store/themeStore";
+import { themes } from "../../../shared/constants/themes";
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuthStore();
-  const { currentTheme, setTheme } = useTheme();
+  const { currentThemeName, setTheme } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,7 +34,7 @@ export const Navbar: React.FC = () => {
     navigate("/login");
   };
 
-  const handleThemeChange = (themeName: string) => {
+  const handleThemeChange = (themeName: keyof typeof themes) => {
     setTheme(themeName);
     setIsThemeMenuOpen(false);
   };
@@ -46,7 +46,8 @@ export const Navbar: React.FC = () => {
         {/* Brand */}
         <Link
           to="/"
-          className="flex items-center gap-2.5 px-5 border-r border-border hover:bg-surface/60 transition-colors"
+          className="flex items-center gap-2.5 px-5 border-r border-border hover:bg-surface/60"
+          style={{ transition: "background-color 0.3s ease" }}
         >
           <div className="w-7 h-7 bg-primary flex items-center justify-center font-mono font-black text-bg text-base shrink-0">
             P
@@ -64,12 +65,29 @@ export const Navbar: React.FC = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-5 font-mono text-[11px] uppercase tracking-[0.15em] border-b-2 transition-colors
-                  ${
-                    isActive
-                      ? "border-primary text-primary bg-primary/5"
-                      : "border-transparent text-text-muted hover:text-text hover:bg-surface/40"
-                  }`}
+                className={`flex items-center px-5 font-mono text-[11px] uppercase tracking-[0.15em] border-b-2`}
+                style={{
+                  borderColor: isActive ? "var(--primary)" : "transparent",
+                  color: isActive ? "var(--primary)" : "var(--text-muted)",
+                  backgroundColor: isActive
+                    ? "rgba(var(--primary-rgb), 0.05)"
+                    : "transparent",
+                  transition:
+                    "border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease",
+                }}
+                onMouseOver={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = "var(--text)";
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(var(--surface-rgb), 0.4)";
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = "var(--text-muted)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }
+                }}
               >
                 {link.name}
               </Link>
@@ -98,27 +116,65 @@ export const Navbar: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-              className="flex items-center justify-center w-10 h-10 text-text-muted hover:text-primary hover:bg-surface/60 transition-colors rounded"
+              className="flex items-center justify-center w-10 h-10 text-text-muted hover:text-primary"
+              style={{
+                backgroundColor: "transparent",
+                transition: "color 0.3s ease, background-color 0.3s ease",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.color = "var(--primary)";
+                e.currentTarget.style.backgroundColor =
+                  "rgba(var(--surface-rgb), 0.6)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.color = "var(--text-muted)";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
               title="Cambiar tema"
             >
               <span className="material-symbols-outlined text-lg">palette</span>
             </button>
             {isThemeMenuOpen && (
-              <div className="absolute right-0 mt-2 w-32 bg-bg rounded-md shadow-lg border border-border z-50">
+              <div
+                className="absolute right-0 mt-2 w-32 bg-bg rounded-md shadow-lg border border-border z-50"
+                style={{ transition: "opacity 0.3s ease, transform 0.3s ease" }}
+              >
                 <div className="p-1">
-                  {Object.keys(THEMES).map((themeName) => (
-                    <button
-                      key={themeName}
-                      onClick={() => handleThemeChange(themeName)}
-                      className={`block w-full text-left p-2 text-[11px] uppercase tracking-[0.1em] rounded hover:bg-surface/40 transition-colors ${
-                        currentTheme.name === themeName
-                          ? "bg-primary/10 text-primary"
-                          : "text-text-muted"
-                      }`}
-                    >
-                      {themeName}
-                    </button>
-                  ))}
+                  {(Object.keys(themes) as Array<keyof typeof themes>).map(
+                    (themeName) => (
+                      <button
+                        key={themeName}
+                        onClick={() => handleThemeChange(themeName)}
+                        className={`block w-full text-left p-2 text-[11px] uppercase tracking-[0.1em] rounded`}
+                        style={{
+                          backgroundColor:
+                            currentThemeName === themeName
+                              ? "rgba(var(--primary-rgb), 0.1)"
+                              : "transparent",
+                          color:
+                            currentThemeName === themeName
+                              ? "var(--primary)"
+                              : "var(--text-muted)",
+                          transition:
+                            "background-color 0.2s ease, color 0.2s ease",
+                        }}
+                        onMouseOver={(e) => {
+                          if (currentThemeName !== themeName) {
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(var(--surface-rgb), 0.4)";
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (currentThemeName !== themeName) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }
+                        }}
+                      >
+                        {themeName}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
             )}
@@ -128,7 +184,19 @@ export const Navbar: React.FC = () => {
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="flex items-center justify-center w-14 border-l border-border text-text-muted hover:text-primary hover:bg-surface/60 transition-colors"
+          className="flex items-center justify-center w-14 border-l border-border text-text-muted"
+          style={{
+            transition: "color 0.3s ease, background-color 0.3s ease",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.color = "var(--primary)";
+            e.currentTarget.style.backgroundColor =
+              "rgba(var(--surface-rgb), 0.6)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
           title="Cerrar sesión"
         >
           <span className="material-symbols-outlined text-lg">logout</span>
@@ -137,7 +205,17 @@ export const Navbar: React.FC = () => {
         {/* Mobile menu toggle */}
         <button
           className="md:hidden flex items-center justify-center w-14 border-l border-border text-text-muted"
+          style={{ transition: "color 0.3s ease, background-color 0.3s ease" }}
           onClick={() => setIsMenuOpen(!isMenuOpen)}
+          onMouseOver={(e) => {
+            e.currentTarget.style.color = "var(--primary)";
+            e.currentTarget.style.backgroundColor =
+              "rgba(var(--surface-rgb), 0.6)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
         >
           <span className="material-symbols-outlined text-lg">
             {isMenuOpen ? "close" : "menu"}
@@ -147,18 +225,40 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile dropdown */}
       {isMenuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-bg border-b border-border md:hidden flex flex-col">
+        <div
+          className="absolute top-14 left-0 w-full bg-bg border-b border-border md:hidden flex flex-col"
+          style={{ transition: "transform 0.3s ease" }}
+        >
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
-              className={`px-6 py-3 font-mono text-sm uppercase tracking-widest border-b border-border/30 transition-colors
-                ${
+              className={`px-6 py-3 font-mono text-sm uppercase tracking-widest border-b border-border/30`}
+              style={{
+                color:
                   location.pathname === link.path
-                    ? "text-primary bg-primary/5"
-                    : "text-text-muted hover:text-text hover:bg-surface/40"
-                }`}
+                    ? "var(--primary)"
+                    : "var(--text-muted)",
+                backgroundColor:
+                  location.pathname === link.path
+                    ? "rgba(var(--primary-rgb), 0.05)"
+                    : "transparent",
+                transition: "color 0.3s ease, background-color 0.3s ease",
+              }}
+              onMouseOver={(e) => {
+                if (location.pathname !== link.path) {
+                  e.currentTarget.style.color = "var(--text)";
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(var(--surface-rgb), 0.4)";
+                }
+              }}
+              onMouseOut={(e) => {
+                if (location.pathname !== link.path) {
+                  e.currentTarget.style.color = "var(--text-muted)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }
+              }}
             >
               {link.name}
             </Link>

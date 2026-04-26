@@ -1,20 +1,24 @@
 import { BrowserRouter as Router } from "react-router-dom";
 import { AppRouter } from "./ui/router";
-import { useTheme } from "./application/hooks/useTheme";
+import { useThemeStore } from "./infrastructure/store/themeStore";
 import { useEffect } from "react";
 
 const App = () => {
-  const { currentTheme } = useTheme();
+  const { currentTheme } = useThemeStore();
 
   // Asignar variables CSS dinámicamente
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--theme-bg",
-      currentTheme.colors.background,
+      currentTheme.colors.bg,
     );
     document.documentElement.style.setProperty(
       "--theme-surface",
-      currentTheme.colors.accent,
+      currentTheme.colors.surface,
+    );
+    document.documentElement.style.setProperty(
+      "--theme-surface-brighter",
+      currentTheme.colors.surfaceBrighter,
     );
     document.documentElement.style.setProperty(
       "--theme-primary",
@@ -22,11 +26,15 @@ const App = () => {
     );
     document.documentElement.style.setProperty(
       "--theme-primary-low",
-      `${currentTheme.colors.primary}1a`,
+      currentTheme.colors.primaryLow,
+    );
+    document.documentElement.style.setProperty(
+      "--theme-primary-glow",
+      currentTheme.colors.primaryGlow,
     );
     document.documentElement.style.setProperty(
       "--theme-border",
-      currentTheme.colors.text,
+      currentTheme.colors.border,
     );
     document.documentElement.style.setProperty(
       "--theme-text",
@@ -34,12 +42,12 @@ const App = () => {
     );
     document.documentElement.style.setProperty(
       "--theme-text-muted",
-      `${currentTheme.colors.text}80`,
+      currentTheme.colors.textMuted,
     );
     document.documentElement.style.setProperty(
       "--theme-text-inverted",
-      currentTheme.colors.background,
-    ); /* Para textos sobre fondos oscuros */
+      currentTheme.colors.textInverted,
+    );
   }, [currentTheme]);
 
   return (

@@ -49,25 +49,24 @@ const MOCK_RANKING = [
 ];
 
 export const RankingPage: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState("global");
+
   return (
     <main
       className="flex-1 p-6 max-w-5xl mx-auto w-full"
-      style={{
-        backgroundColor: "var(--theme-bg)",
-        color: "var(--theme-text)",
-      }}
+      style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
     >
       {/* Header */}
       <header className="mb-12 text-center">
         <h1
-          className="text-2xl font-mono font-bold tracking-[0.1em] mb-3 uppercase"
-          style={{ color: "var(--theme-text)" }}
+          className="text-2xl font-mono font-bold tracking-[0.1em] mb-3 uppercase transition-all duration-300 hover:text-primary"
+          style={{ color: "var(--text)" }}
         >
           Comunidad & Ranking
         </h1>
         <p
-          className="text-sm font-medium max-w-xl mx-auto"
-          style={{ color: "var(--theme-text-muted)" }}
+          className="text-sm font-medium max-w-xl mx-auto transition-all duration-300"
+          style={{ color: "var(--text-muted)" }}
         >
           Compite con otros grupos y escala en el ranking global del Sector
           Alfa.
@@ -79,35 +78,33 @@ export const RankingPage: React.FC = () => {
         {/* Segundo lugar */}
         <div className="order-2 md:order-1 pt-8">
           <div
-            className="border border-border p-6 text-center flex flex-col items-center"
-            style={{
-              backgroundColor: "rgba(var(--theme-surface-rgb), 0.3)",
-            }}
+            className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
+            style={{ backgroundColor: "var(--bg)" }}
           >
             <div
-              className="w-12 h-12 flex items-center justify-center border border-border font-bold mb-4"
+              className="w-12 h-12 flex items-center justify-center border border-border font-bold mb-4 transition-all duration-300"
               style={{
-                backgroundColor: "var(--theme-surface)",
-                color: "var(--theme-text)",
+                backgroundColor: "var(--surface)",
+                color: "var(--text)",
               }}
             >
               2
             </div>
             <p
-              className="font-bold text-sm mb-1"
-              style={{ color: "var(--theme-text)" }}
+              className="font-bold text-sm mb-1 transition-all duration-300"
+              style={{ color: "var(--text)" }}
             >
               Carlos Ruiz
             </p>
             <p
-              className="text-[10px] font-mono mb-4 uppercase tracking-widest"
-              style={{ color: "var(--theme-text-muted)" }}
+              className="text-[10px] font-mono mb-4 uppercase tracking-widest transition-all duration-300"
+              style={{ color: "var(--text-muted)" }}
             >
               Mecatrónica B
             </p>
             <span
-              className="text-xs font-mono font-bold"
-              style={{ color: "var(--theme-primary)" }}
+              className="text-xs font-mono font-bold transition-all duration-300"
+              style={{ color: "var(--primary)" }}
             >
               11,800 XP
             </span>
@@ -117,47 +114,44 @@ export const RankingPage: React.FC = () => {
         {/* Primer lugar */}
         <div className="order-1 md:order-2">
           <div
-            className="border-2 p-8 text-center flex flex-col items-center relative transform scale-105"
+            className="border-2 p-8 text-center flex flex-col items-center relative transform scale-105 transition-all duration-300 hover:shadow-2xl hover:scale-110"
             style={{
-              borderColor: "var(--theme-primary)",
-              backgroundColor: "rgba(var(--theme-primary-rgb), 0.05)",
-              boxShadow: "0 0 30px rgba(var(--theme-primary-rgb), 0.1)",
+              borderColor: "var(--primary)",
+              backgroundColor: "rgba(var(--primary-rgb), 0.05)",
+              boxShadow: "0 0 30px rgba(var(--primary-rgb), 0.1)",
             }}
           >
             <div
-              className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-[10px] tracking-widest uppercase"
-              style={{
-                backgroundColor: "var(--theme-primary)",
-                color: "var(--theme-bg)",
-              }}
+              className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-[10px] tracking-widest uppercase transition-all duration-300"
+              style={{ backgroundColor: "var(--primary)", color: "var(--bg)" }}
             >
               Líder
             </div>
             <div
-              className="w-16 h-16 flex items-center justify-center border font-black text-xl mb-4"
+              className="w-16 h-16 flex items-center justify-center border font-black text-xl mb-4 transition-all duration-300"
               style={{
-                backgroundColor: "var(--theme-primary)",
-                borderColor: "var(--theme-primary)",
-                color: "var(--theme-bg)",
+                backgroundColor: "var(--primary)",
+                borderColor: "var(--primary)",
+                color: "var(--bg)",
               }}
             >
               1
             </div>
             <p
-              className="font-bold text-lg mb-1"
-              style={{ color: "var(--theme-text)" }}
+              className="font-bold text-lg mb-1 transition-all duration-300"
+              style={{ color: "var(--text)" }}
             >
               Ana Sofía Lopez
             </p>
             <p
-              className="text-[10px] font-mono mb-4 uppercase tracking-widest"
-              style={{ color: "var(--theme-text-muted)" }}
+              className="text-[10px] font-mono mb-4 uppercase tracking-widest transition-all duration-300"
+              style={{ color: "var(--text-muted)" }}
             >
               Robótica A
             </p>
             <span
-              className="text-sm font-mono font-bold"
-              style={{ color: "var(--theme-primary)" }}
+              className="text-sm font-mono font-bold transition-all duration-300"
+              style={{ color: "var(--primary)" }}
             >
               12,500 XP
             </span>
@@ -167,35 +161,33 @@ export const RankingPage: React.FC = () => {
         {/* Tercer lugar */}
         <div className="order-3 pt-12">
           <div
-            className="border border-border p-6 text-center flex flex-col items-center"
-            style={{
-              backgroundColor: "rgba(var(--theme-surface-rgb), 0.3)",
-            }}
+            className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
+            style={{ backgroundColor: "var(--bg)" }}
           >
             <div
-              className="w-10 h-10 flex items-center justify-center border border-border font-bold mb-4"
+              className="w-10 h-10 flex items-center justify-center border border-border font-bold mb-4 transition-all duration-300"
               style={{
-                backgroundColor: "var(--theme-surface)",
-                color: "var(--theme-text)",
+                backgroundColor: "var(--surface)",
+                color: "var(--text)",
               }}
             >
               3
             </div>
             <p
-              className="font-bold text-sm mb-1"
-              style={{ color: "var(--theme-text)" }}
+              className="font-bold text-sm mb-1 transition-all duration-300"
+              style={{ color: "var(--text)" }}
             >
               Elena García
             </p>
             <p
-              className="text-[10px] font-mono mb-4"
-              style={{ color: "var(--theme-text-muted)" }}
+              className="text-[10px] font-mono mb-4 transition-all duration-300"
+              style={{ color: "var(--text-muted)" }}
             >
               Robótica A
             </p>
             <span
-              className="text-xs font-mono font-bold"
-              style={{ color: "var(--theme-primary)" }}
+              className="text-xs font-mono font-bold transition-all duration-300"
+              style={{ color: "var(--primary)" }}
             >
               11,250 XP
             </span>
@@ -205,37 +197,30 @@ export const RankingPage: React.FC = () => {
 
       {/* Tabla de ranking */}
       <div
-        className="border border-border"
-        style={{
-          backgroundColor: "rgba(var(--theme-surface-rgb), 0.4)",
-        }}
+        className="border border-border transition-all duration-300"
+        style={{ backgroundColor: "var(--bg)" }}
       >
         {/* Header de la tabla */}
         <div
-          className="p-4 border-b border-border flex justify-between items-center"
-          style={{
-            backgroundColor: "rgba(var(--theme-surface-rgb), 0.6)",
-          }}
+          className="p-4 border-b border-border flex justify-between items-center transition-all duration-300"
+          style={{ backgroundColor: "var(--surface)" }}
         >
           <h2
-            className="text-[10px] font-mono font-bold uppercase tracking-widest"
-            style={{ color: "var(--theme-text)" }}
+            className="text-[10px] font-mono font-bold uppercase tracking-widest transition-all duration-300"
+            style={{ color: "var(--text)" }}
           >
             Top 50 Estudiantes
           </h2>
           <div className="flex gap-4 text-[9px] font-mono uppercase tracking-widest">
             <button
-              className="border-b"
-              style={{
-                color: "var(--theme-primary)",
-                borderColor: "var(--theme-primary)",
-              }}
+              onClick={() => setActiveTab("global")}
+              className={`border-b-2 px-2 pb-1 transition-all duration-200 ${activeTab === "global" ? "border-primary text-primary scale-105" : "text-text-muted hover:text-text hover:scale-105"}`}
             >
               Global
             </button>
             <button
-              className="hover:text-text"
-              style={{ color: "var(--theme-text-muted)" }}
+              onClick={() => setActiveTab("group")}
+              className={`border-b-2 px-2 pb-1 transition-all duration-200 ${activeTab === "group" ? "border-primary text-primary scale-105" : "text-text-muted hover:text-text hover:scale-105"}`}
             >
               Mi Grupo
             </button>
@@ -243,65 +228,58 @@ export const RankingPage: React.FC = () => {
         </div>
 
         {/* Lista de ranking */}
-        <div className="divide-y">
+        <div className="divide-y" style={{ backgroundColor: "var(--bg)" }}>
           {MOCK_RANKING.map((user) => (
             <div
               key={user.id}
-              className="flex items-center p-4 hover:bg-surface/30 transition-colors"
-              style={{
-                borderColor: "rgba(var(--theme-border-rgb), 0.5)",
-                backgroundColor: "rgba(var(--theme-bg-rgb), 0.1)",
-              }}
+              className="flex items-center p-4 hover:bg-surface transition-all duration-300"
+              style={{ borderColor: "rgba(var(--border-rgb), 0.5)" }}
             >
               <div
-                className="w-10 font-mono font-bold text-center text-xs"
-                style={{ color: "var(--theme-text-muted)" }}
+                className="w-10 font-mono font-bold text-center text-xs transition-all duration-300"
+                style={{ color: "var(--text-muted)" }}
               >
                 {user.rank}
               </div>
               <div
-                className="w-10 h-10 border flex items-center justify-center font-bold text-xs mr-4"
+                className="w-10 h-10 border flex items-center justify-center font-bold text-xs mr-4 transition-all duration-300"
                 style={{
-                  backgroundColor: "var(--theme-bg)",
-                  borderColor: "var(--theme-border)",
-                  color: "var(--theme-text)",
+                  backgroundColor: "var(--bg)",
+                  borderColor: "var(--border)",
+                  color: "var(--text)",
                 }}
               >
                 {user.avatar}
               </div>
               <div className="flex-1">
                 <p
-                  className="text-xs font-bold"
-                  style={{ color: "var(--theme-text)" }}
+                  className="text-xs font-bold transition-all duration-300"
+                  style={{ color: "var(--text)" }}
                 >
                   {user.name}
                 </p>
                 <p
-                  className="text-[10px] uppercase tracking-widest"
-                  style={{ color: "var(--theme-text-muted)" }}
+                  className="text-[10px] uppercase tracking-widest transition-all duration-300"
+                  style={{ color: "var(--text-muted)" }}
                 >
                   {user.group}
                 </p>
               </div>
               <div className="text-right">
                 <p
-                  className="text-xs font-mono font-bold"
-                  style={{ color: "var(--theme-primary)" }}
+                  className="text-xs font-mono font-bold transition-all duration-300"
+                  style={{ color: "var(--primary)" }}
                 >
                   {user.xp.toLocaleString()} XP
                 </p>
                 <span
-                  className={`material-symbols-outlined text-sm ${
+                  className={`material-symbols-outlined text-sm transition-all duration-300 ${
                     user.trend === "up"
                       ? "text-green-500"
                       : user.trend === "down"
                         ? "text-red-500"
                         : "opacity-30"
                   }`}
-                  style={{
-                    color:
-                      user.trend === "same" ? "var(--theme-text-muted)" : "",
-                  }}
                 >
                   {user.trend === "up"
                     ? "trending_up"
@@ -316,12 +294,12 @@ export const RankingPage: React.FC = () => {
 
         {/* Botón de ver más */}
         <div
-          className="p-4 text-center"
-          style={{ backgroundColor: "rgba(var(--theme-bg-rgb), 0.4)" }}
+          className="p-4 text-center transition-all duration-300"
+          style={{ backgroundColor: "var(--bg)" }}
         >
           <button
-            className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] hover:underline transition-colors"
-            style={{ color: "var(--theme-text-muted)" }}
+            className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] hover:underline transition-all duration-300 hover:text-primary"
+            style={{ color: "var(--text-muted)" }}
           >
             Ver lista completa
           </button>

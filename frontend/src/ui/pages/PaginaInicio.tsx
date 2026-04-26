@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaRobot, FaCode, FaGamepad } from "react-icons/fa";
 import { getCourses } from "../../infrastructure/adapters/http/CourseApiAdapter";
-import type { Course } from "../../domain/models/Course";
+import type { Course } from "../../shared/types/Course";
 
 const CATEGORIES = [
   { key: "all", label: "Todos", icon: null },
@@ -49,7 +49,6 @@ export const PaginaInicio = () => {
         const data = await getCourses();
         setCursos(data);
       } catch {
-        // fallback to demo data if API fails
         setCursos([]);
       } finally {
         setLoading(false);
@@ -62,7 +61,7 @@ export const PaginaInicio = () => {
 
   return (
     <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-6 pt-[4rem] pb-16">
-      {/* Page Header — compact, not a giant hero */}
+      {/* Page Header */}
       <div className="mb-8 pt-4">
         <h1 className="text-2xl font-mono font-bold tracking-tight mb-1">
           Plataforma de <span className="text-primary">Retos</span>
@@ -82,12 +81,9 @@ export const PaginaInicio = () => {
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-wider border transition-colors
-                ${
-                  isActive
-                    ? "border-primary text-primary bg-primary/5"
-                    : "border-border text-text-muted hover:text-text hover:border-text-muted"
-                }`}
+              className={`category-button flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-wider ${
+                isActive ? "active" : ""
+              }`}
             >
               {Icon && <Icon className="text-[10px]" />}
               {cat.label}
@@ -108,13 +104,13 @@ export const PaginaInicio = () => {
           {allItems.map((item, idx) => (
             <article
               key={item.id}
-              className="panel-border bg-surface/40 flex flex-col group cursor-pointer hover:bg-surface/60 transition-colors"
+              className="panel-border bg-surface/40 flex flex-col group cursor-pointer transition-all duration-300 hover:shadow-lg"
             >
               {/* Image */}
               <div className="aspect-video w-full overflow-hidden relative bg-bg">
                 {item.imagen ? (
                   <img
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-90 transition-opacity"
+                    className="w-full h-full object-cover opacity-60 group-hover:opacity-90 transition-opacity duration-300"
                     src={item.imagen}
                     alt={item.nombre}
                   />
@@ -135,7 +131,7 @@ export const PaginaInicio = () => {
 
               {/* Content */}
               <div className="p-5 flex-1 flex flex-col gap-2">
-                <h3 className="text-sm font-mono font-bold text-text group-hover:text-primary transition-colors leading-snug">
+                <h3 className="text-sm font-mono font-bold text-text group-hover:text-primary transition-colors duration-300 leading-snug">
                   {item.nombre}
                 </h3>
                 <p className="text-xs text-text-muted leading-relaxed line-clamp-2 flex-1">
@@ -145,7 +141,7 @@ export const PaginaInicio = () => {
                   <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">
                     Disponible
                   </span>
-                  <span className="text-[10px] font-mono text-primary">
+                  <span className="text-[10px] font-mono text-primary glow-text">
                     Iniciar →
                   </span>
                 </div>
