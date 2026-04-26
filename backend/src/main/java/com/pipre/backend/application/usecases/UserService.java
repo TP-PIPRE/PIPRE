@@ -1,5 +1,6 @@
 package com.pipre.backend.application.usecases;
 
+import com.pipre.backend.adapters.in.controller.dto.UserResponseDTO;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.UserJpa;
 import com.pipre.backend.adapters.in.controller.dto.UserRequestDTO;
 import com.pipre.backend.adapters.out.persistence.repository.UserRepository;
@@ -15,7 +16,17 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UUID getUserUuid(UserRequestDTO requestDTO) {
+    public UserResponseDTO getUser(UUID id) {
+        UserJpa userJpa = userRepository.findUserJpaByIdUser(id);
+        return new UserResponseDTO(
+                userJpa.getIdUser(),
+                userJpa.getFirstName(),
+                userJpa.getLastName(),
+                userJpa.getEmail()
+        );
+    }
+
+    public UUID postUser(UserRequestDTO requestDTO) {
         UserJpa newUserJpa = new UserJpa(
                 null,
                 requestDTO.firstName(),
