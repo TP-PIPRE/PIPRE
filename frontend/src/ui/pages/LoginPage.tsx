@@ -1,273 +1,212 @@
 import React, { useState } from "react";
 import { useAuth } from "../../application/hooks/useAuth";
+import { apiService } from "../../infrastructure/api/apiService";
 
 export const LoginPage: React.FC = () => {
-  const { login, error } = useAuth();
+  const { login, error: authError } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [regError, setRegError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    const form = e.currentTarget;
-    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
-    const password = (form.elements.namedItem("password") as HTMLInputElement)
-      .value;
+    setSuccessMessage(null);
+    setRegError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
     try {
       if (isLogin) {
         await login(email, password);
       } else {
-        setTimeout(() => {
-          alert(
-            "El registro de nuevas entidades está restringido temporalmente.",
-          );
-          setIsLoading(false);
-        }, 1000);
+        const first_name = formData.get("first_name") as string;
+        const last_name = formData.get("last_name") as string;
+        const age = parseInt(formData.get("age") as string);
+        const grade = formData.get("grade") as string;
+        const institution = formData.get("institution") as string;
+        const zone = formData.get("zone") as string;
+
+        await apiService.users.create({
+          first_name,
+          last_name,
+          age,
+          grade,
+          email,
+          passwordHash: password,
+          institution,
+          zone,
+        });
+
+        setSuccessMessage("Nodo de usuario creado. Identifícate para entrar.");
+        setIsLogin(true);
       }
+    } catch (err) {
+      console.error("Error in auth/reg:", err);
+      setRegError("Error de sincronización. Verifica los datos del nodo.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ backgroundColor: "var(--bg)" }}
-    >
-      {/* Subtle Background pattern */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(var(--primary) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
-      </div>
+    <main className="min-h-screen flex items-center justify-center p-6 bg-bg animate-fade-in relative overflow-hidden">
+      {/* Decorative Blur Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-lg z-10">
         {/* Logo Section */}
-        <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-col items-center mb-12 animate-scale-up">
           <div
-            className="w-16 h-16 flex items-center justify-center font-mono font-black text-bg text-3xl mb-4 shadow-[0_0_40px_rgba(var(--primary-rgb),0.2)] transition-all duration-300 hover:shadow-[0_0_50px_rgba(var(--primary-rgb),0.3)]"
-            style={{ backgroundColor: "var(--primary)" }}
+            className="w-20 h-20 flex items-center justify-center font-bold text-bg text-4xl mb-6 shadow-2xl hover:rotate-12 transition-transform duration-500"
+            style={{ backgroundColor: "var(--primary)", borderRadius: "var(--theme-radius)" }}
           >
             P
           </div>
-          <h1
-            className="text-2xl font-mono font-bold tracking-[0.2em] transition-colors duration-300"
-            style={{ color: "var(--text)" }}
-          >
-            PIPRE
-          </h1>
-          <p
-            className="text-[10px] uppercase tracking-[0.3em] font-medium transition-colors duration-300"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Plataforma Industrial de Retos
-          </p>
+          <h1 className="text-3xl font-bold tracking-widest text-text mb-2">PIPRE</h1>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-text-muted font-bold">Plataforma Industrial de Retos</p>
         </div>
 
-        {/* Login Card */}
+        {/* Login/Reg Card */}
         <div
-          className="border border-border p-8 relative group transition-all duration-300 hover:border-primary/50"
-          style={{ backgroundColor: "rgba(var(--surface-rgb), 0.5)" }}
+          className="bg-surface/50 backdrop-blur-xl border border-border p-10 shadow-2xl relative group transition-all duration-500 hover:border-primary/30"
+          style={{ borderRadius: "var(--theme-radius)" }}
         >
-          {/* Decorative elements */}
-          <div className="absolute -top-px -left-px w-8 h-px bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-px -left-px w-px h-8 bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-          <div
-            className="absolute top-2 right-2 text-[8px] font-mono uppercase tracking-widest transition-colors duration-300"
-            style={{ color: "rgba(var(--text-muted-rgb), 0.2)" }}
-          >
-            Auth_Node_0x44
-          </div>
-          <div
-            className="absolute bottom-2 left-2 text-[8px] font-mono uppercase tracking-widest transition-colors duration-300"
-            style={{ color: "rgba(var(--text-muted-rgb), 0.2)" }}
-          >
-            Secure_Input_Active
-          </div>
-
-          <div className="mb-8">
-            <h2
-              className="text-sm font-mono font-bold uppercase tracking-widest mb-1 transition-colors duration-300"
-              style={{ color: "var(--text)" }}
-            >
-              {isLogin ? "Acceso al Sistema" : "Crear Cuenta"}
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-text mb-2">
+              {isLogin ? "Acceso al Nodo" : "Registro de Estudiante"}
             </h2>
-            <p
-              className="text-[11px] transition-colors duration-300"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {isLogin
-                ? "Introduce tus credenciales para conectar con el nodo."
-                : "Regístrate para comenzar con los retos industriales."}
+            <p className="text-xs text-text-muted">
+              {isLogin ? "Introduce tus credenciales para sincronizar sesión." : "Crea tu perfil para empezar los retos industriales."}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label
-                    className="text-[10px] font-mono uppercase tracking-wider ml-1 transition-colors duration-300"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Nombre
-                  </label>
+              <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Nombre</label>
                   <input
-                    name="name"
-                    type="text"
+                    name="first_name"
                     required
-                    className="w-full px-4 py-3 border border-border focus:border-primary focus:outline-none transition-all duration-300 font-mono text-xs placeholder:text-text-muted/30"
-                    style={{
-                      backgroundColor: "var(--bg)",
-                      color: "var(--text)",
-                      borderColor: "var(--border)",
-                    }}
-                    placeholder="Ej. Juan"
+                    className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                    style={{ borderRadius: "var(--theme-radius)" }}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label
-                    className="text-[10px] font-mono uppercase tracking-wider ml-1 transition-colors duration-300"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Apellido
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Apellido</label>
                   <input
-                    name="lastname"
-                    type="text"
+                    name="last_name"
                     required
-                    className="w-full px-4 py-3 border border-border focus:border-primary focus:outline-none transition-all duration-300 font-mono text-xs placeholder:text-text-muted/30"
-                    style={{
-                      backgroundColor: "var(--bg)",
-                      color: "var(--text)",
-                      borderColor: "var(--border)",
-                    }}
-                    placeholder="Ej. Pérez"
+                    className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                    style={{ borderRadius: "var(--theme-radius)" }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Edad</label>
+                  <input
+                    name="age"
+                    type="number"
+                    required
+                    className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                    style={{ borderRadius: "var(--theme-radius)" }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Grado</label>
+                  <input
+                    name="grade"
+                    required
+                    className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                    style={{ borderRadius: "var(--theme-radius)" }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Institución</label>
+                  <input
+                    name="institution"
+                    required
+                    className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                    style={{ borderRadius: "var(--theme-radius)" }}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Zona</label>
+                  <input
+                    name="zone"
+                    required
+                    className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                    style={{ borderRadius: "var(--theme-radius)" }}
                   />
                 </div>
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label
-                className="text-[10px] font-mono uppercase tracking-wider ml-1 transition-colors duration-300"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Identificador (Email)
-              </label>
-              <div className="relative">
-                <span
-                  className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg opacity-40 transition-colors duration-300"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  alternate_email
-                </span>
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-border focus:border-primary focus:outline-none transition-all duration-300 font-mono text-xs placeholder:text-text-muted/30"
-                  style={{
-                    backgroundColor: "var(--bg)",
-                    color: "var(--text)",
-                    borderColor: "var(--border)",
-                  }}
-                  placeholder="usuario@pipre.io"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Email</label>
+              <input
+                name="email"
+                type="email"
+                required
+                className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                style={{ borderRadius: "var(--theme-radius)" }}
+                placeholder="usuario@pipre.io"
+              />
             </div>
 
-            <div className="space-y-1.5">
-              <label
-                className="text-[10px] font-mono uppercase tracking-wider ml-1 transition-colors duration-300"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Contraseña de Seguridad
-              </label>
-              <div className="relative">
-                <span
-                  className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg opacity-40 transition-colors duration-300"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  key
-                </span>
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-border focus:border-primary focus:outline-none transition-all duration-300 font-mono text-xs placeholder:text-text-muted/30"
-                  style={{
-                    backgroundColor: "var(--bg)",
-                    color: "var(--text)",
-                    borderColor: "var(--border)",
-                  }}
-                  placeholder="••••••••"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Contraseña</label>
+              <input
+                name="password"
+                type="password"
+                required
+                className="w-full px-5 py-3.5 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
+                style={{ borderRadius: "var(--theme-radius)" }}
+                placeholder="••••••••"
+              />
             </div>
 
-            {error && (
-              <div className="p-3 border border-red-500/30 bg-red-500/5 text-red-400 font-mono text-[10px] uppercase tracking-wider text-center transition-all duration-300">
-                Error de autenticación: Credenciales no válidas
+            {(authError || regError) && (
+              <div className="p-4 bg-danger/10 border border-danger/20 text-danger text-[10px] font-bold uppercase tracking-widest text-center animate-shake" style={{ borderRadius: "var(--theme-radius)" }}>
+                {authError ? "Credenciales Inválidas" : regError}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="p-4 bg-success/10 border border-success/20 text-success text-[10px] font-bold uppercase tracking-widest text-center animate-fade-in" style={{ borderRadius: "var(--theme-radius)" }}>
+                {successMessage}
               </div>
             )}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-4 font-mono font-bold uppercase tracking-[0.2em] text-xs transition-all duration-300 active:scale-[0.98] disabled:opacity-50 border"
-              style={{
-                backgroundColor: "transparent",
-                color: "var(--text-muted)",
-                borderColor: "var(--text-muted)",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--surface)";
-                e.currentTarget.style.color = "var(--text)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.color = "var(--text-muted)";
-              }}
+              className="w-full py-4 btn-premium font-bold uppercase tracking-[0.3em] text-[11px] active:scale-95 transition-all shadow-xl hover:shadow-primary/20 disabled:opacity-50"
+              style={{ borderRadius: "var(--theme-radius)" }}
             >
-              {isLoading ? "PROCESANDO..." : isLogin ? "CONECTAR" : "REGISTRAR"}
+              {isLoading ? "Sincronizando..." : isLogin ? "IDENTIFICARSE" : "REGISTRARSE"}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-border/50 text-center">
+          <div className="mt-10 pt-8 border-t border-border/50 text-center">
             <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="font-mono text-[10px] uppercase tracking-widest transition-all duration-300 hover:underline"
-              style={{ color: "var(--primary)" }}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setSuccessMessage(null);
+                setRegError(null);
+              }}
+              className="text-[10px] font-bold uppercase tracking-widest text-primary hover:glow-text transition-all"
             >
-              {isLogin
-                ? "¿No tienes cuenta? Regístrate aquí"
-                : "¿Ya tienes cuenta? Inicia sesión"}
+              {isLogin ? "¿No tienes cuenta? Regístrate aquí" : "¿Ya tienes cuenta? Inicia sesión"}
             </button>
           </div>
-        </div>
-
-        {/* Footer info */}
-        <div
-          className="mt-8 flex justify-center items-center gap-4 text-[9px] font-mono uppercase tracking-[0.2em] transition-colors duration-300"
-          style={{ color: "var(--text-muted)" }}
-        >
-          <span>v2.0.4-stable</span>
-          <span className="w-1 h-1 bg-border rounded-full" />
-          <span>Encrypted_TLS_1.3</span>
-          <span className="w-1 h-1 bg-border rounded-full" />
-          <span>Status: Online</span>
         </div>
       </div>
     </main>
   );
 };
 
-export default LoginPage;

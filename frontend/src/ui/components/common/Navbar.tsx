@@ -40,225 +40,136 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 border-b border-border bg-bg/95 backdrop-blur-md z-[1001] flex items-stretch">
+    <header className="fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-bg/95 backdrop-blur-2xl z-[1001] flex items-stretch">
       {/* Left: Brand + Nav */}
-      <div className="flex items-stretch">
+      <div className="flex items-stretch flex-1">
         {/* Brand */}
         <Link
           to="/"
-          className="flex items-center gap-2.5 px-5 border-r border-border hover:bg-surface/60"
-          style={{ transition: "background-color 0.3s ease" }}
+          className="flex items-center gap-3 px-6 hover:bg-surface/40 transition-all group"
         >
-          <div className="w-7 h-7 bg-primary flex items-center justify-center font-mono font-black text-bg text-base shrink-0">
+          <div 
+            className="w-8 h-8 bg-primary flex items-center justify-center font-bold text-bg text-lg shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
+            style={{ borderRadius: "var(--theme-radius)" }}
+          >
             P
           </div>
-          <span className="font-mono text-xs font-bold tracking-[0.15em] text-text hidden sm:block">
-            PIPRE
-          </span>
+          <div className="hidden sm:flex flex-col leading-none">
+            <span className="text-sm font-bold tracking-widest text-text">PIPRE</span>
+            <span className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">Industrial</span>
+          </div>
         </Link>
 
         {/* Nav links */}
-        <nav className="hidden md:flex items-stretch">
+        <nav className="hidden md:flex items-stretch ml-4">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-5 font-mono text-[11px] uppercase tracking-[0.15em] border-b-2`}
-                style={{
-                  borderColor: isActive ? "var(--primary)" : "transparent",
-                  color: isActive ? "var(--primary)" : "var(--text-muted)",
-                  backgroundColor: isActive
-                    ? "rgba(var(--primary-rgb), 0.05)"
-                    : "transparent",
-                  transition:
-                    "border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = "var(--text)";
-                    e.currentTarget.style.backgroundColor =
-                      "rgba(var(--surface-rgb), 0.4)";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = "var(--text-muted)";
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }
-                }}
+                className={`flex items-center px-6 text-[10px] font-bold uppercase tracking-[0.2em] relative transition-all active:scale-95 ${
+                  isActive ? "text-primary" : "text-text-muted hover:text-text"
+                }`}
               >
                 {link.name}
+                {isActive && (
+                  <span className="absolute bottom-0 left-6 right-6 h-0.5 bg-primary rounded-full shadow-[0_0_10px_var(--primary)]" />
+                )}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
       {/* Right: User + Actions */}
-      <div className="flex items-stretch font-mono text-[10px] uppercase tracking-[0.12em]">
-        {/* User info */}
-        <div className="hidden sm:flex items-center gap-3 px-5 border-l border-border relative">
-          <div className="flex flex-col items-end leading-tight">
-            <span className="text-text text-[11px] font-semibold normal-case truncate max-w-[120px]">
-              {user?.name || user?.email || "Guest"}
-            </span>
-            <span className="text-text-muted text-[9px]">
-              {isDocente ? "Instructor" : "Estudiante"}
-            </span>
-          </div>
-
-          {/* Menú de temas */}
-          <div className="relative">
-            <button
-              onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-              className="flex items-center justify-center w-10 h-10 text-text-muted hover:text-primary"
-              style={{
-                backgroundColor: "transparent",
-                transition: "color 0.3s ease, background-color 0.3s ease",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.color = "var(--primary)";
-                e.currentTarget.style.backgroundColor =
-                  "rgba(var(--surface-rgb), 0.6)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.color = "var(--text-muted)";
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-              title="Cambiar tema"
+      <div className="flex items-stretch px-2">
+        {/* Theme Picker */}
+        <div className="relative flex items-center">
+          <button
+            onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+            className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
+            title="Sincronizar Tema"
+          >
+            <span className="material-symbols-outlined text-xl">palette</span>
+          </button>
+          
+          {isThemeMenuOpen && (
+            <div
+              className="absolute right-0 top-14 w-40 bg-surface border border-border p-2 shadow-2xl animate-scale-up z-[1100]"
+              style={{ borderRadius: "var(--theme-radius)" }}
             >
-              <span className="material-symbols-outlined text-lg">palette</span>
-            </button>
-            {isThemeMenuOpen && (
-              <div
-                className="absolute right-0 mt-2 w-32 bg-bg rounded-md shadow-lg border border-border z-50"
-                style={{ transition: "opacity 0.3s ease, transform 0.3s ease" }}
-              >
-                <div className="p-1">
-                  {(Object.keys(themes) as Array<keyof typeof themes>).map(
-                    (themeName) => (
-                      <button
-                        key={themeName}
-                        onClick={() => handleThemeChange(themeName)}
-                        className={`block w-full text-left p-2 text-[11px] uppercase tracking-[0.1em] rounded`}
-                        style={{
-                          backgroundColor:
-                            currentThemeName === themeName
-                              ? "rgba(var(--primary-rgb), 0.1)"
-                              : "transparent",
-                          color:
-                            currentThemeName === themeName
-                              ? "var(--primary)"
-                              : "var(--text-muted)",
-                          transition:
-                            "background-color 0.2s ease, color 0.2s ease",
-                        }}
-                        onMouseOver={(e) => {
-                          if (currentThemeName !== themeName) {
-                            e.currentTarget.style.backgroundColor =
-                              "rgba(var(--surface-rgb), 0.4)";
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          if (currentThemeName !== themeName) {
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
-                          }
-                        }}
-                      >
-                        {themeName}
-                      </button>
-                    ),
-                  )}
-                </div>
-              </div>
-            )}
+              {(Object.keys(themes) as Array<keyof typeof themes>).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => handleThemeChange(t)}
+                  className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    currentThemeName === t ? "text-primary bg-primary/10" : "text-text-muted hover:bg-bg"
+                  }`}
+                  style={{ borderRadius: "var(--theme-radius)" }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* User Status */}
+        <div className="hidden sm:flex items-center gap-4 px-6 border-x border-border/30">
+          <div className="flex flex-col items-end leading-tight">
+            <span className="text-[10px] font-bold text-text truncate max-w-[120px]">
+              {user?.name || user?.email?.split('@')[0] || "Operador"}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1 h-1 bg-success rounded-full animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-text-muted">
+                {isDocente ? "Instructor" : "Estudiante"}
+              </span>
+            </div>
+          </div>
+          <div 
+            className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
+            style={{ borderRadius: "var(--theme-radius)" }}
+          >
+            <span className="material-symbols-outlined text-text-muted text-lg">person</span>
           </div>
         </div>
 
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center justify-center w-14 border-l border-border text-text-muted"
-          style={{
-            transition: "color 0.3s ease, background-color 0.3s ease",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = "var(--primary)";
-            e.currentTarget.style.backgroundColor =
-              "rgba(var(--surface-rgb), 0.6)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = "var(--text-muted)";
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
-          title="Cerrar sesión"
-        >
-          <span className="material-symbols-outlined text-lg">logout</span>
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-1 px-2">
+          <button
+            onClick={handleLogout}
+            className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
+            title="Desconectar"
+          >
+            <span className="material-symbols-outlined text-xl">power_settings_new</span>
+          </button>
 
-        {/* Mobile menu toggle */}
-        <button
-          className="md:hidden flex items-center justify-center w-14 border-l border-border text-text-muted"
-          style={{ transition: "color 0.3s ease, background-color 0.3s ease" }}
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = "var(--primary)";
-            e.currentTarget.style.backgroundColor =
-              "rgba(var(--surface-rgb), 0.6)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = "var(--text-muted)";
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
-        >
-          <span className="material-symbols-outlined text-lg">
-            {isMenuOpen ? "close" : "menu"}
-          </span>
-        </button>
+          {/* Mobile menu toggle */}
+          <button
+            className="md:hidden w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <span className="material-symbols-outlined text-xl">
+              {isMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile dropdown */}
       {isMenuOpen && (
-        <div
-          className="absolute top-14 left-0 w-full bg-bg border-b border-border md:hidden flex flex-col"
-          style={{ transition: "transform 0.3s ease" }}
-        >
+        <div className="absolute top-16 left-0 w-full bg-surface border-b border-border md:hidden flex flex-col p-4 gap-2 animate-fade-in">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
-              className={`px-6 py-3 font-mono text-sm uppercase tracking-widest border-b border-border/30`}
-              style={{
-                color:
-                  location.pathname === link.path
-                    ? "var(--primary)"
-                    : "var(--text-muted)",
-                backgroundColor:
-                  location.pathname === link.path
-                    ? "rgba(var(--primary-rgb), 0.05)"
-                    : "transparent",
-                transition: "color 0.3s ease, background-color 0.3s ease",
-              }}
-              onMouseOver={(e) => {
-                if (location.pathname !== link.path) {
-                  e.currentTarget.style.color = "var(--text)";
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(var(--surface-rgb), 0.4)";
-                }
-              }}
-              onMouseOut={(e) => {
-                if (location.pathname !== link.path) {
-                  e.currentTarget.style.color = "var(--text-muted)";
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }
-              }}
+              className={`px-6 py-4 text-[10px] font-bold uppercase tracking-widest transition-all ${
+                location.pathname === link.path ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg"
+              }`}
+              style={{ borderRadius: "var(--theme-radius)" }}
             >
               {link.name}
             </Link>

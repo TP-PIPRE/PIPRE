@@ -17,7 +17,7 @@ export class BotStageEngine implements ISimulatorEngine {
 
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color("#0f172a"); // slate-900
+    // Background is transparent to show the CSS background
 
     // Orthographic Camera for 2.5D isometric look
     const aspect = window.innerWidth / window.innerHeight;
@@ -209,13 +209,16 @@ export class BotStageEngine implements ISimulatorEngine {
       metalness: 0.2,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.name = "environment_floor";
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.5;
     floor.receiveShadow = true;
+    floor.visible = false; // Hide to show the CSS grid through transparency if preferred
     this.scene.add(floor);
 
     // Grid helper on top of floor
     const gridHelper = new THREE.GridHelper(100, 100, "#334155", "#1e293b");
+    gridHelper.name = "environment_grid";
     gridHelper.position.y = -0.49;
     this.scene.add(gridHelper);
 
@@ -321,13 +324,36 @@ export class BotStageEngine implements ISimulatorEngine {
     );
 
     // Show installed
-    installedHardware.forEach((hw) => {
-      const name = mapping[hw];
-      if (name) {
-        const part = this.botGroup.getObjectByName(name);
+    installedHardware.forEach((id) => {
+      const meshName = mapping[id];
+      if (meshName) {
+        const part = this.botGroup.getObjectByName(meshName);
         if (part) part.visible = true;
       }
     });
+  }
+
+  public updateTheme(colors: any): void {
+    // Update Floor/Grid if visible
+    const grid = this.scene.getObjectByName("environment_grid") as THREE.GridHelper;
+    if (grid) {
+      grid.material.color.set(colors.border);
+      grid.material.opacity = 0.2;
+      grid.material.transparent = true;
+    }
+
+    // Update Bot Core Color
+    const core = this.botGroup.children.find(c => c.type === "Mesh" && (c as THREE.Mesh).material instanceof THREE.MeshStandardMaterial && ((c as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive) as THREE.Mesh;
+    if (core) {
+        const mat = core.material as THREE.MeshStandardMaterial;
+        mat.color.set(colors.primary);
+        mat.emissive.set(colors.primary);
+    }
+
+    // Update Ultrasonic Cone
+    if (this.ultrasonicCone) {
+        (this.ultrasonicCone.material as THREE.MeshBasicMaterial).color.set(colors.accent || colors.primary);
+    }
   }
 
   public dispose(): void {

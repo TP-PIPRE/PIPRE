@@ -48,6 +48,22 @@ const App = () => {
       "--theme-text-inverted",
       currentTheme.colors.textInverted,
     );
+    document.documentElement.style.setProperty(
+      "--theme-accent",
+      currentTheme.colors.accent,
+    );
+    document.documentElement.style.setProperty(
+      "--theme-success",
+      currentTheme.colors.success,
+    );
+    document.documentElement.style.setProperty(
+      "--theme-danger",
+      currentTheme.colors.danger,
+    );
+    document.documentElement.style.setProperty(
+      "--theme-radius",
+      (currentTheme as any).borderRadius || "8px",
+    );
   }, [currentTheme]);
 
   return (

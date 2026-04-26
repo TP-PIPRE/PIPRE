@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef } from "react";
 import type { ReactNode } from "react";
 import type { Block, BlockCategory } from "../../shared/types/Simulador";
 import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngine";
+import { useThemeStore } from "../../infrastructure/store/themeStore";
 
 interface LogEntry {
   time: string;
@@ -46,6 +47,7 @@ interface SimuladorContextType {
 
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
+  currentTheme: any;
 }
 
 const SimuladorContext = createContext<SimuladorContextType | undefined>(
@@ -57,6 +59,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [installedHardware, setInstalledHardware] = useState<string[]>([]);
   const [blocks, setBlocks] = useState<Block[]>([]);
+  const { currentTheme } = useThemeStore();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -309,6 +312,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         currentMissionIndex,
         consumeEnergy,
         completeMission,
+        currentTheme,
       }}
     >
       {children}

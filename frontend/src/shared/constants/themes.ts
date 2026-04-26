@@ -1,65 +1,101 @@
-// Conversión de HEX a OKLCH para Candy Harmony
+// frontend/src/shared/constants/themes.ts
+
+/**
+ * Persona-driven color palettes.
+ * Principles applied (Impeccable skill):
+ *   - Neutrals tinted toward each theme's brand hue
+ *   - No pure black (#000) or pure white (#fff)
+ *   - 60-30-10 visual weight distribution
+ *   - Dark mode uses surface elevation (lighter = higher), not shadows
+ *   - Explicit overlay colors instead of heavy alpha usage
+ *   - Fonts avoid reflex defaults (Inter, Outfit, IBM Plex, etc.)
+ */
+
 const candyHarmonyColors = {
-  bg: "oklch(92% 0.08 350)", // Aproximación de #F8D4E3
-  surface: "oklch(90% 0.07 340)", // Aproximación de #E8D0E6
-  surfaceBrighter: "oklch(94% 0.06 330)", // Aproximación de #F4E9F0
-  primary: "oklch(75% 0.18 320)", // Aproximación de #D699C9
-  primaryLow: "oklch(75% 0.18 320 / 0.1)",
-  primaryGlow: "oklch(75% 0.18 320 / 0.15)",
-  border: "oklch(70% 0.1 310)", // Aproximación de #B399B9
-  text: "oklch(20% 0.05 0)", // Aproximación de #333333
-  textMuted: "oklch(50% 0.05 0)", // Aproximación de #808080
-  textInverted: "oklch(92% 0.08 350)", // Aproximación de #F8D4E3
+  // Persona: Women in STEM — elegant, warm, confident
+  // Brand hue: mauve/plum (hue ~310) — sophisticated, not infantile
+  // Borders blend into background — nearly invisible edges
+  bg: "#FAF5F8",              // Warm blush off-white
+  surface: "#F3ECF0",         // Mauve-tinted linen
+  surfaceBrighter: "#FCF8FA", // Elevated blush
+  primary: "#9B4D96",         // Rich plum — confident, sophisticated
+  primaryLow: "rgba(155, 77, 150, 0.10)",
+  primaryGlow: "rgba(155, 77, 150, 0.22)",
+  accent: "#C68B3E",          // Warm gold — grounding, luxe
+  border: "#F0E8EC",          // Blends into bg — barely visible, soft edge
+  text: "#2E1A28",            // Dark aubergine — warm dark, never pure black
+  textMuted: "#7D6975",       // Muted mauve-gray
+  textInverted: "#FAF5F8",
+  success: "#5BA870",         // Sage green — natural, not neon
+  danger: "#C94F5A",          // Muted rose-red — firm but not harsh
 };
 
-// Conversión de los colores hexadecimales a OKLCH para Dark
 const darkColors = {
-  bg: "oklch(12% 0.02 240)", // Aproximación de #0E233D
-  surface: "oklch(15% 0.02 240)", // Aproximación de #131B28
-  surfaceBrighter: "oklch(45% 0.03 200)", // Aproximación de #73858C
-  primary: "oklch(35% 0.18 25)", // Aproximación de #721D14
-  primaryLow: "oklch(35% 0.18 25 / 0.1)",
-  primaryGlow: "oklch(35% 0.18 25 / 0.15)",
-  border: "oklch(15% 0.03 30)", // Aproximación de #261611
-  text: "oklch(98% 0 0)", // Blanco para contraste
-  textMuted: "oklch(70% 0 0)", // Gris claro para texto atenuado
-  textInverted: "oklch(12% 0.02 240)", // Aproximación de #0E233D
+  // Persona: Tech enthusiasts & gamers — precise, immersive, high-contrast
+  // Brand hue: emerald/teal (hue ~160) — NOT cyan-on-dark AI slop
+  // Depth via surface elevation: bg < surface < surfaceBrighter
+  bg: "#0C1117",              // Near-black with teal undertone — never pure #000
+  surface: "#141C24",         // Elevation 1 — slightly lighter
+  surfaceBrighter: "#1C2733", // Elevation 2 — noticeably lifted
+  primary: "#34D399",         // Emerald — technical, not neon, not cyan
+  primaryLow: "rgba(52, 211, 153, 0.10)",
+  primaryGlow: "rgba(52, 211, 153, 0.25)",
+  accent: "#F59E0B",          // Warm amber — contrast against cool neutrals
+  border: "#1A2430",          // Blends with bg — subtle dark edge
+  text: "#E8EDF2",            // Slight blue tint — not pure white
+  textMuted: "#6B8299",       // Steel blue-gray — never pure gray
+  textInverted: "#0C1117",
+  success: "#22C55E",         // Vivid green — clear signal
+  danger: "#EF4444",          // Alarm red — unmistakable
 };
 
-// Conversión de los nuevos colores hexadecimales a OKLCH para Light
 const lightColors = {
-  bg: "oklch(99% 0.01 240)", // Aproximación de #F9FBFD
-  surface: "oklch(98% 0.01 240)", // Aproximación de #ESEAFC (corregido a #E5EAFc)
-  surfaceBrighter: "oklch(100% 0 0)", // Aproximación de #FFFFFF
-  primary: "oklch(60% 0.15 250)", // Aproximación de #335EEA
-  primaryLow: "oklch(60% 0.15 250 / 0.1)",
-  primaryGlow: "oklch(60% 0.15 250 / 0.15)",
-  border: "oklch(85% 0.02 240)", // Aproximación de #869AB8
-  text: "oklch(20% 0 0)", // Negro para contraste
-  textMuted: "oklch(40% 0 0)", // Gris para texto atenuado
-  textInverted: "oklch(99% 0.01 240)", // Aproximación de #F9FBFD
+  // Persona: Educators & professionals — calm, trustworthy, uncluttered
+  // Brand hue: indigo (hue ~240) — neutrals tinted warm-cool
+  bg: "#F7F8FB",              // Warm paper — tinted toward indigo, not pure white
+  surface: "#EEEEF5",         // Indigo-tinted pebble
+  surfaceBrighter: "#FAFAFD", // Elevated paper
+  primary: "#4F46E5",         // True indigo — confident, not passive slate
+  primaryLow: "rgba(79, 70, 229, 0.07)",
+  primaryGlow: "rgba(79, 70, 229, 0.14)",
+  accent: "#D97706",          // Warm amber — grounding earth tone
+  border: "#E6E5F0",         // Blends into bg — soft indigo edge
+  text: "#1A1828",            // Near-black tinted toward indigo
+  textMuted: "#6E6B80",       // Muted purple-gray — tinted neutral
+  textInverted: "#F7F8FB",
+  success: "#16A34A",         // Natural green
+  danger: "#DC2626",          // Clear red
 };
 
 export const themes = {
   candyHarmony: {
+    name: "Elegance",
     colors: candyHarmonyColors,
+    style: "playful",
+    borderRadius: "1.25rem",   // Generous but not extreme — 2rem was cartoonish
     fonts: {
-      mono: '"JetBrains Mono", "IBM Plex Mono", monospace',
-      sans: '"Inter", system-ui, sans-serif',
+      mono: '"Recursive", monospace',      // Variable mono with casual axis
+      sans: '"Nunito", system-ui, sans-serif',  // Rounded, warm, kid-friendly
     },
   },
   dark: {
+    name: "Tech-Gamer",
     colors: darkColors,
+    style: "gamer",
+    borderRadius: "6px",       // Sharp but not brutalist — 2px was too raw
     fonts: {
-      mono: '"JetBrains Mono", "IBM Plex Mono", monospace',
-      sans: '"Inter", system-ui, sans-serif',
+      mono: '"Recursive", monospace',      // Variable mono — crisp at small sizes
+      sans: '"Geist", system-ui, sans-serif',   // Sharp, utilitarian, modern
     },
   },
   light: {
+    name: "Minimalist",
     colors: lightColors,
+    style: "subtle",
+    borderRadius: "10px",      // Refined rounding
     fonts: {
-      mono: '"JetBrains Mono", "IBM Plex Mono", monospace',
-      sans: '"Inter", system-ui, sans-serif',
+      mono: '"Recursive", monospace',
+      sans: '"Source Serif 4", Georgia, serif',  // Serif for authority & warmth
     },
   },
 };
