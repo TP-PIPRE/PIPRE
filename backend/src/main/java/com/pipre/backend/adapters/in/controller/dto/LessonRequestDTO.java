@@ -1,6 +1,9 @@
 package com.pipre.backend.adapters.in.controller.dto;
 
-public record LessonsRequestDTO(
+import java.util.UUID;
+
+public record LessonRequestDTO(
+    UUID idModule,
     String title
 ) {
 }

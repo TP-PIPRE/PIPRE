@@ -2,6 +2,9 @@ package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.Set;
 
@@ -33,10 +36,12 @@ public class ActivityJpa {
     @Column(name = "type")
     private String type;
 
+    @Builder.Default
     @OneToMany(mappedBy = "activityJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<RoboticsSimulationJpa> roboticsSimulationJpas;
+    private List<RoboticsSimulationJpa> roboticsSimulationJpas = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_lesson", nullable = false)
     private LessonJpa lessonJpa;
+
 }

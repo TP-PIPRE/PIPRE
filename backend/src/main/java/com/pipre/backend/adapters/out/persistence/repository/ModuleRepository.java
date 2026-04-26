@@ -8,4 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface ModuleRepository extends JpaRepository<ModuleJpa, UUID> {
+    ModuleJpa findModuleJpaByIdModule(UUID idModule);
 }
