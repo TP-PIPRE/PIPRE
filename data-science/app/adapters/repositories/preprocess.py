@@ -1,3 +1,6 @@
+import pandas as pd
+import numpy as np
+
 def preprocess_data(self, df, is_training=False):
     df = df.copy()
 

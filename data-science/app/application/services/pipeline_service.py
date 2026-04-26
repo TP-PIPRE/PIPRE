@@ -1,10 +1,10 @@
 import pandas as pd
 
-from models.ria01_desempeño import ClasificadorDesempeno
-from models.ria03_recomendador import RecomendadorActividades
-from models.ria08_anomalias import DetectorAnomalias
-from models.ria11_tiempo import ClasificadorTiempo
-from models.ria12_codigo import EvaluadorCodigo
+from app.domain.models.ria01_desempeño import ClasificadorDesempeno
+from app.domain.models.ria03_recomendador import RecomendadorActividades
+from app.domain.models.ria08_anomalias import DetectorAnomalias
+from app.domain.models.ria11_tiempo import ClasificadorTiempo
+from app.domain.models.ria12_codigo import EvaluadorCodigo
 
 
 class PipelineIA:

@@ -4,13 +4,17 @@ from contextlib import asynccontextmanager
 import os
 import joblib
 
-from schemas.ria01_schema import RIA01Input
-from services.ria01_service import RIA01Service
+from app.application.schemas.ria01_schema import RIA01Input
+from app.application.services.ria01_service import RIA01Service
+
 
 # =========================
 # 📦 CONFIG
 # =========================
-MODEL_PATH = "models/ria01_model.pkl"
+
+MODEL_PATH = "saved_models/ria01_model.pkl"
+
+os.makedirs("saved_models", exist_ok=True)
 
 # instancia global
 ria01_service = RIA01Service()
@@ -19,23 +23,26 @@ ria01_service = RIA01Service()
 # =========================
 # 🚀 LIFESPAN
 # =========================
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    # 🔹 SI EXISTE MODELO → CARGAR
     if os.path.exists(MODEL_PATH):
         print("📦 Cargando modelo existente...")
+
         ria01_service.model = joblib.load(MODEL_PATH)
         ria01_service._trained = True
+
         print("✅ Modelo cargado correctamente")
 
     else:
         print("🧠 Entrenando modelo desde cero...")
+
         df = pd.read_excel("data/dataset.xlsx")
 
         ria01_service.train(df)
 
-        # 🔥 guardar TODO el modelo (incluye encoders)
+        # guardar modelo entrenado
         joblib.dump(ria01_service.model, MODEL_PATH)
 
         print("💾 Modelo entrenado y guardado")
@@ -48,6 +55,7 @@ async def lifespan(app: FastAPI):
 # =========================
 # 🌐 APP
 # =========================
+
 app = FastAPI(
     title="API IA - RIA01",
     lifespan=lifespan
@@ -57,6 +65,7 @@ app = FastAPI(
 # =========================
 # 📊 ENDPOINT PREDICT
 # =========================
+
 @app.post("/ria01/predict")
 def predict_ria01(data: RIA01Input):
     return ria01_service.predict(data.dict())
@@ -65,6 +74,7 @@ def predict_ria01(data: RIA01Input):
 # =========================
 # 🔍 ENDPOINT INFO
 # =========================
+
 @app.get("/ria01/info")
 def info():
     return {
@@ -78,6 +88,9 @@ def info():
 # =========================
 # ❤️ HEALTH CHECK
 # =========================
+
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok"
+    }

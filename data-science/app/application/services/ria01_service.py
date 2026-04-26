@@ -1,5 +1,5 @@
 import pandas as pd
-from models.ria01_desempeño import ClasificadorDesempeno
+from app.domain.models.ria01_desempeño import ClasificadorDesempeno
 
 class RIA01Service:
 

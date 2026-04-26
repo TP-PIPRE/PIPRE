@@ -1,14 +1,14 @@
 import pandas as pd
 
-from services.pipeline_service import PipelineIA
-from ui.evaluador import generar_resultados
-from ui.ui_resultados import mostrar_resultados
+from app.application.services.pipeline_service import PipelineIA
+from app.ui.evaluador import generar_resultados
+from app.ui.ui_resultados import mostrar_resultados
 
 
 def main():
 
     # 🔹 cargar dataset
-    df = pd.read_excel("data-science/data/dataset.xlsx")
+    df = pd.read_excel("data/dataset.xlsx")
 
     # 🔹 pipeline
     pipeline = PipelineIA()
