@@ -1,9 +1,9 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.controller.dto.LessonResponseDTO;
+import com.pipre.backend.adapters.in.controller.dto.ActivityRequestDTO;
+import com.pipre.backend.adapters.in.controller.dto.ActivityResponseDTO;
+import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpa;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpa;
-import com.pipre.backend.adapters.in.controller.dto.LessonRequestDTO;
-import com.pipre.backend.adapters.out.persistence.jpaEntities.ModuleJpa;
 import com.pipre.backend.adapters.out.persistence.repository.LessonRepository;
 import com.pipre.backend.adapters.out.persistence.repository.ModuleRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,34 +15,33 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class LessonService {
+public class ActivityService {
     private final LessonRepository lessonRepository;
     private final ModuleRepository moduleRepository;
 
-    public List<LessonResponseDTO> getLessons(UUID idModule) {
-        ModuleJpa moduleJpa = moduleRepository.findById(idModule)
+    public List<ActivityResponseDTO> getActivities(UUID idLesson) {
+        LessonJpa lessonJpa = lessonRepository.findById(idLesson)
                 .orElseThrow(() -> new RuntimeException("Módulo no encontrado"));
 
-        return moduleJpa.getLessonJpas().stream()
-                .map( lesson -> new LessonResponseDTO(
-                        lesson.getIdLesson(),
-                        lesson.getTitle()
-
+        return lessonJpa.getActivitiesJpas().stream()
+                .map( lesson -> new ActivityResponseDTO(
+                        lesson.getIdActivity(),
+                        lesson.getName()
                 ))
                 .toList();
     }
 
     @Transactional
-    public void postLesson(LessonRequestDTO requestDTO) {
+    public void postActivity(ActivityRequestDTO requestDTO) {
 
-        ModuleJpa moduleJpa = moduleRepository.findById(requestDTO.idModule())
+        LessonJpa lessonJpa = lessonRepository.findById(requestDTO.idLesson())
                 .orElseThrow(() -> new RuntimeException("Módulo no encontrado"));
 
-        LessonJpa lessonJpa = LessonJpa.builder()
-                .title(requestDTO.title())
+        ActivityJpa activityJpa = ActivityJpa.builder()
+                .name(requestDTO.name())
                 .build();
 
-        moduleJpa.addLesson(lessonJpa);
+        lessonJpa.addActivity(activityJpa);
 
         lessonRepository.save(lessonJpa);
     }

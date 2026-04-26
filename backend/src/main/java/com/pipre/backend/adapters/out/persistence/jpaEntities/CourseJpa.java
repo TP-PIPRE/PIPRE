@@ -2,6 +2,9 @@ package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -34,6 +37,12 @@ public class CourseJpa {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "courseJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ModuleJpa> moduleJpas;
+    private List<ModuleJpa> moduleJpas = new ArrayList<>();
+
+    public void addModule(ModuleJpa module) {
+        moduleJpas.add(module);
+        module.setCourseJpa(this);
+    }
 }

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.Set;
 
@@ -35,10 +37,16 @@ public class ModuleJpa {
     @Column(name = "percentage_meta", precision = 5, scale = 2)
     private BigDecimal percentageMeta;
 
+    @Builder.Default
     @OneToMany(mappedBy = "moduleJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<LessonJpa> lessonJpas;
+    private List<LessonJpa> lessonJpas = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_course", nullable = false)
     private CourseJpa courseJpa;
+
+    public void addLesson(LessonJpa lessonJpa) {
+        lessonJpas.add(lessonJpa);
+        lessonJpa.setModuleJpa(this);
+    }
 }
