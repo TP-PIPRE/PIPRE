@@ -6,6 +6,7 @@ import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpa;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ModuleJpa;
 import com.pipre.backend.adapters.out.persistence.repository.CourseRepository;
 import com.pipre.backend.adapters.out.persistence.repository.ModuleRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +17,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ModuleService {
 
-
-    private final ModuleRepository moduleRepository;
     private final CourseRepository courseRepository;
 
+    @Transactional(readOnly = true)
     public List<ModuleResponseDTO> getModule(UUID id) {
         CourseJpa course =  courseRepository.findByIdCourse(id);
         return course.getModuleJpas().stream()
@@ -30,6 +30,7 @@ public class ModuleService {
                 .toList();
     }
 
+    @Transactional
     public void postModule(ModuleRequestDTO requestDTO) {
         CourseJpa courseJpa = courseRepository.findById(requestDTO.idCourse())
                 .orElseThrow(() -> new RuntimeException("Curso no encontrado"));

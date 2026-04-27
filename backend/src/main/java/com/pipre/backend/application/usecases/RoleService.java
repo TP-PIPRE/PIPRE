@@ -8,6 +8,7 @@ import com.pipre.backend.adapters.out.persistence.repository.RoleRepository;
 import com.pipre.backend.adapters.out.persistence.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class RoleService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public List<RoleResponseDTO> getRoles() {
         return roleRepository.findAll().stream()
                 .map(roleJpa -> new RoleResponseDTO(
@@ -26,6 +28,7 @@ public class RoleService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public void getRoleUser(RoleUserRequestDTO requestDTO) {
         UserJpa user = userRepository.findById(requestDTO.idUser())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

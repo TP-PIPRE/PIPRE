@@ -18,6 +18,7 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
 
+    @Transactional(readOnly = true)
     public List<CourseResponseDTO> getCourse() {
         List<CourseJpa> cours = courseRepository.findAll();
         return cours.stream()
