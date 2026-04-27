@@ -48,15 +48,19 @@ export const Navbar: React.FC = () => {
           to="/"
           className="flex items-center gap-3 px-6 hover:bg-surface/40 transition-all group"
         >
-          <div 
+          <div
             className="w-8 h-8 bg-primary flex items-center justify-center font-bold text-bg text-lg shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
             P
           </div>
           <div className="hidden sm:flex flex-col leading-none">
-            <span className="text-sm font-bold tracking-widest text-text">PIPRE</span>
-            <span className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">Industrial</span>
+            <span className="text-sm font-bold tracking-widest text-text">
+              PIPRE
+            </span>
+            <span className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">
+              Industrial
+            </span>
           </div>
         </Link>
 
@@ -85,18 +89,18 @@ export const Navbar: React.FC = () => {
       {/* Right: User + Actions */}
       <div className="flex items-stretch px-2">
         {/* Theme Picker */}
-        <div className="relative flex items-center">
+        <div className="relative flex items-center h-full">
           <button
             onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
             className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
-            title="Sincronizar Tema"
+            title="Cambiar Tema"
           >
             <span className="material-symbols-outlined text-xl">palette</span>
           </button>
-          
+
           {isThemeMenuOpen && (
             <div
-              className="absolute right-0 top-14 w-40 bg-surface border border-border p-2 shadow-2xl animate-scale-up z-[1100]"
+              className="absolute right-0 top-full mt-1 w-40 bg-surface border border-border p-2 shadow-2xl animate-scale-up z-[1100]"
               style={{ borderRadius: "var(--theme-radius)" }}
             >
               {(Object.keys(themes) as Array<keyof typeof themes>).map((t) => (
@@ -104,9 +108,11 @@ export const Navbar: React.FC = () => {
                   key={t}
                   onClick={() => handleThemeChange(t)}
                   className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${
-                    currentThemeName === t ? "text-primary bg-primary/10" : "text-text-muted hover:bg-bg"
+                    currentThemeName === t
+                      ? "text-primary bg-primary/10"
+                      : "text-text-muted hover:bg-surface-brighter"
                   }`}
-                  style={{ borderRadius: "var(--theme-radius)" }}
+                  style={{ borderRadius: "calc(var(--theme-radius) - 2px)" }}
                 >
                   {t}
                 </button>
@@ -119,7 +125,7 @@ export const Navbar: React.FC = () => {
         <div className="hidden sm:flex items-center gap-4 px-6 border-x border-border/30">
           <div className="flex flex-col items-end leading-tight">
             <span className="text-[10px] font-bold text-text truncate max-w-[120px]">
-              {user?.name || user?.email?.split('@')[0] || "Operador"}
+              {user?.name || user?.email?.split("@")[0] || "Operador"}
             </span>
             <div className="flex items-center gap-1.5">
               <span className="w-1 h-1 bg-success rounded-full animate-pulse" />
@@ -128,11 +134,13 @@ export const Navbar: React.FC = () => {
               </span>
             </div>
           </div>
-          <div 
+          <div
             className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
-            <span className="material-symbols-outlined text-text-muted text-lg">person</span>
+            <span className="material-symbols-outlined text-text-muted text-lg">
+              person
+            </span>
           </div>
         </div>
 
@@ -143,7 +151,9 @@ export const Navbar: React.FC = () => {
             className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
             title="Desconectar"
           >
-            <span className="material-symbols-outlined text-xl">power_settings_new</span>
+            <span className="material-symbols-outlined text-xl">
+              power_settings_new
+            </span>
           </button>
 
           {/* Mobile menu toggle */}
@@ -167,7 +177,9 @@ export const Navbar: React.FC = () => {
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
               className={`px-6 py-4 text-[10px] font-bold uppercase tracking-widest transition-all ${
-                location.pathname === link.path ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg"
+                location.pathname === link.path
+                  ? "bg-primary/10 text-primary"
+                  : "text-text-muted hover:bg-bg"
               }`}
               style={{ borderRadius: "var(--theme-radius)" }}
             >

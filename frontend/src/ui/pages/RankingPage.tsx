@@ -78,13 +78,13 @@ export const RankingPage: React.FC = () => {
         {/* Segundo lugar */}
         <div className="order-2 md:order-1 pt-8">
           <div
-            className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
-            style={{ backgroundColor: "var(--bg)" }}
+            className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105 rounded-lg"
+            style={{ backgroundColor: "var(--surface)" }}
           >
             <div
-              className="w-12 h-12 flex items-center justify-center border border-border font-bold mb-4 transition-all duration-300"
+              className="w-12 h-12 flex items-center justify-center border border-border font-bold mb-4 transition-all duration-300 rounded-md"
               style={{
-                backgroundColor: "var(--surface)",
+                backgroundColor: "var(--surface-brighter)",
                 color: "var(--text)",
               }}
             >
@@ -114,7 +114,7 @@ export const RankingPage: React.FC = () => {
         {/* Primer lugar */}
         <div className="order-1 md:order-2">
           <div
-            className="border-2 p-8 text-center flex flex-col items-center relative transform scale-105 transition-all duration-300 hover:shadow-2xl hover:scale-110"
+            className="border-2 p-8 text-center flex flex-col items-center relative transform scale-105 transition-all duration-300 hover:shadow-2xl hover:scale-110 rounded-lg"
             style={{
               borderColor: "var(--primary)",
               backgroundColor: "rgba(var(--primary-rgb), 0.05)",
@@ -122,13 +122,13 @@ export const RankingPage: React.FC = () => {
             }}
           >
             <div
-              className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-[10px] tracking-widest uppercase transition-all duration-300"
+              className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-[10px] tracking-widest uppercase transition-all duration-300 rounded-md"
               style={{ backgroundColor: "var(--primary)", color: "var(--bg)" }}
             >
               Líder
             </div>
             <div
-              className="w-16 h-16 flex items-center justify-center border font-black text-xl mb-4 transition-all duration-300"
+              className="w-16 h-16 flex items-center justify-center border font-black text-xl mb-4 transition-all duration-300 rounded-lg"
               style={{
                 backgroundColor: "var(--primary)",
                 borderColor: "var(--primary)",
@@ -161,13 +161,13 @@ export const RankingPage: React.FC = () => {
         {/* Tercer lugar */}
         <div className="order-3 pt-12">
           <div
-            className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
-            style={{ backgroundColor: "var(--bg)" }}
+            className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105 rounded-lg"
+            style={{ backgroundColor: "var(--surface)" }}
           >
             <div
-              className="w-10 h-10 flex items-center justify-center border border-border font-bold mb-4 transition-all duration-300"
+              className="w-10 h-10 flex items-center justify-center border border-border font-bold mb-4 transition-all duration-300 rounded-md"
               style={{
-                backgroundColor: "var(--surface)",
+                backgroundColor: "var(--surface-brighter)",
                 color: "var(--text)",
               }}
             >
@@ -180,7 +180,7 @@ export const RankingPage: React.FC = () => {
               Elena García
             </p>
             <p
-              className="text-[10px] font-mono mb-4 transition-all duration-300"
+              className="text-[10px] font-mono mb-4 uppercase tracking-widest transition-all duration-300"
               style={{ color: "var(--text-muted)" }}
             >
               Robótica A
@@ -197,13 +197,13 @@ export const RankingPage: React.FC = () => {
 
       {/* Tabla de ranking */}
       <div
-        className="border border-border transition-all duration-300"
-        style={{ backgroundColor: "var(--bg)" }}
+        className="border border-border transition-all duration-300 rounded-lg overflow-hidden"
+        style={{ backgroundColor: "var(--surface)" }}
       >
         {/* Header de la tabla */}
         <div
           className="p-4 border-b border-border flex justify-between items-center transition-all duration-300"
-          style={{ backgroundColor: "var(--surface)" }}
+          style={{ backgroundColor: "var(--surface-brighter)" }}
         >
           <h2
             className="text-[10px] font-mono font-bold uppercase tracking-widest transition-all duration-300"
@@ -228,12 +228,11 @@ export const RankingPage: React.FC = () => {
         </div>
 
         {/* Lista de ranking */}
-        <div className="divide-y" style={{ backgroundColor: "var(--bg)" }}>
+        <div className="divide-y" style={{ backgroundColor: "var(--surface)" }}>
           {MOCK_RANKING.map((user) => (
             <div
               key={user.id}
-              className="flex items-center p-4 hover:bg-surface transition-all duration-300"
-              style={{ borderColor: "rgba(var(--border-rgb), 0.5)" }}
+              className="flex items-center p-4 hover:bg-surface-brighter transition-all duration-300 rounded-lg mx-2 my-1"
             >
               <div
                 className="w-10 font-mono font-bold text-center text-xs transition-all duration-300"
@@ -242,9 +241,9 @@ export const RankingPage: React.FC = () => {
                 {user.rank}
               </div>
               <div
-                className="w-10 h-10 border flex items-center justify-center font-bold text-xs mr-4 transition-all duration-300"
+                className="w-10 h-10 border flex items-center justify-center font-bold text-xs mr-4 transition-all duration-300 rounded-md"
                 style={{
-                  backgroundColor: "var(--bg)",
+                  backgroundColor: "var(--surface-brighter)",
                   borderColor: "var(--border)",
                   color: "var(--text)",
                 }}
@@ -275,9 +274,9 @@ export const RankingPage: React.FC = () => {
                 <span
                   className={`material-symbols-outlined text-sm transition-all duration-300 ${
                     user.trend === "up"
-                      ? "text-green-500"
+                      ? "text-success"
                       : user.trend === "down"
-                        ? "text-red-500"
+                        ? "text-danger"
                         : "opacity-30"
                   }`}
                 >
@@ -295,7 +294,7 @@ export const RankingPage: React.FC = () => {
         {/* Botón de ver más */}
         <div
           className="p-4 text-center transition-all duration-300"
-          style={{ backgroundColor: "var(--bg)" }}
+          style={{ backgroundColor: "var(--surface-brighter)" }}
         >
           <button
             className="text-[10px] font-mono font-bold uppercase tracking-[0.2em] hover:underline transition-all duration-300 hover:text-primary"

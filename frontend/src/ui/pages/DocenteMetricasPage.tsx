@@ -55,8 +55,8 @@ export const DocenteMetricasPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         {/* Dropout Risk Panel */}
         <div
-          className="border border-border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
-          style={{ backgroundColor: "rgba(var(--surface-rgb), 0.4)" }}
+          className="border border-border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] rounded-lg"
+          style={{ backgroundColor: "var(--surface)" }}
         >
           <h2
             className="text-xs font-mono font-bold uppercase tracking-widest mb-6 flex items-center gap-2 transition-all duration-300"
@@ -64,7 +64,7 @@ export const DocenteMetricasPage: React.FC = () => {
           >
             <span
               className="material-symbols-outlined text-sm transition-all duration-300"
-              style={{ color: "var(--red)" }}
+              style={{ color: "var(--danger)" }}
             >
               warning
             </span>
@@ -74,8 +74,8 @@ export const DocenteMetricasPage: React.FC = () => {
             {MOCK_METRICS.dropoutRisk.map((student) => (
               <div
                 key={student.id}
-                className="flex items-center justify-between p-4 border border-border/50 transition-all duration-300 hover:bg-surface/50 hover:scale-[1.01]"
-                style={{ backgroundColor: "rgba(var(--bg-rgb), 0.2)" }}
+                className="flex items-center justify-between p-4 border border-border/50 transition-all duration-300 hover:bg-surface-brighter rounded-lg"
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <div className="flex flex-col">
                   <span
@@ -94,7 +94,13 @@ export const DocenteMetricasPage: React.FC = () => {
                 <div className="flex items-center gap-4 text-right">
                   <div className="flex flex-col">
                     <span
-                      className={`text-[10px] font-mono font-bold uppercase transition-all duration-300 ${student.risk === "Alto" ? "text-red" : student.risk === "Medio" ? "text-yellow" : "text-primary"}`}
+                      className={`text-[10px] font-mono font-bold uppercase transition-all duration-300 ${
+                        student.risk === "Alto"
+                          ? "text-danger"
+                          : student.risk === "Medio"
+                            ? "text-yellow-500"
+                            : "text-primary"
+                      }`}
                     >
                       Riesgo {student.risk}
                     </span>
@@ -109,7 +115,7 @@ export const DocenteMetricasPage: React.FC = () => {
                           : "Estable"}
                     </span>
                   </div>
-                  <button className="text-text-muted hover:text-primary transition-all duration-300 transform hover:scale-110">
+                  <button className="text-text-muted hover:text-primary transition-all duration-300 transform hover:scale-110 rounded-full p-1">
                     <span className="material-symbols-outlined">mail</span>
                   </button>
                 </div>
@@ -120,8 +126,8 @@ export const DocenteMetricasPage: React.FC = () => {
 
         {/* Module Efficiency */}
         <div
-          className="border border-border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
-          style={{ backgroundColor: "rgba(var(--surface-rgb), 0.4)" }}
+          className="border border-border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] rounded-lg"
+          style={{ backgroundColor: "var(--surface)" }}
         >
           <h2
             className="text-xs font-mono font-bold uppercase tracking-widest mb-6 flex items-center gap-2 transition-all duration-300"
@@ -139,7 +145,8 @@ export const DocenteMetricasPage: React.FC = () => {
             {MOCK_METRICS.moduleEfficiency.map((mod) => (
               <div
                 key={mod.name}
-                className="transition-all duration-300 hover:scale-[1.01]"
+                className="p-4 transition-all duration-300 hover:scale-[1.01] rounded-lg"
+                style={{ backgroundColor: "rgba(var(--surface-rgb), 0.5)" }}
               >
                 <div
                   className="flex justify-between text-[10px] font-mono uppercase tracking-widest mb-2 transition-all duration-300"
@@ -149,11 +156,11 @@ export const DocenteMetricasPage: React.FC = () => {
                   <span>{mod.completion}% Finalización</span>
                 </div>
                 <div
-                  className="h-1.5 w-full border border-border overflow-hidden transition-all duration-500"
-                  style={{ backgroundColor: "var(--bg)" }}
+                  className="h-1.5 w-full border border-border overflow-hidden transition-all duration-500 rounded-full"
+                  style={{ backgroundColor: "var(--surface)" }}
                 >
                   <div
-                    className="h-full transition-all duration-500"
+                    className="h-full transition-all duration-500 rounded-full"
                     style={{
                       width: `${mod.completion}%`,
                       backgroundColor: "var(--primary)",
@@ -162,7 +169,7 @@ export const DocenteMetricasPage: React.FC = () => {
                 </div>
                 <div className="flex justify-end mt-1">
                   <span
-                    className="text-[9px] font-mono transition-all duration-300 hover:text-yellow"
+                    className="text-[9px] font-mono transition-all duration-300 hover:text-yellow-500"
                     style={{ color: "var(--primary)" }}
                   >
                     Promedio: {mod.avgScore} pts

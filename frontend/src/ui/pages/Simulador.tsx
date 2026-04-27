@@ -15,14 +15,14 @@ export const Simulador = () => {
             {/* Column 1: Hardware & Missions (3 cols) */}
             <div className="col-span-3 row-span-12 flex flex-col gap-4 min-h-0">
               <div
-                className="min-h-0 panel-border flex-1 overflow-auto"
-                style={{ backgroundColor: "var(--bg)" }}
+                className="min-h-0 panel-border flex-1 overflow-auto rounded-lg"
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <HardwarePanel />
               </div>
               <div
-                className="min-h-0 panel-border flex-1 overflow-auto"
-                style={{ backgroundColor: "var(--bg)" }}
+                className="min-h-0 panel-border flex-1 overflow-auto rounded-lg"
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <MissionsPanel />
               </div>
@@ -30,17 +30,20 @@ export const Simulador = () => {
 
             {/* Column 2: Logic Assembly (5 cols) */}
             <div
-              className="col-span-5 row-span-12 flex flex-col panel-border min-h-0"
-              style={{ backgroundColor: "var(--bg)" }}
+              className="col-span-5 row-span-12 flex flex-col panel-border min-h-0 rounded-lg"
+              style={{ backgroundColor: "var(--surface)" }}
             >
               <div className="flex h-full">
                 <div
-                  className="w-1/3 border-r border-border"
-                  style={{ backgroundColor: "var(--bg)" }}
+                  className="w-1/3 border-r border-border rounded-l-lg"
+                  style={{ backgroundColor: "var(--surface)" }}
                 >
                   <Toolbox />
                 </div>
-                <div className="w-2/3" style={{ backgroundColor: "var(--bg)" }}>
+                <div
+                  className="w-2/3"
+                  style={{ backgroundColor: "var(--surface)" }}
+                >
                   <Workspace />
                 </div>
               </div>
@@ -49,13 +52,13 @@ export const Simulador = () => {
             {/* Column 3: Visualization & Console (4 cols) */}
             <div className="col-span-4 row-span-12 flex flex-col gap-4 min-h-0">
               <div
-                className="flex-1 min-h-0 relative panel-border"
-                style={{ backgroundColor: "var(--bg)" }}
+                className="flex-1 min-h-0 relative panel-border rounded-lg"
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <Stage3D />
               </div>
               <div
-                className="h-48 shrink-0 panel-border"
+                className="h-48 shrink-0 panel-border rounded-lg"
                 style={{ backgroundColor: "var(--surface)" }}
               >
                 <Console />
@@ -67,4 +70,3 @@ export const Simulador = () => {
     </SimuladorProvider>
   );
 };
-

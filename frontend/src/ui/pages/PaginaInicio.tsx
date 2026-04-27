@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaRobot, FaCode, FaGamepad, FaMicrochip, FaTools, FaCheckCircle } from "react-icons/fa";
+import {
+  FaRobot,
+  FaCode,
+  FaGamepad,
+  FaMicrochip,
+  FaTools,
+  FaCheckCircle,
+} from "react-icons/fa";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { Course } from "../../shared/types/Course";
 import { Modal } from "../components/common/Modal";
@@ -15,21 +22,25 @@ const DEMO_RETOS: Course[] = [
   {
     id: "demo-1",
     nombre: "Introducción a la Robótica",
-    descripcion: "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
-    imagen: "https://lh3.googleusercontent.com/aida-public/AB6AXuAe-fnR0Qj_GfTf88xQ4Dms2aLibPWG91i_YhOmCqlpJrEoJA7WZCCjs96HQT8PGA96-7Yv_O_k-AL9Iu06JYXjHRmW6peg9e2LCwKi96K5VrPlkyBaBIb1h8GinhlSdQla8o4zSykiDZ8L_KaJn3r8kCuJxXoyuugFmv3MkBGPhkHVS1zjwQlH00Zg275MmwUpxh1HeGWnopxYuy4TJZLfR6a6XNMp3eAvjnpy9HjakYM_2s1fMPb47DAsDJDoR8rod6BaDoc6_KM=w600-h400",
+    descripcion:
+      "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
+    imagen:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAe-fnR0Qj_GfTf88xQ4Dms2aLibPWG91i_YhOmCqlpJrEoJA7WZCCjs96HQT8PGA96-7Yv_O_k-AL9Iu06JYXjHRmW6peg9e2LCwKi96K5VrPlkyBaBIb1h8GinhlSdQla8o4zSykiDZ8L_KaJn3r8kCuJxXoyuugFmv3MkBGPhkHVS1zjwQlH00Zg275MmwUpxh1HeGWnopxYuy4TJZLfR6a6XNMp3eAvjnpy9HjakYM_2s1fMPb47DAsDJDoR8rod6BaDoc6_KM=w600-h400",
     tipo: "curso",
   },
   {
     id: "demo-2",
     nombre: "Navegación Autónoma",
-    descripcion: "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
+    descripcion:
+      "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
     imagen: "",
     tipo: "simulador",
   },
   {
     id: "demo-3",
     nombre: "Brazo Robótico v2",
-    descripcion: "Controla una garra mecánica para clasificar objetos por color.",
+    descripcion:
+      "Controla una garra mecánica para clasificar objetos por color.",
     imagen: "",
     tipo: "simulador",
   },
@@ -46,12 +57,12 @@ export const PaginaInicio = () => {
     const fetchCourses = async () => {
       try {
         const data = await apiService.courses.getAll();
-        const mapped: Course[] = data.map(c => ({
+        const mapped: Course[] = data.map((c) => ({
           id: c.id_course,
           nombre: c.name,
           descripcion: "Explora los fundamentos de este módulo industrial.",
           imagen: "",
-          tipo: "curso"
+          tipo: "curso",
         }));
         setCursos(mapped);
       } catch {
@@ -64,9 +75,10 @@ export const PaginaInicio = () => {
   }, []);
 
   const allItems = [...DEMO_RETOS, ...cursos];
-  const filteredItems = activeCategory === "all" 
-    ? allItems 
-    : allItems.filter(item => item.tipo === activeCategory);
+  const filteredItems =
+    activeCategory === "all"
+      ? allItems
+      : allItems.filter((item) => item.tipo === activeCategory);
 
   return (
     <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-8 pt-[6rem] pb-24 animate-fade-in-soft">
@@ -76,13 +88,14 @@ export const PaginaInicio = () => {
           Ecosistema de <span className="text-primary/70">Aprendizaje</span>
         </h1>
         <p className="text-text-muted/60 text-xs font-medium max-w-lg leading-relaxed">
-          Plataforma educativa modular para la formación técnica en robótica industrial y automatización.
+          Plataforma educativa modular para la formación técnica en robótica
+          industrial y automatización.
         </p>
       </div>
 
       {/* BRIEFING MODAL — uses shared component */}
-      <Modal 
-        isOpen={selectedReto !== null} 
+      <Modal
+        isOpen={selectedReto !== null}
         onClose={() => setSelectedReto(null)}
         maxWidth="max-w-3xl"
       >
@@ -91,11 +104,22 @@ export const PaginaInicio = () => {
             {/* Mission Hero Header */}
             <div className="relative h-48 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border/10">
               <div className="absolute inset-0 opacity-20 pointer-events-none">
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(var(--theme-primary) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(var(--theme-primary) 1px, transparent 1px)",
+                    backgroundSize: "20px 20px",
+                  }}
+                />
               </div>
               <div className="relative text-center px-10">
-                <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 block animate-fade-in-soft">Protocolo de Inicio</span>
-                <h2 className="text-4xl font-bold tracking-tight animate-scale-up-soft">{selectedReto.nombre}</h2>
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-4 block animate-fade-in-soft">
+                  Protocolo de Inicio
+                </span>
+                <h2 className="text-4xl font-bold tracking-tight animate-scale-up-soft">
+                  {selectedReto.nombre}
+                </h2>
               </div>
             </div>
 
@@ -103,7 +127,8 @@ export const PaginaInicio = () => {
               {/* Mission Objective */}
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted/60 flex items-center gap-2">
-                  <span className="w-8 h-[1px] bg-primary/30" /> Objetivo Operacional
+                  <span className="w-8 h-[1px] bg-primary/30" /> Objetivo
+                  Operacional
                 </h3>
                 <p className="text-lg text-text-muted/90 leading-relaxed font-medium">
                   {selectedReto.descripcion}
@@ -123,10 +148,14 @@ export const PaginaInicio = () => {
                     {[
                       "Servomotores de Torque Alto",
                       "Sensor Ultrasónico HC-SR04",
-                      "Microcontrolador PIPRE-X1"
+                      "Microcontrolador PIPRE-X1",
                     ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-3 text-sm font-semibold text-text/80">
-                        <FaCheckCircle className="text-success text-[12px] shrink-0" /> {item}
+                      <li
+                        key={i}
+                        className="flex items-center gap-3 text-sm font-semibold text-text/80"
+                      >
+                        <FaCheckCircle className="text-success text-[12px] shrink-0" />{" "}
+                        {item}
                       </li>
                     ))}
                   </ul>
@@ -144,10 +173,14 @@ export const PaginaInicio = () => {
                     {[
                       "Inicialización de Puertos I/O",
                       "Bucle de Control PID",
-                      "Sincronización de Servos"
+                      "Sincronización de Servos",
                     ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-3 text-sm font-semibold text-text/80">
-                        <FaCheckCircle className="text-success text-[12px] shrink-0" /> {item}
+                      <li
+                        key={i}
+                        className="flex items-center gap-3 text-sm font-semibold text-text/80"
+                      >
+                        <FaCheckCircle className="text-success text-[12px] shrink-0" />{" "}
+                        {item}
                       </li>
                     ))}
                   </ul>
@@ -156,13 +189,13 @@ export const PaginaInicio = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                <button 
+                <button
                   onClick={() => setSelectedReto(null)}
                   className="flex-1 btn-secondary text-[11px] font-black tracking-widest py-5"
                 >
                   CANCELAR MISIÓN
                 </button>
-                <button 
+                <button
                   onClick={() => navigate("/simulador")}
                   className="flex-[2] btn-premium py-5 text-[11px] font-black tracking-[0.3em] shadow-2xl shadow-primary/20"
                 >
@@ -184,13 +217,17 @@ export const PaginaInicio = () => {
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
               className={`flex items-center gap-2.5 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border ${
-                isActive 
-                  ? "bg-primary text-bg border-primary shadow-lg shadow-primary/10" 
+                isActive
+                  ? "bg-primary text-bg border-primary shadow-lg shadow-primary/10"
                   : "bg-surface/40 border-border/20 text-text-muted/60 hover:border-primary/30 hover:text-text"
               }`}
               style={{ borderRadius: "var(--theme-radius)" }}
             >
-              {Icon && <Icon className={isActive ? "animate-bounce-soft" : "opacity-40"} />}
+              {Icon && (
+                <Icon
+                  className={isActive ? "animate-bounce-soft" : "opacity-40"}
+                />
+              )}
               {cat.label}
             </button>
           );
@@ -201,7 +238,9 @@ export const PaginaInicio = () => {
       {loading ? (
         <div className="py-32 flex flex-col items-center gap-6 opacity-30">
           <div className="w-10 h-10 border border-primary/30 border-t-primary rounded-full animate-spin" />
-          <span className="font-mono text-[9px] uppercase tracking-[0.3em] font-bold">Sincronizando Nodo...</span>
+          <span className="font-mono text-[9px] uppercase tracking-[0.3em] font-bold">
+            Sincronizando Nodo...
+          </span>
         </div>
       ) : (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -226,7 +265,7 @@ export const PaginaInicio = () => {
                   </div>
                 )}
                 {/* Type badge */}
-                <span 
+                <span
                   className="absolute top-5 left-5 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] bg-bg/80 backdrop-blur-md border border-border/20 text-primary/80"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
@@ -241,7 +280,7 @@ export const PaginaInicio = () => {
                     {item.nombre}
                   </h3>
                 </div>
-                
+
                 <p className="text-xs text-text-muted/50 leading-relaxed line-clamp-2 flex-1 font-medium">
                   {item.descripcion}
                 </p>
@@ -249,7 +288,9 @@ export const PaginaInicio = () => {
                 <div className="pt-6 border-t border-border/5 flex justify-between items-center">
                   <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                     <div className="w-1.5 h-1.5 bg-success/60 rounded-full group-hover:bg-success" />
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">Disponible</span>
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
+                      Disponible
+                    </span>
                   </div>
                   <button className="text-[10px] font-black text-primary/70 uppercase tracking-[0.2em] group-hover:translate-x-1 transition-transform">
                     ACCEDER →

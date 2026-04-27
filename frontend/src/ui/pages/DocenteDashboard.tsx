@@ -115,7 +115,7 @@ export const DocenteDashboard = () => {
             Gestión de retos, estudiantes y seguimiento de progreso.
           </p>
         </div>
-        <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0">
+        <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
           <span className="material-symbols-outlined text-sm">add_circle</span>
           Nuevo Reto
         </button>
@@ -126,7 +126,7 @@ export const DocenteDashboard = () => {
         {dataToShow.metricas.map((m) => (
           <div
             key={m.id}
-            className="border border-border bg-surface/50 p-6 transition-all duration-300 hover:shadow-lg hover:scale-102"
+            className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg hover:scale-102 rounded-lg"
           >
             <div className="flex justify-between items-start mb-4">
               <span
@@ -161,9 +161,9 @@ export const DocenteDashboard = () => {
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Retos table */}
-        <div className="lg:col-span-8 border border-border bg-surface/50 p-6 transition-all duration-300 hover:scale-101">
+        <div className="lg:col-span-8 border border-border bg-surface p-6 transition-all duration-300 rounded-lg">
           <h2
-            className="text-sm font-mono font-bold uppercase tracking-wider mb-6 transition-colors duration-300"
+            className="text-sm font-mono font-bold uppercase tracking-wider mb-6 transition-colors duration-300 pb-2"
             style={{
               color: "var(--text)",
               borderBottom: "1px solid var(--border)",
@@ -195,7 +195,7 @@ export const DocenteDashboard = () => {
                 {dataToShow.retos.map((r) => (
                   <tr
                     key={r.id}
-                    className="hover:bg-surface/30 transition-colors duration-300"
+                    className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
                   >
                     <td
                       className="py-4 font-mono text-xs font-semibold"
@@ -205,7 +205,7 @@ export const DocenteDashboard = () => {
                     </td>
                     <td className="py-4">
                       <span
-                        className="text-xs font-mono border border-border px-2 py-0.5"
+                        className="text-xs font-mono border border-border px-2 py-0.5 rounded-md"
                         style={{
                           color: "var(--text-muted)",
                           borderColor: "var(--border)",
@@ -224,7 +224,9 @@ export const DocenteDashboard = () => {
                               height: "12px",
                               borderRadius: "2px",
                               backgroundColor:
-                                i <= r.dificultad ? "#B19CD9" : "var(--border)",
+                                i <= r.dificultad
+                                  ? "var(--primary)"
+                                  : "var(--border)",
                             }}
                           />
                         ))}
@@ -232,19 +234,23 @@ export const DocenteDashboard = () => {
                     </td>
                     <td className="py-4 text-center">
                       <span
-                        className={`text-xs font-mono ${r.estado ? "text-green-500" : "text-yellow-500"}`}
+                        className={`text-xs font-mono px-2 py-1 rounded-full ${
+                          r.estado
+                            ? "bg-green-500/10 text-green-500"
+                            : "bg-yellow-500/10 text-yellow-500"
+                        }`}
                       >
                         {r.estado ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                     <td className="py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="text-text-muted hover:text-primary transition-colors duration-300">
+                        <button className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1">
                           <span className="material-symbols-outlined text-base">
                             edit
                           </span>
                         </button>
-                        <button className="text-text-muted hover:text-red-500 transition-colors duration-300">
+                        <button className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1">
                           <span className="material-symbols-outlined text-base">
                             delete
                           </span>
@@ -259,7 +265,7 @@ export const DocenteDashboard = () => {
         </div>
 
         {/* Top students */}
-        <div className="lg:col-span-4 border border-border bg-surface/50 p-6 transition-all duration-300 hover:shadow-lg hover:scale-101">
+        <div className="lg:col-span-4 border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg rounded-lg">
           <h2
             className="text-sm font-mono font-bold uppercase tracking-wider mb-6 transition-colors duration-300"
             style={{ color: "var(--text)" }}
@@ -270,27 +276,17 @@ export const DocenteDashboard = () => {
             {dataToShow.estudiantesDestacados.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center gap-4 p-3 border border-border/50 transition-all duration-300 hover:shadow-sm hover:scale-101"
+                className="flex items-center gap-4 p-3 border border-border/50 transition-all duration-300 hover:shadow-sm rounded-lg"
               >
                 <div className="relative shrink-0">
                   <img
                     alt={e.nombre}
-                    className="w-10 h-10 object-cover border border-border"
+                    className="w-10 h-10 object-cover border border-border rounded-md"
                     src={e.avatar}
                   />
                   <span
-                    className="absolute -top-1 -right-1"
-                    style={{
-                      backgroundColor: "var(--primary)",
-                      color: "var(--bg)",
-                      width: "16px",
-                      height: "16px",
-                      fontSize: "10px",
-                      fontWeight: "bold",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                    className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center font-bold text-[10px] rounded-full text-bg"
+                    style={{ backgroundColor: "var(--primary)" }}
                   >
                     {e.posicion}
                   </span>
@@ -304,19 +300,17 @@ export const DocenteDashboard = () => {
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <div
-                      className="flex-1 h-1"
+                      className="flex-1 h-1 rounded-full"
                       style={{
                         backgroundColor: "var(--border)",
                         opacity: 0.3,
-                        borderRadius: "2px",
                       }}
                     >
                       <div
-                        className="h-full transition-all duration-500"
+                        className="h-full transition-all duration-500 rounded-full"
                         style={{
                           width: `${(e.xp / 5000) * 100}%`,
                           backgroundColor: "var(--primary)",
-                          borderRadius: "2px",
                         }}
                       />
                     </div>
@@ -337,7 +331,7 @@ export const DocenteDashboard = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-3 border border-dashed border-border text-text-muted hover:text-primary hover:border-primary transition-all duration-300 hover:scale-102 text-xs font-mono uppercase tracking-wider">
+          <button className="w-full mt-6 py-3 border border-dashed border-border text-text-muted hover:text-primary hover:border-primary transition-all duration-300 text-xs font-mono uppercase tracking-wider rounded-lg">
             Ver ranking completo
           </button>
         </div>

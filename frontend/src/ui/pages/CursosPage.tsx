@@ -2,8 +2,16 @@ import React, { useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
 
 const MOCK_COURSES = [
-  { idCourse: "1", name: "Robótica Nivel 1: Fundamentos (Local)", description: "Aprende las bases de la robótica y electrónica." },
-  { idCourse: "2", name: "Programación de Microcontroladores (Local)", description: "Domina el lenguaje C++ para control de hardware." },
+  {
+    idCourse: "1",
+    name: "Robótica Nivel 1: Fundamentos (Local)",
+    description: "Aprende las bases de la robótica y electrónica.",
+  },
+  {
+    idCourse: "2",
+    name: "Programación de Microcontroladores (Local)",
+    description: "Domina el lenguaje C++ para control de hardware.",
+  },
 ];
 
 export const CursosPage: React.FC = () => {
@@ -35,8 +43,13 @@ export const CursosPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center font-mono text-sm" style={{ color: "var(--text-muted)" }}>
-        <span className="animate-pulse">Cargando módulos de aprendizaje...</span>
+      <div
+        className="flex-1 flex items-center justify-center font-mono text-sm"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <span className="animate-pulse">
+          Cargando módulos de aprendizaje...
+        </span>
       </div>
     );
   }
@@ -44,9 +57,16 @@ export const CursosPage: React.FC = () => {
   if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <span className="material-symbols-outlined text-4xl mb-4" style={{ color: "var(--accent)" }}>error</span>
-        <p className="font-mono text-sm mb-4" style={{ color: "var(--text)" }}>{error}</p>
-        <button 
+        <span
+          className="material-symbols-outlined text-4xl mb-4"
+          style={{ color: "var(--accent)" }}
+        >
+          error
+        </span>
+        <p className="font-mono text-sm mb-4" style={{ color: "var(--text)" }}>
+          {error}
+        </p>
+        <button
           onClick={() => window.location.reload()}
           className="btn-secondary text-xs uppercase tracking-widest"
         >
@@ -77,8 +97,14 @@ export const CursosPage: React.FC = () => {
       </header>
 
       {courses.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border">
-          <p className="font-mono text-xs" style={{ color: "var(--text-muted)" }}>
+        <div
+          className="text-center py-20 border border-dashed border-border rounded-lg"
+          style={{ borderRadius: "var(--theme-radius)" }}
+        >
+          <p
+            className="font-mono text-xs"
+            style={{ color: "var(--text-muted)" }}
+          >
             No tienes cursos asignados actualmente.
           </p>
         </div>
@@ -88,12 +114,15 @@ export const CursosPage: React.FC = () => {
             <div
               key={course.idCourse}
               className="border border-border overflow-hidden group hover:shadow-lg transition-shadow duration-300"
-              style={{ backgroundColor: "var(--bg)" }}
+              style={{
+                backgroundColor: "var(--surface)",
+                borderRadius: "var(--theme-radius)",
+              }}
             >
               {/* Header del curso */}
               <div
                 className="p-6 border-b border-border transition-colors duration-300"
-                style={{ backgroundColor: "var(--bg)" }}
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <div className="flex justify-between items-start mb-4">
                   <h2
@@ -106,7 +135,6 @@ export const CursosPage: React.FC = () => {
                     className="font-mono text-xs"
                     style={{ color: "var(--primary)" }}
                   >
-                    {/* Placeholder for progress since API doesn't provide it yet */}
                     0%
                   </span>
                 </div>
@@ -114,12 +142,14 @@ export const CursosPage: React.FC = () => {
                   className="text-xs mb-6 line-clamp-2"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  {/* Placeholder for description if not in DTO */}
                   Accede a los contenidos y desafíos de {course.name}.
                 </p>
 
                 {/* Barra de progreso */}
-                <div className="h-1.5 w-full border border-border overflow-hidden">
+                <div
+                  className="h-1.5 w-full border border-border rounded-full overflow-hidden"
+                  style={{ backgroundColor: "var(--border)" }}
+                >
                   <div
                     className="h-full transition-all duration-500"
                     style={{
@@ -130,10 +160,10 @@ export const CursosPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Módulos del curso - Placeholder for now as API is limited */}
+              {/* Módulos del curso */}
               <div
                 className="p-6 space-y-4"
-                style={{ backgroundColor: "var(--bg)" }}
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <h3
                   className="text-[10px] font-mono font-bold uppercase tracking-widest mb-4"
@@ -142,12 +172,13 @@ export const CursosPage: React.FC = () => {
                   Módulos Disponibles
                 </h3>
                 <div
-                   className="flex items-center justify-between p-3 border border-border/50 transition-all cursor-pointer hover:bg-[var(--surface)]"
+                  className="flex items-center justify-between p-3 border border-border/50 rounded-lg transition-all cursor-pointer hover:bg-[var(--surface-brighter)]"
+                  style={{ borderRadius: "var(--theme-radius)" }}
                 >
                   <div className="flex items-center gap-4">
                     <div
                       className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: "var(--border)" }}
+                      style={{ backgroundColor: "var(--primary)" }}
                     />
                     <div>
                       <p
@@ -176,7 +207,7 @@ export const CursosPage: React.FC = () => {
               {/* Botón de acción */}
               <div
                 className="p-4 border-t border-border flex justify-end transition-colors duration-300"
-                style={{ borderColor: "rgba(var(--border-rgb), 0.4)" }}
+                style={{ backgroundColor: "var(--surface)" }}
               >
                 <button
                   className="text-[10px] font-mono font-bold uppercase tracking-widest hover:underline transition-colors duration-300"

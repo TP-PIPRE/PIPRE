@@ -5,28 +5,18 @@ interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   maxWidth?: string;
-  /** Height constraint — use for chat-style modals */
   height?: string;
 }
 
-/**
- * Reusable modal with:
- *  - Solid container background (no content bleed-through)
- *  - Translucent overlay with blur
- *  - Escape key to close
- *  - Click-outside to close
- *  - Soft entry animation
- */
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   children,
-  maxWidth = "max-w-lg",
+  maxWidth = "max-w-3xl",
   height,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close on Escape
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => {
@@ -40,7 +30,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-8 animate-fade-in-soft backdrop-blur-md bg-bg/60"
+      className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-9 animate-fade-in-soft"
       onClick={(e) => {
         if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
           onClose();
@@ -49,23 +39,21 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         ref={panelRef}
-        className={`w-full ${maxWidth} bg-surface-brighter border border-border/20 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] relative animate-scale-up-soft overflow-hidden flex flex-col`}
+        className={`w-full ${maxWidth} border border-border shadow-[0_32px_64px_-16px_var(--primary-glow)] relative animate-scale-up-soft overflow-hidden flex flex-col`}
         style={{
+          backgroundColor: "var(--surface)",
           borderRadius: "var(--theme-radius)",
           height: height || "auto",
           maxHeight: "calc(100vh - 4rem)",
         }}
       >
-        {/* Decorative Top Accent (Subtle) */}
-        <div className="h-1.5 w-full bg-primary/20" />
-
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-surface/50 text-text-muted/60 hover:text-danger hover:bg-danger/10 transition-all duration-300"
+          className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-surface-brighter text-text-muted hover:text-text hover:bg-surface transition-all duration-300"
           aria-label="Cerrar"
         >
-          <span className="material-symbols-outlined text-xl">close</span>
+          <span className="text-xl">×</span>
         </button>
 
         {/* Content — scrollable if needed */}

@@ -62,7 +62,10 @@ export const ResultadosPage: React.FC = () => {
         {/* Promedio General */}
         <div
           className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
-          style={{ backgroundColor: "var(--bg)" }}
+          style={{
+            backgroundColor: "var(--surface)",
+            borderRadius: "var(--theme-radius)",
+          }}
         >
           <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
             Promedio General
@@ -84,7 +87,10 @@ export const ResultadosPage: React.FC = () => {
         {/* Actividades Completadas */}
         <div
           className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
-          style={{ backgroundColor: "var(--bg)" }}
+          style={{
+            backgroundColor: "var(--surface)",
+            borderRadius: "var(--theme-radius)",
+          }}
         >
           <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
             Actividades Completadas
@@ -103,7 +109,10 @@ export const ResultadosPage: React.FC = () => {
         {/* Rango Actual */}
         <div
           className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
-          style={{ backgroundColor: "var(--bg)" }}
+          style={{
+            backgroundColor: "var(--surface)",
+            borderRadius: "var(--theme-radius)",
+          }}
         >
           <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
             Rango Actual
@@ -122,24 +131,15 @@ export const ResultadosPage: React.FC = () => {
 
       {/* Tabla de historial */}
       <div
-        className="border border-border"
-        style={{ backgroundColor: "var(--bg)" }}
+        className="border border-border rounded-lg overflow-hidden"
+        style={{ backgroundColor: "var(--surface)" }}
       >
         {/* Header de la tabla */}
-        <div
-          className="p-6 border-b border-border flex justify-between items-center"
-          style={{ backgroundColor: "var(--bg)" }}
-        >
-          <h2
-            className="text-xs font-mono font-bold uppercase tracking-widest"
-            style={{ color: "var(--text)" }}
-          >
+        <div className="p-6 border-b border-border flex justify-between items-center bg-surface">
+          <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-text">
             Historial de Actividades
           </h2>
-          <button
-            className="text-[10px] font-mono uppercase tracking-widest transition-all duration-200 hover:text-primary hover:underline"
-            style={{ color: "var(--text-muted)" }}
-          >
+          <button className="text-[10px] font-mono uppercase tracking-widest transition-all duration-200 hover:text-primary hover:underline text-text-muted">
             Descargar Reporte
           </button>
         </div>
@@ -148,91 +148,57 @@ export const ResultadosPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left font-mono">
             <thead>
-              <tr
-                className="text-[10px] uppercase tracking-widest border-b"
-                style={{
-                  borderColor: "rgba(var(--border-rgb), 0.5)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                <th className="px-6 py-4 font-normal">Actividad</th>
-                <th className="px-6 py-4 font-normal">Tipo</th>
-                <th className="px-6 py-4 font-normal">Fecha</th>
-                <th className="px-6 py-4 font-normal">Calificación</th>
-                <th className="px-6 py-4 font-normal text-right">Estatus</th>
+              <tr className="text-[10px] uppercase tracking-widest border-b border-border">
+                <th className="px-6 py-4 font-normal text-text-muted">
+                  Actividad
+                </th>
+                <th className="px-6 py-4 font-normal text-text-muted">Tipo</th>
+                <th className="px-6 py-4 font-normal text-text-muted">Fecha</th>
+                <th className="px-6 py-4 font-normal text-text-muted">
+                  Calificación
+                </th>
+                <th className="px-6 py-4 font-normal text-right text-text-muted">
+                  Estatus
+                </th>
               </tr>
             </thead>
             <tbody className="text-xs">
-              {MOCK_RESULTS.map((res) => (
+              {MOCK_RESULTS.map((res, index) => (
                 <tr
                   key={res.id}
-                  className="border-b transition-colors duration-200 hover:bg-surface"
-                  style={{
-                    borderColor: "rgba(var(--border-rgb), 0.3)",
-                    backgroundColor: "rgba(var(--bg-rgb), 0.1)",
-                  }}
+                  className={`border-b border-border transition-colors duration-200 hover:bg-surface-brighter ${index % 2 === 0 ? "bg-surface" : "bg-surface/50"}`}
                 >
-                  <td
-                    className="px-6 py-4 font-semibold"
-                    style={{ color: "var(--text)" }}
-                  >
+                  <td className="px-6 py-4 font-semibold text-text">
                     {res.activity}
                   </td>
-                  <td
-                    className="px-6 py-4"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {res.type}
-                  </td>
-                  <td
-                    className="px-6 py-4"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {res.date}
-                  </td>
+                  <td className="px-6 py-4 text-text-muted">{res.type}</td>
+                  <td className="px-6 py-4 text-text-muted">{res.date}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       <div
-                        className="flex-1 h-1 w-12 overflow-hidden"
-                        style={{ backgroundColor: "var(--surface)" }}
+                        className="flex-1 h-1.5 bg-surface-brighter rounded-full overflow-hidden"
+                        style={{ width: "120px" }}
                       >
                         <div
-                          className="h-full transition-all duration-500"
+                          className="h-full transition-all duration-500 rounded-full"
                           style={{
                             width: `${res.score}%`,
                             backgroundColor: "var(--primary)",
                           }}
                         />
                       </div>
-                      <span
-                        className="font-bold"
-                        style={{ color: "var(--primary)" }}
-                      >
+                      <span className="font-bold text-primary">
                         {res.score}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span
-                      className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider ${
+                      className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider rounded-full ${
                         res.status === "Excelente"
-                          ? "border-primary/50"
-                          : "border-border"
+                          ? "border-primary/50 bg-primary/10 text-primary"
+                          : "border-border text-text-muted"
                       }`}
-                      style={{
-                        backgroundColor:
-                          res.status === "Excelente"
-                            ? "rgba(var(--primary-rgb), 0.05)"
-                            : "transparent",
-                        borderColor:
-                          res.status === "Excelente"
-                            ? "rgba(var(--primary-rgb), 0.5)"
-                            : "var(--border)",
-                        color:
-                          res.status === "Excelente"
-                            ? "var(--primary)"
-                            : "var(--text-muted)",
-                      }}
                     >
                       {res.status}
                     </span>
