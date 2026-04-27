@@ -4,7 +4,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: PipreDatabase
+    container_name: pipre-database
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
@@ -25,7 +25,7 @@ services:
   backend:
     build: ./backend
     image: pipre-backend
-    container_name: PipreBackend
+    container_name: pipre-backend
     ports:
       - "${PORT_BACK:-8080}:8080"
     environment:
@@ -46,7 +46,7 @@ services:
       args:
         - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
     image: pipre-frontend
-    container_name: PipreFrontend
+    container_name: pipre-frontend
     ports:
       - "${PORT_FRONT:-3000}:3000"
     environment:

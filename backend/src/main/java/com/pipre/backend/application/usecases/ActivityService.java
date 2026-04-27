@@ -17,8 +17,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ActivityService {
     private final LessonRepository lessonRepository;
-    private final ModuleRepository moduleRepository;
 
+    @Transactional(readOnly = true)
     public List<ActivityResponseDTO> getActivities(UUID idLesson) {
         LessonJpa lessonJpa = lessonRepository.findById(idLesson)
                 .orElseThrow(() -> new RuntimeException("Módulo no encontrado"));

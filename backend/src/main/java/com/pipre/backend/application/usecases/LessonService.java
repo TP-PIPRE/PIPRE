@@ -19,6 +19,7 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final ModuleRepository moduleRepository;
 
+    @Transactional(readOnly = true)
     public List<LessonResponseDTO> getLessons(UUID idModule) {
         ModuleJpa moduleJpa = moduleRepository.findById(idModule)
                 .orElseThrow(() -> new RuntimeException("Módulo no encontrado"));

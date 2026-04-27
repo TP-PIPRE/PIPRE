@@ -1,15 +1,23 @@
+name: pipre-dev-application
+# Quitar comentarios si no estás en el servidor
 services:
   postgres:
+    container_name: pipre-dev-database
     ports:
       - "5432:5432"
+  backend:
+    profiles:
+      - dev
+    container_name: pipre-dev-backend
   frontend:
-    environment:
-      - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
-    build:
-      args:
-        - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
+    container_name: pipre-dev-frontend
+#    environment:
+#      - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
+#    build:
+#      args:
+#        - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
 networks:
-  devops_network:
-    external: false
   database-network:
     internal: false
+#  app_network:
+#    external: true
