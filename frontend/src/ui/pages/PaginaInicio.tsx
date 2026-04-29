@@ -25,7 +25,7 @@ const DEMO_RETOS: Course[] = [
     descripcion:
       "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
     imagen:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAe-fnR0Qj_GfTf88xQ4Dms2aLibPWG91i_YhOmCqlpJrEoJA7WZCCjs96HQT8PGA96-7Yv_O_k-AL9Iu06JYXjHRmW6peg9e2LCwKi96K5VrPlkyBaBIb1h8GinhlSdQla8o4zSykiDZ8L_KaJn3r8kCuJxXoyuugFmv3MkBGPhkHVS1zjwQlH00Zg275MmwUpxh1HeGWnopxYuy4TJZLfR6a6XNMp3eAvjnpy9HjakYM_2s1fMPb47DAsDJDoR8rod6BaDoc6_KM=w600-h400",
+      "",
     tipo: "curso",
   },
   {
@@ -216,11 +216,10 @@ export const PaginaInicio = () => {
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
-              className={`flex items-center gap-2.5 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border ${
-                isActive
+              className={`flex items-center gap-2.5 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border ${isActive
                   ? "bg-primary text-bg border-primary shadow-lg shadow-primary/10"
                   : "bg-surface/40 border-border/20 text-text-muted/60 hover:border-primary/30 hover:text-text"
-              }`}
+                }`}
               style={{ borderRadius: "var(--theme-radius)" }}
             >
               {Icon && (

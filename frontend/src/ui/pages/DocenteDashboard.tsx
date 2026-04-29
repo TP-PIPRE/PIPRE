@@ -54,8 +54,6 @@ const mockDashboardData = {
       xp: 4850,
       variacionXP: 120,
       posicion: 1,
-      avatar:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBRXeHbyvhi3GcZupKkP-LGXR5VJwrpv15E8-xqt06PA4kbxyXqK4if7SL-JxJtLbihRkOrKlgjgn2_ox3nQg586qQwbIP5--gZsNVoxgYk-8bKRE-L_ypdX7BSCjI4BuyCm4AQ30vHIY6AW1DWu7hMX6-V7FwEJmUpjHb8ucX0Tt7AVbQCFZ3qt90Y5hT_E2Aojucql0TGkuPDepB1dR4BBJOKPDRHcJbkvqvWiYbfyYa6z25eVczbwUiv3dP2aQdanuG1VAps7oc",
     },
     {
       id: "2",
@@ -63,8 +61,6 @@ const mockDashboardData = {
       xp: 4120,
       variacionXP: 85,
       posicion: 2,
-      avatar:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuAndtY1yIqKoZ2MnPG2v3YOFYwMW4S0pjFXhqYr1rikeNifUDF2ednsL9Gyo-gsAxIy7ZkQS1sD_dqMN1OJIr-kuJUI9tuKCoS-1G36IkWa4Z4ebV9v-Ug7x9lO08bv49ntV56oXPel-mdJCk899yLztUMCo5NSHwxFJrJ-VfsqCyKXeJwWjaYdw26vMxTtFsgOrpWwGMwsKCw7Ti5DJSlrozyoL6ybXxlUeqrGJmW0YdgR63w1T36ZbsbpqBwDjROHxFgzEXW4McA",
     },
     {
       id: "3",
@@ -72,8 +68,6 @@ const mockDashboardData = {
       xp: 3980,
       variacionXP: 40,
       posicion: 3,
-      avatar:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBKi3ucl5uNxoQnuEy7SMW7vUggGVb3yY8rNPL54UB0U0RmqK9GKrO9iqrG3uNq_u4KbyBnS-pUCYYvF5g2pLdkgP3dv4g5vTzyGSy8SR9_ams3O4OlpC69EPxelvqMM3qN3WdqUJBIVw1fd81IfdGnuBFled71wQ582UocGiO3DrSsdzfoLxkKTl3NXuefb4G_hZoZsy36rPFE5qJXFlLyME-eB6QDXHpTKIIXkJjlnMmjaXR1vG8QE6SvjkrJJBs8ld3uAkPy6c0",
     },
   ],
 };
@@ -234,11 +228,10 @@ export const DocenteDashboard = () => {
                     </td>
                     <td className="py-4 text-center">
                       <span
-                        className={`text-xs font-mono px-2 py-1 rounded-full ${
-                          r.estado
+                        className={`text-xs font-mono px-2 py-1 rounded-full ${r.estado
                             ? "bg-green-500/10 text-green-500"
                             : "bg-yellow-500/10 text-yellow-500"
-                        }`}
+                          }`}
                       >
                         {r.estado ? "Activo" : "Inactivo"}
                       </span>

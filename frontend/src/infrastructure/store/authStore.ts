@@ -15,7 +15,8 @@ const getCookie = (name: string): string | null => {
 const setCookie = (name: string, value: string, expiresInDays: number = 1) => {
   const date = new Date();
   date.setTime(date.getTime() + expiresInDays * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${date.toUTCString()}; path=/; Secure; SameSite=Strict`;
+  // Eliminado Secure y SameSite=Strict para evitar problemas en localhost
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${date.toUTCString()}; path=/;`;
 };
 
 // Función para eliminar una cookie (mejorada para borrar en todos los paths)
