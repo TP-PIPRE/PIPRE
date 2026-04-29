@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../../infrastructure/store/authStore";
+import {
+  getAuthState,
+  clearAuthState,
+} from "../../../infrastructure/store/authStore";
 import { useThemeStore } from "../../../infrastructure/store/themeStore";
 import { themes } from "../../../shared/constants/themes";
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated } = getAuthState();
   const { currentThemeName, setTheme } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -30,7 +33,8 @@ export const Navbar: React.FC = () => {
       ];
 
   const handleLogout = () => {
-    logout();
+    console.log("Manejador de logout llamado desde Navbar.");
+    clearAuthState();
     navigate("/login");
   };
 
@@ -122,39 +126,43 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* User Status */}
-        <div className="hidden sm:flex items-center gap-4 px-6 border-x border-border/30">
-          <div className="flex flex-col items-end leading-tight">
-            <span className="text-[10px] font-bold text-text truncate max-w-[120px]">
-              {user?.name || user?.email?.split("@")[0] || "Operador"}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1 h-1 bg-success rounded-full animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-text-muted">
-                {isDocente ? "Instructor" : "Estudiante"}
+        {isAuthenticated && (
+          <div className="hidden sm:flex items-center gap-4 px-6 border-x border-border/30">
+            <div className="flex flex-col items-end leading-tight">
+              <span className="text-[10px] font-bold text-text truncate max-w-[120px]">
+                {user?.name || user?.email?.split("@")[0] || "Operador"}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1 h-1 bg-success rounded-full animate-pulse" />
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-text-muted">
+                  {isDocente ? "Instructor" : "Estudiante"}
+                </span>
+              </div>
+            </div>
+            <div
+              className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
+              style={{ borderRadius: "var(--theme-radius)" }}
+            >
+              <span className="material-symbols-outlined text-text-muted text-lg">
+                person
               </span>
             </div>
           </div>
-          <div
-            className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
-            style={{ borderRadius: "var(--theme-radius)" }}
-          >
-            <span className="material-symbols-outlined text-text-muted text-lg">
-              person
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-1 px-2">
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
-            title="Desconectar"
-          >
-            <span className="material-symbols-outlined text-xl">
-              power_settings_new
-            </span>
-          </button>
+          {isAuthenticated && (
+            <button
+              onClick={handleLogout}
+              className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
+              title="Desconectar"
+            >
+              <span className="material-symbols-outlined text-xl">
+                power_settings_new
+              </span>
+            </button>
+          )}
 
           {/* Mobile menu toggle */}
           <button
