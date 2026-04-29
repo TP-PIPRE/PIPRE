@@ -16,12 +16,32 @@ export class AuthAdapter implements IAuthRepository {
       // El backend devuelve el token como un string simple
       const token = response.data;
 
-      // Construimos el usuario basado en las credenciales enviadas exitosamente
+      // Intentamos obtener el rol del token (JWT)
+      let role = "student";
+      try {
+        const payloadBase64 = token.split(".")[1];
+        const payload = JSON.parse(atob(payloadBase64));
+        const backendRole = payload.role || "";
+        
+        if (backendRole === "admin") role = "admin";
+        else if (backendRole === "teacher") role = "docente";
+        else if (backendRole === "student") role = "student";
+        else {
+          // Fallback por email si el rol no viene claro en el token
+          if (email.includes("admin")) role = "admin";
+          else if (email.includes("docente")) role = "docente";
+        }
+      } catch (e) {
+        // Fallback total si el token no es JWT
+        if (email.includes("admin")) role = "admin";
+        else if (email.includes("docente")) role = "docente";
+      }
+
       const user: User = {
-        id: email === "admin@pipre.com" ? "1" : "2",
-        name: email === "admin@pipre.com" ? "Admin" : "Usuario",
+        id: role === "admin" ? "1" : (role === "docente" ? "2" : "3"),
+        name: role === "admin" ? "Admin" : (role === "docente" ? "Profesor" : "Estudiante"),
         email: email,
-        role: email === "admin@pipre.com" ? "admin" : "student",
+        role: role,
       };
 
       return { user, token };
