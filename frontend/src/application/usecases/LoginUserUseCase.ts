@@ -1,5 +1,5 @@
-import type { IAuthRepository } from "../../domain/ports/IAuthRepository";
-import type { User } from "../../domain/models/User";
+import type { IAuthRepository } from "../../infrastructure/ports/IAuthRepository";
+import type { User } from "../../shared/types/User";
 
 export class LoginUserUseCase {
   private authRepository: IAuthRepository;
@@ -8,7 +8,10 @@ export class LoginUserUseCase {
     this.authRepository = authRepository;
   }
 
-  async execute(email: string, password: string): Promise<{ user: User; token: string }> {
+  async execute(
+    email: string,
+    password: string,
+  ): Promise<{ user: User; token: string }> {
     return this.authRepository.login(email, password);
   }
 }

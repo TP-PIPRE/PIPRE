@@ -1,52 +1,56 @@
-import type { IAuthRepository } from "../../../domain/ports/IAuthRepository";
-import type { User } from "../../../domain/models/User";
+import axiosInstance from "../../api/axiosInstance";
+import type { IAuthRepository } from "../../ports/IAuthRepository";
+import type { User } from "../../../shared/types/User";
 
-// Credenciales temporales
-const MOCK_USERS = [
-  {
-    email: "admin@pipre.com",
-    password: "123456",
-    role: "admin" as const,
-  },
-  {
-    email: "docente@pipre.com",
-    password: "123456",
-    role: "docente" as const,
-  },
-];
+const LOGIN_ENDPOINT = "auth/login";
+const REGISTER_ENDPOINT = "users";
 
 export class AuthAdapter implements IAuthRepository {
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
-    // Simulación de autenticación con credenciales estáticas
-    const user = MOCK_USERS.find(
-      (u) => u.email === email && u.password === password,
-    );
-    if (user) {
-      // Mock JWT token (base64 header.payload.signature)
-      const mockToken = btoa(JSON.stringify({ email: user.email, role: user.role, exp: Date.now() + 3600000 }));
-      return {
-        user: {
-          id: user.role === "admin" ? "1" : "2",
-          name: user.role === "docente" ? "Prof. García" : "Admin",
-          email: user.email,
-          role: user.role,
-        },
-        token: mockToken,
-      };
-    } else {
-      throw new Error("Credenciales incorrectas");
-    }
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{ user: User; token: string }> {
+    try {
+      const response = await axiosInstance.post(LOGIN_ENDPOINT, { email, password });
 
-    // Endpoint real (comentado para usar cuando la API esté disponible)
-    /*
-    const response = await fetch("https://api.pipre.com/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!response.ok) throw new Error("Credenciales incorrectas");
-    return response.json();
-    */
+      // El backend devuelve el token como un string simple
+      const token = response.data;
+
+      // Intentamos obtener el rol del token (JWT)
+      let role = "student";
+      try {
+        const payloadBase64 = token.split(".")[1];
+        const payload = JSON.parse(atob(payloadBase64));
+        const backendRole = payload.role || "";
+        
+        if (backendRole === "admin") role = "admin";
+        else if (backendRole === "teacher") role = "docente";
+        else if (backendRole === "student") role = "student";
+        else {
+          // Fallback por email si el rol no viene claro en el token
+          if (email.includes("admin")) role = "admin";
+          else if (email.includes("docente")) role = "docente";
+        }
+      } catch (e) {
+        // Fallback total si el token no es JWT
+        if (email.includes("admin")) role = "admin";
+        else if (email.includes("docente")) role = "docente";
+      }
+
+      const user: User = {
+        id: role === "admin" ? "1" : (role === "docente" ? "2" : "3"),
+        name: role === "admin" ? "Admin" : (role === "docente" ? "Profesor" : "Estudiante"),
+        email: email,
+        role: role,
+      };
+
+      return { user, token };
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 
+        "Credenciales incorrectas o error en el servidor"
+      );
+    }
   }
 
   async register(
@@ -57,26 +61,23 @@ export class AuthAdapter implements IAuthRepository {
     age: number,
     grade: string,
   ): Promise<User> {
-    // Endpoint real
-    const response = await fetch("https://api.pipre.com/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        lastname,
+    try {
+      const response = await axiosInstance.post(REGISTER_ENDPOINT, {
+        first_name: name,
+        last_name: lastname,
         email,
         password,
         age,
         grade,
         role: "student" as const,
-      }),
-    });
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Error al registrar usuario");
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.message || 
+        "Error al registrar usuario: " + error.message
+      );
     }
-
-    return response.json();
   }
 }

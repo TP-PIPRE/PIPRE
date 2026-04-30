@@ -9,16 +9,6 @@ frontend/
 │
 ├── src/
 │   │
-│   ├── domain/                     #  Núcleo de negocio del frontend (sin dependencias externas)
-│   │   ├── models/                 #  Tipos e interfaces que representan entidades del negocio
-│   │   │   ├── User.ts             #  Tipo User con sus atributos de negocio
-│   │   │   └── Product.ts          #  Ejemplo de entidad de dominio
-│   │   │
-│   │   ├── ports/                  # Contratos (interfaces) que la app espera cumplir
-│   │   │   └── IUserRepository.ts  #  Qué operaciones puede hacer sobre usuarios
-│   │   │
-│   │   └── exceptions/             # Errores del dominio (ej. ValidationError, NotFoundError)
-│   │       └── DomainError.ts
 │   │
 │   ├── application/                # Casos de uso: orquesta domain + ports
 │   │   ├── usecases/
@@ -42,8 +32,10 @@ frontend/
 │   │   │   ├── axiosInstance.ts    # Instancia Axios con baseURL, interceptores, JWT header
 │   │   │   └── endpoints.ts        # Constantes con todas las rutas del backend
 │   │   │
-│   │   └── store/                  # Estado global (Zustand / Redux Toolkit)
-│   │       └── authStore.ts        # Estado de autenticación
+│   │   |── store/                  # Estado global (Zustand / Redux Toolkit)
+│   │   |   └── authStore.ts        # Estado de autenticación
+│   │   └── ports/                  # Contratos (interfaces) que la app espera cumplir
+│   │       └── IUserRepository.ts  #  Qué operaciones puede hacer sobre usuarios
 │   │
 │   ├── ui/                         # Capa de presentación (solo React, sin lógica de negocio)
 │   │   ├── pages/                  # Vistas completas mapeadas a rutas
@@ -61,6 +53,8 @@ frontend/
 │   │   ├── utils/                  # Funciones puras (formatDate, slugify, etc.)
 │   │   ├── constants/              # Enumeraciones y constantes globales
 │   │   └── types/                  # Tipos genéricos compartidos (Pagination, ApiResponse<T>)
+│   │       ├── User.ts             #  Tipo User con sus atributos de negocio
+│   │       └── Product.ts          #  Ejemplo de entidad de dominio
 │   │
 │   ├── assets/                     # Imágenes, fuentes, íconos SVG
 │   │
@@ -139,24 +133,4 @@ Estas rutas solo las usaremos para carpetas importantes.
 ```shell
 pnpm i
 pnpm dev
-```
-
-# Anotaciones Juan
-
-añadi react-router-dom
-
-```shell
-pnpm add react-router-dom
-```
-
-añadi axios
-
-```shell
-pnpm add axios
-```
-
-añadi zustand
-
-```shell
-pnpm add zustand
 ```

@@ -11,12 +11,12 @@ import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
 import { CursosPage } from "../pages/CursosPage";
 import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
-import { useAuthStore } from "../../infrastructure/store/authStore";
+import { getAuthState } from "../../infrastructure/store/authStore";
 
 // Componente para rutas protegidas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuthStore();
-  if (!user) {
+  const { isAuthenticated } = getAuthState();
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
@@ -27,16 +27,14 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen pt-14 flex flex-col bg-bg text-text">
       <Navbar />
-      <main className="flex-1 flex flex-col">
-        {children}
-      </main>
+      <main className="flex-1 flex flex-col">{children}</main>
     </div>
   );
 };
 
 // Componente para restringir acceso a docentes
 const DocenteRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuthStore();
+  const { user } = getAuthState();
   if (user?.role !== "docente") {
     return <Navigate to="/" replace />;
   }
@@ -112,7 +110,10 @@ export const AppRouter = () => {
                   <Route path="dashboard" element={<DocenteDashboard />} />
                   <Route path="metricas" element={<DocenteMetricasPage />} />
                   <Route path="retos" element={<DocenteRetosPage />} />
-                  <Route path="estudiantes" element={<DocenteEstudiantesPage />} />
+                  <Route
+                    path="estudiantes"
+                    element={<DocenteEstudiantesPage />}
+                  />
                 </Routes>
               </AppLayout>
             </DocenteRoute>

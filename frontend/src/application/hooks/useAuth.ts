@@ -1,18 +1,21 @@
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../infrastructure/store/authStore";
-import { LoginUserUseCase } from "../usecases/LoginUserUseCase";
 import { AuthAdapter } from "../../infrastructure/adapters/http/AuthAdapter";
+import {
+  getAuthState,
+  setAuthState,
+  clearAuthState,
+} from "../../infrastructure/store/authStore";
 
 export const useAuth = () => {
-  const { setUser, setError } = useAuthStore();
   const navigate = useNavigate();
-  const loginUserUseCase = new LoginUserUseCase(new AuthAdapter());
+  const authAdapter = new AuthAdapter();
 
   const login = async (email: string, password: string) => {
     try {
-      const { user, token } = await loginUserUseCase.execute(email, password);
-      setUser(user, token);
-      setError(null);
+      const { user, token } = await authAdapter.login(email, password);
+
+      // Guarda en cookies
+      setAuthState(user, token);
 
       // Redirigir según el rol del usuario
       if (user.role === "docente") {
@@ -21,16 +24,26 @@ export const useAuth = () => {
         navigate("/");
       }
     } catch (err) {
-      setError(
+      throw new Error(
         "Credenciales incorrectas: " +
           (err instanceof Error ? err.message : String(err)),
       );
     }
   };
 
+  const logout = () => {
+    clearAuthState(); // Elimina cookies
+    navigate("/login");
+  };
+
+  // Obtener el estado actual de autenticación
+  const { user, token, isAuthenticated } = getAuthState();
+
   return {
-    user: useAuthStore((state) => state.user),
-    error: useAuthStore((state) => state.error),
+    user,
+    token,
+    isAuthenticated,
     login,
+    logout,
   };
 };
