@@ -116,3 +116,9 @@ export interface DropoutRiskResponse {
   performance: string;
   motivation_level: string;
 }
+// En src/infrastructure/models/apiModels.ts
+export interface HomeResponseDTO {
+  status: string; // Ejemplo: "ok" | "error"
+  message?: string;
+  data?: any; // Ajusta según lo que devuelva el endpoint /home
+}

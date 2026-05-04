@@ -5,7 +5,6 @@ import {
   FaCode,
   FaGamepad,
   FaMicrochip,
-  FaTools,
   FaCheckCircle,
 } from "react-icons/fa";
 import { apiService } from "../../infrastructure/api/apiService";
@@ -24,8 +23,7 @@ const DEMO_RETOS: Course[] = [
     nombre: "Introducción a la Robótica",
     descripcion:
       "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
-    imagen:
-      "",
+    imagen: "",
     tipo: "curso",
   },
   {
@@ -216,10 +214,11 @@ export const PaginaInicio = () => {
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
-              className={`flex items-center gap-2.5 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border ${isActive
+              className={`flex items-center gap-2.5 px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 border ${
+                isActive
                   ? "bg-primary text-bg border-primary shadow-lg shadow-primary/10"
                   : "bg-surface/40 border-border/20 text-text-muted/60 hover:border-primary/30 hover:text-text"
-                }`}
+              }`}
               style={{ borderRadius: "var(--theme-radius)" }}
             >
               {Icon && (
@@ -243,7 +242,7 @@ export const PaginaInicio = () => {
         </div>
       ) : (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-          {filteredItems.map((item, idx) => (
+          {filteredItems.map((item) => (
             <article
               key={item.id}
               onClick={() => setSelectedReto(item)}

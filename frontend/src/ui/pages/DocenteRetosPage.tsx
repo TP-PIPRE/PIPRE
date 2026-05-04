@@ -337,7 +337,7 @@ export const DocenteRetosPage: React.FC = () => {
                   <span className="w-1.5 h-1.5 bg-success/60 rounded-full group-hover:bg-success group-hover:animate-pulse transition-colors" />
                   Online
                 </span>
-                <span>Node: {course.id_course.split("-")[0]}</span>
+                <span>Node: {(course.id_course || "").split("-")[0]}</span>
               </div>
 
               <div className="flex gap-4 pt-6 border-t border-border/10">

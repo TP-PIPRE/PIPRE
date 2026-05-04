@@ -54,6 +54,7 @@ const mockDashboardData = {
       xp: 4850,
       variacionXP: 120,
       posicion: 1,
+      avatar: "https://ui-avatars.com/api/?name=Lucia+Mendez&background=random", // Placeholder
     },
     {
       id: "2",
@@ -61,6 +62,7 @@ const mockDashboardData = {
       xp: 4120,
       variacionXP: 85,
       posicion: 2,
+      avatar: "https://ui-avatars.com/api/?name=Mateo+Rivera&background=random",
     },
     {
       id: "3",
@@ -68,6 +70,7 @@ const mockDashboardData = {
       xp: 3980,
       variacionXP: 40,
       posicion: 3,
+      avatar: "https://ui-avatars.com/api/?name=Sofia+Chen&background=random",
     },
   ],
 };
@@ -228,10 +231,11 @@ export const DocenteDashboard = () => {
                     </td>
                     <td className="py-4 text-center">
                       <span
-                        className={`text-xs font-mono px-2 py-1 rounded-full ${r.estado
+                        className={`text-xs font-mono px-2 py-1 rounded-full ${
+                          r.estado
                             ? "bg-green-500/10 text-green-500"
                             : "bg-yellow-500/10 text-yellow-500"
-                          }`}
+                        }`}
                       >
                         {r.estado ? "Activo" : "Inactivo"}
                       </span>
