@@ -1,6 +1,6 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.controller.dto.GroupResponseDTO;
+import com.pipre.backend.adapters.in.web.dto.GroupResponseDTO;
 import com.pipre.backend.adapters.out.persistence.repository.GroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

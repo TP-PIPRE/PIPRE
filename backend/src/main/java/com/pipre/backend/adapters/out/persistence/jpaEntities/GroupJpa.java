@@ -20,7 +20,7 @@ public class GroupJpa {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_teacher")
-    private UserJpa teacher;
+    private UserJpaEntity teacher;
 
     @Column(name = "group_name", nullable = false)
     private String groupName;

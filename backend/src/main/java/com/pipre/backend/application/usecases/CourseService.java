@@ -1,8 +1,8 @@
 package com.pipre.backend.application.usecases;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpa;
-import com.pipre.backend.adapters.in.controller.dto.CourseRequestDTO;
-import com.pipre.backend.adapters.in.controller.dto.CourseResponseDTO;
+import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
 import com.pipre.backend.adapters.out.persistence.repository.CourseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

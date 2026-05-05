@@ -31,7 +31,7 @@ public class ModuleProgressJpa {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_student", nullable = false)
-    private UserJpa studentJpa;
+    private UserJpaEntity studentJpa;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_module", nullable = false)

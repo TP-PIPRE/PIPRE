@@ -1,8 +1,8 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.controller.dto.LessonResponseDTO;
+import com.pipre.backend.adapters.in.web.dto.LessonResponseDTO;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpa;
-import com.pipre.backend.adapters.in.controller.dto.LessonRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.LessonRequestDTO;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ModuleJpa;
 import com.pipre.backend.adapters.out.persistence.repository.LessonRepository;
 import com.pipre.backend.adapters.out.persistence.repository.ModuleRepository;

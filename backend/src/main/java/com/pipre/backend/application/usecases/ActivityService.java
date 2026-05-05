@@ -1,11 +1,10 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.controller.dto.ActivityRequestDTO;
-import com.pipre.backend.adapters.in.controller.dto.ActivityResponseDTO;
+import com.pipre.backend.adapters.in.web.dto.ActivityRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.ActivityResponseDTO;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpa;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpa;
 import com.pipre.backend.adapters.out.persistence.repository.LessonRepository;
-import com.pipre.backend.adapters.out.persistence.repository.ModuleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
