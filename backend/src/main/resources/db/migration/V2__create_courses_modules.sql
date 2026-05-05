@@ -12,7 +12,7 @@ CREATE TABLE modules (
     id_course VARCHAR(36),
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    difficulty VARCHAR(50),
+    isAvailable BOOLEAN,
     module_order INT,
     percentage_meta DECIMAL(5,2),
 
@@ -37,7 +37,6 @@ CREATE TABLE activities (
     id_activity VARCHAR(36) PRIMARY KEY,
     id_lesson VARCHAR(36),
     name VARCHAR(255) NOT NULL,
-    complexity VARCHAR(50),
     difficulty VARCHAR(50),
     logic_level INTEGER,
     type VARCHAR(100),
@@ -47,7 +46,7 @@ CREATE TABLE activities (
         ON DELETE CASCADE
 );
 
-CREATE TABLE robotics_simulations (
+CREATE TABLE simulations (
     id_simulation VARCHAR(36) PRIMARY KEY,
     id_student VARCHAR(36),
     id_activity VARCHAR(36),
