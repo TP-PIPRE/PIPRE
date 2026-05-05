@@ -4,7 +4,6 @@ import com.pipre.backend.adapters.in.web.dto.RoleUserRequestDTO;
 import com.pipre.backend.application.ports.input.AssignRoleUseCase;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.domain.entities.Role;
 import com.pipre.backend.domain.entities.User;
 import com.pipre.backend.domain.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;

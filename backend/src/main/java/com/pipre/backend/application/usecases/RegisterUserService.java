@@ -2,7 +2,7 @@ package com.pipre.backend.application.usecases;
 
 import com.pipre.backend.application.ports.input.RegisterUserUseCase;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.application.usecases.commands.RegisterUserCommand;
+import com.pipre.backend.application.commands.RegisterUserCommand;
 import com.pipre.backend.domain.entities.User;
 import com.pipre.backend.domain.factories.UserFactory;
 import lombok.RequiredArgsConstructor;

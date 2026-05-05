@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ActivityJpaRepository extends JpaRepository<ActivityJpaEntity, String> {
-
+    Boolean existsActivityJpaEntityByName(String name);
 }

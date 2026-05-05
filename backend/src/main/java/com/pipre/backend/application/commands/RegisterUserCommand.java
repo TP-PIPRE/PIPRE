@@ -1,4 +1,4 @@
-package com.pipre.backend.application.usecases.commands;
+package com.pipre.backend.application.commands;
 
 import java.util.List;
 

@@ -2,31 +2,33 @@ package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.adapters.in.web.dto.ActivityRequestDTO;
 import com.pipre.backend.adapters.in.web.dto.ActivityResponseDTO;
-import com.pipre.backend.application.usecases.ActivityService;
+import com.pipre.backend.application.ports.input.CreateActivityUseCase;
+import com.pipre.backend.application.ports.input.GetActivitiesUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/activities")
 @RequiredArgsConstructor
 public class ActivityController {
-//
-//    private final ActivityService activityService;
-//
-//    @GetMapping("/lesson/{id}")
-//    public ResponseEntity<List<ActivityResponseDTO>> getActivities(@PathVariable UUID id) {
-//        return ResponseEntity.ok().body(activityService.getActivities(id));
-//    }
-//
-//    @PostMapping
-//    public ResponseEntity<Void> postActivity(@RequestBody ActivityRequestDTO requestDTO) {
-//        activityService.postActivity(requestDTO);
-//        return ResponseEntity.status(HttpStatus.CREATED).build();
-//    }
+
+    private final GetActivitiesUseCase getActivitiesUseCase;
+    private final CreateActivityUseCase createActivityUseCase;
+
+    @GetMapping("/lesson/{idLesson}")
+    public ResponseEntity<List<ActivityResponseDTO>> getActivities(@PathVariable String idLesson) {
+
+        return ResponseEntity.ok(getActivitiesUseCase.execute(idLesson));
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> postActivity(@RequestBody ActivityRequestDTO requestDTO) {
+        createActivityUseCase.execute(requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
 }
