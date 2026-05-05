@@ -3,7 +3,7 @@ package com.pipre.backend.domain.entities;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class RoboticsSimulation {
+public class Simulation {
 
     private String idSimulation;
     private Boolean isRandom;
