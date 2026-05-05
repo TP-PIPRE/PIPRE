@@ -15,18 +15,18 @@ import java.util.UUID;
 @RequestMapping("/api/v1/activities")
 @RequiredArgsConstructor
 public class ActivityController {
-
-    private final ActivityService activityService;
-
-    @GetMapping("/lesson/{id}")
-    public ResponseEntity<List<ActivityResponseDTO>> getActivities(@PathVariable UUID id) {
-        return ResponseEntity.ok().body(activityService.getActivities(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<Void> postActivity(@RequestBody ActivityRequestDTO requestDTO) {
-        activityService.postActivity(requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
+//
+//    private final ActivityService activityService;
+//
+//    @GetMapping("/lesson/{id}")
+//    public ResponseEntity<List<ActivityResponseDTO>> getActivities(@PathVariable UUID id) {
+//        return ResponseEntity.ok().body(activityService.getActivities(id));
+//    }
+//
+//    @PostMapping
+//    public ResponseEntity<Void> postActivity(@RequestBody ActivityRequestDTO requestDTO) {
+//        activityService.postActivity(requestDTO);
+//        return ResponseEntity.status(HttpStatus.CREATED).build();
+//    }
 
 }

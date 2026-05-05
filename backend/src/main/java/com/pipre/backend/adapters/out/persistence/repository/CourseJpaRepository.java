@@ -10,6 +10,6 @@ import java.util.UUID;
 public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, String> {
 
     //refac
-    CourseJpaEntity findByIdCourse(UUID idCourse);
+    //CourseJpaEntity findByIdCourse(UUID idCourse);
 
 }

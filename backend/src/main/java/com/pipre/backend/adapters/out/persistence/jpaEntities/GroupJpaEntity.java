@@ -25,6 +25,6 @@ public class GroupJpaEntity {
     private String grade;
     private String section;
 
-    @OneToMany(mappedBy = "groupJpa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "groupJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupStudentJpaEntity> groupStudentJpaEntityList;
 }

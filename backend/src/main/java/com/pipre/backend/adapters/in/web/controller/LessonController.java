@@ -15,17 +15,17 @@ import java.util.UUID;
 @RequestMapping("/api/v1/lessons")
 @RequiredArgsConstructor
 public class LessonController {
-
-    private final LessonService lessonService;
-
-    @GetMapping("/module/{idModule}")
-    public ResponseEntity<List<LessonResponseDTO>> getLessons(@PathVariable UUID idModule) {
-        return ResponseEntity.ok().body(lessonService.getLessons(idModule));
-    }
-
-    @PostMapping
-    public ResponseEntity<Void> postLesson(@RequestBody LessonRequestDTO requestDTO) {
-        lessonService.postLesson(requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
+//
+//    private final LessonService lessonService;
+//
+//    @GetMapping("/module/{idModule}")
+//    public ResponseEntity<List<LessonResponseDTO>> getLessons(@PathVariable UUID idModule) {
+//        return ResponseEntity.ok().body(lessonService.getLessons(idModule));
+//    }
+//
+//    @PostMapping
+//    public ResponseEntity<Void> postLesson(@RequestBody LessonRequestDTO requestDTO) {
+//        lessonService.postLesson(requestDTO);
+//        return ResponseEntity.status(HttpStatus.CREATED).build();
+//    }
 }

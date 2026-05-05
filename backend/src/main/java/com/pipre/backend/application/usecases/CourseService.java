@@ -1,9 +1,9 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpa;
+import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpaEntity;
 import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
 import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
-import com.pipre.backend.adapters.out.persistence.repository.CourseRepository;
+import com.pipre.backend.adapters.out.persistence.repository.CourseJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,47 +12,47 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Service
-@RequiredArgsConstructor
+//@Service
+//@RequiredArgsConstructor
 public class CourseService {
-
-    private final CourseRepository courseRepository;
-
-    @Transactional(readOnly = true)
-    public List<CourseResponseDTO> getCourse() {
-        List<CourseJpa> cours = courseRepository.findAll();
-        return cours.stream()
-                .map(courseJpa -> new CourseResponseDTO(
-                        courseJpa.getIdCourse(),
-                        courseJpa.getName()
-                ))
-                .toList();
-    }
-
-    @Transactional
-    public void postCourse(CourseRequestDTO requestDTO) {
-        CourseJpa courseJpa = new CourseJpa(
-                null,
-                requestDTO.name(),
-                requestDTO.description(),
-                requestDTO.level(),
-                "Aprendizaje de robótica",
-                LocalDateTime.now(),
-                null
-        );
-        courseRepository.save(courseJpa);
-    }
-
-    @Transactional
-    public void updateCourse(UUID idCourse, CourseRequestDTO requestDTO) {
-        CourseJpa courseJpa = courseRepository.findById(idCourse)
-                .orElseThrow(() -> new RuntimeException("Curso no existe"));
-
-        courseJpa.setName(requestDTO.name());
-        courseJpa.setDescription(requestDTO.description());
-        courseJpa.setLevel(requestDTO.level());
-
-        courseRepository.save(courseJpa);
-    }
+//
+//    private final CourseJpaRepository courseJpaRepository;
+//
+//    @Transactional(readOnly = true)
+//    public List<CourseResponseDTO> getCourse() {
+//        List<CourseJpaEntity> cours = courseJpaRepository.findAll();
+//        return cours.stream()
+//                .map(courseJpaEntity -> new CourseResponseDTO(
+//                        courseJpaEntity.getIdCourse(),
+//                        courseJpaEntity.getName()
+//                ))
+//                .toList();
+//    }
+//
+//    @Transactional
+//    public void postCourse(CourseRequestDTO requestDTO) {
+//        CourseJpaEntity courseJpaEntity = new CourseJpaEntity(
+//                null,
+//                requestDTO.name(),
+//                requestDTO.description(),
+//                requestDTO.level(),
+//                "Aprendizaje de robótica",
+//                LocalDateTime.now(),
+//                null
+//        );
+//        courseJpaRepository.save(courseJpaEntity);
+//    }
+//
+//    @Transactional
+//    public void updateCourse(UUID idCourse, CourseRequestDTO requestDTO) {
+//        CourseJpaEntity courseJpaEntity = courseJpaRepository.findById(idCourse)
+//                .orElseThrow(() -> new RuntimeException("Curso no existe"));
+//
+//        courseJpaEntity.setName(requestDTO.name());
+//        courseJpaEntity.setDescription(requestDTO.description());
+//        courseJpaEntity.setLevel(requestDTO.level());
+//
+//        courseJpaRepository.save(courseJpaEntity);
+//    }
 
 }

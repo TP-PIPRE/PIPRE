@@ -27,7 +27,7 @@ public class LessonJpaEntity {
 
     private String resourceType;
 
-    @OneToMany(mappedBy = "lessonJpa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "lessonJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ActivityJpaEntity> activityJpaEntityList = new ArrayList<>();
 
 //

@@ -12,7 +12,7 @@ CREATE TABLE modules (
     id_course VARCHAR(36),
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    isAvailable BOOLEAN,
+    is_available BOOLEAN,
     module_order INT,
     percentage_meta DECIMAL(5,2),
 

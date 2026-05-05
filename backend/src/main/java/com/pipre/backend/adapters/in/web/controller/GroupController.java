@@ -14,10 +14,10 @@ import java.util.List;
 @RequestMapping("/api/v1/groups")
 @RequiredArgsConstructor
 public class GroupController {
-    private final GroupService groupService;
-
-    @GetMapping("")
-    public ResponseEntity<List<GroupResponseDTO>> getGroups() {
-        return ResponseEntity.ok().body(groupService.getGroups());
-    }
+//    private final GroupService groupService;
+//
+//    @GetMapping("")
+//    public ResponseEntity<List<GroupResponseDTO>> getGroups() {
+//        return ResponseEntity.ok().body(groupService.getGroups());
+//    }
 }

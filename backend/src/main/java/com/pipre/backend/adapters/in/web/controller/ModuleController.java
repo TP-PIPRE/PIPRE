@@ -15,16 +15,16 @@ import java.util.UUID;
 @RequestMapping("/api/v1/modules")
 @RequiredArgsConstructor
 public class ModuleController {
-    private final ModuleService moduleService;
-
-    @GetMapping("course/{id}")
-    public ResponseEntity<List<ModuleResponseDTO>> getModule(@PathVariable UUID id) {
-        return ResponseEntity.ok().body(moduleService.getModule(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<Void> postModule(@RequestBody ModuleRequestDTO requestDTO) {
-        moduleService.postModule(requestDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
+//    private final ModuleService moduleService;
+//
+//    @GetMapping("course/{id}")
+//    public ResponseEntity<List<ModuleResponseDTO>> getModule(@PathVariable UUID id) {
+//        return ResponseEntity.ok().body(moduleService.getModule(id));
+//    }
+//
+//    @PostMapping
+//    public ResponseEntity<Void> postModule(@RequestBody ModuleRequestDTO requestDTO) {
+//        moduleService.postModule(requestDTO);
+//        return ResponseEntity.status(HttpStatus.CREATED).build();
+//    }
 }

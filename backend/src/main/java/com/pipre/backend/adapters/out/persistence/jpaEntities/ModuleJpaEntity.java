@@ -31,7 +31,7 @@ public class ModuleJpaEntity {
     @Column(precision = 5, scale = 2)
     private BigDecimal percentageMeta;
 
-    @OneToMany(mappedBy = "moduleJpa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "moduleJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LessonJpaEntity> lessonJpaEntityList = new ArrayList<>();
 
 //    public void addLesson(LessonJpaEntity lessonJpaEntity) {

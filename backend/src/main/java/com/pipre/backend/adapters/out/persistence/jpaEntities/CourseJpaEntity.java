@@ -29,7 +29,7 @@ public class CourseJpaEntity {
 
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "courseJpa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "courseJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ModuleJpaEntity> moduleJpaEntityList = new ArrayList<>();
 
 //    public void addModule(ModuleJpaEntity module) {
