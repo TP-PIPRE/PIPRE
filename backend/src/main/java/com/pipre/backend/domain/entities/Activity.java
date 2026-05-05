@@ -1,16 +1,21 @@
 package com.pipre.backend.domain.entities;
 
+import lombok.Builder;
+import lombok.Getter;
+
 import java.util.List;
 
+@Builder
+@Getter
 public class Activity {
 
-    private String idActivity;
-    private String name;
-    private String complexity;
-    private String difficulty;
-    private Integer logicLevel;
-    private String type;
-    private List<String> idRoboticsSimulationList;
-    private String idLesson;
+    private final String idActivity;
+    private final String name;
+    private final String complexity;
+    private final String difficulty;
+    private final Integer logicLevel;
+    private final String type;
+    private final List<String> idimulationList;
+    private final String idLesson;
 
 }

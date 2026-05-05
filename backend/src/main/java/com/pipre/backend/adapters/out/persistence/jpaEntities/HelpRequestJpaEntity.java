@@ -1,8 +1,8 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
-import lombok.*;
-import java.util.UUID;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity

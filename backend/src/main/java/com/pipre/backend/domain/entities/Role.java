@@ -1,6 +1,7 @@
 package com.pipre.backend.domain.entities;
 
 public class Role {
+
     private final String idRole;
     private final String name;
     private final String description;

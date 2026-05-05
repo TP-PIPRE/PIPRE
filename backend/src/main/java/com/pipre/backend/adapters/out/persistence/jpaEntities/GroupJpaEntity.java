@@ -1,11 +1,9 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.Set;
 
 @Entity
 @Table(name = "groups")

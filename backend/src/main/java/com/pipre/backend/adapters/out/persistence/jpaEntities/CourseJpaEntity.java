@@ -1,12 +1,11 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "courses")

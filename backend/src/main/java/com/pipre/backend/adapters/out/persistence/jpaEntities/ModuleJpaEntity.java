@@ -1,7 +1,7 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
