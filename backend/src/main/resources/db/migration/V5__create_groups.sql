@@ -1,6 +1,6 @@
 CREATE TABLE groups (
-    id_group UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    id_teacher UUID,
+    id_group VARCHAR(36) PRIMARY KEY,
+    id_teacher VARCHAR(36),
     group_name VARCHAR(255) NOT NULL,
     grade VARCHAR(50),
     section VARCHAR(50),
@@ -11,10 +11,10 @@ CREATE TABLE groups (
 );
 
 CREATE TABLE group_students (
-    id_ranking UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    id_group UUID,
-    id_student UUID,
-    total_points INTEGER DEFAULT 0,
+    id_ranking VARCHAR(36) PRIMARY KEY,
+    id_group VARCHAR(36),
+    id_student VARCHAR(36),
+    total_points INTEGER,
     position INTEGER,
 
     CONSTRAINT fk_group_students_group FOREIGN KEY (id_group)

@@ -9,14 +9,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "robotics_simulations")
-@Getter
-@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class RoboticsSimulationJpa {
+public class SimulationJpaEntity {
     @Id
-    @GeneratedValue(generator = "UUID")
     @Column(name = "id_simulation", updatable = false, nullable = false)
     private UUID idSimulation;
 
@@ -53,5 +48,5 @@ public class RoboticsSimulationJpa {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_activity", nullable = false)
-    private ActivityJpa activityJpa;
+    private ActivityJpaEntity activityJpaEntity;
 }

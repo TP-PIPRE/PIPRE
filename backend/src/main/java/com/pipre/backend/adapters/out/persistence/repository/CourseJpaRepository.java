@@ -1,15 +1,15 @@
 package com.pipre.backend.adapters.out.persistence.repository;
 
-import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpa;
+import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface CourseJpaRepository extends JpaRepository<CourseJpa, String> {
+public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, String> {
 
     //refac
-    CourseJpa findByIdCourse(UUID idCourse);
+    CourseJpaEntity findByIdCourse(UUID idCourse);
 
 }

@@ -1,13 +1,13 @@
 CREATE TABLE activity_results (
-    id_result UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    id_student UUID,
-    id_activity UUID,
-    attempts INTEGER DEFAULT 0,
-    errors INTEGER DEFAULT 0,
+    id_result VARCHAR(36) PRIMARY KEY,
+    id_student VARCHAR(36),
+    id_activity VARCHAR(36),
+    attempts INTEGER,
+    errors INTEGER,
     score DECIMAL(5,2),
-    done_count INTEGER DEFAULT 0,
+    done_count INTEGER,
     success_rate DECIMAL(5,2),
-    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date TIMESTAMP,
 
     CONSTRAINT fk_results_student FOREIGN KEY (id_student)
         REFERENCES users(id_user)
@@ -19,12 +19,12 @@ CREATE TABLE activity_results (
 );
 
 CREATE TABLE module_progress (
-    id_progress UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    id_student UUID,
-    id_module UUID,
-    percentage DECIMAL(5,2) DEFAULT 0,
+    id_progress VARCHAR(36) PRIMARY KEY,
+    id_student VARCHAR(36),
+    id_module VARCHAR(36),
+    percentage DECIMAL(5,2),
     status VARCHAR(50),
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
 
     CONSTRAINT fk_progress_student FOREIGN KEY (id_student)
         REFERENCES users(id_user)

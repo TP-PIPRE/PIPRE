@@ -6,42 +6,28 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.Set;
 
 @Entity
 @Table(name = "activities")
-@Getter
-@Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ActivityJpa {
+public class ActivityJpaEntity {
     @Id
-    @GeneratedValue(generator = "UUID")
-    @Column(name = "id_activity", updatable = false, nullable = false)
-    private UUID idActivity;
+    @Column(updatable = false, nullable = false)
+    private String idActivity;
 
-    @Column(name = "name", nullable = false)
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "complexity")
     private String complexity;
-
-    @Column(name = "difficulty")
     private String difficulty;
-
-    @Column(name = "logic_level")
     private Integer logicLevel;
-
-    @Column(name = "type")
     private String type;
 
-    @Builder.Default
     @OneToMany(mappedBy = "activityJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RoboticsSimulationJpa> roboticsSimulationJpas = new ArrayList<>();
+    private List<SimulationJpaEntity> simulationJpaEntityList = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_lesson", nullable = false)
-    private LessonJpa lessonJpa;
+    private LessonJpaEntity lessonJpaEntity;
 
 }
