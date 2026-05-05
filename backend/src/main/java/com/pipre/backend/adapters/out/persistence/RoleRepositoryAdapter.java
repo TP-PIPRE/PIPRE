@@ -32,4 +32,9 @@ public class RoleRepositoryAdapter implements RoleRepositoryPort {
                 .map(RoleMapper::toDomain);
     }
 
+    @Override
+    public Boolean existsById(String idRole) {
+        return jpaRepository.existsById(idRole);
+    }
+
 }

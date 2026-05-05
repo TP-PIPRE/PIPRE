@@ -9,5 +9,6 @@ public interface RoleRepositoryPort {
 
     List<Role> findAll();
     Optional<Role> findById(String idRole);
+    Boolean existsById(String idRole);
 
 }

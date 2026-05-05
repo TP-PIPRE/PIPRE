@@ -6,6 +6,7 @@ import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.domain.entities.Role;
 import com.pipre.backend.domain.entities.User;
+import com.pipre.backend.domain.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,12 @@ public class AssignRoleService implements AssignRoleUseCase {
     public void execute(RoleUserRequestDTO requestDTO) {
         User user = userRepositoryPort.findById(requestDTO.idUser())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        Role role = roleRepositoryPort.findById(requestDTO.idRole())
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
 
-        user.addRole(role.getIdRole());
-        userRepositoryPort.save(user);
+        if(!roleRepositoryPort.existsById(requestDTO.idRole())) {
+            throw new BusinessException("El rol no existe");
+        }
+
+        User userWithNewRole = user.addRole(requestDTO.idRole());
+        userRepositoryPort.save(userWithNewRole);
     }
 }
