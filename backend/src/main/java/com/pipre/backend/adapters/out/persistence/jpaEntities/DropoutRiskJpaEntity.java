@@ -11,14 +11,15 @@ import java.time.LocalDateTime;
 public class DropoutRiskJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    private UUID idRisk;
+    private String idRisk;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_student", nullable = false)
+    private UserJpaEntity studentJpaEntity;
+
     private Integer daysInactive;
     private String performance;
     private String riskLevel;
     private String motivationLevel;
     private LocalDateTime analysisDate;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_student", nullable = false)
-    private UserJpaEntity studentJpa;
 }

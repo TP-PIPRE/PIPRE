@@ -10,12 +10,7 @@ import java.util.UUID;
 public class GroupStudentJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    private UUID idRanking;
-
-    @Column(columnDefinition = "INTEGER DEFAULT 0")
-    private Integer totalPoints;
-
-    private Integer position;
+    private String idRanking;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_group", nullable = false)
@@ -23,5 +18,8 @@ public class GroupStudentJpaEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_student", nullable = false)
-    private UserJpaEntity studentJpa;
+    private UserJpaEntity studentJpaEntity;
+
+    private Integer totalPoints;
+    private Integer position;
 }

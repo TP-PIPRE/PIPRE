@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class CourseJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    private UUID idCourse;
+    private String idCourse;
 
     @Column(nullable = false)
     private String name;
@@ -30,10 +30,10 @@ public class CourseJpaEntity {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "courseJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ModuleJpaEntity> moduleJpaEntities = new ArrayList<>();
+    private List<ModuleJpaEntity> moduleJpaEntityList = new ArrayList<>();
 
-    public void addModule(ModuleJpaEntity module) {
-        moduleJpaEntities.add(module);
-        module.setCourseJpaEntity(this);
-    }
+//    public void addModule(ModuleJpaEntity module) {
+//        moduleJpaEntities.add(module);
+//        module.setCourseJpaEntity(this);
+//    }
 }

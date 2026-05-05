@@ -15,19 +15,18 @@ public class ActivityJpaEntity {
     @Column(updatable = false, nullable = false)
     private String idActivity;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_lesson", nullable = false)
+    private LessonJpaEntity lessonJpaEntity;
+
     @Column(nullable = false)
     private String name;
 
-    private String complexity;
     private String difficulty;
     private Integer logicLevel;
     private String type;
 
     @OneToMany(mappedBy = "activityJpa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SimulationJpaEntity> simulationJpaEntityList = new ArrayList<>();
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_lesson", nullable = false)
-    private LessonJpaEntity lessonJpaEntity;
 
 }

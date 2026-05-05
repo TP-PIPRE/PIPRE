@@ -13,10 +13,17 @@ import java.time.LocalDateTime;
 public class ActivityResultJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    private UUID idResult;
+    private String idResult;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_student", nullable = false)
+    private UserJpaEntity studentJpaEntity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_activity", nullable = false)
+    private ActivityJpaEntity activityJpaEntity;
 
     private Integer attempts;
-
     private Integer errors;
 
     @Column(precision = 5, scale = 2)
@@ -28,12 +35,4 @@ public class ActivityResultJpaEntity {
     private BigDecimal successRate;
 
     private LocalDateTime date;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_student", nullable = false)
-    private UserJpaEntity studentJpa;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_activity", nullable = false)
-    private ActivityJpaEntity activityJpaEntity;
 }

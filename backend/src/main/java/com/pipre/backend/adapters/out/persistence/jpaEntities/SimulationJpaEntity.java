@@ -8,12 +8,20 @@ import java.util.UUID;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "robotics_simulations")
+@Table(name = "simulations")
 @NoArgsConstructor
 public class SimulationJpaEntity {
     @Id
     @Column(name = "id_simulation", updatable = false, nullable = false)
-    private UUID idSimulation;
+    private String idSimulation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_student", nullable = false)
+    private UserJpaEntity studentJpaEntity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_activity", nullable = false)
+    private ActivityJpaEntity activityJpaEntity;
 
     @Column(name = "is_random")
     private Boolean isRandom;
@@ -41,12 +49,4 @@ public class SimulationJpaEntity {
 
     @Column(name = "date")
     private LocalDateTime date;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_student", nullable = false)
-    private UserJpaEntity studentJpa;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_activity", nullable = false)
-    private ActivityJpaEntity activityJpaEntity;
 }

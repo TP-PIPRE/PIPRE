@@ -13,7 +13,11 @@ import java.util.UUID;
 public class LessonJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    private UUID idLesson;
+    private String idLesson;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_module", nullable = false)
+    private ModuleJpaEntity moduleJpaEntity;
 
     @Column(nullable = false)
     private String title;
@@ -24,14 +28,11 @@ public class LessonJpaEntity {
     private String resourceType;
 
     @OneToMany(mappedBy = "lessonJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ActivityJpaEntity> activitiesJpas = new ArrayList<>();
+    private List<ActivityJpaEntity> activityJpaEntityList = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_module", nullable = false)
-    private ModuleJpaEntity moduleJpaEntity;
-
-    public void addActivity(ActivityJpaEntity activity) {
-        activitiesJpas.add(activity);
-        activity.setLessonJpa(this);
-    }
+//
+//    public void addActivity(ActivityJpaEntity activity) {
+//        activitiesJpas.add(activity);
+//        activity.setLessonJpa(this);
+//    }
 }

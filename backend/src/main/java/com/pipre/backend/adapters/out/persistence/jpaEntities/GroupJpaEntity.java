@@ -2,6 +2,8 @@ package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 import java.util.UUID;
 import java.util.Set;
 
@@ -11,7 +13,11 @@ import java.util.Set;
 public class GroupJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    private UUID idGroup;
+    private String idGroup;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_teacher")
+    private UserJpaEntity teacherJpaEntity;
 
     @Column(nullable = false)
     private String groupName;
@@ -20,9 +26,5 @@ public class GroupJpaEntity {
     private String section;
 
     @OneToMany(mappedBy = "groupJpa", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<GroupStudentJpaEntity> groupStudentJpaEntities;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_teacher")
-    private UserJpaEntity teacher;
+    private List<GroupStudentJpaEntity> groupStudentJpaEntityList;
 }
