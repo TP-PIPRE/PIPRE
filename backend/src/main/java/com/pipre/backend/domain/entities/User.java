@@ -3,6 +3,7 @@ package com.pipre.backend.domain.entities;
 import com.pipre.backend.domain.exceptions.BusinessException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class User {
@@ -15,7 +16,7 @@ public class User {
     private final Integer age;
     private final Boolean isActive;
     private final LocalDateTime registeredAt;
-    private final List<String> roleIdList;
+    private final List<String> idRoleList;
 
     public User(Builder builder) {
         if (builder.email == null || builder.email.isBlank()) {
@@ -35,13 +36,34 @@ public class User {
         this.age = builder.age;
         this.isActive = builder.isActive;
         this.registeredAt = builder.registeredAt;
-        this.roleIdList = builder.roleIdList;
+        this.idRoleList = builder.roleIdList != null
+                        ? List.copyOf(builder.roleIdList)
+                        :List.of();
     }
 
-    public void addRole(String roleId) {
-        if (this.roleIdList.contains(roleId)) {
+    public User addRole(String roleId) {
+        if (this.idRoleList.contains(roleId)) {
             throw new BusinessException("El usuario ya tiene asignado este rol");
         }
+        List<String> updateRoles = new ArrayList<>(this.idRoleList);
+        updateRoles.add(roleId);
+        return this.toBuilder()
+                .roleIdList(updateRoles)
+                .build();
+    }
+
+    public Builder toBuilder() {
+        return new Builder()
+                .idUser(this.idUser)
+                .firstName(this.firstName)
+                .lastName(this.lastName)
+                .email(this.email)
+                .passwordHash(this.passwordHash)
+                .grade(this.grade)
+                .age(this.age)
+                .isActive(this.isActive)
+                .registeredAt(this.registeredAt)
+                .roleIdList(this.idRoleList);
     }
 
     public static class Builder {
@@ -108,8 +130,8 @@ public class User {
         return registeredAt;
     }
 
-    public List<String> getRoleIdList() {
-        return roleIdList;
+    public List<String> getIdRoleList() {
+        return idRoleList;
     }
 
 }
