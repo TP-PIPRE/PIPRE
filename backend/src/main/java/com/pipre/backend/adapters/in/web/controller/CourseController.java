@@ -33,8 +33,8 @@ public class CourseController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PutMapping
-    public ResponseEntity<Void> putCourse(@RequestBody String idCourse, CourseRequestDTO requestDTO) {
+    @PutMapping("/{idCourse}")
+    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, CourseRequestDTO requestDTO) {
         updateCoursesUseCase.execute(idCourse, requestDTO);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
