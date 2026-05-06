@@ -1,10 +1,10 @@
 package com.pipre.backend.adapters.in.web.controller;
 
+import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
 import com.pipre.backend.application.ports.input.CreateCoursesUseCase;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
-import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
-import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

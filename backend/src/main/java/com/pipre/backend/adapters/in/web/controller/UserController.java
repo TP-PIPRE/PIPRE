@@ -1,9 +1,9 @@
 package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.adapters.in.web.dto.UserResponseDTO;
+import com.pipre.backend.application.commands.RegisterUserCommand;
 import com.pipre.backend.application.ports.input.GetUserByIdUseCase;
 import com.pipre.backend.application.ports.input.RegisterUserUseCase;
-import com.pipre.backend.application.commands.RegisterUserCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

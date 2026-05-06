@@ -1,9 +1,9 @@
 package com.pipre.backend.adapters.in.web.controller;
 
+import com.pipre.backend.adapters.in.web.dto.LessonRequestDTO;
 import com.pipre.backend.adapters.in.web.dto.LessonResponseDTO;
 import com.pipre.backend.application.ports.input.CreateLessonsUseCase;
 import com.pipre.backend.application.ports.input.GetLessonsUseCase;
-import com.pipre.backend.adapters.in.web.dto.LessonRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
