@@ -49,7 +49,7 @@ public class User {
         List<String> updateRoles = new ArrayList<>(this.idRoleList);
         updateRoles.add(roleId);
         return this.toBuilder()
-                .roleIdList(updateRoles)
+                .idRoleList(updateRoles)
                 .build();
     }
 
@@ -64,7 +64,7 @@ public class User {
                 .age(this.age)
                 .isActive(this.isActive)
                 .registeredAt(this.registeredAt)
-                .roleIdList(this.idRoleList);
+                .idRoleList(this.idRoleList);
     }
 
     public static class Builder {
@@ -88,7 +88,7 @@ public class User {
         public Builder age(Integer age) {this.age = age; return this; }
         public Builder isActive(Boolean isActive) {this.isActive = isActive; return this; }
         public Builder registeredAt(LocalDateTime registeredAt) {this.registeredAt = registeredAt; return this; }
-        public Builder roleIdList(List<String> roleIdList) {this.roleIdList = roleIdList; return this; }
+        public Builder idRoleList(List<String> roleIdList) {this.roleIdList = roleIdList; return this; }
 
         public User build() {
             return new User(this);

@@ -1,5 +1,8 @@
 package com.pipre.backend.adapters.in.web.controller;
 
+import com.pipre.backend.application.ports.input.CreateCoursesUseCase;
+import com.pipre.backend.application.ports.input.GetCoursesUseCase;
+import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
 import com.pipre.backend.application.usecases.CourseService;
 import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
 import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
@@ -15,22 +18,24 @@ import java.util.UUID;
 @RequestMapping("/api/v1/courses")
 @RequiredArgsConstructor
 public class CourseController {
-//    private final CourseService courseService;
-//
-//    @GetMapping
-//    public ResponseEntity<List<CourseResponseDTO>> getCourses() {
-//        return ResponseEntity.ok().body(courseService.getCourse());
-//    }
-//
-//    @PostMapping
-//    public ResponseEntity<Void> postCourse(@RequestBody CourseRequestDTO requestDTO) {
-//        courseService.postCourse(requestDTO);
-//        return ResponseEntity.status(HttpStatus.CREATED).build();
-//    }
-//
-//    @PutMapping("/{id}")
-//    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable UUID id, CourseRequestDTO requestDTO) {
-//        courseService.updateCourse(id, requestDTO);
-//        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-//    }
+    private final GetCoursesUseCase getCoursesUseCase;
+    private final CreateCoursesUseCase createCoursesUseCase;
+    private final UpdateCoursesUseCase updateCoursesUseCase;
+
+    @GetMapping
+    public ResponseEntity<List<CourseResponseDTO>> getCourses() {
+        return ResponseEntity.ok().body(getCoursesUseCase.execute());
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> postCourse(@RequestBody CourseRequestDTO requestDTO) {
+        createCoursesUseCase.execute(requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, CourseRequestDTO requestDTO) {
+        updateCoursesUseCase.execute(idCourse, requestDTO);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }

@@ -10,7 +10,7 @@ public class UserFactory {
     public static User createNewUser(
             String firstName, String lastName, String email,
             String passwordHash, String grade, Integer age,
-            List<String> roleIdList) {
+            List<String> idRoleList) {
         return new User.Builder()
                 .idUser(UUID.randomUUID().toString())
                 .firstName(firstName)
@@ -21,7 +21,7 @@ public class UserFactory {
                 .age(age)
                 .isActive(true)
                 .registeredAt(LocalDateTime.now())
-                .roleIdList(roleIdList)
+                .idRoleList(idRoleList)
                 .build();
     }
 
