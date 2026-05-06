@@ -2,6 +2,7 @@ package com.pipre.backend.application.usecases;
 
 import com.pipre.backend.application.commands.RegisterUserCommand;
 import com.pipre.backend.application.ports.input.RegisterUserUseCase;
+import com.pipre.backend.application.ports.output.PasswordEncoderPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.domain.entities.User;
 import com.pipre.backend.domain.factories.UserFactory;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegisterUserService implements RegisterUserUseCase {
 
     private final UserRepositoryPort repositoryPort;
+    private final PasswordEncoderPort passwordEncoderPort;
 
     @Override
     @Transactional
@@ -22,11 +24,13 @@ public class RegisterUserService implements RegisterUserUseCase {
            throw new RuntimeException("El email ya se encuentra registrado.");
         }
 
+        String encodedPassword = passwordEncoderPort.encode(command.passwordHash());
+
         User newUser = UserFactory.createNewUser(
                 command.firstName(),
                 command.lastName(),
                 command.email(),
-                command.passwordHash(),
+                encodedPassword,
                 command.grade(),
                 command.age(),
                 command.roleIdList()
