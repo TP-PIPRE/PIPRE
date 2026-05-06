@@ -7,6 +7,7 @@ import com.pipre.backend.domain.entities.Course;
 import com.pipre.backend.domain.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -15,6 +16,7 @@ public class UpdateCoursesService implements UpdateCoursesUseCase {
     private final CourseRepositoryPort courseRepositoryPort;
 
     @Override
+    @Transactional
     public void execute(String idCourse, CourseRequestDTO requestDTO) {
 
         Course course = courseRepositoryPort.findById(idCourse)

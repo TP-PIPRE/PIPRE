@@ -5,6 +5,7 @@ import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ public class GetCoursesService implements GetCoursesUseCase {
     private final CourseRepositoryPort repositoryPort;
 
     @Override
+    @Transactional(readOnly = true)
     public List<CourseResponseDTO> execute() {
         return repositoryPort.findAll()
                 .stream()
