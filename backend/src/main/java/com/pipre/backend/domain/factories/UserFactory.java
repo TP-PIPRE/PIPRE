@@ -24,5 +24,4 @@ public class UserFactory {
                 .idRoleList(idRoleList)
                 .build();
     }
-
 }
