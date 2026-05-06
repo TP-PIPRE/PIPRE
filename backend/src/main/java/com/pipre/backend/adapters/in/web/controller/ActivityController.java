@@ -21,7 +21,6 @@ public class ActivityController {
 
     @GetMapping("/lesson/{idLesson}")
     public ResponseEntity<List<ActivityResponseDTO>> getActivities(@PathVariable String idLesson) {
-
         return ResponseEntity.ok(getActivitiesUseCase.execute(idLesson));
     }
 

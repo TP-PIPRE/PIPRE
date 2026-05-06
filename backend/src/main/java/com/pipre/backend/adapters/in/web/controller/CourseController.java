@@ -22,7 +22,7 @@ public class CourseController {
 
     @GetMapping
     public ResponseEntity<List<CourseResponseDTO>> getCourses() {
-        return ResponseEntity.ok().body(getCoursesUseCase.execute());
+        return ResponseEntity.ok(getCoursesUseCase.execute());
     }
 
     @PostMapping
