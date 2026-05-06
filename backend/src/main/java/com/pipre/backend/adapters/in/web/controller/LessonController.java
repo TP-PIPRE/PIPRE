@@ -3,7 +3,6 @@ package com.pipre.backend.adapters.in.web.controller;
 import com.pipre.backend.adapters.in.web.dto.LessonResponseDTO;
 import com.pipre.backend.application.ports.input.CreateLessonsUseCase;
 import com.pipre.backend.application.ports.input.GetLessonsUseCase;
-import com.pipre.backend.application.usecases.LessonService;
 import com.pipre.backend.adapters.in.web.dto.LessonRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/lessons")

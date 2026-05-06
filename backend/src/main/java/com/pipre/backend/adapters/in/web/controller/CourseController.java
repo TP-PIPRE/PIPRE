@@ -3,7 +3,6 @@ package com.pipre.backend.adapters.in.web.controller;
 import com.pipre.backend.application.ports.input.CreateCoursesUseCase;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
-import com.pipre.backend.application.usecases.CourseService;
 import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
 import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/courses")
