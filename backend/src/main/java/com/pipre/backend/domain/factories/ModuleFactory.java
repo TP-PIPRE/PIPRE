@@ -10,7 +10,7 @@ public class ModuleFactory {
     public static Module createNewModule(
             String title,
             String description,
-            String difficulty,
+            Boolean isAvailable,
             Integer moduleOrder,
             List<String> idLessonList,
             String idCourse
@@ -19,7 +19,7 @@ public class ModuleFactory {
                 .idModule(UUID.randomUUID().toString())
                 .title(title)
                 .description(description)
-                .difficulty(difficulty)
+                .isAvailable(isAvailable)
                 .moduleOrder(moduleOrder)
                 .percentageMeta(BigDecimal.valueOf(0))
                 .idLessonList(idLessonList)

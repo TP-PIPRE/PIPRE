@@ -8,7 +8,7 @@ public class Module {
     private final String idModule;
     private final String title;
     private final String description;
-    private final String difficulty;
+    private final Boolean isAvailable;
     private final Integer moduleOrder;
     private final BigDecimal percentageMeta;
     private final List<String> idLessonList;
@@ -18,7 +18,7 @@ public class Module {
         this.idModule = builder.idModule;
         this.title = builder.title;
         this.description = builder.description;
-        this.difficulty = builder.difficulty;
+        this.isAvailable = builder.isAvailable;
         this.moduleOrder = builder.moduleOrder;
         this.percentageMeta = builder.percentageMeta;
         this.idLessonList = builder.idLessonList;
@@ -41,8 +41,8 @@ public class Module {
         return this.description;
     }
 
-    public String getDifficulty() {
-        return this.difficulty;
+    public Boolean getIsAvailable() {
+        return this.isAvailable;
     }
 
     public Integer getModuleOrder() {
@@ -65,7 +65,7 @@ public class Module {
         private String idModule;
         private String title;
         private String description;
-        private String difficulty;
+        private Boolean isAvailable;
         private Integer moduleOrder;
         private BigDecimal percentageMeta;
         private List<String> idLessonList;
@@ -89,8 +89,8 @@ public class Module {
             return this;
         }
 
-        public Builder difficulty(String difficulty) {
-            this.difficulty = difficulty;
+        public Builder isAvailable(Boolean isAvailable) {
+            this.isAvailable = isAvailable;
             return this;
         }
 
@@ -118,8 +118,5 @@ public class Module {
             return new Module(this);
         }
 
-        public String toString() {
-            return "Module.ModuleBuilder(idModule=" + this.idModule + ", title=" + this.title + ", description=" + this.description + ", difficulty=" + this.difficulty + ", moduleOrder=" + this.moduleOrder + ", percentageMeta=" + this.percentageMeta + ", idLessonList=" + this.idLessonList + ", idCourse=" + this.idCourse + ")";
-        }
     }
 }

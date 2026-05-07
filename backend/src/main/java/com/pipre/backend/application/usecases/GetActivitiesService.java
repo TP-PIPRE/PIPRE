@@ -5,6 +5,7 @@ import com.pipre.backend.application.ports.input.GetActivitiesUseCase;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,6 +16,7 @@ public class GetActivitiesService implements GetActivitiesUseCase {
     public final ActivityRepositoryPort repositoryPort;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ActivityResponseDTO> execute(String id) {
         return repositoryPort.findAll()
                 .stream()

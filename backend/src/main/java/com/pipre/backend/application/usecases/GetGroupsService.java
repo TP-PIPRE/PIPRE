@@ -5,6 +5,7 @@ import com.pipre.backend.application.ports.input.GetGroupsUseCase;
 import com.pipre.backend.application.ports.output.GroupRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class GetGroupsService implements GetGroupsUseCase {
     private final GroupRepositoryPort groupRepositoryPort;
 
     @Override
+    @Transactional(readOnly = true)
     public List<GroupResponseDTO> execute() {
         return  groupRepositoryPort.findAll()
                 .stream()

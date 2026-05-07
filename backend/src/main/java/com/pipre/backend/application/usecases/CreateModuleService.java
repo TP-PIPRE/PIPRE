@@ -22,7 +22,7 @@ public class CreateModuleService implements CreateModuleUseCase {
                 null,
                 null,
                 null,
-                null
+                requestDTO.idCourse()
         );
         moduleRepositoryPort.save(newModule);
     }

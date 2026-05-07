@@ -28,7 +28,8 @@ public class CourseMapper {
 
         List<String> idModuleList = (entity.getModuleJpaEntityList() == null)
                 ? new ArrayList<>()
-                : entity.getModuleJpaEntityList().stream()
+                : entity.getModuleJpaEntityList()
+                        .stream()
                         .map(ModuleJpaEntity::getIdModule)
                         .collect(Collectors.toList());
 
