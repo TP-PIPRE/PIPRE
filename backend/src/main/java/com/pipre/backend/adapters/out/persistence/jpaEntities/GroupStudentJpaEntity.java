@@ -1,11 +1,15 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "group_students")
 @NoArgsConstructor
+@Getter
+@Setter
 public class GroupStudentJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)

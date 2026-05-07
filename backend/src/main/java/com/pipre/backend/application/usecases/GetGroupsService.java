@@ -12,6 +12,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class GetGroupsService implements GetGroupsUseCase {
+
     private final GroupRepositoryPort groupRepositoryPort;
 
     @Override
