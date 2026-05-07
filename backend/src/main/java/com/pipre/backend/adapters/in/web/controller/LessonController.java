@@ -1,8 +1,8 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.LessonRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateLessonCommand;
 import com.pipre.backend.adapters.in.web.dto.LessonResponseDTO;
-import com.pipre.backend.application.ports.input.CreateLessonsUseCase;
+import com.pipre.backend.application.ports.input.CreateLessonUseCase;
 import com.pipre.backend.application.ports.input.GetLessonsUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,7 @@ import java.util.List;
 public class LessonController {
 
     private final GetLessonsUseCase getLessonsUseCase;
-    private final CreateLessonsUseCase createLessonsUseCase;
+    private final CreateLessonUseCase createLessonUseCase;
 
     @GetMapping("/module/{idModule}")
     public ResponseEntity<List<LessonResponseDTO>> getLessons(@PathVariable String idModule) {
@@ -25,8 +25,8 @@ public class LessonController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> postLesson(@RequestBody LessonRequestDTO requestDTO) {
-        createLessonsUseCase.execute(requestDTO);
+    public ResponseEntity<Void> postLesson(@RequestBody CreateLessonCommand requestDTO) {
+        createLessonUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

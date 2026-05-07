@@ -1,6 +1,6 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.web.dto.ActivityRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateActivityCommand;
 import com.pipre.backend.application.ports.input.CreateActivityUseCase;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import com.pipre.backend.domain.entities.Activity;
@@ -15,15 +15,16 @@ public class CreateActivityService implements CreateActivityUseCase {
     private final ActivityRepositoryPort activityRepositoryPort;
 
     @Override
-    public void execute(ActivityRequestDTO requestDTO) {
+    public String execute(CreateActivityCommand cmd) {
         Activity newActivity = ActivityFactory.createNewActivity(
-                requestDTO.name(),
+                cmd.name(),
                 null,
                 null,
                 null,
                 null,
-                requestDTO.idLesson()
+                cmd.idLesson()
         );
         activityRepositoryPort.save(newActivity);
+        return newActivity.getIdActivity();
     }
 }

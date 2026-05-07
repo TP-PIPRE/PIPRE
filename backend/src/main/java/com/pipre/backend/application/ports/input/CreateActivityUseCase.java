@@ -1,7 +1,7 @@
 package com.pipre.backend.application.ports.input;
 
-import com.pipre.backend.adapters.in.web.dto.ActivityRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateActivityCommand;
 
 public interface CreateActivityUseCase {
-    void execute(ActivityRequestDTO requestDTO);
+    String execute(CreateActivityCommand cmd);
 }

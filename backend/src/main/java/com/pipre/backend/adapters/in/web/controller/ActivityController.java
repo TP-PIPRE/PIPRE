@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.ActivityRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateActivityCommand;
 import com.pipre.backend.adapters.in.web.dto.ActivityResponseDTO;
 import com.pipre.backend.application.ports.input.CreateActivityUseCase;
 import com.pipre.backend.application.ports.input.GetActivitiesUseCase;
@@ -25,7 +25,7 @@ public class ActivityController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> postActivity(@RequestBody ActivityRequestDTO requestDTO) {
+    public ResponseEntity<Void> postActivity(@RequestBody CreateActivityCommand requestDTO) {
         createActivityUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

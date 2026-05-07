@@ -1,7 +1,7 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
-import com.pipre.backend.application.ports.input.CreateCoursesUseCase;
+import com.pipre.backend.adapters.in.web.dto.RegisterCourseCommand;
+import com.pipre.backend.application.ports.input.CreateCourseUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import com.pipre.backend.domain.entities.Course;
 import com.pipre.backend.domain.factories.CourseFactory;
@@ -11,20 +11,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class CreateCoursesService implements CreateCoursesUseCase {
+public class CreateCourseService implements CreateCourseUseCase {
 
     private final CourseRepositoryPort courseRepositoryPort;
 
     @Override
     @Transactional
-    public void execute(CourseRequestDTO command) {
+    public String execute(RegisterCourseCommand cmd) {
         Course newCourse = CourseFactory.createNewCourse(
-                command.name(),
-                command.description(),
-                command.level(),
+                cmd.name(),
+                cmd.description(),
+                cmd.level(),
                 "Aprendizaje de robótica",
                 null
         );
         courseRepositoryPort.save(newCourse);
+        return newCourse.getIdCourse();
     }
 }

@@ -1,6 +1,6 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.web.dto.ModuleRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
 import com.pipre.backend.application.ports.input.CreateModuleUseCase;
 import com.pipre.backend.application.ports.output.ModuleRepositoryPort;
 import com.pipre.backend.domain.entities.Module;
@@ -15,15 +15,16 @@ public class CreateModuleService implements CreateModuleUseCase {
     private final ModuleRepositoryPort moduleRepositoryPort;
 
     @Override
-    public void execute(ModuleRequestDTO requestDTO) {
+    public String execute(CreateModuleCommand cmd) {
         Module newModule = ModuleFactory.createNewModule(
-                requestDTO.title(),
+                cmd.title(),
                 null,
                 null,
                 null,
                 null,
-                requestDTO.idCourse()
+                cmd.idCourse()
         );
         moduleRepositoryPort.save(newModule);
+        return newModule.getIdModule();
     }
 }

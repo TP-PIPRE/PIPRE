@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.ModuleRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
 import com.pipre.backend.adapters.in.web.dto.ModuleResponseDTO;
 import com.pipre.backend.application.ports.input.CreateModuleUseCase;
 import com.pipre.backend.application.ports.input.GetModulesUseCase;
@@ -25,7 +25,7 @@ public class ModuleController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> postModule(@RequestBody ModuleRequestDTO requestDTO) {
+    public ResponseEntity<Void> postModule(@RequestBody CreateModuleCommand requestDTO) {
         createModuleUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

@@ -1,6 +1,6 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.RegisterCourseCommand;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import com.pipre.backend.domain.entities.Course;
@@ -17,7 +17,7 @@ public class UpdateCoursesService implements UpdateCoursesUseCase {
 
     @Override
     @Transactional
-    public void execute(String idCourse, CourseRequestDTO requestDTO) {
+    public void execute(String idCourse, RegisterCourseCommand requestDTO) {
 
         Course course = courseRepositoryPort.findById(idCourse)
                 .orElseThrow(() -> new BusinessException("El curso no existe"));

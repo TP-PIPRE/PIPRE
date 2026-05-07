@@ -1,7 +1,7 @@
 package com.pipre.backend.application.ports.input;
 
-import com.pipre.backend.adapters.in.web.dto.ModuleRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
 
 public interface CreateModuleUseCase {
-    void execute(ModuleRequestDTO requestDTO);
+    String execute(CreateModuleCommand cmd);
 }

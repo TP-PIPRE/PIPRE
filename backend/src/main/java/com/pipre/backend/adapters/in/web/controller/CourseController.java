@@ -1,8 +1,8 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.CourseRequestDTO;
+import com.pipre.backend.adapters.in.web.dto.RegisterCourseCommand;
 import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
-import com.pipre.backend.application.ports.input.CreateCoursesUseCase;
+import com.pipre.backend.application.ports.input.CreateCourseUseCase;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CourseController {
     private final GetCoursesUseCase getCoursesUseCase;
-    private final CreateCoursesUseCase createCoursesUseCase;
+    private final CreateCourseUseCase createCourseUseCase;
     private final UpdateCoursesUseCase updateCoursesUseCase;
 
     @GetMapping
@@ -26,13 +26,13 @@ public class CourseController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> postCourse(@RequestBody CourseRequestDTO requestDTO) {
-        createCoursesUseCase.execute(requestDTO);
+    public ResponseEntity<Void> postCourse(@RequestBody RegisterCourseCommand requestDTO) {
+        createCourseUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{idCourse}")
-    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, CourseRequestDTO requestDTO) {
+    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, RegisterCourseCommand requestDTO) {
         updateCoursesUseCase.execute(idCourse, requestDTO);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

@@ -1,7 +1,7 @@
 package com.pipre.backend.application.usecases;
 
-import com.pipre.backend.adapters.in.web.dto.LessonRequestDTO;
-import com.pipre.backend.application.ports.input.CreateLessonsUseCase;
+import com.pipre.backend.adapters.in.web.dto.CreateLessonCommand;
+import com.pipre.backend.application.ports.input.CreateLessonUseCase;
 import com.pipre.backend.application.ports.output.LessonRepositoryPort;
 import com.pipre.backend.domain.entities.Lesson;
 import com.pipre.backend.domain.factories.LessonFactory;
@@ -10,19 +10,20 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CreateLessonsService implements CreateLessonsUseCase {
+public class CreateLessonService implements CreateLessonUseCase {
 
     private final LessonRepositoryPort lessonRepositoryPort;
 
     @Override
-    public void execute(LessonRequestDTO requestDTO) {
+    public String execute(CreateLessonCommand cmd) {
         Lesson newLesson = LessonFactory.createNewLesson(
-                requestDTO.title(),
+                cmd.title(),
                 null,
                 null,
                 null,
-                requestDTO.idModule()
+                cmd.idModule()
         );
         lessonRepositoryPort.save(newLesson);
+        return newLesson.getIdLesson();
     }
 }

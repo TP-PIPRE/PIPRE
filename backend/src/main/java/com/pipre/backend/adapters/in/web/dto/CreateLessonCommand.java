@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.dto;
 
-public record LessonRequestDTO(
+public record CreateLessonCommand(
     String idModule,
     String title
 ) {
