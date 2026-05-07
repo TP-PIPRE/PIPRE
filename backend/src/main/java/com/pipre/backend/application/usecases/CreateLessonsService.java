@@ -20,7 +20,7 @@ public class CreateLessonsService implements CreateLessonsUseCase {
                 null,
                 null,
                 null,
-                null
+                requestDTO.idModule()
         );
         lessonRepositoryPort.save(newLesson);
     }

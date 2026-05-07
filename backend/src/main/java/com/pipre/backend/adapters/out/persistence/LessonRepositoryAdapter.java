@@ -3,6 +3,7 @@ package com.pipre.backend.adapters.out.persistence;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpaEntity;
 import com.pipre.backend.adapters.out.persistence.mapper.LessonMapper;
 import com.pipre.backend.adapters.out.persistence.repository.LessonJpaRepository;
+import com.pipre.backend.adapters.out.persistence.repository.ModuleJpaRepository;
 import com.pipre.backend.application.ports.output.LessonRepositoryPort;
 import com.pipre.backend.domain.entities.Lesson;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import java.util.List;
 public class LessonRepositoryAdapter implements LessonRepositoryPort {
 
     private final LessonJpaRepository lessonJpaRepository;
+    private final ModuleJpaRepository moduleJpaRepository;
 
     @Override
     public List<Lesson> findAll() {
@@ -27,6 +29,10 @@ public class LessonRepositoryAdapter implements LessonRepositoryPort {
     @Override
     public void save(Lesson lesson) {
         LessonJpaEntity entity = LessonMapper.toJpaEntity(lesson);
+        if (lesson.getIdModule() != null) {
+            moduleJpaRepository.findById(lesson.getIdModule())
+                    .ifPresent(entity::setModuleJpaEntity); // Asignamos el objeto completo gestionado por JPA
+        }
         lessonJpaRepository.save(entity);
     }
 }

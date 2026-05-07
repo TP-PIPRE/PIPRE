@@ -1,7 +1,9 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +11,8 @@ import java.util.List;
 @Entity
 @Table(name = "activities")
 @NoArgsConstructor
+@Getter
+@Setter
 public class ActivityJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
