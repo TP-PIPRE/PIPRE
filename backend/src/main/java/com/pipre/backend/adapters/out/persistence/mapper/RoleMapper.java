@@ -5,9 +5,19 @@ import com.pipre.backend.domain.entities.Role;
 
 public class RoleMapper {
     public static RoleJpaEntity toJpaEntity(Role domain) {
-        return null;
+        if (domain == null) return null;
+        RoleJpaEntity entity = new RoleJpaEntity();
+        entity.setIdRole(domain.getIdRole());
+        entity.setName(domain.getName());
+        entity.setDescription(domain.getDescription());
+        return entity;
     }
-    public static Role toDomain(RoleJpaEntity domain) {
-        return null;
+    public static Role toDomain(RoleJpaEntity entity) {
+        if (entity == null) return null;
+        return new Role.Builder()
+                .idRole(entity.getIdRole())
+                .name(entity.getName())
+                .description(entity.getDescription())
+                .build();
     }
 }

@@ -37,8 +37,8 @@ public class User {
         this.age = builder.age;
         this.isActive = builder.isActive;
         this.registeredAt = builder.registeredAt;
-        this.idRoleList = builder.roleIdList != null
-                        ? List.copyOf(builder.roleIdList)
+        this.idRoleList = builder.idRoleList != null
+                        ? List.copyOf(builder.idRoleList)
                         :List.of();
     }
 
@@ -77,7 +77,7 @@ public class User {
         private Integer age;
         private Boolean isActive;
         private LocalDateTime registeredAt;
-        private List<String> roleIdList;
+        private List<String> idRoleList;
 
         public Builder idUser(String idUser) {this.idUser = idUser; return this; }
         public Builder firstName(String firstName) {this.firstName = firstName; return this; }
@@ -88,7 +88,7 @@ public class User {
         public Builder age(Integer age) {this.age = age; return this; }
         public Builder isActive(Boolean isActive) {this.isActive = isActive; return this; }
         public Builder registeredAt(LocalDateTime registeredAt) {this.registeredAt = registeredAt; return this; }
-        public Builder idRoleList(List<String> roleIdList) {this.roleIdList = roleIdList; return this; }
+        public Builder idRoleList(List<String> idRoleList) {this.idRoleList = idRoleList; return this; }
 
         public User build() {
             return new User(this);
