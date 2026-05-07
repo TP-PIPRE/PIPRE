@@ -9,7 +9,7 @@ import java.util.Date;
 
 @Component
 public class JwtUtils {
-    private final String SECRET_KEY = "tu_clave_secreta_super_segura"; // Usa variables de entorno en producción
+    private final String SECRET_KEY = "clave_secreta_segura";
     private final String USER_GENERATOR = "TuBackendApp";
 
     public String createToken(String username) {
