@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
+import com.pipre.backend.application.commands.CreateModuleCommand;
 import com.pipre.backend.application.ports.output.ModuleRepositoryPort;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

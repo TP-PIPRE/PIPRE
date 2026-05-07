@@ -35,8 +35,4 @@ public class CourseJpaEntity {
     @OneToMany(mappedBy = "courseJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ModuleJpaEntity> moduleJpaEntityList = new ArrayList<>();
 
-//    public void addModule(ModuleJpaEntity module) {
-//        moduleJpaEntities.add(module);
-//        module.setCourseJpaEntity(this);
-//    }
 }

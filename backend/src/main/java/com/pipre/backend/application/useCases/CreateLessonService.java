@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.CreateLessonCommand;
+import com.pipre.backend.application.commands.CreateLessonCommand;
 import com.pipre.backend.application.ports.input.CreateLessonUseCase;
 import com.pipre.backend.application.ports.output.LessonRepositoryPort;
 import com.pipre.backend.domain.entities.Lesson;

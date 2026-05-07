@@ -38,8 +38,4 @@ public class ModuleJpaEntity {
     @OneToMany(mappedBy = "moduleJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LessonJpaEntity> lessonJpaEntityList = new ArrayList<>();
 
-//    public void addLesson(LessonJpaEntity lessonJpaEntity) {
-//        lessonJpaEntities.add(lessonJpaEntity);
-//        lessonJpaEntity.setModuleJpa(this);
-//    }
 }

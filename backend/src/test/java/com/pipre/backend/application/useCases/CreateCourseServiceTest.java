@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.RegisterCourseCommand;
+import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

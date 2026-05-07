@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.CreateActivityCommand;
+import com.pipre.backend.application.commands.CreateActivityCommand;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import com.pipre.backend.domain.entities.Activity;
 import org.junit.jupiter.api.DisplayName;

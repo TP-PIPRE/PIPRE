@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.dto;
 
-public record LoginRequest(
+public record LoginRequestDTO(
         String email,
         String password) {
 }

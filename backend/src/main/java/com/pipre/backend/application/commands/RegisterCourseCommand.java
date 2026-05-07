@@ -1,4 +1,4 @@
-package com.pipre.backend.adapters.in.web.dto;
+package com.pipre.backend.application.commands;
 
 public record RegisterCourseCommand(
     String name,

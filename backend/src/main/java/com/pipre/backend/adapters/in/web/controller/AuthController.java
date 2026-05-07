@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.LoginRequest;
+import com.pipre.backend.adapters.in.web.dto.LoginRequestDTO;
 import com.pipre.backend.infrastructure.security.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +23,11 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<String> login(@RequestBody LoginRequestDTO loginRequestDTO) {
         System.out.println(passwordEncoder.encode("123"));
         // 1. Validar credenciales
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password())
+                new UsernamePasswordAuthenticationToken(loginRequestDTO.email(), loginRequestDTO.password())
         );
 
         // 2. Si es válido, generar el token

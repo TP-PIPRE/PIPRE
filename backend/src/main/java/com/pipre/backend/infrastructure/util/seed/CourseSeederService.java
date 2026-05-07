@@ -1,9 +1,9 @@
 package com.pipre.backend.infrastructure.util.seed;
 
-import com.pipre.backend.adapters.in.web.dto.CreateActivityCommand;
-import com.pipre.backend.adapters.in.web.dto.CreateLessonCommand;
-import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
-import com.pipre.backend.adapters.in.web.dto.RegisterCourseCommand;
+import com.pipre.backend.application.commands.CreateActivityCommand;
+import com.pipre.backend.application.commands.CreateLessonCommand;
+import com.pipre.backend.application.commands.CreateModuleCommand;
+import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.application.ports.input.*;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.domain.entities.User;
@@ -12,9 +12,7 @@ import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor

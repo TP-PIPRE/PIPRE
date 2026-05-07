@@ -33,9 +33,4 @@ public class LessonJpaEntity {
     @OneToMany(mappedBy = "lessonJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ActivityJpaEntity> activityJpaEntityList = new ArrayList<>();
 
-//
-//    public void addActivity(ActivityJpaEntity activity) {
-//        activitiesJpas.add(activity);
-//        activity.setLessonJpa(this);
-//    }
 }

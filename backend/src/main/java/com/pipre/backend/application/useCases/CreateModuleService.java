@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
+import com.pipre.backend.application.commands.CreateModuleCommand;
 import com.pipre.backend.application.ports.input.CreateModuleUseCase;
 import com.pipre.backend.application.ports.output.ModuleRepositoryPort;
 import com.pipre.backend.domain.entities.Module;

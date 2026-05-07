@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.RegisterCourseCommand;
+import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
 import com.pipre.backend.application.ports.input.CreateCourseUseCase;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;

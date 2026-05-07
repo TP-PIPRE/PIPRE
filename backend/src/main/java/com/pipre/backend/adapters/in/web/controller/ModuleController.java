@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.CreateModuleCommand;
+import com.pipre.backend.application.commands.CreateModuleCommand;
 import com.pipre.backend.adapters.in.web.dto.ModuleResponseDTO;
 import com.pipre.backend.application.ports.input.CreateModuleUseCase;
 import com.pipre.backend.application.ports.input.GetModulesUseCase;

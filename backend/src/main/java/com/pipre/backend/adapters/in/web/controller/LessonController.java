@@ -1,6 +1,6 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.CreateLessonCommand;
+import com.pipre.backend.application.commands.CreateLessonCommand;
 import com.pipre.backend.adapters.in.web.dto.LessonResponseDTO;
 import com.pipre.backend.application.ports.input.CreateLessonUseCase;
 import com.pipre.backend.application.ports.input.GetLessonsUseCase;
