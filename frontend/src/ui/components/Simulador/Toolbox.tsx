@@ -30,7 +30,6 @@ export const Toolbox = () => {
     category: BlockCategory,
     isUnlocked: boolean,
     reqText: string,
-    colorClass: string,
     params: Record<string, string> = {},
   ) => {
     const getColorClass = () => {
@@ -101,7 +100,7 @@ export const Toolbox = () => {
             "event",
             true,
             "",
-            "border-success",
+            {},
           )}
           {renderBlock(
             "al_detectar_obstaculo",
@@ -109,7 +108,7 @@ export const Toolbox = () => {
             "event",
             hasSonar,
             "Sensor Ultrasónico",
-            "border-success",
+            {},
           )}
         </div>
 
@@ -125,7 +124,6 @@ export const Toolbox = () => {
             "action",
             hasRuedas,
             "Tracción Oruga",
-            "border-text-muted/50",
             { distancia: "30" },
           )}
           {renderBlock(
@@ -134,7 +132,6 @@ export const Toolbox = () => {
             "action",
             hasRuedas,
             "Tracción Oruga",
-            "border-text-muted/50",
             { grados: "90" },
           )}
           {renderBlock(
@@ -143,7 +140,6 @@ export const Toolbox = () => {
             "action",
             hasHelices,
             "Hélices Drone",
-            "border-primary",
             { altura: "50" },
           )}
           {renderBlock(
@@ -152,7 +148,7 @@ export const Toolbox = () => {
             "action",
             hasHelices,
             "Hélices Drone",
-            "border-primary",
+            {},
           )}
         </div>
 
@@ -168,7 +164,7 @@ export const Toolbox = () => {
             "action",
             hasGarra,
             "Garra Mecánica",
-            "border-accent",
+            {},
           )}
           {renderBlock(
             "soltar",
@@ -176,7 +172,7 @@ export const Toolbox = () => {
             "action",
             hasGarra,
             "Garra Mecánica",
-            "border-accent",
+            {},
           )}
           {renderBlock(
             "encender_luz",
@@ -184,7 +180,7 @@ export const Toolbox = () => {
             "action",
             hasLed,
             "Faro LED",
-            "border-accent",
+            {},
           )}
         </div>
 
@@ -200,7 +196,7 @@ export const Toolbox = () => {
             "condition",
             hasSonar,
             "Sensor Ultrasónico",
-            "border-primary",
+            {},
           )}
         </div>
       </div>

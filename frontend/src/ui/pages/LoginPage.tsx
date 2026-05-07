@@ -3,7 +3,7 @@ import { useAuth } from "../../application/hooks/useAuth";
 import { apiService } from "../../infrastructure/api/apiService";
 
 export const LoginPage: React.FC = () => {
-  const { login, error: authError } = useAuth();
+  const { login } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -46,7 +46,11 @@ export const LoginPage: React.FC = () => {
       }
     } catch (err) {
       console.error("Error in auth/reg:", err);
-      setRegError("Error de sincronización. Verifica los datos del nodo.");
+      setRegError(
+        isLogin
+          ? "Credenciales inválidas"
+          : "Error de sincronización. Verifica los datos del nodo.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -198,12 +202,12 @@ export const LoginPage: React.FC = () => {
               />
             </div>
 
-            {(authError || regError) && (
+            {regError && (
               <div
                 className="p-4 bg-danger/10 border border-danger/20 text-danger text-[10px] font-bold uppercase tracking-widest text-center animate-shake"
                 style={{ borderRadius: "var(--theme-radius)" }}
               >
-                {authError ? "Credenciales Inválidas" : regError}
+                {regError}
               </div>
             )}
 
