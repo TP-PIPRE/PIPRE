@@ -1,5 +1,6 @@
 import { useDashboardDocente } from "../../application/hooks/useDashboardDocente";
 
+// Mock original (retos, estudiantes, métricas)
 const mockDashboardData = {
   metricas: [
     {
@@ -54,7 +55,7 @@ const mockDashboardData = {
       xp: 4850,
       variacionXP: 120,
       posicion: 1,
-      avatar: "https://ui-avatars.com/api/?name=Lucia+Mendez&background=random", // Placeholder
+      avatar: "https://ui-avatars.com/api/?name=Lucia+Mendez&background=random",
     },
     {
       id: "2",
@@ -73,6 +74,133 @@ const mockDashboardData = {
       avatar: "https://ui-avatars.com/api/?name=Sofia+Chen&background=random",
     },
   ],
+};
+
+// Mock para el dashboard de IA (nuevo)
+const mockIADashboardData = {
+  datosEvaluados: [
+    { variable: "id_estudiante", valor: "ALUM-097" },
+    { variable: "edad", valor: "6" },
+    { variable: "grado", valor: "1" },
+    { variable: "tiempo_sesion_min", valor: "41" },
+    { variable: "intentos", valor: "6" },
+    { variable: "errores", valor: "9" },
+  ],
+  resultado: "Desempeño bajo",
+  metricasIA: [
+    { nombre: "Accuracy", valor: 0.87 },
+    { nombre: "Precisión", valor: 0.87 },
+  ],
+  importanciaVariables: [
+    { nombre: "uso_codigo", importancia: 0.25 },
+    { nombre: "errores", importancia: 0.23 },
+    { nombre: "ratio_error", importancia: 0.18 },
+    { nombre: "tiempo_sesion_min", importancia: 0.12 },
+    { nombre: "intensidad_uso", importancia: 0.08 },
+    { nombre: "dependencia_ia", importancia: 0.06 },
+    { nombre: "interacciones_ia", importancia: 0.05 },
+    { nombre: "intentos", importancia: 0.03 },
+  ],
+};
+
+// Componente para el gráfico de barras horizontal (SVG puro)
+const HorizontalBarChart = ({
+  data,
+}: {
+  data: { nombre: string; importancia: number }[];
+}) => {
+  const maxImportancia = Math.max(...data.map((d) => d.importancia));
+  const barHeight = 20;
+  const barSpacing = 10;
+  const width = 500;
+  const height = data.length * (barHeight + barSpacing);
+
+  return (
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="overflow-visible"
+    >
+      {data.map((d, index) => {
+        const barWidth = (d.importancia / maxImportancia) * (width - 120);
+        const y = index * (barHeight + barSpacing);
+        return (
+          <g key={d.nombre}>
+            <rect
+              x={120}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              fill="var(--primary)"
+              rx={2}
+              ry={2}
+            />
+            <text
+              x={115}
+              y={y + barHeight / 2 + 5}
+              textAnchor="end"
+              dominantBaseline="middle"
+              className="text-xs font-mono"
+              style={{ fill: "var(--text-muted)" }}
+            >
+              {d.nombre}
+            </text>
+            <text
+              x={120 + barWidth + 5}
+              y={y + barHeight / 2 + 5}
+              textAnchor="start"
+              dominantBaseline="middle"
+              className="text-xs font-mono"
+              style={{ fill: "var(--text)" }}
+            >
+              {d.importancia.toFixed(2)}
+            </text>
+          </g>
+        );
+      })}
+      <line
+        x1={120}
+        y1={0}
+        x2={120}
+        y2={height}
+        stroke="var(--border)"
+        strokeWidth={1}
+      />
+      <line
+        x1={120}
+        y1={height}
+        x2={width}
+        y2={height}
+        stroke="var(--border)"
+        strokeWidth={1}
+      />
+      {[0, 0.05, 0.1, 0.15, 0.2, 0.25].map((val) => {
+        const x = 120 + (val / maxImportancia) * (width - 120);
+        return (
+          <text
+            key={val}
+            x={x}
+            y={height + 15}
+            textAnchor="middle"
+            className="text-xs font-mono"
+            style={{ fill: "var(--text-muted)" }}
+          >
+            {val.toFixed(2)}
+          </text>
+        );
+      })}
+      <text
+        x={width / 2}
+        y={height + 30}
+        textAnchor="middle"
+        className="text-xs font-mono"
+        style={{ fill: "var(--text-muted)" }}
+      >
+        Importancia
+      </text>
+    </svg>
+  );
 };
 
 export const DocenteDashboard = () => {
@@ -109,7 +237,7 @@ export const DocenteDashboard = () => {
             className="text-sm transition-all duration-300"
             style={{ color: "var(--text-muted)" }}
           >
-            Gestión de retos, estudiantes y seguimiento de progreso.
+            Gestión de retos, estudiantes y seguimiento de progreso
           </p>
         </div>
         <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
@@ -118,7 +246,7 @@ export const DocenteDashboard = () => {
         </button>
       </div>
 
-      {/* Metrics */}
+      {/* Métricas originales (Retos Activos, Estudiantes, Progreso Global) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {dataToShow.metricas.map((m) => (
           <div
@@ -155,8 +283,8 @@ export const DocenteDashboard = () => {
         ))}
       </div>
 
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Main grid (Retos y Mejores Estudiantes) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
         {/* Retos table */}
         <div className="lg:col-span-8 border border-border bg-surface p-6 transition-all duration-300 rounded-lg">
           <h2
@@ -332,6 +460,141 @@ export const DocenteDashboard = () => {
             Ver ranking completo
           </button>
         </div>
+      </div>
+
+      {/* --- NUEVAS SECCIONES DEL DASHBOARD DE IA --- */}
+      <div className="border-t border-border my-8" />
+
+      {/* Título del Dashboard de IA */}
+      <div className="mb-6">
+        <h2
+          className="text-xl font-mono font-bold tracking-tight mb-2"
+          style={{ color: "var(--text)" }}
+        >
+          Dashboard de Resultados IA
+        </h2>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          Análisis de desempeño basado en inteligencia artificial
+        </p>
+      </div>
+
+      {/* Datos evaluados (Tabla) */}
+      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
+        <h3
+          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
+          style={{ color: "var(--text)" }}
+        >
+          Datos evaluados
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr
+                className="text-xs uppercase tracking-wider border-b"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                <th className="pb-2 font-normal">Variable</th>
+                <th className="pb-2 font-normal">Valor</th>
+              </tr>
+            </thead>
+            <tbody
+              className="divide-y"
+              style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
+            >
+              {mockIADashboardData.datosEvaluados.map((d, index) => (
+                <tr
+                  key={index}
+                  className="hover:bg-surface/30 transition-colors duration-300"
+                >
+                  <td
+                    className="py-2 font-mono text-xs"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {d.variable}
+                  </td>
+                  <td
+                    className="py-2 font-mono text-xs"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {d.valor}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Resultado */}
+      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
+        <h3
+          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
+          style={{ color: "var(--text)" }}
+        >
+          Resultado
+        </h3>
+        <div
+          className="bg-surface p-4 rounded-lg text-center font-mono font-bold"
+          style={{
+            backgroundColor: "var(--surface)",
+            color: "var(--text)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          {mockIADashboardData.resultado}
+        </div>
+      </div>
+
+      {/* Métricas de IA */}
+      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
+        <h3
+          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
+          style={{ color: "var(--text)" }}
+        >
+          Métricas
+        </h3>
+        <div className="flex gap-8">
+          {mockIADashboardData.metricasIA.map((m) => (
+            <div key={m.nombre} className="flex flex-col">
+              <span
+                className="text-xs font-mono"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {m.nombre}:
+              </span>
+              <span
+                className="text-lg font-mono font-bold"
+                style={{ color: "var(--text)" }}
+              >
+                {m.valor}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Gráfico de Importancia de Variables */}
+      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
+        <h3
+          className="text-sm font-mono font-bold uppercase tracking-wider mb-4 text-center"
+          style={{ color: "var(--text)" }}
+        >
+          Importancia de Variables
+        </h3>
+        <div className="w-full overflow-x-auto">
+          <HorizontalBarChart data={mockIADashboardData.importanciaVariables} />
+        </div>
+      </div>
+
+      {/* Botón "Evaluar otra fila" */}
+      <div className="mt-8 flex justify-center">
+        <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
+          <span className="material-symbols-outlined text-sm">refresh</span>
+          Evaluar otra fila
+        </button>
       </div>
     </main>
   );
