@@ -2,7 +2,7 @@ package com.pipre.backend.adapters.out.persistence;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpaEntity;
 import com.pipre.backend.adapters.out.persistence.mapper.CourseMapper;
-import com.pipre.backend.adapters.out.persistence.repository.CourseJpaRepository;
+import com.pipre.backend.adapters.out.persistence.jpaRepositories.CourseJpaRepository;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import com.pipre.backend.domain.entities.Course;
 import lombok.RequiredArgsConstructor;

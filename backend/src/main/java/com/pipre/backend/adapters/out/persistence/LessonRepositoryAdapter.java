@@ -2,8 +2,8 @@ package com.pipre.backend.adapters.out.persistence;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpaEntity;
 import com.pipre.backend.adapters.out.persistence.mapper.LessonMapper;
-import com.pipre.backend.adapters.out.persistence.repository.LessonJpaRepository;
-import com.pipre.backend.adapters.out.persistence.repository.ModuleJpaRepository;
+import com.pipre.backend.adapters.out.persistence.jpaRepositories.LessonJpaRepository;
+import com.pipre.backend.adapters.out.persistence.jpaRepositories.ModuleJpaRepository;
 import com.pipre.backend.application.ports.output.LessonRepositoryPort;
 import com.pipre.backend.domain.entities.Lesson;
 import lombok.RequiredArgsConstructor;

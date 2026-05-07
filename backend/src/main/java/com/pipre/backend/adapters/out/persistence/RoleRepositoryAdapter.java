@@ -1,14 +1,13 @@
 package com.pipre.backend.adapters.out.persistence;
 
 import com.pipre.backend.adapters.out.persistence.mapper.RoleMapper;
-import com.pipre.backend.adapters.out.persistence.repository.RoleJpaRepository;
+import com.pipre.backend.adapters.out.persistence.jpaRepositories.RoleJpaRepository;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.domain.entities.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor

@@ -2,8 +2,8 @@ package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.adapters.in.web.dto.RoleResponseDTO;
 import com.pipre.backend.adapters.in.web.dto.RoleUserRequestDTO;
-import com.pipre.backend.application.usecases.AssignRoleService;
-import com.pipre.backend.application.usecases.GetRolesService;
+import com.pipre.backend.application.useCases.AssignRoleService;
+import com.pipre.backend.application.useCases.GetRolesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
