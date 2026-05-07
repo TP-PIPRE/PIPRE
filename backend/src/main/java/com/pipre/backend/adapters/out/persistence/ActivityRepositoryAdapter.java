@@ -1,7 +1,9 @@
 package com.pipre.backend.adapters.out.persistence;
 
+import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpaEntity;
 import com.pipre.backend.adapters.out.persistence.mapper.ActivityMapper;
 import com.pipre.backend.adapters.out.persistence.repository.ActivityJpaRepository;
+import com.pipre.backend.adapters.out.persistence.repository.LessonJpaRepository;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import com.pipre.backend.domain.entities.Activity;
 import lombok.RequiredArgsConstructor;
@@ -12,18 +14,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
 
-    private final ActivityJpaRepository jpaRepository;
+    private final ActivityJpaRepository activityJpaRepository;
+    private final LessonJpaRepository lessonJpaRepository;
+
     @Override
     public List<Activity> findAll() {
-        return jpaRepository.findAll()
+        return activityJpaRepository.findAll()
                 .stream()
                 .map(ActivityMapper::toDomain)
                 .toList();
     }
 
     @Override
-    public Boolean existsByName(String name) {
-        return jpaRepository.existsActivityJpaEntityByName(name);
+    public void save(Activity activity) {
+        ActivityJpaEntity entity = ActivityMapper.toJpaEntity(activity);
+        if (activity.getIdLesson() != null) {
+            lessonJpaRepository.findById(activity.getIdLesson())
+                    .ifPresent(entity::setLessonJpaEntity);
+        }
+        activityJpaRepository.save(entity);
     }
 
 }

@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface ActivityRepositoryPort {
     List<Activity> findAll();
-    Boolean existsByName(String name);
+    void save(Activity newActivity);
 }

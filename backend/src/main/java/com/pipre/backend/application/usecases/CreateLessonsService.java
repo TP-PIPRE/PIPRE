@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class CreateLessonsService implements CreateLessonsUseCase {
+
     private final LessonRepositoryPort lessonRepositoryPort;
 
     @Override

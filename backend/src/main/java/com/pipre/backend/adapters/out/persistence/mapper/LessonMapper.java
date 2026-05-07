@@ -20,7 +20,7 @@ public class LessonMapper {
 
     public static Lesson toDomain(LessonJpaEntity entity) {
         if (entity == null) return null;
-        String idModule = (entity.getModuleJpaEntity() ==null)
+        String idModule = (entity.getModuleJpaEntity() == null)
                 ? null
                 : entity.getModuleJpaEntity().getIdModule();
         List<String> idActivityList = (entity.getActivityJpaEntityList() == null)

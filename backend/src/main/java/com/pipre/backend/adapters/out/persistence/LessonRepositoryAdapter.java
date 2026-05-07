@@ -31,7 +31,7 @@ public class LessonRepositoryAdapter implements LessonRepositoryPort {
         LessonJpaEntity entity = LessonMapper.toJpaEntity(lesson);
         if (lesson.getIdModule() != null) {
             moduleJpaRepository.findById(lesson.getIdModule())
-                    .ifPresent(entity::setModuleJpaEntity); // Asignamos el objeto completo gestionado por JPA
+                    .ifPresent(entity::setModuleJpaEntity);
         }
         lessonJpaRepository.save(entity);
     }

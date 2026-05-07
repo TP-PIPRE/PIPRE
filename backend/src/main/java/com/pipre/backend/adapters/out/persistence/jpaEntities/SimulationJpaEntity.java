@@ -1,7 +1,9 @@
 package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,6 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "simulations")
 @NoArgsConstructor
+@Getter
+@Setter
 public class SimulationJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
