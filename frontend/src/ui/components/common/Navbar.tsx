@@ -1,121 +1,195 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../../infrastructure/store/authStore';
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  getAuthState,
+  clearAuthState,
+} from "../../../infrastructure/store/authStore";
+import { useThemeStore } from "../../../infrastructure/store/themeStore";
+import { themes } from "../../../shared/constants/themes";
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated } = getAuthState();
+  const { currentThemeName, setTheme } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
-  const isDocente = user?.role === 'docente';
+  const isDocente = user?.role === "docente";
 
   const navLinks = isDocente
     ? [
-        { name: 'Dashboard', path: '/docente/dashboard' },
-        { name: 'Métricas', path: '/docente/metricas' },
-        { name: 'Retos', path: '/docente/retos' },
-        { name: 'Estudiantes', path: '/docente/estudiantes' },
+        { name: "Dashboard", path: "/docente/dashboard" },
+        { name: "Métricas", path: "/docente/metricas" },
+        { name: "Retos", path: "/docente/retos" },
+        { name: "Estudiantes", path: "/docente/estudiantes" },
       ]
     : [
-        { name: 'Inicio', path: '/' },
-        { name: 'Cursos', path: '/cursos' },
-        { name: 'Simulador', path: '/simulador' },
-        { name: 'Resultados', path: '/resultados' },
-        { name: 'Ranking', path: '/ranking' },
+        { name: "Inicio", path: "/" },
+        { name: "Cursos", path: "/cursos" },
+        { name: "Simulador", path: "/simulador" },
+        { name: "Resultados", path: "/resultados" },
+        { name: "Ranking", path: "/ranking" },
       ];
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    console.log("Manejador de logout llamado desde Navbar.");
+    clearAuthState();
+    navigate("/login");
+  };
+
+  const handleThemeChange = (themeName: keyof typeof themes) => {
+    setTheme(themeName);
+    setIsThemeMenuOpen(false);
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 border-b border-border bg-bg/95 backdrop-blur-md z-[1001] flex items-stretch">
+    <header className="fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-bg/95 backdrop-blur-2xl z-[1001] flex items-stretch">
       {/* Left: Brand + Nav */}
-      <div className="flex items-stretch">
+      <div className="flex items-stretch flex-1">
         {/* Brand */}
         <Link
           to="/"
-          className="flex items-center gap-2.5 px-5 border-r border-border hover:bg-surface/60 transition-colors"
+          className="flex items-center gap-3 px-6 hover:bg-surface/40 transition-all group"
         >
-          <div className="w-7 h-7 bg-primary flex items-center justify-center font-mono font-black text-bg text-base shrink-0">
+          <div
+            className="w-8 h-8 bg-primary flex items-center justify-center font-bold text-bg text-lg shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
+            style={{ borderRadius: "var(--theme-radius)" }}
+          >
             P
           </div>
-          <span className="font-mono text-xs font-bold tracking-[0.15em] text-text hidden sm:block">
-            PIPRE
-          </span>
+          <div className="hidden sm:flex flex-col leading-none">
+            <span className="text-sm font-bold tracking-widest text-text">
+              PIPRE
+            </span>
+            <span className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">
+              Industrial
+            </span>
+          </div>
         </Link>
 
         {/* Nav links */}
-        <nav className="hidden md:flex items-stretch">
+        <nav className="hidden md:flex items-stretch ml-4">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-5 font-mono text-[11px] uppercase tracking-[0.15em] border-b-2 transition-colors
-                  ${isActive
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-text-muted hover:text-text hover:bg-surface/40'}`}
+                className={`flex items-center px-6 text-[10px] font-bold uppercase tracking-[0.2em] relative transition-all active:scale-95 ${
+                  isActive ? "text-primary" : "text-text-muted hover:text-text"
+                }`}
               >
                 {link.name}
+                {isActive && (
+                  <span className="absolute bottom-0 left-6 right-6 h-0.5 bg-primary rounded-full shadow-[0_0_10px_var(--primary)]" />
+                )}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
       {/* Right: User + Actions */}
-      <div className="flex items-stretch font-mono text-[10px] uppercase tracking-[0.12em]">
-        {/* User info */}
-        <div className="hidden sm:flex items-center gap-3 px-5 border-l border-border">
-          <div className="flex flex-col items-end leading-tight">
-            <span className="text-text text-[11px] font-semibold normal-case truncate max-w-[120px]">
-              {user?.name || user?.email || 'Guest'}
-            </span>
-            <span className="text-text-muted text-[9px]">
-              {isDocente ? 'Instructor' : 'Estudiante'}
-            </span>
-          </div>
+      <div className="flex items-stretch px-2">
+        {/* Theme Picker */}
+        <div className="relative flex items-center h-full">
+          <button
+            onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+            className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
+            title="Cambiar Tema"
+          >
+            <span className="material-symbols-outlined text-xl">palette</span>
+          </button>
+
+          {isThemeMenuOpen && (
+            <div
+              className="absolute right-0 top-full mt-1 w-40 bg-surface border border-border p-2 shadow-2xl animate-scale-up z-[1100]"
+              style={{ borderRadius: "var(--theme-radius)" }}
+            >
+              {(Object.keys(themes) as Array<keyof typeof themes>).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => handleThemeChange(t)}
+                  className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${
+                    currentThemeName === t
+                      ? "text-primary bg-primary/10"
+                      : "text-text-muted hover:bg-surface-brighter"
+                  }`}
+                  style={{ borderRadius: "calc(var(--theme-radius) - 2px)" }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center justify-center w-14 border-l border-border text-text-muted hover:text-primary hover:bg-surface/60 transition-colors"
-          title="Cerrar sesión"
-        >
-          <span className="material-symbols-outlined text-lg">logout</span>
-        </button>
+        {/* User Status */}
+        {isAuthenticated && (
+          <div className="hidden sm:flex items-center gap-4 px-6 border-x border-border/30">
+            <div className="flex flex-col items-end leading-tight">
+              <span className="text-[10px] font-bold text-text truncate max-w-[120px]">
+                {user?.name || user?.email?.split("@")[0] || "Operador"}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1 h-1 bg-success rounded-full animate-pulse" />
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-text-muted">
+                  {isDocente ? "Instructor" : "Estudiante"}
+                </span>
+              </div>
+            </div>
+            <div
+              className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
+              style={{ borderRadius: "var(--theme-radius)" }}
+            >
+              <span className="material-symbols-outlined text-text-muted text-lg">
+                person
+              </span>
+            </div>
+          </div>
+        )}
 
-        {/* Mobile menu toggle */}
-        <button
-          className="md:hidden flex items-center justify-center w-14 border-l border-border text-text-muted"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          <span className="material-symbols-outlined text-lg">
-            {isMenuOpen ? 'close' : 'menu'}
-          </span>
-        </button>
+        {/* Actions */}
+        <div className="flex items-center gap-1 px-2">
+          {isAuthenticated && (
+            <button
+              onClick={handleLogout}
+              className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
+              title="Desconectar"
+            >
+              <span className="material-symbols-outlined text-xl">
+                power_settings_new
+              </span>
+            </button>
+          )}
+
+          {/* Mobile menu toggle */}
+          <button
+            className="md:hidden w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <span className="material-symbols-outlined text-xl">
+              {isMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile dropdown */}
       {isMenuOpen && (
-        <div className="absolute top-14 left-0 w-full bg-bg border-b border-border md:hidden flex flex-col">
+        <div className="absolute top-16 left-0 w-full bg-surface border-b border-border md:hidden flex flex-col p-4 gap-2 animate-fade-in">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
-              className={`px-6 py-3 font-mono text-sm uppercase tracking-widest border-b border-border/30 transition-colors
-                ${location.pathname === link.path
-                  ? 'text-primary bg-primary/5'
-                  : 'text-text-muted hover:text-text hover:bg-surface/40'}`}
+              className={`px-6 py-4 text-[10px] font-bold uppercase tracking-widest transition-all ${
+                location.pathname === link.path
+                  ? "bg-primary/10 text-primary"
+                  : "text-text-muted hover:bg-bg"
+              }`}
+              style={{ borderRadius: "var(--theme-radius)" }}
             >
               {link.name}
             </Link>
@@ -125,4 +199,3 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
-

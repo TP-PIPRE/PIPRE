@@ -14,9 +14,9 @@ public class DataSeeder {
 
     private final UserRolesSeederService userSeederService;
     private final CourseSeederService courseSeederService;
-    private final ProgressSeederService progressSeederService;
-    private final SupportAnalyticSeederService supportAnalyticSeederService;
-    private final GroupSeederService groupSeederService;
+//    private final ProgressSeederService progressSeederService;
+//    private final SupportAnalyticSeederService supportAnalyticSeederService;
+//    private final GroupSeederService groupSeederService;
 
     @Bean
     CommandLineRunner seed() {
@@ -24,9 +24,9 @@ public class DataSeeder {
             if (!userSeederService.isDatabaseSeeded()) {
                 userSeederService.seedUsers();
                 courseSeederService.seedCourses();
-                progressSeederService.seedProgress();
-                supportAnalyticSeederService.seedAnalytics();
-                groupSeederService.seedGroups();
+//                progressSeederService.seedProgress();
+//                supportAnalyticSeederService.seedAnalytics();
+//                groupSeederService.seedGroups();
                 System.out.println("Base de datos sembrada");
             } else {
                 System.out.println("La base de datos ya contiene datos. No se sembró nada.");

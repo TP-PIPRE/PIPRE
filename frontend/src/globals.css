@@ -1,31 +1,37 @@
 @import "tailwindcss";
 
-@theme {
-  --color-bg: oklch(10% 0 0);
-  --color-surface: oklch(14% 0 0);
-  --color-surface-brighter: oklch(18% 0 0);
-  --color-primary: oklch(85% 0.16 170);
-  --color-primary-low: oklch(85% 0.16 170 / 0.1);
-  --color-primary-glow: oklch(85% 0.16 170 / 0.15);
-  --color-border: oklch(22% 0.01 240);
-  --color-text: oklch(85% 0.01 240);
-  --color-text-muted: oklch(50% 0.01 240);
-  
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", monospace;
-  --font-sans: "Inter", system-ui, sans-serif;
-}
-
 :root {
-  --bg: var(--color-bg);
-  --surface: var(--color-surface);
-  --primary: var(--color-primary);
-  --primary-low: var(--color-primary-low);
-  --border: var(--color-border);
-  --text: var(--color-text);
-  --text-muted: var(--color-text-muted);
+  /* Theme variables (assigned from App.tsx) */
+  --bg: var(--theme-bg);
+  --surface: var(--theme-surface);
+  --surface-brighter: var(--theme-surface-brighter);
+  --primary: var(--theme-primary);
+  --primary-low: var(--theme-primary-low);
+  --primary-glow: var(--theme-primary-glow);
+  --accent: var(--theme-accent);
+  --success: var(--theme-success);
+  --danger: var(--theme-danger);
+  --border: var(--theme-border);
+  --text: var(--theme-text);
+  --text-muted: var(--theme-text-muted);
+  --text-inverted: var(--theme-text-inverted);
+
+  /* Font stacks (updated per theme in App.tsx) */
+  --font-mono: "Recursive", monospace;
+  --font-sans: "Geist", system-ui, sans-serif;
+
+  /* Spacing scale (4pt base) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
 }
 
 body {
+  position: relative;
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
@@ -33,63 +39,50 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
   overflow-x: hidden;
-  position: relative;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Industrial Grid Pattern */
+/* Subtle grid texture — only visible at low opacity */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(var(--border) 1px, transparent 1px),
     linear-gradient(90deg, var(--border) 1px, transparent 1px);
   background-size: 40px 40px;
   background-position: center;
-  opacity: 0.1;
+  opacity: 0.08;
   pointer-events: none;
   z-index: -1;
+  transition: opacity 0.4s ease;
 }
 
-/* Scanline Effect */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 245, 212, 0.03) 50%,
-    transparent 100%
-  );
-  background-size: 100% 4px;
-  animation: scan 10s linear infinite;
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0.2;
-}
-
-@keyframes scan {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(100%); }
-}
-
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.mono-title {
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-/* Typographic scale — each level gets its own size */
-h1 { font-size: clamp(1.5rem, 3vw + 0.5rem, 2.25rem); }
-h2 { font-size: clamp(1.15rem, 2vw + 0.4rem, 1.5rem); }
-h3 { font-size: clamp(0.95rem, 1.5vw + 0.3rem, 1.15rem); }
-h4 { font-size: 0.875rem; }
-h5 { font-size: 0.75rem; }
-h6 { font-size: 0.625rem; }
+/* Type scale — fixed rem for product UI, not fluid */
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.125rem; }
 
-/* Industrial Scrollbars */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -97,54 +90,105 @@ h6 { font-size: 0.625rem; }
 
 ::-webkit-scrollbar-track {
   background: var(--bg);
-  border-left: 1px solid var(--border);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 0;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--primary);
 }
 
-/* Utility Classes */
+/* Panel component — no side-stripe, depth via border + shadow */
 .panel-border {
   border: 1px solid var(--border);
+  background-color: var(--surface);
   position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Corner highlights for panels */
-.panel-border::before {
-  content: "";
-  position: absolute;
-  top: -1px;
-  left: -1px;
-  width: 10px;
-  height: 10px;
-  border-top: 2px solid var(--primary);
-  border-left: 2px solid var(--primary);
-  opacity: 0;
-  transition: opacity 0.3s;
+.panel-border:hover {
+  border-color: var(--primary);
+  background-color: var(--surface-brighter);
+  box-shadow: 0 8px 24px -8px var(--primary-glow);
 }
 
-.panel-border:hover::before {
-  opacity: 1;
+/* Button: primary action */
+.btn-premium {
+  @apply px-6 py-3 font-bold transition-all duration-300 active:scale-95 flex items-center justify-center gap-2;
+  background-color: var(--primary);
+  color: var(--text-inverted);
+  border-radius: var(--theme-radius, 10px);
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
+.btn-premium:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 20px var(--primary-glow);
+  transform: translateY(-1px);
+}
+
+/* Button: secondary action */
+.btn-secondary {
+  @apply px-6 py-3 font-bold transition-all duration-300 active:scale-95 border;
+  border-color: var(--border);
+  color: var(--text);
+  border-radius: var(--theme-radius, 10px);
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--primary-low);
+}
+
+/* Utility text classes */
 .glow-text {
-  text-shadow: 0 0 10px var(--color-primary-glow);
+  text-shadow: 0 0 12px var(--primary-glow);
 }
 
-.mono {
-  font-family: var(--font-mono);
-}
+.accent-text { color: var(--accent); }
+.success-text { color: var(--success); }
+.danger-text { color: var(--danger); }
+.mono { font-family: var(--font-mono); }
 
-/* Material Symbols Adjustments */
+/* Material Symbols config */
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
   vertical-align: middle;
 }
 
+/* Animations — subtle, exponential easing (ease-out-quart) */
+@keyframes fade-in-soft {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
+@keyframes scale-up-soft {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-fade-in-soft {
+  animation: fade-in-soft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-up-soft {
+  animation: scale-up-soft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s infinite ease-in-out;
+}
