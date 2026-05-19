@@ -14,10 +14,6 @@ public class ModuleMapper {
         ModuleJpaEntity entity = new ModuleJpaEntity();
         entity.setIdModule(domain.getIdModule());
         entity.setTitle(domain.getTitle());
-        entity.setDescription(domain.getDescription());
-        entity.setIsAvailable(domain.getIsAvailable());
-        entity.setModuleOrder(domain.getModuleOrder());
-        entity.setPercentageMeta(domain.getPercentageMeta());
         return entity;
     }
     public static Module toDomain(ModuleJpaEntity entity) {
@@ -37,10 +33,6 @@ public class ModuleMapper {
                 .idModule(entity.getIdModule())
                 .idCourse(idCourse)
                 .title(entity.getTitle())
-                .description(entity.getDescription())
-                .isAvailable(entity.getIsAvailable())
-                .moduleOrder(entity.getModuleOrder())
-                .percentageMeta(entity.getPercentageMeta())
                 .idLessonList(idLessonList)
                 .build();
     }
