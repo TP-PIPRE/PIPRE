@@ -25,10 +25,6 @@ public class ActivityJpaEntity {
     @Column(nullable = false)
     private String name;
 
-    private String difficulty;
-    private Integer logicLevel;
-    private String type;
-
     @OneToMany(mappedBy = "activityJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SimulationJpaEntity> simulationJpaEntityList = new ArrayList<>();
 
