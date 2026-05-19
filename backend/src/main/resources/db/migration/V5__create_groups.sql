@@ -1,13 +1,6 @@
 CREATE TABLE groups (
     id_group VARCHAR(36) PRIMARY KEY,
-    id_teacher VARCHAR(36),
-    group_name VARCHAR(255) NOT NULL,
-    grade VARCHAR(50),
-    section VARCHAR(50),
-
-    CONSTRAINT fk_groups_teacher FOREIGN KEY (id_teacher)
-        REFERENCES users(id_user)
-        ON DELETE SET NULL
+    group_name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE group_students (
