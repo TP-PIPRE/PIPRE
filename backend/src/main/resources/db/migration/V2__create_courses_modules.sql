@@ -24,8 +24,6 @@ CREATE TABLE lessons (
     id_lesson VARCHAR(36) PRIMARY KEY,
     id_module VARCHAR(36),
     title VARCHAR(255) NOT NULL,
-    content TEXT,
-    resource_type VARCHAR(100),
 
     CONSTRAINT fk_lessons_module FOREIGN KEY (id_module)
         REFERENCES modules(id_module)

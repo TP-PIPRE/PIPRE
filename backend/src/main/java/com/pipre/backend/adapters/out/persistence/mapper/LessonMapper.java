@@ -13,8 +13,6 @@ public class LessonMapper {
         LessonJpaEntity entity = new LessonJpaEntity();
         entity.setIdLesson(domain.getIdLesson());
         entity.setTitle(domain.getTitle());
-        entity.setContent(domain.getContent());
-        entity.setResourceType(domain.getResourceType());
         return entity;
     }
 
@@ -32,8 +30,6 @@ public class LessonMapper {
         return new Lesson.Builder()
                 .idLesson(entity.getIdLesson())
                 .title(entity.getTitle())
-                .content(entity.getContent())
-                .resourceType(entity.getResourceType())
                 .idModule(idModule)
                 .idActivityList(idActivityList)
                 .build();
