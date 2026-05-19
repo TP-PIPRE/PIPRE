@@ -13,4 +13,10 @@ export const API_ENDPOINTS = {
   // Lesson endpoints
   LESSONS: "/api/v1/lesson",
   LESSON_BY_ID: (id: string) => `/api/v1/lesson/${id}`,
+
+  // Challenge endpoints
+  CHALLENGES: "/api/v1/challenges",
+  CHALLENGES_BY_COURSE: (courseId: string) =>
+    `/api/v1/courses/${courseId}/challenges`,
+  CHALLENGE_BY_ID: (id: string) => `/api/v1/challenges/${id}`,
 };
