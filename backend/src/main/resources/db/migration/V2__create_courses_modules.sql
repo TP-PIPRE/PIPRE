@@ -3,7 +3,6 @@ CREATE TABLE courses (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     level VARCHAR(50),
-    objective TEXT,
     created_at TIMESTAMP
 );
 
@@ -37,9 +36,6 @@ CREATE TABLE activities (
     id_activity VARCHAR(36) PRIMARY KEY,
     id_lesson VARCHAR(36),
     name VARCHAR(255) NOT NULL,
-    difficulty VARCHAR(50),
-    logic_level INTEGER,
-    type VARCHAR(100),
 
     CONSTRAINT fk_activities_lesson FOREIGN KEY (id_lesson)
         REFERENCES lessons(id_lesson)
