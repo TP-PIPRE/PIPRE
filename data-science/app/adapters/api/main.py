@@ -9,7 +9,7 @@ from app.application.services.ria01_service import RIA01Service
 
 
 # =========================
-# 📦 CONFIG
+#  CONFIG
 # =========================
 
 MODEL_PATH = "saved_models/ria01_model.pkl"
@@ -21,7 +21,7 @@ ria01_service = RIA01Service()
 
 
 # =========================
-# 🚀 LIFESPAN
+#  LIFESPAN
 # =========================
 
 @asynccontextmanager
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 
 # =========================
-# 🌐 APP
+#  APP
 # =========================
 
 app = FastAPI(
@@ -63,7 +63,7 @@ app = FastAPI(
 
 
 # =========================
-# 📊 ENDPOINT PREDICT
+# ENDPOINT PREDICT
 # =========================
 
 @app.post("/ria01/predict")
@@ -72,7 +72,7 @@ def predict_ria01(data: RIA01Input):
 
 
 # =========================
-# 🔍 ENDPOINT INFO
+#  ENDPOINT INFO
 # =========================
 
 @app.get("/ria01/info")
@@ -86,7 +86,7 @@ def info():
 
 
 # =========================
-# ❤️ HEALTH CHECK
+#  HEALTH CHECK
 # =========================
 
 @app.get("/health")

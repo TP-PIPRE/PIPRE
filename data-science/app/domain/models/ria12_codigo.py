@@ -17,7 +17,7 @@ class EvaluadorCodigo:
 
         self.le_nivel = LabelEncoder()
 
-        # 🔥 FEATURES TRANSFORMADAS (sin leak)
+        # FEATURES TRANSFORMADAS (sin leak)
         self.feature_columns = [
             "ratio_error",
             "ratio_codigo",
@@ -30,7 +30,7 @@ class EvaluadorCodigo:
         self.precision = 0
 
     # =========================
-    # 🔥 PREPROCESS
+    #  PREPROCESS
     # =========================
     def preprocess_data(self, df, is_training=False):
 
@@ -44,12 +44,12 @@ class EvaluadorCodigo:
             "nivel_logico"
         ]
 
-        # 🔧 asegurar columnas
+        #  asegurar columnas
         for col in base_cols:
             if col not in df.columns:
                 df[col] = 0
 
-        # 🔧 asegurar numéricos
+        #  asegurar numéricos
         for col in base_cols[:-1]:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
@@ -64,7 +64,7 @@ class EvaluadorCodigo:
             )
             df["nivel_logico"] = self.le_nivel.transform(df["nivel_logico"])
 
-        # 🔥 TARGET (sin error ahora)
+        #  TARGET (sin error ahora)
         if is_training:
             df["calidad_codigo"] = (
                 df["uso_codigo"] * 2 -
@@ -92,7 +92,7 @@ class EvaluadorCodigo:
         return df
 
     # =========================
-    # 🔥 TRAIN
+    #  TRAIN
     # =========================
     def train(self, df):
 
@@ -115,7 +115,7 @@ class EvaluadorCodigo:
         )
 
     # =========================
-    # 🔥 PREDICT
+    #  PREDICT
     # =========================
     def predict(self, data):
 
