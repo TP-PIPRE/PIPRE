@@ -26,7 +26,7 @@ def preprocess_data(self, df, is_training=False):
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-    # 🎯 SOLO entrenamiento
+    #  SOLO entrenamiento
     if is_training:
         required_cols = ["puntaje", "tasa_exito", "errores", "intentos"]
 
@@ -51,7 +51,7 @@ def preprocess_data(self, df, is_training=False):
             duplicates="drop"
         )
 
-        # 🔥 evitar NaN en target
+        # evitar NaN en target
         df["rendimiento"] = df["rendimiento"].astype(str).fillna("medio")
 
     # 🔥 FEATURES ROBUSTAS
@@ -59,11 +59,11 @@ def preprocess_data(self, df, is_training=False):
     df["actividad_total"] = df["uso_codigo"] + df["interacciones_ia"]
     df["inactividad_relativa"] = df["dias_inactivo"] / (df["dias_inactivo"] + df["intentos"] + 1)
 
-    # 🔧 limpiar posibles inf / NaN
+    #  limpiar posibles inf / NaN
     df.replace([float("inf"), -float("inf")], 0, inplace=True)
     df.fillna(0, inplace=True)
 
-    # 🔧 encoding
+    #  encoding
     df["nivel_logico"] = df["nivel_logico"].astype(str)
 
     if is_training:

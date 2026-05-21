@@ -75,11 +75,11 @@ class ClasificadorTiempo:
         for col in base_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
-        # 🔥 TARGET (solo en entrenamiento)
+        #  TARGET (solo en entrenamiento)
         if is_training:
             df = self.construir_target(df)
 
-        # 🔥 FEATURES TRANSFORMADAS (NO SON LA MISMA FÓRMULA)
+        #  FEATURES TRANSFORMADAS (NO SON LA MISMA FÓRMULA)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
         df["ratio_codigo"] = df["uso_codigo"] / (df["interacciones_ia"] + 1)
         df["interaccion_relativa"] = df["interacciones_ia"] / (df["intentos"] + 1)
@@ -141,7 +141,7 @@ class ClasificadorTiempo:
         pred = self.model.predict(X)[0]
         label = self.le_target.inverse_transform([pred])[0]
 
-        # 🔥 MENSAJES INTERPRETADOS
+        #  MENSAJES INTERPRETADOS
         if label == "corto":
             return "Tiempo corto:"
         

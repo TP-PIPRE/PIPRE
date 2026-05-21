@@ -7,22 +7,22 @@ from app.ui.ui_resultados import mostrar_resultados
 
 def main():
 
-    # 🔹 cargar dataset
+    #  cargar dataset
     df = pd.read_excel("data/dataset.xlsx")
 
-    # 🔹 pipeline
+    #  pipeline
     pipeline = PipelineIA()
     pipeline.train(df)
 
     ria1, ria3, ria8, ria11, ria12 = pipeline.get_models()
 
-    # 🔁 función reutilizable
+    # función reutilizable
     def evaluar():
         return generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
 
     resultados = evaluar()
 
-    # 🔥 UI
+    #  UI
     mostrar_resultados(resultados, evaluar)
 
 

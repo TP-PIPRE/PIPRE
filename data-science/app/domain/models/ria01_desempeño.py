@@ -56,22 +56,22 @@ class ClasificadorDesempeno:
             if col not in df.columns:
                 df[col] = 0
 
-        # 🔥 SOLO en entrenamiento se usa puntaje/tasa_exito
+        #  SOLO en entrenamiento se usa puntaje/tasa_exito
         if is_training:
             if "puntaje" not in df.columns or "tasa_exito" not in df.columns:
                 raise ValueError("Faltan columnas necesarias para construir el target")
 
             df = self.construir_rendimiento(df)
 
-        # 🔥 FEATURES (SIN usar puntaje ni tasa_exito)
+        # FEATURES (SIN usar puntaje ni tasa_exito)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
         df["intensidad_uso"] = df["tiempo_sesion_min"] / (df["intentos"] + 1)
         df["dependencia_ia"] = df["interacciones_ia"] / (df["intentos"] + 1)
 
-        # 🔥 asegurar tipo
+        #  asegurar tipo
         df["nivel_logico"] = df["nivel_logico"].astype(str)
 
-        # 🔥 encoding
+        #  encoding
         if is_training:
             df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
             df["rendimiento"] = self.le_target.fit_transform(df["rendimiento"])
@@ -100,7 +100,7 @@ class ClasificadorDesempeno:
             random_state=42
         )
 
-        # 🔥 RandomForest NO necesita scaler → eliminado
+        #  RandomForest NO necesita scaler → eliminado
         self.model = RandomForestClassifier(
             n_estimators=300,
             max_depth=8,
