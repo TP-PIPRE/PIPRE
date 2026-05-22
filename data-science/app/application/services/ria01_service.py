@@ -1,11 +1,16 @@
 import pandas as pd
-from app.domain.models.ria01_desempeño import ClasificadorDesempeno
+from app.domain.ports.ria01_usecase import RIA01UseCase
 
-class RIA01Service:
 
-    def __init__(self):
-        self.model = ClasificadorDesempeno()
+class RIA01Service(RIA01UseCase):
+
+    def __init__(self, model):
+        self.model = model
         self._trained = False
+
+    def set_model(self, model):
+        self.model = model
+        self._trained = True
 
     def train(self, df):
         self.model.train(df)
@@ -13,7 +18,7 @@ class RIA01Service:
 
     def predict(self, data_dict):
         if not self._trained:
-            raise Exception("Modelo no entrenado")
+            raise RuntimeError("Modelo no entrenado")
 
         df = pd.DataFrame([data_dict])
         resultado = self.model.predict(df)

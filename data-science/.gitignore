@@ -9,6 +9,9 @@ __pycache__/
 venv/
 ../.env/
 
+# Artefactos generados por entrenamiento
+saved_models/
+
 # Archivos de sistema
 .DS_Store
 Thumbs.db
