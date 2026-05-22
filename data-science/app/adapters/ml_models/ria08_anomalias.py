@@ -7,7 +7,6 @@ class DetectorAnomalias:
         self.model = IsolationForest(contamination=0.1, random_state=42)
 
         self.feature_columns = [
-            "tiempo_sesion_min",
             "intentos",
             "errores",
             "puntaje",

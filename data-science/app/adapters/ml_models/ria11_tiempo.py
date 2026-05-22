@@ -18,6 +18,7 @@ class ClasificadorTiempo:
 
         self.verbose = verbose
         self.le_nivel = LabelEncoder()
+        self.le_emocion = LabelEncoder()
         self.le_target = LabelEncoder()
 
         self.accuracy = 0
@@ -26,22 +27,36 @@ class ClasificadorTiempo:
 
         # 🔥 FEATURES NUEVAS (NO DIRECTAMENTE LAS MISMAS DEL TARGET)
         self.feature_columns = [
+            "intentos",
+            "errores",
+            "interacciones_ia",
+            "dias_inactivo",
+            "ayuda_solicitada",
+            "actividades_completadas",
+            "edad",
+            "grado",
             "ratio_error",
-            "ratio_codigo",
             "interaccion_relativa",
+            "ayuda_por_intento",
+            "inactividad_relativa",
+            "actividad_por_inactividad",
             "complejidad",
-            "nivel_logico"
+            "nivel_logico",
+            "emocion_detectada"
         ]
 
     def construir_target(self, df):
         df = df.copy()
+        nivel_score = df["nivel_logico"].map({"bajo": 0, "medio": 1, "alto": 2}).fillna(1)
 
         df["tiempo_score"] = (
             df["intentos"] * 2 +
             df["errores"] * 3 +
             df["interacciones_ia"] * 1.5 -
-            df["uso_codigo"] * 1.5 -
-            df["nivel_logico"] * 2
+            df["actividades_completadas"] * 1.2 +
+            df["dias_inactivo"] * 1.5 +
+            df["ayuda_solicitada"] * 1.2 -
+            nivel_score * 2
         )
 
         q1 = df["tiempo_score"].quantile(0.33)
@@ -62,8 +77,13 @@ class ClasificadorTiempo:
             "intentos",
             "errores",
             "interacciones_ia",
-            "uso_codigo",
-            "nivel_logico"
+            "dias_inactivo",
+            "ayuda_solicitada",
+            "actividades_completadas",
+            "edad",
+            "grado",
+            "nivel_logico",
+            "emocion_detectada"
         ]
 
         # asegurar columnas
@@ -71,8 +91,19 @@ class ClasificadorTiempo:
             if col not in df.columns:
                 df[col] = 0
 
+        numeric_cols = [
+            "intentos",
+            "errores",
+            "interacciones_ia",
+            "dias_inactivo",
+            "ayuda_solicitada",
+            "actividades_completadas",
+            "edad",
+            "grado"
+        ]
+
         # asegurar numéricos
-        for col in base_cols:
+        for col in numeric_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         #  TARGET (solo en entrenamiento)
@@ -81,8 +112,10 @@ class ClasificadorTiempo:
 
         #  FEATURES TRANSFORMADAS (NO SON LA MISMA FÓRMULA)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
-        df["ratio_codigo"] = df["uso_codigo"] / (df["interacciones_ia"] + 1)
         df["interaccion_relativa"] = df["interacciones_ia"] / (df["intentos"] + 1)
+        df["ayuda_por_intento"] = df["ayuda_solicitada"] / (df["intentos"] + 1)
+        df["inactividad_relativa"] = df["dias_inactivo"] / (df["dias_inactivo"] + df["intentos"] + 1)
+        df["actividad_por_inactividad"] = df["actividades_completadas"] / (df["dias_inactivo"] + 1)
         df["complejidad"] = df["errores"] * df["interacciones_ia"]
 
         # limpieza
@@ -91,15 +124,21 @@ class ClasificadorTiempo:
 
         # encoding
         df["nivel_logico"] = df["nivel_logico"].astype(str)
+        df["emocion_detectada"] = df["emocion_detectada"].astype(str)
 
         if is_training:
             df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
+            df["emocion_detectada"] = self.le_emocion.fit_transform(df["emocion_detectada"])
             df["categoria_tiempo"] = self.le_target.fit_transform(df["categoria_tiempo"])
         else:
             df["nivel_logico"] = df["nivel_logico"].apply(
                 lambda x: x if x in self.le_nivel.classes_ else self.le_nivel.classes_[0]
             )
             df["nivel_logico"] = self.le_nivel.transform(df["nivel_logico"])
+            df["emocion_detectada"] = df["emocion_detectada"].apply(
+                lambda x: x if x in self.le_emocion.classes_ else self.le_emocion.classes_[0]
+            )
+            df["emocion_detectada"] = self.le_emocion.transform(df["emocion_detectada"])
 
         return df
 
