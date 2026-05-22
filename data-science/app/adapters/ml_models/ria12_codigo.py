@@ -19,7 +19,7 @@ class EvaluadorCodigo:
         self.le_nivel = LabelEncoder()
         self.le_emocion = LabelEncoder()
 
-        # FEATURES TRANSFORMADAS (sin leak)
+        # FEATURES TRANSFORMADAS 
         self.feature_columns = [
             "errores",
             "intentos",
@@ -114,7 +114,7 @@ class EvaluadorCodigo:
                 labels=[0, 1, 2]
             )
 
-        # 🔥 FEATURES DERIVADAS (sin copiar fórmula)
+        #  FEATURES DERIVADAS (sin copiar fórmula)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
         df["intentos_normalizados"] = df["intentos"] / (df["errores"] + 1)
         df["ia_por_error"] = df["interacciones_ia"] / (df["errores"] + 1)

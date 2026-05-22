@@ -25,7 +25,7 @@ class ClasificadorTiempo:
         self.precision = 0
         self.recall = 0
 
-        # 🔥 FEATURES NUEVAS (NO DIRECTAMENTE LAS MISMAS DEL TARGET)
+        #  FEATURES 
         self.feature_columns = [
             "intentos",
             "errores",
@@ -110,7 +110,7 @@ class ClasificadorTiempo:
         if is_training:
             df = self.construir_target(df)
 
-        #  FEATURES TRANSFORMADAS (NO SON LA MISMA FÓRMULA)
+        #  FEATURES TRANSFORMADAS
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
         df["interaccion_relativa"] = df["interacciones_ia"] / (df["intentos"] + 1)
         df["ayuda_por_intento"] = df["ayuda_solicitada"] / (df["intentos"] + 1)

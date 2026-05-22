@@ -45,10 +45,10 @@ class DetectorAnomalias:
     def calcular_importancia(self, df):
         X = self.preprocess(df)
 
-        # 🔥 usar desviación estándar como proxy de importancia
+        # usar desviación estándar como proxy de importancia
         importancias = X.std().to_dict()
 
-        # 🔥 normalizar
+        # normalizar
         total = sum(importancias.values())
         if total > 0:
             importancias = {k: v / total for k, v in importancias.items()}
