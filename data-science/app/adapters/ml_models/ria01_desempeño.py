@@ -28,9 +28,13 @@ class ClasificadorDesempeno:
     def construir_rendimiento(self, df):
         df = df.copy()
 
+        tasa_exito = pd.to_numeric(df["tasa_exito"], errors="coerce").fillna(0)
+        if tasa_exito.max() > 1:
+            tasa_exito = tasa_exito / 100
+
         score = (
             (df["puntaje"] * 0.5) +
-            (df["tasa_exito"] * 50 * 0.5)
+            (tasa_exito * 50 * 0.5)
         )
 
         df["rendimiento"] = pd.cut(
@@ -138,9 +142,4 @@ class ClasificadorDesempeno:
         pred = self.model.predict(data)[0]
         label = self.le_target.inverse_transform([pred])[0]
 
-        if label == "bajo":
-            return "Desempeño bajo"
-        elif label == "medio":
-            return "Desempeño medio"
-        else:
-            return "Desempeño alto"
+        return label
