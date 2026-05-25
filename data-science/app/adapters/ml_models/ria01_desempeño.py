@@ -14,23 +14,24 @@ class ClasificadorDesempeno:
         self.verbose = verbose
 
         self.feature_columns = [
-            "tiempo_sesion_min",
             "intentos",
             "errores",
             "nivel_logico",
-            "uso_codigo",
             "interacciones_ia",
             "ratio_error",
-            "intensidad_uso",
             "dependencia_ia"
         ]
 
     def construir_rendimiento(self, df):
         df = df.copy()
 
+        tasa_exito = pd.to_numeric(df["tasa_exito"], errors="coerce").fillna(0)
+        if tasa_exito.max() > 1:
+            tasa_exito = tasa_exito / 100
+
         score = (
             (df["puntaje"] * 0.5) +
-            (df["tasa_exito"] * 50 * 0.5)
+            (tasa_exito * 50 * 0.5)
         )
 
         df["rendimiento"] = pd.cut(
@@ -47,8 +48,7 @@ class ClasificadorDesempeno:
         df = df.copy()  # 🔥 NO modificar original
 
         base_cols = [
-            "tiempo_sesion_min", "errores", "intentos",
-            "nivel_logico", "uso_codigo", "interacciones_ia"
+            "errores", "intentos", "nivel_logico", "interacciones_ia"
         ]
 
         # asegurar columnas base
@@ -65,7 +65,6 @@ class ClasificadorDesempeno:
 
         # FEATURES (SIN usar puntaje ni tasa_exito)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
-        df["intensidad_uso"] = df["tiempo_sesion_min"] / (df["intentos"] + 1)
         df["dependencia_ia"] = df["interacciones_ia"] / (df["intentos"] + 1)
 
         #  asegurar tipo
@@ -138,9 +137,4 @@ class ClasificadorDesempeno:
         pred = self.model.predict(data)[0]
         label = self.le_target.inverse_transform([pred])[0]
 
-        if label == "bajo":
-            return "Desempeño bajo"
-        elif label == "medio":
-            return "Desempeño medio"
-        else:
-            return "Desempeño alto"
+        return label

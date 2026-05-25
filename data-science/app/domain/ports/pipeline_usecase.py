@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 
 
-class RIA01UseCase(ABC):
+class PipelineUseCase(ABC):
     @abstractmethod
     def train(self, df):
         pass
 
     @abstractmethod
-    def predict(self, data_dict):
+    def get_models(self):
         pass

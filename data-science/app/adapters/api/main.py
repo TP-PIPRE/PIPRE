@@ -1,23 +1,17 @@
 from fastapi import FastAPI
-import pandas as pd
 from contextlib import asynccontextmanager
-import os
-import joblib
 
-from app.application.schemas.ria01_schema import RIA01Input
-from app.application.services.ria01_service import RIA01Service
+from app.adapters.api.schemas import RIA01Input
+from app.infrastructure.container import (
+    create_dataset_repository,
+    create_ria01_model_repository,
+    create_ria01_service,
+)
 
 
-# =========================
-#  CONFIG
-# =========================
-
-MODEL_PATH = "saved_models/ria01_model.pkl"
-
-os.makedirs("saved_models", exist_ok=True)
-
-# instancia global
-ria01_service = RIA01Service()
+dataset_repository = create_dataset_repository()
+model_repository = create_ria01_model_repository()
+ria01_service = create_ria01_service()
 
 
 # =========================
@@ -27,29 +21,27 @@ ria01_service = RIA01Service()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    if os.path.exists(MODEL_PATH):
-        print("📦 Cargando modelo existente...")
+    if model_repository.exists():
+        print("Cargando modelo existente...")
 
-        ria01_service.model = joblib.load(MODEL_PATH)
-        ria01_service._trained = True
+        ria01_service.set_model(model_repository.load())
 
-        print("✅ Modelo cargado correctamente")
+        print("Modelo cargado correctamente")
 
     else:
-        print("🧠 Entrenando modelo desde cero...")
+        print("Entrenando modelo desde cero...")
 
-        df = pd.read_excel("data/dataset.xlsx")
+        df = dataset_repository.load()
 
         ria01_service.train(df)
 
-        # guardar modelo entrenado
-        joblib.dump(ria01_service.model, MODEL_PATH)
+        model_repository.save(ria01_service.model)
 
-        print("💾 Modelo entrenado y guardado")
+        print("Modelo entrenado y guardado")
 
     yield
 
-    print("🛑 Cerrando API...")
+    print("Cerrando API...")
 
 
 # =========================
@@ -68,7 +60,7 @@ app = FastAPI(
 
 @app.post("/ria01/predict")
 def predict_ria01(data: RIA01Input):
-    return ria01_service.predict(data.dict())
+    return ria01_service.predict(data.model_dump())
 
 
 # =========================

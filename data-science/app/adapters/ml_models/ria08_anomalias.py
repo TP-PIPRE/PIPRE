@@ -7,7 +7,6 @@ class DetectorAnomalias:
         self.model = IsolationForest(contamination=0.1, random_state=42)
 
         self.feature_columns = [
-            "tiempo_sesion_min",
             "intentos",
             "errores",
             "puntaje",
@@ -46,10 +45,10 @@ class DetectorAnomalias:
     def calcular_importancia(self, df):
         X = self.preprocess(df)
 
-        # 🔥 usar desviación estándar como proxy de importancia
+        # usar desviación estándar como proxy de importancia
         importancias = X.std().to_dict()
 
-        # 🔥 normalizar
+        # normalizar
         total = sum(importancias.values())
         if total > 0:
             importancias = {k: v / total for k, v in importancias.items()}
