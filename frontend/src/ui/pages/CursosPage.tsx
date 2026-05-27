@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
 import type {
   CourseResponseDTO,
@@ -21,6 +22,7 @@ const MOCK_COURSES = [
 ];
 
 export const CursosPage: React.FC = () => {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseResponseDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -287,11 +289,7 @@ export const CursosPage: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Lógica para abrir el simulador con la configuración del reto
-                                console.log(
-                                  "Abrir simulador con reto:",
-                                  challenge.id,
-                                );
+                                navigate(`/simulador/${course.id_course}`);
                               }}
                               className="text-[10px] font-bold uppercase tracking-widest hover:underline"
                               style={{ color: "var(--primary)" }}
