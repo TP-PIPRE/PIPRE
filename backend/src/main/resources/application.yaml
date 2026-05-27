@@ -28,3 +28,6 @@ springdoc:
     enabled: true
   api-docs:
     enabled: true
+external:
+  fast-api:
+    url: ${FAST_API_URL:http://localhost:8000}

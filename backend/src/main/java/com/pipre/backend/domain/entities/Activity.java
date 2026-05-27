@@ -6,14 +6,16 @@ public class Activity {
 
     private final String idActivity;
     private final String name;
+    private final String logicLevel;
     private final String idLesson;
     private final List<String> idSimulationList;
 
     public Activity(Builder builder) {
         this.idActivity = builder.idActivity;
         this.name = builder.name;
-        this.idSimulationList = builder.idSimulationList;
+        this.logicLevel = builder.logicLevel;
         this.idLesson = builder.idLesson;
+        this.idSimulationList = builder.idSimulationList;
     }
 
     public static Builder builder() {
@@ -28,6 +30,10 @@ public class Activity {
         return this.name;
     }
 
+    public String getLogicLevel() {
+        return this.logicLevel;
+    }
+
     public String getIdLesson() {
         return this.idLesson;
     }
@@ -35,8 +41,9 @@ public class Activity {
     public static class Builder {
         private String idActivity;
         private String name;
-        private List<String> idSimulationList;
+        private String logicLevel;
         private String idLesson;
+        private List<String> idSimulationList;
 
         public Builder idActivity(String idActivity) {
             this.idActivity = idActivity;
@@ -48,13 +55,18 @@ public class Activity {
             return this;
         }
 
-        public Builder idSimulationList(List<String> idSimulationList) {
-            this.idSimulationList = idSimulationList;
+        public Builder logicLevel(String logicLevel) {
+            this.logicLevel = logicLevel;
             return this;
         }
 
         public Builder idLesson(String idLesson) {
             this.idLesson = idLesson;
+            return this;
+        }
+
+        public Builder idSimulationList(List<String> idSimulationList) {
+            this.idSimulationList = idSimulationList;
             return this;
         }
 
