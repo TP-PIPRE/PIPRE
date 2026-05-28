@@ -6,7 +6,9 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
 
     data = df.sample(1)
 
-    input_data = data.to_dict(orient="records")[0]
+    def get_input_data(columns):
+        available_columns = [col for col in columns if col in data.columns]
+        return data[available_columns].to_dict(orient="records")[0]
 
     resultados = {
 
@@ -18,7 +20,12 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
                 ria1.feature_columns,
                 ria1.model.feature_importances_
             )),
-            "input_data": input_data
+            "input_data": get_input_data([
+                "intentos",
+                "errores",
+                "nivel_logico",
+                "interacciones_ia"
+            ])
         },
 
         "RIA3 - Recomendación": {
@@ -29,7 +36,12 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
                 ria3.feature_columns,
                 ria3.model_stage1.feature_importances_
             )),
-            "input_data": input_data
+            "input_data": get_input_data([
+                "nivel_logico",
+                "dias_inactivo",
+                "interacciones_ia",
+                "intentos"
+            ])
         },
 
         "RIA8 - Anomalías": {
@@ -37,7 +49,12 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
             "interpretacion": ria8.predict_detailed(data),
             "anomalias": f"{ria8.anomaly_ratio:.2%} del dataset detectado como anómalo",
             "importancias": ria8.calcular_importancia(df),
-            "input_data": input_data
+            "input_data": get_input_data([
+                "intentos",
+                "errores",
+                "puntaje",
+                "dias_inactivo"
+            ])
         },
 
         "RIA11 - Tiempo": {
@@ -48,7 +65,17 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
                 ria11.feature_columns,
                 ria11.model.feature_importances_
             )),
-            "input_data": input_data
+            "input_data": get_input_data([
+                "intentos",
+                "errores",
+                "interacciones_ia",
+                "dias_inactivo",
+                "ayuda_solicitada",
+                "actividades_completadas",
+                "edad",
+                "grado",
+                "nivel_logico"
+            ])
         },
 
         "RIA12 - Código": {
@@ -59,7 +86,18 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
                 ria12.feature_columns,
                 ria12.model.feature_importances_
             )),
-            "input_data": input_data
+            "input_data": get_input_data([
+                "errores",
+                "intentos",
+                "interacciones_ia",
+                "ayuda_solicitada",
+                "actividades_completadas",
+                "dias_inactivo",
+                "edad",
+                "grado",
+                "nivel_logico",
+                "emocion_detectada"
+            ])
         }
     }
 

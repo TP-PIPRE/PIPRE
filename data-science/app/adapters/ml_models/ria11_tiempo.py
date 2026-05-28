@@ -18,7 +18,6 @@ class ClasificadorTiempo:
 
         self.verbose = verbose
         self.le_nivel = LabelEncoder()
-        self.le_emocion = LabelEncoder()
         self.le_target = LabelEncoder()
 
         self.accuracy = 0
@@ -41,8 +40,7 @@ class ClasificadorTiempo:
             "inactividad_relativa",
             "actividad_por_inactividad",
             "complejidad",
-            "nivel_logico",
-            "emocion_detectada"
+            "nivel_logico"
         ]
 
     def construir_target(self, df):
@@ -82,8 +80,7 @@ class ClasificadorTiempo:
             "actividades_completadas",
             "edad",
             "grado",
-            "nivel_logico",
-            "emocion_detectada"
+            "nivel_logico"
         ]
 
         # asegurar columnas
@@ -124,21 +121,15 @@ class ClasificadorTiempo:
 
         # encoding
         df["nivel_logico"] = df["nivel_logico"].astype(str)
-        df["emocion_detectada"] = df["emocion_detectada"].astype(str)
 
         if is_training:
             df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
-            df["emocion_detectada"] = self.le_emocion.fit_transform(df["emocion_detectada"])
             df["categoria_tiempo"] = self.le_target.fit_transform(df["categoria_tiempo"])
         else:
             df["nivel_logico"] = df["nivel_logico"].apply(
                 lambda x: x if x in self.le_nivel.classes_ else self.le_nivel.classes_[0]
             )
             df["nivel_logico"] = self.le_nivel.transform(df["nivel_logico"])
-            df["emocion_detectada"] = df["emocion_detectada"].apply(
-                lambda x: x if x in self.le_emocion.classes_ else self.le_emocion.classes_[0]
-            )
-            df["emocion_detectada"] = self.le_emocion.transform(df["emocion_detectada"])
 
         return df
 

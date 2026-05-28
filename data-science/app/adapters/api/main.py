@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.adapters.api.schemas import RIA01Input, RIA03Input, RIA08Input
+from app.adapters.api.schemas import RIA01Input, RIA03Input, RIA08Input, RIA11Input
 from app.application.metrics import round_metric
 from app.infrastructure.container import (
     create_dataset_repository,
@@ -11,6 +11,8 @@ from app.infrastructure.container import (
     create_ria03_service,
     create_ria08_model_repository,
     create_ria08_service,
+    create_ria11_model_repository,
+    create_ria11_service,
 )
 
 
@@ -18,9 +20,11 @@ dataset_repository = create_dataset_repository()
 ria01_model_repository = create_ria01_model_repository()
 ria03_model_repository = create_ria03_model_repository()
 ria08_model_repository = create_ria08_model_repository()
+ria11_model_repository = create_ria11_model_repository()
 ria01_service = create_ria01_service()
 ria03_service = create_ria03_service()
 ria08_service = create_ria08_service()
+ria11_service = create_ria11_service()
 
 RIA01_FEATURE_NAME_MAP = {
     "intentos": "attempts",
@@ -51,6 +55,24 @@ RIA08_FEATURE_NAME_MAP = {
     "dias_inactivo": "inactive_days",
 }
 
+RIA11_FEATURE_NAME_MAP = {
+    "intentos": "attempts",
+    "errores": "errors",
+    "interacciones_ia": "ai_interactions",
+    "dias_inactivo": "inactive_days",
+    "ayuda_solicitada": "help_requested",
+    "actividades_completadas": "completed_activities",
+    "edad": "age",
+    "grado": "grade",
+    "ratio_error": "error_ratio",
+    "interaccion_relativa": "relative_interaction",
+    "ayuda_por_intento": "help_per_attempt",
+    "inactividad_relativa": "relative_inactivity",
+    "actividad_por_inactividad": "activity_per_inactivity",
+    "complejidad": "complexity",
+    "nivel_logico": "logical_level",
+}
+
 
 def to_ria01_model_input(data: RIA01Input):
     return {
@@ -76,6 +98,20 @@ def to_ria08_model_input(data: RIA08Input):
         "errores": data.errors,
         "puntaje": data.score,
         "dias_inactivo": data.inactive_days,
+    }
+
+
+def to_ria11_model_input(data: RIA11Input):
+    return {
+        "intentos": data.attempts,
+        "errores": data.errors,
+        "interacciones_ia": data.ai_interactions,
+        "dias_inactivo": data.inactive_days,
+        "ayuda_solicitada": data.help_requested,
+        "actividades_completadas": data.completed_activities,
+        "edad": data.age,
+        "grado": data.grade,
+        "nivel_logico": data.logical_level,
     }
 
 
@@ -110,6 +146,17 @@ def train_and_save_ria08(reason: str):
     ria08_model_repository.save(ria08_service.model)
 
     print("RIA08 model trained and saved")
+
+
+def train_and_save_ria11(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria11_service.train(df)
+    ria11_model_repository.save(ria11_service.model)
+
+    print("RIA11 model trained and saved")
 
 
 def load_or_train_ria01():
@@ -188,6 +235,32 @@ def load_or_train_ria08():
         train_and_save_ria08("Training RIA08 model from scratch...")
 
 
+def load_or_train_ria11():
+    if ria11_model_repository.exists():
+        print("Loading existing RIA11 model...")
+
+        try:
+            loaded_model = ria11_model_repository.load()
+            expected_features = ria11_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_version = ria11_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+
+            if loaded_features != expected_features or loaded_version != expected_version:
+                train_and_save_ria11("Existing RIA11 model is incompatible. Retraining model...")
+            else:
+                ria11_service.set_model(loaded_model)
+                print("RIA11 model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria11(
+                f"Could not load existing RIA11 model ({type(exc).__name__}: {exc}). Retraining model..."
+            )
+
+    else:
+        train_and_save_ria11("Training RIA11 model from scratch...")
+
+
 # =========================
 #  LIFESPAN
 # =========================
@@ -197,6 +270,7 @@ async def lifespan(app: FastAPI):
     load_or_train_ria01()
     load_or_train_ria03()
     load_or_train_ria08()
+    load_or_train_ria11()
 
     yield
 
@@ -230,6 +304,11 @@ def recommend_ria03(data: RIA03Input):
 @app.post("/ria08/anomaly")
 def detect_ria08(data: RIA08Input):
     return ria08_service.predict(to_ria08_model_input(data))
+
+
+@app.post("/ria11/time")
+def classify_ria11(data: RIA11Input):
+    return ria11_service.predict(to_ria11_model_input(data))
 
 
 # =========================
@@ -272,6 +351,20 @@ def info_ria08():
         ] if ria08_service._trained else [],
         "dataset_anomaly_ratio": ria08_service.model.anomaly_ratio,
         "thresholds": getattr(ria08_service.model, "thresholds", {}),
+    }
+
+
+@app.get("/ria11/info")
+def info_ria11():
+    return {
+        "trained": ria11_service._trained,
+        "features": [
+            RIA11_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria11_service.model.feature_columns
+        ] if ria11_service._trained else [],
+        "accuracy": round_metric(getattr(ria11_service.model, "accuracy", None)),
+        "precision": round_metric(getattr(ria11_service.model, "precision", None)),
+        "recall": round_metric(getattr(ria11_service.model, "recall", None)),
     }
 
 
