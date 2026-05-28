@@ -14,6 +14,17 @@ model_repository = create_ria01_model_repository()
 ria01_service = create_ria01_service()
 
 
+def train_and_save_ria01(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria01_service.train(df)
+    model_repository.save(ria01_service.model)
+
+    print("Modelo entrenado y guardado")
+
+
 # =========================
 #  LIFESPAN
 # =========================
@@ -24,20 +35,24 @@ async def lifespan(app: FastAPI):
     if model_repository.exists():
         print("Cargando modelo existente...")
 
-        ria01_service.set_model(model_repository.load())
+        try:
+            loaded_model = model_repository.load()
+            expected_features = ria01_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
 
-        print("Modelo cargado correctamente")
+            if loaded_features != expected_features:
+                train_and_save_ria01("Modelo existente incompatible. Reentrenando modelo...")
+            else:
+                ria01_service.set_model(loaded_model)
+                print("Modelo cargado correctamente")
+
+        except Exception as exc:
+            train_and_save_ria01(
+                f"No se pudo cargar el modelo existente ({type(exc).__name__}: {exc}). Reentrenando modelo..."
+            )
 
     else:
-        print("Entrenando modelo desde cero...")
-
-        df = dataset_repository.load()
-
-        ria01_service.train(df)
-
-        model_repository.save(ria01_service.model)
-
-        print("Modelo entrenado y guardado")
+        train_and_save_ria01("Entrenando modelo desde cero...")
 
     yield
 
