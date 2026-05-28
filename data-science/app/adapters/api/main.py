@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.adapters.api.schemas import RIA01Input, RIA03Input, RIA08Input, RIA11Input
+from app.adapters.api.schemas import RIA01Input, RIA03Input, RIA04Input, RIA08Input, RIA11Input
 from app.application.metrics import round_metric
 from app.infrastructure.container import (
     create_dataset_repository,
@@ -9,6 +9,8 @@ from app.infrastructure.container import (
     create_ria01_service,
     create_ria03_model_repository,
     create_ria03_service,
+    create_ria04_model_repository,
+    create_ria04_service,
     create_ria08_model_repository,
     create_ria08_service,
     create_ria11_model_repository,
@@ -19,10 +21,12 @@ from app.infrastructure.container import (
 dataset_repository = create_dataset_repository()
 ria01_model_repository = create_ria01_model_repository()
 ria03_model_repository = create_ria03_model_repository()
+ria04_model_repository = create_ria04_model_repository()
 ria08_model_repository = create_ria08_model_repository()
 ria11_model_repository = create_ria11_model_repository()
 ria01_service = create_ria01_service()
 ria03_service = create_ria03_service()
+ria04_service = create_ria04_service()
 ria08_service = create_ria08_service()
 ria11_service = create_ria11_service()
 
@@ -46,6 +50,21 @@ RIA03_FEATURE_NAME_MAP = {
     "consistencia": "consistency",
     "intensidad_total": "total_intensity",
     "eficiencia": "efficiency",
+}
+
+RIA04_FEATURE_NAME_MAP = {
+    "puntaje": "score",
+    "tasa_exito": "success_rate",
+    "errores": "errors",
+    "intentos": "attempts",
+    "ayuda_solicitada": "help_requested",
+    "actividades_completadas": "completed_activities",
+    "dias_inactivo": "inactive_days",
+    "nivel_logico": "logical_level",
+    "ratio_error": "error_ratio",
+    "frustracion": "frustration",
+    "progreso_reciente": "recent_progress",
+    "estabilidad": "stability",
 }
 
 RIA08_FEATURE_NAME_MAP = {
@@ -92,6 +111,19 @@ def to_ria03_model_input(data: RIA03Input):
     }
 
 
+def to_ria04_model_input(data: RIA04Input):
+    return {
+        "puntaje": data.score,
+        "tasa_exito": data.success_rate,
+        "errores": data.errors,
+        "intentos": data.attempts,
+        "ayuda_solicitada": data.help_requested,
+        "actividades_completadas": data.completed_activities,
+        "dias_inactivo": data.inactive_days,
+        "nivel_logico": data.logical_level,
+    }
+
+
 def to_ria08_model_input(data: RIA08Input):
     return {
         "intentos": data.attempts,
@@ -135,6 +167,17 @@ def train_and_save_ria03(reason: str):
     ria03_model_repository.save(ria03_service.model)
 
     print("RIA03 model trained and saved")
+
+
+def train_and_save_ria04(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria04_service.train(df)
+    ria04_model_repository.save(ria04_service.model)
+
+    print("RIA04 model trained and saved")
 
 
 def train_and_save_ria08(reason: str):
@@ -209,6 +252,32 @@ def load_or_train_ria03():
         train_and_save_ria03("Training RIA03 model from scratch...")
 
 
+def load_or_train_ria04():
+    if ria04_model_repository.exists():
+        print("Loading existing RIA04 model...")
+
+        try:
+            loaded_model = ria04_model_repository.load()
+            expected_features = ria04_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_version = ria04_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+
+            if loaded_features != expected_features or loaded_version != expected_version:
+                train_and_save_ria04("Existing RIA04 model is incompatible. Retraining model...")
+            else:
+                ria04_service.set_model(loaded_model)
+                print("RIA04 model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria04(
+                f"Could not load existing RIA04 model ({type(exc).__name__}: {exc}). Retraining model..."
+            )
+
+    else:
+        train_and_save_ria04("Training RIA04 model from scratch...")
+
+
 def load_or_train_ria08():
     if ria08_model_repository.exists():
         print("Loading existing RIA08 model...")
@@ -269,6 +338,7 @@ def load_or_train_ria11():
 async def lifespan(app: FastAPI):
     load_or_train_ria01()
     load_or_train_ria03()
+    load_or_train_ria04()
     load_or_train_ria08()
     load_or_train_ria11()
 
@@ -299,6 +369,11 @@ def predict_ria01(data: RIA01Input):
 @app.post("/ria03/recommend")
 def recommend_ria03(data: RIA03Input):
     return ria03_service.predict(to_ria03_model_input(data))
+
+
+@app.post("/ria04/difficulty")
+def adjust_ria04(data: RIA04Input):
+    return ria04_service.predict(to_ria04_model_input(data))
 
 
 @app.post("/ria08/anomaly")
@@ -338,6 +413,20 @@ def info_ria03():
         ] if ria03_service._trained else [],
         "accuracy": round_metric(getattr(ria03_service.model, "accuracy", None)),
         "precision": round_metric(getattr(ria03_service.model, "precision", None))
+    }
+
+
+@app.get("/ria04/info")
+def info_ria04():
+    return {
+        "trained": ria04_service._trained,
+        "features": [
+            RIA04_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria04_service.model.feature_columns
+        ] if ria04_service._trained else [],
+        "accuracy": round_metric(getattr(ria04_service.model, "accuracy", None)),
+        "precision": round_metric(getattr(ria04_service.model, "precision", None)),
+        "fn_rate": round_metric(getattr(ria04_service.model, "fn_rate", None)),
     }
 
 

@@ -1,8 +1,7 @@
-import pandas as pd
 from app.application.metrics import round_metric
 
 
-def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
+def generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12):
 
     data = df.sample(1)
 
@@ -11,7 +10,6 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
         return data[available_columns].to_dict(orient="records")[0]
 
     resultados = {
-
         "RIA1 - Desempeño": {
             "resultado": ria1.predict(data),
             "accuracy": round_metric(ria1.accuracy),
@@ -41,6 +39,27 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
                 "dias_inactivo",
                 "interacciones_ia",
                 "intentos"
+            ])
+        },
+
+        "RIA4 - Dificultad": {
+            "resultado": ria4.predict(data),
+            "detalle": ria4.predict_detailed(data),
+            "accuracy": round_metric(ria4.accuracy),
+            "precision": round_metric(ria4.precision),
+            "importancias": dict(zip(
+                ria4.feature_columns,
+                ria4.model.feature_importances_
+            )),
+            "input_data": get_input_data([
+                "puntaje",
+                "tasa_exito",
+                "errores",
+                "intentos",
+                "ayuda_solicitada",
+                "actividades_completadas",
+                "dias_inactivo",
+                "nivel_logico"
             ])
         },
 

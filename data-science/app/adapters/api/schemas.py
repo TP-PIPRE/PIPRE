@@ -15,6 +15,17 @@ class RIA03Input(BaseModel):
     attempts: int
 
 
+class RIA04Input(BaseModel):
+    score: float
+    success_rate: float
+    errors: int
+    attempts: int
+    help_requested: int
+    completed_activities: int
+    inactive_days: int
+    logical_level: str
+
+
 class RIA08Input(BaseModel):
     attempts: int
     errors: int
