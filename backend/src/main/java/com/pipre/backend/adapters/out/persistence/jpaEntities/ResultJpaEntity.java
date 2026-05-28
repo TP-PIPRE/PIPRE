@@ -29,13 +29,10 @@ public class ResultJpaEntity {
     private Integer attempts;
     private Integer errors;
 
-    @Column(precision = 5, scale = 2)
+    @Column(precision = 10, scale = 2)
     private BigDecimal score;
 
-    private Integer doneCount;
+    private String resultSimulation;
+    private LocalDateTime dateAttempted;
 
-    @Column(precision = 5, scale = 2)
-    private BigDecimal successRate;
-
-    private LocalDateTime date;
 }

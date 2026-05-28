@@ -1,7 +1,7 @@
 package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.GroupJpaEntity;
-import com.pipre.backend.adapters.out.persistence.jpaEntities.GroupStudentJpaEntity;
+import com.pipre.backend.adapters.out.persistence.jpaEntities.RankingJpaEntity;
 import com.pipre.backend.domain.entities.Group;
 
 import java.util.ArrayList;
@@ -18,11 +18,11 @@ public class GroupMapper {
 
     public static Group toDomain(GroupJpaEntity entity) {
         if (entity == null) return null;
-        List<String> idGroupStudentList = (entity.getGroupStudentJpaEntityList() == null)
+        List<String> idGroupStudentList = (entity.getRankingJpaEntityList() == null)
                 ? new ArrayList<>()
-                : entity.getGroupStudentJpaEntityList()
+                : entity.getRankingJpaEntityList()
                         .stream()
-                        .map(GroupStudentJpaEntity::getIdRanking)
+                        .map(RankingJpaEntity::getIdRanking)
                         .toList();
         return new Group.Builder()
                 .idGroup(entity.getIdGroup())

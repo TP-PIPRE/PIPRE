@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class GroupStudentJpaEntity {
+public class RankingJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
     private String idRanking;
