@@ -28,8 +28,6 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
             entity.setRoleJpaEntityList(roleJpaList);
         }
         jpaRepository.save(entity);
-//        UserJpaEntity saved = jpaRepository.save(entity);
-//        return UserMapper.toDomain(saved);
     }
 
     @Override

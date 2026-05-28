@@ -6,6 +6,5 @@ import java.util.List;
 
 public interface ModuleRepositoryPort {
     List<Module> findAllByIdCourse(String idCourse);
-
     void save(Module newModule);
 }

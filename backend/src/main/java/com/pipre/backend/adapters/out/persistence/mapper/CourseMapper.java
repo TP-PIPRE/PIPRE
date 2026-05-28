@@ -18,7 +18,6 @@ public class CourseMapper {
         entity.setName(domain.getName());
         entity.setDescription(domain.getDescription());
         entity.setLevel(domain.getLevel());
-        entity.setObjective(domain.getObjective());
         entity.setCreatedAt(domain.getCreatedAt());
         return entity;
     }
@@ -38,7 +37,6 @@ public class CourseMapper {
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .level(entity.getLevel())
-                .objective(entity.getObjective())
                 .createdAt(entity.getCreatedAt())
                 .idModuleList(idModuleList)
                 .build();

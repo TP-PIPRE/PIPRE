@@ -6,9 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, String> {
-    Boolean existsCourseJpaEntityByName(String name);
-
-    //refac
-    //CourseJpaEntity findByIdCourse(UUID idCourse);
-
 }

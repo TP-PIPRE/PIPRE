@@ -22,7 +22,6 @@ public class CreateCourseService implements CreateCourseUseCase {
                 cmd.name(),
                 cmd.description(),
                 cmd.level(),
-                "Aprendizaje de robótica",
                 null
         );
         courseRepositoryPort.save(newCourse);

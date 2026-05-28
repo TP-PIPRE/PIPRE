@@ -38,7 +38,7 @@ services:
     image: pipre-backend
     container_name: pipre-backend
     ports:
-      - "${PORT_BACK:-8080}:8080"
+      - ${PORT_BACK:-8080}:8080
     environment:
       - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
@@ -48,27 +48,21 @@ services:
         condition: service_healthy
     networks:
       - pipre-infra-net
-      - cloud-network
     logging: *default-logging
 
   frontend:
     build:
       context: ./frontend
       args:
-        - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
+        - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
     image: pipre-frontend
     container_name: pipre-frontend
     ports:
-      - "${PORT_FRONT:-3000}:3000"
+      - ${PORT_FRONT:-3000}:3000
     environment:
-      - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
-    networks:
-      - cloud-network
+      - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
     logging: *default-logging
 
 networks:
   pipre-infra-net:
     internal: true
-  cloud-network:
-    name: ${CLOUD_NETWORK}
-    external: true

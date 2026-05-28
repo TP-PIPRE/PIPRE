@@ -11,7 +11,6 @@ public class CourseFactory {
             String name,
             String description,
             String level,
-            String objective,
             List<String> idModuleList
     ) {
         return new Course.Builder()
@@ -19,7 +18,6 @@ public class CourseFactory {
                 .name(name)
                 .description(description)
                 .level(level)
-                .objective(objective)
                 .createdAt(LocalDateTime.now())
                 .idModuleList(idModuleList)
                 .build();

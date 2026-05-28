@@ -27,9 +27,6 @@ public class CourseJpaEntity {
 
     private String level;
 
-    @Column(columnDefinition = "TEXT")
-    private String objective;
-
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "courseJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)

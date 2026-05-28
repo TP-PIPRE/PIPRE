@@ -17,15 +17,8 @@ public class GroupJpaEntity {
     @Column(updatable = false, nullable = false)
     private String idGroup;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_teacher")
-    private UserJpaEntity teacherJpaEntity;
-
     @Column(nullable = false)
     private String groupName;
-
-    private String grade;
-    private String section;
 
     @OneToMany(mappedBy = "groupJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GroupStudentJpaEntity> groupStudentJpaEntityList;

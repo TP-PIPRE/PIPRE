@@ -18,10 +18,6 @@ public class CreateModuleService implements CreateModuleUseCase {
     public String execute(CreateModuleCommand cmd) {
         Module newModule = ModuleFactory.createNewModule(
                 cmd.title(),
-                null,
-                null,
-                null,
-                null,
                 cmd.idCourse()
         );
         moduleRepositoryPort.save(newModule);

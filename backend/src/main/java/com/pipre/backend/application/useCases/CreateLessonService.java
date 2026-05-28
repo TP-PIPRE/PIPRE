@@ -18,9 +18,6 @@ public class CreateLessonService implements CreateLessonUseCase {
     public String execute(CreateLessonCommand cmd) {
         Lesson newLesson = LessonFactory.createNewLesson(
                 cmd.title(),
-                null,
-                null,
-                null,
                 cmd.idModule()
         );
         lessonRepositoryPort.save(newLesson);

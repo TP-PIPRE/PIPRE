@@ -41,7 +41,6 @@ class CreateCourseServiceTest {
         verify(courseRepositoryPort, times(1)).save(argThat(course ->
                 course.getName().equals("Robótica Educativa") &&
                         course.getLevel().equals("Básico") &&
-                        course.getObjective().equals("Aprendizaje de robótica") && // El valor hardcodeado en el service
                         course.getIdCourse().equals(courseId)
         ));
     }

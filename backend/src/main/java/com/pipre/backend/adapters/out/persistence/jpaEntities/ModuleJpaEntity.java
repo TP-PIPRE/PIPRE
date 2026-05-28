@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,15 +24,6 @@ public class ModuleJpaEntity {
 
     @Column(nullable = false)
     private String title;
-
-    @Column(columnDefinition = "TEXT")
-    private String description;
-
-    private Boolean isAvailable;
-    private Integer moduleOrder;
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal percentageMeta;
 
     @OneToMany(mappedBy = "moduleJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LessonJpaEntity> lessonJpaEntityList = new ArrayList<>();
