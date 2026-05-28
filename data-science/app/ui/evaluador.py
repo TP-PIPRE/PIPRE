@@ -34,6 +34,7 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
 
         "RIA8 - Anomalías": {
             "resultado": ria8.predict(data),
+            "interpretacion": ria8.predict_detailed(data),
             "anomalias": f"{ria8.anomaly_ratio:.2%} del dataset detectado como anómalo",
             "importancias": ria8.calcular_importancia(df),
             "input_data": input_data

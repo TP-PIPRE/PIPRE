@@ -13,3 +13,10 @@ class RIA03Input(BaseModel):
     inactive_days: int
     ai_interactions: float
     attempts: int
+
+
+class RIA08Input(BaseModel):
+    attempts: int
+    errors: int
+    score: float
+    inactive_days: int

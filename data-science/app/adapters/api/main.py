@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-from app.adapters.api.schemas import RIA01Input, RIA03Input
+from app.adapters.api.schemas import RIA01Input, RIA03Input, RIA08Input
 from app.application.metrics import round_metric
 from app.infrastructure.container import (
     create_dataset_repository,
@@ -9,14 +9,18 @@ from app.infrastructure.container import (
     create_ria01_service,
     create_ria03_model_repository,
     create_ria03_service,
+    create_ria08_model_repository,
+    create_ria08_service,
 )
 
 
 dataset_repository = create_dataset_repository()
 ria01_model_repository = create_ria01_model_repository()
 ria03_model_repository = create_ria03_model_repository()
+ria08_model_repository = create_ria08_model_repository()
 ria01_service = create_ria01_service()
 ria03_service = create_ria03_service()
+ria08_service = create_ria08_service()
 
 RIA01_FEATURE_NAME_MAP = {
     "intentos": "attempts",
@@ -40,6 +44,13 @@ RIA03_FEATURE_NAME_MAP = {
     "eficiencia": "efficiency",
 }
 
+RIA08_FEATURE_NAME_MAP = {
+    "intentos": "attempts",
+    "errores": "errors",
+    "puntaje": "score",
+    "dias_inactivo": "inactive_days",
+}
+
 
 def to_ria01_model_input(data: RIA01Input):
     return {
@@ -56,6 +67,15 @@ def to_ria03_model_input(data: RIA03Input):
         "dias_inactivo": data.inactive_days,
         "interacciones_ia": data.ai_interactions,
         "intentos": data.attempts,
+    }
+
+
+def to_ria08_model_input(data: RIA08Input):
+    return {
+        "intentos": data.attempts,
+        "errores": data.errors,
+        "puntaje": data.score,
+        "dias_inactivo": data.inactive_days,
     }
 
 
@@ -79,6 +99,17 @@ def train_and_save_ria03(reason: str):
     ria03_model_repository.save(ria03_service.model)
 
     print("RIA03 model trained and saved")
+
+
+def train_and_save_ria08(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria08_service.train(df)
+    ria08_model_repository.save(ria08_service.model)
+
+    print("RIA08 model trained and saved")
 
 
 def load_or_train_ria01():
@@ -131,6 +162,32 @@ def load_or_train_ria03():
         train_and_save_ria03("Training RIA03 model from scratch...")
 
 
+def load_or_train_ria08():
+    if ria08_model_repository.exists():
+        print("Loading existing RIA08 model...")
+
+        try:
+            loaded_model = ria08_model_repository.load()
+            expected_features = ria08_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_version = ria08_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+
+            if loaded_features != expected_features or loaded_version != expected_version:
+                train_and_save_ria08("Existing RIA08 model is incompatible. Retraining model...")
+            else:
+                ria08_service.set_model(loaded_model)
+                print("RIA08 model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria08(
+                f"Could not load existing RIA08 model ({type(exc).__name__}: {exc}). Retraining model..."
+            )
+
+    else:
+        train_and_save_ria08("Training RIA08 model from scratch...")
+
+
 # =========================
 #  LIFESPAN
 # =========================
@@ -139,6 +196,7 @@ def load_or_train_ria03():
 async def lifespan(app: FastAPI):
     load_or_train_ria01()
     load_or_train_ria03()
+    load_or_train_ria08()
 
     yield
 
@@ -169,6 +227,11 @@ def recommend_ria03(data: RIA03Input):
     return ria03_service.predict(to_ria03_model_input(data))
 
 
+@app.post("/ria08/anomaly")
+def detect_ria08(data: RIA08Input):
+    return ria08_service.predict(to_ria08_model_input(data))
+
+
 # =========================
 #  ENDPOINT INFO
 # =========================
@@ -196,6 +259,19 @@ def info_ria03():
         ] if ria03_service._trained else [],
         "accuracy": round_metric(getattr(ria03_service.model, "accuracy", None)),
         "precision": round_metric(getattr(ria03_service.model, "precision", None))
+    }
+
+
+@app.get("/ria08/info")
+def info_ria08():
+    return {
+        "trained": ria08_service._trained,
+        "features": [
+            RIA08_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria08_service.model.feature_columns
+        ] if ria08_service._trained else [],
+        "dataset_anomaly_ratio": ria08_service.model.anomaly_ratio,
+        "thresholds": getattr(ria08_service.model, "thresholds", {}),
     }
 
 
