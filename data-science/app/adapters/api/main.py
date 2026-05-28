@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from app.adapters.api.schemas import RIA01Input
+from app.application.metrics import round_metric
 from app.infrastructure.container import (
     create_dataset_repository,
     create_ria01_model_repository,
@@ -108,8 +109,8 @@ def info():
             FEATURE_NAME_MAP.get(feature, feature)
             for feature in ria01_service.model.feature_columns
         ] if ria01_service._trained else [],
-        "accuracy": getattr(ria01_service.model, "accuracy", None),
-        "precision": getattr(ria01_service.model, "precision", None)
+        "accuracy": round_metric(getattr(ria01_service.model, "accuracy", None)),
+        "precision": round_metric(getattr(ria01_service.model, "precision", None))
     }
 
 

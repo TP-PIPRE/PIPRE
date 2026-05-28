@@ -136,13 +136,13 @@ class AppResultados:
 
             tk.Label(
                 frame_metrics,
-                text=f"Accuracy: {accuracy:.2f}",
+                text=f"Accuracy: {accuracy:.4f}",
                 width=20
             ).grid(row=0, column=0, padx=20, pady=5)
 
             tk.Label(
                 frame_metrics,
-                text=f"Precision: {precision:.2f}",
+                text=f"Precision: {precision:.4f}",
                 width=20
             ).grid(row=0, column=1, padx=20, pady=5)
 

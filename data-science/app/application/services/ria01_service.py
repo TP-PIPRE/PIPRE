@@ -1,4 +1,5 @@
 import pandas as pd
+from app.application.metrics import round_metric
 from app.domain.ports.ria01_usecase import RIA01UseCase
 
 
@@ -30,6 +31,6 @@ class RIA01Service(RIA01UseCase):
 
         return {
             "result": self.RESULT_LABELS.get(label, label),
-            "accuracy": getattr(self.model, "accuracy", None),
-            "precision": getattr(self.model, "precision", None)
+            "accuracy": round_metric(getattr(self.model, "accuracy", None)),
+            "precision": round_metric(getattr(self.model, "precision", None))
         }
