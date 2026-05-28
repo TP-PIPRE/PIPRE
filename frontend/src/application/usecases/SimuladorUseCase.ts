@@ -3,7 +3,7 @@
  * import type { ChallengeResponseDTO } from "../../infrastructure/api/models/apiModels";
  */
 
-import type { Block, MissionTemplate, EnvironmentType } from "../../shared/types/Simulador";
+import type { Block, MissionTemplate, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 
 export interface ChallengeData {
@@ -195,14 +195,142 @@ export class SimuladorUseCase {
     return points;
   }
 
-  /* BACKEND:
-   * Enviar resultado al API:
-   * async submitResult(studentId: string, challengeId: string, score: number, data: any): Promise<void> {
-   *   await apiService.simulations.postResult({
-   *     id_student: studentId,
-   *     id_activity: challengeId,
-   *     result: JSON.stringify({ score, ...data }),
-   *   });
-   * }
-   */
+  // Almacenamiento mock en memoria (reemplazar con BD)
+  // Shared between use case and ranking page
+  mockResults: StudentResult[] = [];
+
+  private mockStudentSeed: { id: string; name: string; courseId: string; courseName: string }[] = [
+    { id: "student-2", name: "Ana Sofía Lopez", courseId: "1", courseName: "Robótica Nivel 1" },
+    { id: "student-3", name: "Carlos Ruiz", courseId: "2", courseName: "Programación de Microcontroladores" },
+    { id: "student-4", name: "Elena García", courseId: "1", courseName: "Robótica Nivel 1" },
+    { id: "student-5", name: "Marcos Soto", courseId: "2", courseName: "Programación de Microcontroladores" },
+    { id: "student-6", name: "Lucía Méndez", courseId: "1", courseName: "Robótica Nivel 1" },
+  ];
+
+  saveResult(result: StudentResult): StudentResult {
+    /* BACKEND: Reemplazar con llamada al API:
+     * const response = await apiService.resultados.save({
+     *   studentId: result.studentId,
+     *   studentName: result.studentName,
+     *   courseId: result.courseId,
+     *   courseName: result.courseName,
+     *   challengeId: result.challengeId,
+     *   challengeTitle: result.challengeTitle,
+     *   environment: result.environment,
+     *   score: result.score,
+     *   blocks: result.blocks,
+     *   energy: result.energy,
+     * });
+     * El backend debe hacer UPSERT: si ya existe studentId+courseId+challengeId,
+     * conservar el score más alto (GREATEST).
+     */
+
+    // Mock: upsert en memoria — si ya existe con menor score, actualizar
+    const existingIndex = this.mockResults.findIndex(
+      (r) => r.studentId === result.studentId && r.courseId === result.courseId && r.challengeId === result.challengeId,
+    );
+
+    if (existingIndex >= 0) {
+      const existing = this.mockResults[existingIndex];
+      if (result.score > existing.score) {
+        this.mockResults[existingIndex] = { ...result, completedAt: new Date().toISOString() };
+      }
+      return this.mockResults[existingIndex];
+    }
+
+    const saved: StudentResult = { ...result, completedAt: result.completedAt || new Date().toISOString() };
+    this.mockResults.push(saved);
+    return saved;
+  }
+
+  getResultsByStudent(studentId: string): StudentResult[] {
+    /* BACKEND: GET /api/resultados/estudiante/{studentId} */
+    return this.mockResults.filter((r) => r.studentId === studentId);
+  }
+
+  getResultsByCourse(courseId: string): StudentResult[] {
+    /* BACKEND: GET /api/resultados/curso/{courseId} */
+    return this.mockResults.filter((r) => r.courseId === courseId);
+  }
+
+  getCourseRanking(courseId: string): { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[] {
+    /* BACKEND: GET /api/ranking/curso/{courseId} */
+
+    // Resultados reales de la sesión
+    const courseResults = this.mockResults.filter((r) => r.courseId === courseId);
+    const rankingMap = new Map<string, { studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }>();
+
+    for (const r of courseResults) {
+      const existing = rankingMap.get(r.studentId);
+      if (existing) {
+        existing.totalScore = Math.max(existing.totalScore, r.score);
+        existing.challengesCompleted++;
+        if (r.completedAt > existing.lastUpdated) existing.lastUpdated = r.completedAt;
+      } else {
+        rankingMap.set(r.studentId, {
+          studentId: r.studentId,
+          studentName: r.studentName,
+          totalScore: r.score,
+          challengesCompleted: 1,
+          lastUpdated: r.completedAt,
+        });
+      }
+    }
+
+    // Rellenar con estudiantes mock si no hay datos reales
+    for (const seed of this.mockStudentSeed) {
+      if (seed.courseId === courseId && !rankingMap.has(seed.id)) {
+        rankingMap.set(seed.id, {
+          studentId: seed.id,
+          studentName: seed.name,
+          totalScore: Math.floor(Math.random() * 5000) + 5000,
+          challengesCompleted: Math.floor(Math.random() * 3) + 1,
+          lastUpdated: new Date().toISOString(),
+        });
+      }
+    }
+
+    return Array.from(rankingMap.values())
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((entry, i) => ({ ...entry, position: i + 1 }));
+  }
+
+  getGlobalRanking(): { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[] {
+    /* BACKEND: GET /api/ranking/global */
+
+    const rankingMap = new Map<string, { studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }>();
+
+    for (const r of this.mockResults) {
+      const existing = rankingMap.get(r.studentId);
+      if (existing) {
+        existing.totalScore = Math.max(existing.totalScore, r.score);
+        existing.challengesCompleted++;
+        if (r.completedAt > existing.lastUpdated) existing.lastUpdated = r.completedAt;
+      } else {
+        rankingMap.set(r.studentId, {
+          studentId: r.studentId,
+          studentName: r.studentName,
+          totalScore: r.score,
+          challengesCompleted: 1,
+          lastUpdated: r.completedAt,
+        });
+      }
+    }
+
+    for (const seed of this.mockStudentSeed) {
+      if (!rankingMap.has(seed.id)) {
+        rankingMap.set(seed.id, {
+          studentId: seed.id,
+          studentName: seed.name,
+          totalScore: Math.floor(Math.random() * 5000) + 5000,
+          challengesCompleted: Math.floor(Math.random() * 3) + 1,
+          lastUpdated: new Date().toISOString(),
+        });
+      }
+    }
+
+    return Array.from(rankingMap.values())
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map((entry, i) => ({ ...entry, position: i + 1 }));
+  }
 }

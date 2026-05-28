@@ -65,6 +65,20 @@ export interface EnvironmentConfig {
   defaultHardware: string[];
 }
 
+export interface StudentResult {
+  studentId: string;
+  studentName: string;
+  courseId: string;
+  courseName: string;
+  challengeId: string;
+  challengeTitle: string;
+  environment: EnvironmentType;
+  score: number;
+  blocks: number;
+  energy: number;
+  completedAt: string;
+}
+
 export interface State {
   x: number;
   y: number;

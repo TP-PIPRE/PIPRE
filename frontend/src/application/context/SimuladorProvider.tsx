@@ -2,7 +2,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useRef } from "react";
 import type { ReactNode } from "react";
-import type { Block, BlockCategory, EnvironmentType } from "../../shared/types/Simulador";
+import type { Block, BlockCategory, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngine";
 import { useThemeStore } from "../../infrastructure/store/themeStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
@@ -65,6 +65,13 @@ interface SimuladorContextType {
   consumeEnergy: (amount: number) => void;
   completeMission: () => void;
 
+  challengeCompleted: boolean;
+  lastScore: number;
+  completeChallenge: () => void;
+  dismissChallengeCompletion: () => void;
+  getCourseRanking: () => { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[];
+  getGlobalRanking: () => { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[];
+
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
   currentTheme: Record<string, any>;
@@ -94,6 +101,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [score, setScore] = useState(0);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [currentMissionIndex, setCurrentMissionIndex] = useState(0);
+  const [challengeCompleted, setChallengeCompleted] = useState(false);
+  const [lastScore, setLastScore] = useState(0);
 
   const engineRef = useRef<ISimulatorEngine | null>(null);
   const blockIdCounter = useRef(0);
@@ -227,22 +236,88 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
      * }
      */
 
+    let points = 1000;
+    if (blocks.length <= mission.maxBlocks) points += 500;
+    points += energy * 10;
+
     setMissions((prev) => {
       const next = [...prev];
       next[currentMissionIndex].isCompleted = true;
       return next;
     });
 
-    let points = 1000;
-    if (blocks.length <= mission.maxBlocks) points += 500;
-    points += energy * 10;
-
     setScore((prev) => prev + points);
     addLog(`¡Misión completada! +${points} pts`, "success");
 
+    // Si hay más misiones, avanzar; si no, completar el reto automáticamente
     if (currentMissionIndex < missions.length - 1) {
       setCurrentMissionIndex((prev) => prev + 1);
+    } else if (!isFreeMode && challengeData) {
+      // Todas las misiones completadas → completar el reto
+      setTimeout(() => {
+        const total = score + points;
+        const result: StudentResult = {
+          studentId: "user1",
+          studentName: "Estudiante Demo",
+          courseId: courseId || "unknown",
+          courseName: "",
+          challengeId: challengeId || "unknown",
+          challengeTitle: challengeData?.title || "Reto sin título",
+          environment,
+          score: total,
+          blocks: blocks.length,
+          energy: Math.round(energy),
+          completedAt: new Date().toISOString(),
+        };
+        simuladorUseCase.current.saveResult(result);
+        setLastScore(total);
+        setChallengeCompleted(true);
+        addLog(`¡Reto completado! Puntaje: ${total} pts`, "success");
+      }, 500);
     }
+  };
+
+  const completeChallenge = () => {
+    const totalScore = score;
+
+    const result: StudentResult = {
+      studentId: "user1",
+      studentName: "Estudiante Demo",
+      courseId: courseId || "unknown",
+      courseName: "",
+      challengeId: challengeId || "unknown",
+      challengeTitle: challengeData?.title || "Reto sin título",
+      environment,
+      score: totalScore,
+      blocks: blocks.length,
+      energy: Math.round(energy),
+      completedAt: new Date().toISOString(),
+    };
+
+    /* BACKEND: usar apiService.resultados.save cuando esté conectado:
+     * try {
+     *   await apiService.resultados.save({ ... });
+     * } catch (err) {
+     *   console.error("Error saving result:", err);
+     * }
+     */
+
+    simuladorUseCase.current.saveResult(result);
+    setLastScore(totalScore);
+    setChallengeCompleted(true);
+    addLog(`¡Reto completado! Puntaje: ${totalScore} pts`, "success");
+  };
+
+  const dismissChallengeCompletion = () => {
+    setChallengeCompleted(false);
+  };
+
+  const getCourseRanking = () => {
+    return simuladorUseCase.current.getCourseRanking(courseId || "unknown");
+  };
+
+  const getGlobalRanking = () => {
+    return simuladorUseCase.current.getGlobalRanking();
   };
 
   const addLog = (
@@ -622,6 +697,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
       if (!stopRequested.current && energy > 0) {
         addLog("Programa finalizado.", "success");
+        // Auto-completar misión actual si hay misión activa
+        const currentMission = missions[currentMissionIndex];
+        if (currentMission && !currentMission.isCompleted && !isFreeMode) {
+          completeMission();
+        }
       }
     } catch (e: any) {
       addLog(`Error en ejecución: ${e.message}`, "error");
@@ -673,6 +753,12 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         currentMissionIndex,
         consumeEnergy,
         completeMission,
+        challengeCompleted,
+        lastScore,
+        completeChallenge,
+        dismissChallengeCompletion,
+        getCourseRanking,
+        getGlobalRanking,
         currentTheme,
       }}
     >
