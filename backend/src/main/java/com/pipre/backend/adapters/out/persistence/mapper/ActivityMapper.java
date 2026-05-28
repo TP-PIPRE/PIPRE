@@ -13,6 +13,7 @@ public class ActivityMapper {
         ActivityJpaEntity entity = new ActivityJpaEntity();
         entity.setIdActivity(domain.getIdActivity());
         entity.setName(domain.getName());
+        entity.setLogicLevel(domain.getLogicLevel());
         return entity;
 
     }
@@ -26,9 +27,10 @@ public class ActivityMapper {
                 .stream()
                 .map(SimulationJpaEntity::getIdSimulation)
                 .toList();
-        return new Activity.Builder()
+        return Activity.builder()
                 .idActivity(entity.getIdActivity())
                 .name(entity.getName())
+                .logicLevel(entity.getLogicLevel())
                 .idSimulationList(idimulationList)
                 .idLesson(idLesson)
                 .build();

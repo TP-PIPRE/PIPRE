@@ -1,11 +1,12 @@
 package com.pipre.backend.infrastructure.util.seed;
 
-import com.pipre.backend.application.commands.CreateActivityCommand;
 import com.pipre.backend.application.commands.CreateLessonCommand;
 import com.pipre.backend.application.commands.CreateModuleCommand;
 import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.application.ports.input.*;
+import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
+import com.pipre.backend.domain.entities.Activity;
 import com.pipre.backend.domain.entities.User;
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -21,11 +23,11 @@ public class CourseSeederService {
     private final CreateCourseUseCase createCourseUseCase;
     private final CreateModuleUseCase createModuleUseCase;
     private final CreateLessonUseCase createLessonUseCase;
-    private final CreateActivityUseCase createActivityUseCase;
 
     private final UserRepositoryPort userRepositoryPort;
 
     private final Faker faker = new Faker();
+    private final ActivityRepositoryPort activityRepositoryPort;
 
     @Transactional
     public void seedCourses() {
@@ -55,11 +57,13 @@ public class CourseSeederService {
                     ));
 
                     for (int l = 1; l <= 2; l++) {
-                        createActivityUseCase.execute(new CreateActivityCommand(
-                                lessonId,
-                                "Reto: " + faker.funnyName().name()
-                        ));
-
+                        activityRepositoryPort.save(Activity.builder()
+                                .idActivity(UUID.randomUUID().toString())
+                                .name("Reto: " + faker.funnyName().name())
+                                .logicLevel(faker.options().option("low", "medium", "high"))
+                                .idLesson(lessonId)
+                                .build()
+                        );
                     }
                 }
             }

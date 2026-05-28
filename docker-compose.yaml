@@ -5,6 +5,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: pipre-database
+    ports:
+      - "5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
@@ -43,6 +45,7 @@ services:
       - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
+      - FAST_API_URL=${FAST_API_URL:-http://dev-ml-ia:8000}
     depends_on:
       postgres:
         condition: service_healthy
