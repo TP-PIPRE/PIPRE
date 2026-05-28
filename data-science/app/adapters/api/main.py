@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from app.adapters.api.schemas import RIA01Input
+from app.application.metrics import round_metric
 from app.infrastructure.container import (
     create_dataset_repository,
     create_ria01_model_repository,
@@ -13,6 +14,35 @@ dataset_repository = create_dataset_repository()
 model_repository = create_ria01_model_repository()
 ria01_service = create_ria01_service()
 
+FEATURE_NAME_MAP = {
+    "intentos": "attempts",
+    "errores": "errors",
+    "nivel_logico": "logical_level",
+    "interacciones_ia": "ai_interactions",
+    "ratio_error": "error_ratio",
+    "dependencia_ia": "ai_dependency",
+}
+
+
+def to_ria01_model_input(data: RIA01Input):
+    return {
+        "intentos": data.attempts,
+        "errores": data.errors,
+        "nivel_logico": data.logical_level,
+        "interacciones_ia": data.ai_interactions,
+    }
+
+
+def train_and_save_ria01(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria01_service.train(df)
+    model_repository.save(ria01_service.model)
+
+    print("Modelo entrenado y guardado")
+
 
 # =========================
 #  LIFESPAN
@@ -22,26 +52,30 @@ ria01_service = create_ria01_service()
 async def lifespan(app: FastAPI):
 
     if model_repository.exists():
-        print("Cargando modelo existente...")
+        print("Loading existing model...")
 
-        ria01_service.set_model(model_repository.load())
+        try:
+            loaded_model = model_repository.load()
+            expected_features = ria01_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
 
-        print("Modelo cargado correctamente")
+            if loaded_features != expected_features:
+                train_and_save_ria01("Existing model is incompatible. Retraining model...")
+            else:
+                ria01_service.set_model(loaded_model)
+                print("Model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria01(
+                f"Could not load existing model ({type(exc).__name__}: {exc}). Retraining model..."
+            )
 
     else:
-        print("Entrenando modelo desde cero...")
-
-        df = dataset_repository.load()
-
-        ria01_service.train(df)
-
-        model_repository.save(ria01_service.model)
-
-        print("Modelo entrenado y guardado")
+        train_and_save_ria01("Training model from scratch...")
 
     yield
 
-    print("Cerrando API...")
+    print("Closing API...")
 
 
 # =========================
@@ -60,7 +94,7 @@ app = FastAPI(
 
 @app.post("/ria01/predict")
 def predict_ria01(data: RIA01Input):
-    return ria01_service.predict(data.model_dump())
+    return ria01_service.predict(to_ria01_model_input(data))
 
 
 # =========================
@@ -71,9 +105,12 @@ def predict_ria01(data: RIA01Input):
 def info():
     return {
         "trained": ria01_service._trained,
-        "features": ria01_service.model.feature_columns if ria01_service._trained else [],
-        "accuracy": getattr(ria01_service.model, "accuracy", None),
-        "precision": getattr(ria01_service.model, "precision", None)
+        "features": [
+            FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria01_service.model.feature_columns
+        ] if ria01_service._trained else [],
+        "accuracy": round_metric(getattr(ria01_service.model, "accuracy", None)),
+        "precision": round_metric(getattr(ria01_service.model, "precision", None))
     }
 
 
