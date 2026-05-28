@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type {
   CourseResponseDTO,
@@ -64,10 +64,15 @@ export const DocenteRetosPage: React.FC = () => {
     order: 0,
     difficulty: "EASY",
     points: 0,
-    simulatorConfig: {},
+    simulatorConfig: {
+      environment: "battle",
+      maxBlocks: 10,
+      missions: [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
+    },
     expectedOutput: "",
     reward: { type: "POINTS", value: 0 },
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Cargar cursos
   const fetchCourses = async () => {
@@ -121,9 +126,85 @@ export const DocenteRetosPage: React.FC = () => {
     }
   };
 
+  // Validar formulario de reto
+  const validateChallengeForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    if (!challengeFormData.title?.trim()) errors.title = "El título es obligatorio";
+    if (!challengeFormData.description?.trim()) errors.description = "La descripción es obligatoria";
+    if (!challengeFormData.order || challengeFormData.order < 1) errors.order = "El orden debe ser ≥ 1";
+    if (!challengeFormData.points || challengeFormData.points < 1) errors.points = "Los puntos deben ser > 0";
+    if (!challengeFormData.difficulty) errors.difficulty = "Selecciona una dificultad";
+    const sim = challengeFormData.simulatorConfig;
+    if (sim) {
+      if (!sim.environment) errors.environment = "Selecciona un entorno";
+      if (!sim.maxBlocks || sim.maxBlocks < 1) errors.maxBlocks = "El límite de bloques debe ser ≥ 1";
+      if (sim.missions && sim.missions.length === 0) errors.missions = "Agrega al menos una misión";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Agregar misión al config visual
+  const addMissionToConfig = () => {
+    setChallengeFormData((prev) => {
+      const sim = prev.simulatorConfig || {};
+      const missions = sim.missions || [];
+      const newId = `m${missions.length + 1}`;
+      return {
+        ...prev,
+        simulatorConfig: {
+          ...sim,
+          missions: [...missions, { id: newId, title: `Misión ${missions.length + 1}`, objective: "", maxBlocks: 5 }],
+        },
+      };
+    });
+  };
+
+  // Eliminar misión del config visual
+  const removeMissionFromConfig = (missionId: string) => {
+    setChallengeFormData((prev) => {
+      const sim = prev.simulatorConfig || {};
+      const missions = (sim.missions || []).filter((m: any) => m.id !== missionId);
+      return { ...prev, simulatorConfig: { ...sim, missions } };
+    });
+  };
+
+  // Actualizar una misión en el config visual
+  const updateMissionInConfig = (missionId: string, field: string, value: string | number) => {
+    setChallengeFormData((prev) => {
+      const sim = prev.simulatorConfig || {};
+      const missions = (sim.missions || []).map((m: any) =>
+        m.id === missionId ? { ...m, [field]: value } : m,
+      );
+      return { ...prev, simulatorConfig: { ...sim, missions } };
+    });
+  };
+
+  // Reordenar retos — mover arriba/abajo
+  const moveChallengeOrder = async (challengeId: string, direction: "up" | "down") => {
+    const idx = selectedCourseChallenges.findIndex((c) => c.id === challengeId);
+    if (idx < 0) return;
+    const sorted = [...selectedCourseChallenges].sort((a, b) => a.order - b.order);
+    const currentIdx = sorted.findIndex((c) => c.id === challengeId);
+    if (direction === "up" && currentIdx > 0) {
+      const temp = sorted[currentIdx].order;
+      sorted[currentIdx].order = sorted[currentIdx - 1].order;
+      sorted[currentIdx - 1].order = temp;
+    } else if (direction === "down" && currentIdx < sorted.length - 1) {
+      const temp = sorted[currentIdx].order;
+      sorted[currentIdx].order = sorted[currentIdx + 1].order;
+      sorted[currentIdx + 1].order = temp;
+    } else {
+      return;
+    }
+    /* BACKEND: PATCH /api/v1/challenges/reorder con { challengeId, newOrder } */
+    setSelectedCourseChallenges([...sorted]);
+  };
+
   // Manejar envío de reto
   const handleChallengeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateChallengeForm()) return;
     try {
       if (!selectedCourse) return;
 
@@ -139,6 +220,7 @@ export const DocenteRetosPage: React.FC = () => {
         );
       }
       setChallengeModalType(null);
+      setFormErrors({});
       fetchChallengesByCourse(selectedCourse.id_course);
     } catch (err) {
       console.error("Error saving challenge:", err);
@@ -410,13 +492,18 @@ export const DocenteRetosPage: React.FC = () => {
                     <button
                       onClick={() => {
                         setChallengeModalType("create");
+                        setFormErrors({});
                         setChallengeFormData({
                           title: "",
                           description: "",
                           order: selectedCourseChallenges.length + 1,
                           difficulty: "EASY",
                           points: 0,
-                          simulatorConfig: {},
+                          simulatorConfig: {
+                            environment: "battle",
+                            maxBlocks: 10,
+                            missions: [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
+                          },
                           expectedOutput: "",
                           reward: { type: "POINTS", value: 0 },
                         });
@@ -448,18 +535,45 @@ export const DocenteRetosPage: React.FC = () => {
                                 <span>Puntos: {challenge.points}</span>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex flex-col gap-0.5 mr-1">
+                                <button
+                                  type="button"
+                                  onClick={() => moveChallengeOrder(challenge.id, "up")}
+                                  className="text-text-muted/30 hover:text-primary text-[10px] leading-none"
+                                  title="Subir orden"
+                                >
+                                  ▲
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveChallengeOrder(challenge.id, "down")}
+                                  className="text-text-muted/30 hover:text-primary text-[10px] leading-none"
+                                  title="Bajar orden"
+                                >
+                                  ▼
+                                </button>
+                              </div>
                               <button
                                 onClick={() => {
                                   setChallengeModalType("edit");
+                                  setFormErrors({});
                                   setSelectedChallenge(challenge);
+                                  const sim = challenge.simulatorConfig || {};
                                   setChallengeFormData({
                                     title: challenge.title,
                                     description: challenge.description,
                                     order: challenge.order,
                                     difficulty: challenge.difficulty,
                                     points: challenge.points,
-                                    simulatorConfig: challenge.simulatorConfig,
+                                    simulatorConfig: {
+                                      environment: sim.environment || "battle",
+                                      maxBlocks: sim.maxBlocks || 10,
+                                      missions: sim.missions || [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
+                                      allowedHardware: sim.allowedHardware || [],
+                                      startingPosition: sim.startingPosition || { x: 0, z: 0 },
+                                      targetPosition: sim.targetPosition || { x: 10, z: 10 },
+                                    },
                                     expectedOutput: challenge.expectedOutput,
                                     reward: challenge.reward,
                                   });
@@ -508,6 +622,7 @@ export const DocenteRetosPage: React.FC = () => {
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: Mueve el robot 5 pasos"
                     />
+                    {formErrors.title && <p className="text-danger text-[9px] mt-1">{formErrors.title}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
@@ -516,6 +631,7 @@ export const DocenteRetosPage: React.FC = () => {
                     <input
                       type="number"
                       required
+                      min={1}
                       value={challengeFormData.order || 0}
                       onChange={(e) =>
                         setChallengeFormData({
@@ -527,6 +643,7 @@ export const DocenteRetosPage: React.FC = () => {
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: 1"
                     />
+                    {formErrors.order && <p className="text-danger text-[9px] mt-1">{formErrors.order}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
@@ -550,6 +667,7 @@ export const DocenteRetosPage: React.FC = () => {
                       <option value="MEDIUM">Intermedio</option>
                       <option value="HARD">Avanzado</option>
                     </select>
+                    {formErrors.difficulty && <p className="text-danger text-[9px] mt-1">{formErrors.difficulty}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
@@ -558,6 +676,7 @@ export const DocenteRetosPage: React.FC = () => {
                     <input
                       type="number"
                       required
+                      min={1}
                       value={challengeFormData.points || 0}
                       onChange={(e) =>
                         setChallengeFormData({
@@ -569,6 +688,7 @@ export const DocenteRetosPage: React.FC = () => {
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: 50"
                     />
+                    {formErrors.points && <p className="text-danger text-[9px] mt-1">{formErrors.points}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
@@ -587,31 +707,112 @@ export const DocenteRetosPage: React.FC = () => {
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Describe el objetivo del reto..."
                     />
+                    {formErrors.description && <p className="text-danger text-[9px] mt-1">{formErrors.description}</p>}
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
-                      Configuración del Simulador (JSON)
-                    </label>
-                    <textarea
-                      value={JSON.stringify(
-                        challengeFormData.simulatorConfig || {},
-                        null,
-                        2,
-                      )}
-                      onChange={(e) => {
-                        try {
-                          setChallengeFormData({
-                            ...challengeFormData,
-                            simulatorConfig: JSON.parse(e.target.value || "{}"),
-                          });
-                        } catch {
-                          // Ignorar errores de JSON (opcional: mostrar mensaje de error)
-                        }
-                      }}
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all min-h-[100px] resize-none font-mono"
-                      style={{ borderRadius: "var(--theme-radius)" }}
-                      placeholder='Ej: { "scenario": "grid", "obstacles": [...] }'
-                    />
+                  <div className="space-y-4 md:col-span-2 border border-border/20 p-4" style={{ borderRadius: "var(--theme-radius)" }}>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black">
+                        Configuración del Simulador
+                      </label>
+                      <span className="text-[8px] text-text-muted/30 font-mono">Editor visual</span>
+                    </div>
+
+                    {/* Environment */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Entorno</label>
+                        <select
+                          value={challengeFormData.simulatorConfig?.environment || "battle"}
+                          onChange={(e) =>
+                            setChallengeFormData({
+                              ...challengeFormData,
+                              simulatorConfig: { ...challengeFormData.simulatorConfig, environment: e.target.value },
+                            })
+                          }
+                          className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
+                          style={{ borderRadius: "var(--theme-radius)" }}
+                        >
+                          <option value="battle">⚔️ Batalla de Robots</option>
+                          <option value="space">🚀 Exploración Espacial</option>
+                          <option value="maze">🔮 Laberinto Mágico</option>
+                          <option value="obstacle">🏁 Carrera de Obstáculos</option>
+                        </select>
+                        {formErrors.environment && <p className="text-danger text-[9px] mt-1">{formErrors.environment}</p>}
+                      </div>
+
+                      <div>
+                        <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Límite de Bloques</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={challengeFormData.simulatorConfig?.maxBlocks || 10}
+                          onChange={(e) =>
+                            setChallengeFormData({
+                              ...challengeFormData,
+                              simulatorConfig: { ...challengeFormData.simulatorConfig, maxBlocks: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
+                          style={{ borderRadius: "var(--theme-radius)" }}
+                        />
+                        {formErrors.maxBlocks && <p className="text-danger text-[9px] mt-1">{formErrors.maxBlocks}</p>}
+                      </div>
+                    </div>
+
+                    {/* Misiones */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Misiones</label>
+                        <button
+                          type="button"
+                          onClick={addMissionToConfig}
+                          className="text-[9px] font-bold uppercase tracking-widest text-primary hover:underline"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                      {formErrors.missions && <p className="text-danger text-[9px] mb-2">{formErrors.missions}</p>}
+
+                      {(challengeFormData.simulatorConfig?.missions || []).map((mission: any, mi: number) => (
+                        <div key={mission.id} className="flex gap-2 items-start mb-2 p-2 bg-bg/30 border border-border/10" style={{ borderRadius: "var(--theme-radius)" }}>
+                          <div className="flex-1 space-y-1">
+                            <input
+                              placeholder="Título de la misión"
+                              value={mission.title}
+                              onChange={(e) => updateMissionInConfig(mission.id, "title", e.target.value)}
+                              className="w-full bg-bg/50 border border-border/20 px-2 py-1 text-xs focus:border-primary outline-none"
+                              style={{ borderRadius: "var(--theme-radius)" }}
+                            />
+                            <input
+                              placeholder="Objetivo"
+                              value={mission.objective}
+                              onChange={(e) => updateMissionInConfig(mission.id, "objective", e.target.value)}
+                              className="w-full bg-bg/50 border border-border/20 px-2 py-1 text-xs focus:border-primary outline-none"
+                              style={{ borderRadius: "var(--theme-radius)" }}
+                            />
+                          </div>
+                          <div className="w-16">
+                            <label className="text-[8px] text-text-muted/50 block mb-0.5">Bloques</label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={mission.maxBlocks}
+                              onChange={(e) => updateMissionInConfig(mission.id, "maxBlocks", Number(e.target.value))}
+                              className="w-full bg-bg/50 border border-border/20 px-2 py-1 text-xs focus:border-primary outline-none"
+                              style={{ borderRadius: "var(--theme-radius)" }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeMissionFromConfig(mission.id)}
+                            className="text-danger/50 hover:text-danger text-xs mt-2"
+                            disabled={(challengeFormData.simulatorConfig?.missions || []).length <= 1}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">

@@ -1,4 +1,5 @@
 import { useSimulador } from '../../../application/context/SimuladorProvider';
+import { CelebrationOverlay } from './CelebrationOverlay';
 
 export const MissionsPanel = () => {
   const {
@@ -7,11 +8,18 @@ export const MissionsPanel = () => {
     missions,
     currentMissionIndex,
     blocks,
-    completeMission
+    completeMission,
+    isRunning,
+    isFreeMode,
+    challengeCompleted,
+    lastScore,
+    challengeData,
+    dismissChallengeCompletion,
   } = useSimulador();
 
   const currentMission = missions[currentMissionIndex];
   const isMissionActive = currentMission && !currentMission.isCompleted;
+  const allMissionsCompleted = missions.length > 0 && missions.every((m) => m.isCompleted);
 
   return (
     <div 
@@ -31,7 +39,6 @@ export const MissionsPanel = () => {
 
       {/* METRICS */}
       <div className="grid grid-cols-2 gap-4">
-        {/* ENERGY */}
         <div 
           className="p-4 bg-bg border border-border group hover:border-primary/40 transition-all duration-300"
           style={{ borderRadius: "var(--theme-radius)" }}
@@ -55,7 +62,6 @@ export const MissionsPanel = () => {
           </div>
         </div>
 
-        {/* SCORE */}
         <div 
           className="p-4 bg-bg border border-border flex flex-col justify-center hover:border-primary/40 transition-all duration-300"
           style={{ borderRadius: "var(--theme-radius)" }}
@@ -69,8 +75,32 @@ export const MissionsPanel = () => {
         </div>
       </div>
 
+      {/* MISSION PROGRESS */}
+      {!isFreeMode && missions.length > 0 && (
+        <div className="flex flex-col gap-1.5 px-1">
+          <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">
+            Progreso: {missions.filter((m) => m.isCompleted).length}/{missions.length}
+          </div>
+          <div className="flex gap-1.5">
+            {missions.map((m, i) => (
+              <div
+                key={m.id}
+                className="flex-1 h-1 rounded-full transition-all duration-500"
+                style={{
+                  backgroundColor: m.isCompleted
+                    ? "var(--success)"
+                    : i === currentMissionIndex
+                      ? "var(--primary)"
+                      : "var(--border)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* CURRENT MISSION */}
-      {isMissionActive ? (
+      {isMissionActive && !allMissionsCompleted ? (
         <div className="flex-1 flex flex-col gap-4 animate-scale-up">
           <div className="flex items-center justify-between px-1">
             <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
@@ -116,35 +146,46 @@ export const MissionsPanel = () => {
               </div>
             </div>
           </div>
-
-          {/* Dev button */}
-          <button
-            onClick={completeMission}
-            className="text-[9px] font-mono uppercase tracking-[0.3em] py-3 text-text-muted hover:text-primary hover:bg-primary/5 transition-all active:scale-95 border border-dashed border-border mt-2"
-            style={{ borderRadius: "var(--theme-radius)" }}
-          >
-            Sincronizar Finalización
-          </button>
+        </div>
+      ) : allMissionsCompleted && !isFreeMode ? (
+        <div 
+          className="flex-1 flex flex-col justify-center items-center text-center p-8 border border-success/20 bg-success/5 animate-fade-in"
+          style={{ borderRadius: "var(--theme-radius)" }}
+        >
+          <div className="text-6xl mb-6 drop-shadow-[0_0_15px_rgba(var(--success-rgb),0.4)]">🏆</div>
+          <h3 className="text-xl font-bold text-text mb-2">Sector Asegurado</h3>
+          <p className="text-xs text-text-muted leading-relaxed mb-6">
+            Todas las misiones han sido completadas con éxito.
+          </p>
+          <div className="text-lg font-black text-success mb-6">
+            Puntaje final: {score.toLocaleString()} pts
+          </div>
         </div>
       ) : (
         <div 
-          className="flex-1 flex flex-col justify-center items-center text-center p-8 border border-primary/20 bg-primary/5 animate-fade-in"
+          className="flex-1 flex flex-col justify-center items-center text-center p-8 border border-border/20 bg-bg/30 animate-fade-in"
           style={{ borderRadius: "var(--theme-radius)" }}
         >
-          <div className="text-6xl mb-6 animate-bounce drop-shadow-[0_0_15px_rgba(var(--primary-rgb),0.4)]">🏆</div>
-          <h3 className="text-xl font-bold text-text mb-2">Sector Asegurado</h3>
+          <div className="text-4xl mb-4 opacity-30">⚡</div>
           <p className="text-xs text-text-muted leading-relaxed">
-            Todos los protocolos de simulación han sido completados con éxito.
+            {isFreeMode
+              ? "Modo libre — ensambla tu robot y programa bloques."
+              : "Selecciona un reto para comenzar."}
           </p>
-          <button 
-            className="btn-premium mt-8 w-full py-4 text-xs font-black tracking-[0.2em] active:scale-95"
-            style={{ borderRadius: "var(--theme-radius)" }}
-          >
-            SIGUIENTE NODO →
-          </button>
         </div>
       )}
 
+      {/* Celebration overlay */}
+      {challengeCompleted && challengeData && (
+        <CelebrationOverlay
+          score={lastScore}
+          blocks={blocks.length}
+          energy={Math.round(energy)}
+          challengeTitle={challengeData.title}
+          onNext={dismissChallengeCompletion}
+          onExit={dismissChallengeCompletion}
+        />
+      )}
     </div>
   );
 };
