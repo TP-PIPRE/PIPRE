@@ -1,9 +1,41 @@
 from app.application.metrics import round_metric
 
 
+DIFFICULTY_LABELS = {
+    "low": "baja",
+    "medium": "media",
+    "high": "alta",
+}
+
+REASON_LABELS = {
+    "strong_results": "resultados sólidos",
+    "high_error_ratio": "alta proporción de errores",
+    "high_frustration": "alta frustración",
+    "strong_recent_progress": "buen progreso reciente",
+    "unstable_performance": "desempeño inestable",
+    "balanced_performance": "desempeño equilibrado",
+    "mixed_adaptation_signals": "señales mixtas de adaptación",
+}
+
+
+def traducir_detalle_dificultad(detalle):
+    return {
+        "nivel_dificultad": DIFFICULTY_LABELS.get(
+            detalle.get("difficulty_level"),
+            detalle.get("difficulty_level")
+        ),
+        "razones": [
+            REASON_LABELS.get(reason, reason)
+            for reason in detalle.get("reasons", [])
+        ],
+    }
+
+
 def generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12):
 
     data = df.sample(1)
+    ria4_resultado = ria4.predict(data)
+    ria4_detalle = ria4.predict_detailed(data)
 
     def get_input_data(columns):
         available_columns = [col for col in columns if col in data.columns]
@@ -43,8 +75,8 @@ def generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12):
         },
 
         "RIA4 - Dificultad": {
-            "resultado": ria4.predict(data),
-            "detalle": ria4.predict_detailed(data),
+            "resultado": DIFFICULTY_LABELS.get(ria4_resultado, ria4_resultado),
+            "detalle": traducir_detalle_dificultad(ria4_detalle),
             "accuracy": round_metric(ria4.accuracy),
             "precision": round_metric(ria4.precision),
             "importancias": dict(zip(

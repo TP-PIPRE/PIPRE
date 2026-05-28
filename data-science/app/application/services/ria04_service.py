@@ -28,9 +28,7 @@ class RIA04Service:
 
         return {
             "difficulty_level": result["difficulty_level"],
-            "confidence": round_metric(result["confidence"]),
             "reasons": result["reasons"],
             "accuracy": round_metric(getattr(self.model, "accuracy", None)),
             "precision": round_metric(getattr(self.model, "precision", None)),
-            "fn_rate": round_metric(getattr(self.model, "fn_rate", None)),
         }

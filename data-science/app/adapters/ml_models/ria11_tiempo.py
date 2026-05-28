@@ -173,7 +173,7 @@ class ClasificadorTiempo:
 
         #  MENSAJES INTERPRETADOS
         if label == "corto":
-            return "Tiempo corto:"
+            return "Tiempo corto"
         
         elif label == "medio":
             return "Tiempo medio"

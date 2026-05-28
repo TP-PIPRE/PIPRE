@@ -426,7 +426,6 @@ def info_ria04():
         ] if ria04_service._trained else [],
         "accuracy": round_metric(getattr(ria04_service.model, "accuracy", None)),
         "precision": round_metric(getattr(ria04_service.model, "precision", None)),
-        "fn_rate": round_metric(getattr(ria04_service.model, "fn_rate", None)),
     }
 
 
