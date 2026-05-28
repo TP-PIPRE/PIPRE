@@ -1,0 +1,39 @@
+package com.pipre.backend.adapters.in.web.controller;
+
+import com.pipre.backend.application.commands.RegisterCourseCommand;
+import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
+import com.pipre.backend.application.ports.input.CreateCourseUseCase;
+import com.pipre.backend.application.ports.input.GetCoursesUseCase;
+import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/courses")
+@RequiredArgsConstructor
+public class CourseController {
+    private final GetCoursesUseCase getCoursesUseCase;
+    private final CreateCourseUseCase createCourseUseCase;
+    private final UpdateCoursesUseCase updateCoursesUseCase;
+
+    @GetMapping
+    public ResponseEntity<List<CourseResponseDTO>> getCourses() {
+        return ResponseEntity.ok(getCoursesUseCase.execute());
+    }
+
+    @PostMapping
+    public ResponseEntity<Void> postCourse(@RequestBody RegisterCourseCommand requestDTO) {
+        createCourseUseCase.execute(requestDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/{idCourse}")
+    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, RegisterCourseCommand requestDTO) {
+        updateCoursesUseCase.execute(idCourse, requestDTO);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+}
