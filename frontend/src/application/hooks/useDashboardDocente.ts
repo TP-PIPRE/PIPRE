@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { GetDashboardDocenteDataUseCase } from "../usecases/GetDashboardDocenteDataUseCase";
-import type { DashboardDocenteData } from "../../domain/models/DashboardDocente";
+import type { DashboardDocenteData } from "../../shared/types/DashboardDocente";
 
 export const useDashboardDocente = () => {
   const [dashboardData, setDashboardData] =

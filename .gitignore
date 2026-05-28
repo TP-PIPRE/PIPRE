@@ -11,7 +11,9 @@ Thumbs.db
 *.user
 *.userosscache
 *.sln.docupdates
-
+.agents/*
+skills/*
+skills-lock.json
 # Logs
 *.log
 
