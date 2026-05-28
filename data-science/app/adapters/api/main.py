@@ -13,6 +13,24 @@ dataset_repository = create_dataset_repository()
 model_repository = create_ria01_model_repository()
 ria01_service = create_ria01_service()
 
+FEATURE_NAME_MAP = {
+    "intentos": "attempts",
+    "errores": "errors",
+    "nivel_logico": "logical_level",
+    "interacciones_ia": "ai_interactions",
+    "ratio_error": "error_ratio",
+    "dependencia_ia": "ai_dependency",
+}
+
+
+def to_ria01_model_input(data: RIA01Input):
+    return {
+        "intentos": data.attempts,
+        "errores": data.errors,
+        "nivel_logico": data.logical_level,
+        "interacciones_ia": data.ai_interactions,
+    }
+
 
 def train_and_save_ria01(reason: str):
     print(reason)
@@ -33,7 +51,7 @@ def train_and_save_ria01(reason: str):
 async def lifespan(app: FastAPI):
 
     if model_repository.exists():
-        print("Cargando modelo existente...")
+        print("Loading existing model...")
 
         try:
             loaded_model = model_repository.load()
@@ -41,22 +59,22 @@ async def lifespan(app: FastAPI):
             loaded_features = getattr(loaded_model, "feature_columns", None)
 
             if loaded_features != expected_features:
-                train_and_save_ria01("Modelo existente incompatible. Reentrenando modelo...")
+                train_and_save_ria01("Existing model is incompatible. Retraining model...")
             else:
                 ria01_service.set_model(loaded_model)
-                print("Modelo cargado correctamente")
+                print("Model loaded successfully")
 
         except Exception as exc:
             train_and_save_ria01(
-                f"No se pudo cargar el modelo existente ({type(exc).__name__}: {exc}). Reentrenando modelo..."
+                f"Could not load existing model ({type(exc).__name__}: {exc}). Retraining model..."
             )
 
     else:
-        train_and_save_ria01("Entrenando modelo desde cero...")
+        train_and_save_ria01("Training model from scratch...")
 
     yield
 
-    print("Cerrando API...")
+    print("Closing API...")
 
 
 # =========================
@@ -75,7 +93,7 @@ app = FastAPI(
 
 @app.post("/ria01/predict")
 def predict_ria01(data: RIA01Input):
-    return ria01_service.predict(data.model_dump())
+    return ria01_service.predict(to_ria01_model_input(data))
 
 
 # =========================
@@ -86,7 +104,10 @@ def predict_ria01(data: RIA01Input):
 def info():
     return {
         "trained": ria01_service._trained,
-        "features": ria01_service.model.feature_columns if ria01_service._trained else [],
+        "features": [
+            FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria01_service.model.feature_columns
+        ] if ria01_service._trained else [],
         "accuracy": getattr(ria01_service.model, "accuracy", None),
         "precision": getattr(ria01_service.model, "precision", None)
     }
