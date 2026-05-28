@@ -16,7 +16,6 @@ class PipelineIA(PipelineUseCase):
         self.ria1.train(df)
 
         self.ria3.train(df)
-        self.ria3.evaluar(df)
 
         self.ria8.train(df)
 
