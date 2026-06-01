@@ -19,7 +19,6 @@ public class ResultController {
     private final GetStudentResultUseCase getStudentResultUseCase;
     private final SaveResultUseCase saveResultUseCase;
 
-
     @GetMapping("/user/{idStudent}")
     public ResponseEntity<List<StudentResultResponseDTO>> getStudentResult(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentResultUseCase.execute(idStudent));

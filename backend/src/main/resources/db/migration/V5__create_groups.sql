@@ -7,7 +7,7 @@ CREATE TABLE group_students (
     id_ranking VARCHAR(36) PRIMARY KEY,
     id_group VARCHAR(36),
     id_student VARCHAR(36),
-    total_points INTEGER,
+    total_points DECIMAL(15,2),
     position INTEGER,
 
     CONSTRAINT fk_group_students_group FOREIGN KEY (id_group)
