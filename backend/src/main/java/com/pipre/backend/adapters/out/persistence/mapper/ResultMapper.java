@@ -22,4 +22,13 @@ public class ResultMapper {
                 .idActivity(idActivity)
                 .build();
     }
+
+    public static ResultJpaEntity toEntity(Result domain) {
+        if(domain == null) return null;
+        ResultJpaEntity entity = new ResultJpaEntity();
+        entity.setIdResult(domain.getIdResult());
+        entity.setAttempts(domain.getAttempts());
+        entity.setErrors(domain.getErrors());
+        return entity;
+    }
 }
