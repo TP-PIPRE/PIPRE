@@ -8,14 +8,14 @@ public class Group {
     private final String groupName;
     private final List<String> idGroupStudentList;
 
-    public Group(Builder builder) {
-        this.idGroup = builder.idGroup;
-        this.groupName = builder.groupName;
-        this.idGroupStudentList = builder.idGroupStudentList;
+    Group(String idGroup, String groupName, List<String> idGroupStudentList) {
+        this.idGroup = idGroup;
+        this.groupName = groupName;
+        this.idGroupStudentList = idGroupStudentList;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static GroupBuilder builder() {
+        return new GroupBuilder();
     }
 
     public String getIdGroup() {
@@ -30,31 +30,35 @@ public class Group {
         return this.idGroupStudentList;
     }
 
-    public static class Builder {
+    public static class GroupBuilder {
         private String idGroup;
         private String groupName;
         private List<String> idGroupStudentList;
 
-        public Builder() {
+        GroupBuilder() {
         }
 
-        public Builder idGroup(String idGroup) {
+        public GroupBuilder idGroup(String idGroup) {
             this.idGroup = idGroup;
             return this;
         }
 
-        public Builder groupName(String groupName) {
+        public GroupBuilder groupName(String groupName) {
             this.groupName = groupName;
             return this;
         }
 
-        public Builder idGroupStudentList(List<String> idGroupStudentList) {
+        public GroupBuilder idGroupStudentList(List<String> idGroupStudentList) {
             this.idGroupStudentList = idGroupStudentList;
             return this;
         }
 
         public Group build() {
-            return new Group(this);
+            return new Group(this.idGroup, this.groupName, this.idGroupStudentList);
+        }
+
+        public String toString() {
+            return "Group.GroupBuilder(idGroup=" + this.idGroup + ", groupName=" + this.groupName + ", idGroupStudentList=" + this.idGroupStudentList + ")";
         }
     }
 }

@@ -26,7 +26,7 @@ class GetModulesServiceTest {
     void shouldReturnModulesByCourseId() {
         // Arrange
         String courseId = "course-123";
-        Module module = new Module.Builder().idModule("mod-1").title("Módulo Test").build();
+        Module module = Module.builder().idModule("mod-1").title("Módulo Test").build();
         when(moduleRepositoryPort.findAllByIdCourse(courseId)).thenReturn(List.of(module));
 
         // Act
@@ -34,8 +34,8 @@ class GetModulesServiceTest {
 
         // Assert
         assertEquals(1, result.size());
-        assertEquals("mod-1", result.get(0).idModule());
-        assertEquals("Módulo Test", result.get(0).title());
+        assertEquals("mod-1", result.getFirst().idModule());
+        assertEquals("Módulo Test", result.getFirst().title());
         verify(moduleRepositoryPort, times(1)).findAllByIdCourse(courseId);
     }
 }

@@ -10,16 +10,16 @@ public class Activity {
     private final String idLesson;
     private final List<String> idSimulationList;
 
-    public Activity(Builder builder) {
-        this.idActivity = builder.idActivity;
-        this.name = builder.name;
-        this.logicLevel = builder.logicLevel;
-        this.idLesson = builder.idLesson;
-        this.idSimulationList = builder.idSimulationList;
+    Activity(String idActivity, String name, String logicLevel, String idLesson, List<String> idSimulationList) {
+        this.idActivity = idActivity;
+        this.name = name;
+        this.logicLevel = logicLevel;
+        this.idLesson = idLesson;
+        this.idSimulationList = idSimulationList;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static ActivityBuilder builder() {
+        return new ActivityBuilder();
     }
 
     public String getIdActivity() {
@@ -38,40 +38,51 @@ public class Activity {
         return this.idLesson;
     }
 
-    public static class Builder {
+    public List<String> getIdSimulationList() {
+        return this.idSimulationList;
+    }
+
+    public static class ActivityBuilder {
         private String idActivity;
         private String name;
         private String logicLevel;
         private String idLesson;
         private List<String> idSimulationList;
 
-        public Builder idActivity(String idActivity) {
+        ActivityBuilder() {
+        }
+
+        public ActivityBuilder idActivity(String idActivity) {
             this.idActivity = idActivity;
             return this;
         }
 
-        public Builder name(String name) {
+        public ActivityBuilder name(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder logicLevel(String logicLevel) {
+        public ActivityBuilder logicLevel(String logicLevel) {
             this.logicLevel = logicLevel;
             return this;
         }
 
-        public Builder idLesson(String idLesson) {
+        public ActivityBuilder idLesson(String idLesson) {
             this.idLesson = idLesson;
             return this;
         }
 
-        public Builder idSimulationList(List<String> idSimulationList) {
+        public ActivityBuilder idSimulationList(List<String> idSimulationList) {
             this.idSimulationList = idSimulationList;
             return this;
         }
 
         public Activity build() {
-            return new Activity(this);
+            return new Activity(this.idActivity, this.name, this.logicLevel, this.idLesson, this.idSimulationList);
+        }
+
+        public String toString() {
+            return "Activity.ActivityBuilder(idActivity=" + this.idActivity + ", name=" + this.name + ", logicLevel=" + this.logicLevel + ", idLesson=" + this.idLesson + ", idSimulationList=" + this.idSimulationList + ")";
         }
     }
 }
