@@ -1,14 +1,16 @@
 package com.pipre.backend.domain.entities;
 
+import java.math.BigDecimal;
+
 public class Ranking {
 
     private final String idRanking;
-    private final Integer totalPoints;
+    private final BigDecimal totalPoints;
     private final Integer position;
     private final String idGroup;
     private final String idStudent;
 
-    Ranking(String idRanking, Integer totalPoints, Integer position, String idGroup, String idStudent) {
+    Ranking(String idRanking, BigDecimal totalPoints, Integer position, String idGroup, String idStudent) {
         this.idRanking = idRanking;
         this.totalPoints = totalPoints;
         this.position = position;
@@ -24,7 +26,7 @@ public class Ranking {
         return this.idRanking;
     }
 
-    public Integer getTotalPoints() {
+    public BigDecimal getTotalPoints() {
         return this.totalPoints;
     }
 
@@ -42,7 +44,7 @@ public class Ranking {
 
     public static class RankingBuilder {
         private String idRanking;
-        private Integer totalPoints;
+        private BigDecimal totalPoints;
         private Integer position;
         private String idGroup;
         private String idStudent;
@@ -55,7 +57,7 @@ public class Ranking {
             return this;
         }
 
-        public RankingBuilder totalPoints(Integer totalPoints) {
+        public RankingBuilder totalPoints(BigDecimal totalPoints) {
             this.totalPoints = totalPoints;
             return this;
         }

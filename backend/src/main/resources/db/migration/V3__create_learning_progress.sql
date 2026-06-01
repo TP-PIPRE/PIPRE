@@ -6,7 +6,7 @@ CREATE TABLE activity_results (
     errors INTEGER,
     score DECIMAL(10,2),
     result_simulation VARCHAR(50),
-    dateAttempted TIMESTAMP,
+    date_attempted TIMESTAMP,
 
     CONSTRAINT fk_results_student FOREIGN KEY (id_student)
         REFERENCES users(id_user)

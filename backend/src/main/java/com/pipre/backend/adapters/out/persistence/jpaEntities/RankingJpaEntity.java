@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "group_students")
 @NoArgsConstructor
@@ -23,6 +25,6 @@ public class RankingJpaEntity {
     @JoinColumn(name = "id_student", nullable = false)
     private UserJpaEntity studentJpaEntity;
 
-    private Integer totalPoints;
     private Integer position;
+    private BigDecimal totalPoints;
 }
