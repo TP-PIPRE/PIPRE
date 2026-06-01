@@ -24,7 +24,7 @@ public class GroupMapper {
                         .stream()
                         .map(RankingJpaEntity::getIdRanking)
                         .toList();
-        return new Group.Builder()
+        return Group.builder()
                 .idGroup(entity.getIdGroup())
                 .groupName(entity.getGroupName())
                 .idGroupStudentList(idGroupStudentList)

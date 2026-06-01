@@ -9,7 +9,7 @@ public class ActivityFactory {
             String name,
             String idLesson
     ) {
-        return new Activity.Builder()
+        return Activity.builder()
                 .idActivity(UUID.randomUUID().toString())
                 .name(name)
                 .idLesson(idLesson)

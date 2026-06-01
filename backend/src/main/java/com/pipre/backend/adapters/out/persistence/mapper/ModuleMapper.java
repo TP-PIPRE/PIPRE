@@ -29,7 +29,7 @@ public class ModuleMapper {
                         .map(LessonJpaEntity::getIdLesson)
                         .collect(Collectors.toList());
 
-        return new Module.Builder()
+        return Module.builder()
                 .idModule(entity.getIdModule())
                 .idCourse(idCourse)
                 .title(entity.getTitle())

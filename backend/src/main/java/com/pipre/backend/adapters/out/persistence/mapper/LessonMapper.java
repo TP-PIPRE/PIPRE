@@ -27,7 +27,7 @@ public class LessonMapper {
                         .stream()
                         .map(ActivityJpaEntity::getIdActivity)
                         .toList();
-        return new Lesson.Builder()
+        return Lesson.builder()
                 .idLesson(entity.getIdLesson())
                 .title(entity.getTitle())
                 .idModule(idModule)

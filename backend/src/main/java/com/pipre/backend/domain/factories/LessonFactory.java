@@ -9,7 +9,7 @@ public class LessonFactory {
             String title,
             String idModule
     ) {
-        return new Lesson.Builder()
+        return Lesson.builder()
                 .idLesson(UUID.randomUUID().toString())
                 .title(title)
                 .idActivityList(null)

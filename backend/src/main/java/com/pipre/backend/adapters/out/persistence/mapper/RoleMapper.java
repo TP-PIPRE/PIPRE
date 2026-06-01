@@ -14,7 +14,7 @@ public class RoleMapper {
     }
     public static Role toDomain(RoleJpaEntity entity) {
         if (entity == null) return null;
-        return new Role.Builder()
+        return Role.builder()
                 .idRole(entity.getIdRole())
                 .name(entity.getName())
                 .description(entity.getDescription())
