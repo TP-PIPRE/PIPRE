@@ -33,7 +33,13 @@ public class UserRolesSeederService {
         String studentId = getRoleIdByName("STUDENT");
 
         registerUserUseCase.execute(new RegisterUserCommand(
-                "Admin", "Principal", "admin@pipre.com", "123", "N/A", 35, List.of(adminId)
+                "Admin",
+                "Principal",
+                "admin@pipre.com",
+                "123",
+                "N/A",
+                35,
+                List.of(adminId)
         ));
 
         registerUserUseCase.execute(new RegisterUserCommand(
@@ -54,7 +60,7 @@ public class UserRolesSeederService {
                 .filter(r -> r.getName().equalsIgnoreCase(name))
                 .map(Role::getIdRole)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Error Crítico: El rol " + name + " no existe en la base de datos. Verifica Flyway."));
+                .orElseThrow(() -> new RuntimeException("Error Crítico: El rol " + name + " no existe en la base de datos."));
     }
 
     private RegisterUserCommand generateFakeUser(String roleId, int minAge, int maxAge) {

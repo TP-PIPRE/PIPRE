@@ -1,5 +1,6 @@
 package com.pipre.backend.adapters.out.persistence.mapper;
 
+import com.pipre.backend.adapters.out.persistence.jpaEntities.RoleJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.UserJpaEntity;
 import com.pipre.backend.domain.entities.User;
 
@@ -34,6 +35,7 @@ public class UserMapper {
                 .age(entity.getAge())
                 .isActive(entity.getIsActive())
                 .registeredAt(entity.getRegisteredAt())
+                .idRoleList(entity.getRoleJpaEntityList().stream().map(RoleJpaEntity::getIdRole).toList())
                 .build();
     }
 }

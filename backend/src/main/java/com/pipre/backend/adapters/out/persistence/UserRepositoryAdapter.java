@@ -9,6 +9,7 @@ import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.domain.entities.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,12 +37,14 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     }
 
     @Override
+    @Transactional
     public Optional<User> findById(String id) {
         return jpaRepository.findById(id)
                 .map(UserMapper::toDomain);
     }
 
     @Override
+    @Transactional
     public Optional<User> findByEmail(String email) {
         return jpaRepository.findByEmail(email)
                 .map(UserMapper::toDomain);
@@ -53,6 +56,7 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     }
 
     @Override
+    @Transactional
     public List<User> findAll() {
         return jpaRepository.findAll()
                 .stream()
