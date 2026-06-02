@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface GroupRepositoryPort {
     List<Group> findAll();
     Optional<Group> findById(String idGroup);
+    void save(Group group);
 }

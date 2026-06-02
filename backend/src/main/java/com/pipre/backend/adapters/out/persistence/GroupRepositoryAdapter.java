@@ -1,5 +1,6 @@
 package com.pipre.backend.adapters.out.persistence;
 
+import com.pipre.backend.adapters.out.persistence.jpaEntities.GroupJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaRepositories.GroupJpaRepository;
 import com.pipre.backend.adapters.out.persistence.mapper.GroupMapper;
 import com.pipre.backend.application.ports.output.GroupRepositoryPort;
@@ -27,5 +28,11 @@ public class GroupRepositoryAdapter implements GroupRepositoryPort {
     public Optional<Group> findById(String idGroup) {
         return groupJpaRepository.findById(idGroup)
                 .map(GroupMapper::toDomain);
+    }
+
+    @Override
+    public void save(Group group) {
+        GroupJpaEntity entity = GroupMapper.toJpaEntity(group);
+        groupJpaRepository.save(entity);
     }
 }
