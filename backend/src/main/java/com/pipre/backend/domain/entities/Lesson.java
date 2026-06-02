@@ -6,14 +6,14 @@ public class Lesson {
 
     private final String idLesson;
     private final String title;
-    private final List<String> idActivityList;
     private final String idModule;
+    private final List<String> idActivityList;
 
-    Lesson(String idLesson, String title, List<String> idActivityList, String idModule) {
+    Lesson(String idLesson, String title, String idModule, List<String> idActivityList) {
         this.idLesson = idLesson;
         this.title = title;
-        this.idActivityList = idActivityList;
         this.idModule = idModule;
+        this.idActivityList = idActivityList;
     }
 
     public static LessonBuilder builder() {
@@ -28,19 +28,19 @@ public class Lesson {
         return this.title;
     }
 
-    public List<String> getIdActivityList() {
-        return this.idActivityList;
-    }
-
     public String getIdModule() {
         return this.idModule;
+    }
+
+    public List<String> getIdActivityList() {
+        return this.idActivityList;
     }
 
     public static class LessonBuilder {
         private String idLesson;
         private String title;
-        private List<String> idActivityList;
         private String idModule;
+        private List<String> idActivityList;
 
         LessonBuilder() {
         }
@@ -55,22 +55,22 @@ public class Lesson {
             return this;
         }
 
-        public LessonBuilder idActivityList(List<String> idActivityList) {
-            this.idActivityList = idActivityList;
-            return this;
-        }
-
         public LessonBuilder idModule(String idModule) {
             this.idModule = idModule;
             return this;
         }
 
+        public LessonBuilder idActivityList(List<String> idActivityList) {
+            this.idActivityList = idActivityList;
+            return this;
+        }
+
         public Lesson build() {
-            return new Lesson(this.idLesson, this.title, this.idActivityList, this.idModule);
+            return new Lesson(this.idLesson, this.title, this.idModule, this.idActivityList);
         }
 
         public String toString() {
-            return "Lesson.LessonBuilder(idLesson=" + this.idLesson + ", title=" + this.title + ", idActivityList=" + this.idActivityList + ", idModule=" + this.idModule + ")";
+            return "Lesson.LessonBuilder(idLesson=" + this.idLesson + ", title=" + this.title + ", idModule=" + this.idModule + ", idActivityList=" + this.idActivityList + ")";
         }
     }
 }
