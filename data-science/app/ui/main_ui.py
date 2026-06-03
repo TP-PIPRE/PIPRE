@@ -5,22 +5,21 @@ from app.ui.ui_resultados import mostrar_resultados
 
 def main():
 
-    #  cargar dataset
+    # cargar dataset
     df = create_dataset_repository().load()
 
-    #  pipeline
+    # pipeline
     pipeline = create_pipeline()
     pipeline.train(df)
 
-    ria1, ria3, ria8, ria11, ria12 = pipeline.get_models()
+    ria1, ria3, ria4, ria8, ria11, ria12 = pipeline.get_models()
 
-    # función reutilizable
     def evaluar():
-        return generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
+        return generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12)
 
     resultados = evaluar()
 
-    #  UI
+    # UI
     mostrar_resultados(resultados, evaluar)
 
 

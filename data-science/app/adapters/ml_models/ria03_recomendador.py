@@ -46,32 +46,31 @@ class RecomendadorActividades:
             if col not in df.columns:
                 df[col] = 0
 
-        for col in base_cols:
+        numeric_cols = ["dias_inactivo", "interacciones_ia", "intentos"]
+
+        for col in numeric_cols:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
+        df["nivel_logico"] = df["nivel_logico"].astype(str)
+
         if is_training:
-            required_cols = ["puntaje", "tasa_exito", "errores", "intentos"]
-
-            for col in required_cols:
-                if col not in df.columns:
-                    raise ValueError(f"Falta columna: {col}")
-
-            for col in required_cols:
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
-            df["score_final"] = (
-                df["puntaje"] * 0.5 +
-                df["tasa_exito"] * 50 -
-                df["errores"] * 2 +
-                df["intentos"] * 1.5
+            nivel_score = (
+                df["nivel_logico"]
+                .str.lower()
+                .map({"bajo": 0, "medio": 1, "alto": 2})
+                .fillna(1)
             )
 
-            q1 = df["score_final"].quantile(0.25)
-            q2 = df["score_final"].quantile(0.75)
+            df["score_final"] = (
+                nivel_score * 2.0 +
+                df["intentos"].clip(lower=0, upper=10) * 0.45 +
+                df["interacciones_ia"].clip(lower=0, upper=10) * 0.25 -
+                df["dias_inactivo"].clip(lower=0, upper=30) * 0.35
+            )
 
             df["rendimiento"] = pd.cut(
                 df["score_final"],
-                bins=[-float("inf"), q1, q2, float("inf")],
+                bins=[-float("inf"), 2.0, 5.5, float("inf")],
                 labels=["bajo", "medio", "alto"]
             )
 
@@ -90,8 +89,6 @@ class RecomendadorActividades:
         df.replace([np.inf, -np.inf], 0, inplace=True)
         df.fillna(0, inplace=True)
 
-        df["nivel_logico"] = df["nivel_logico"].astype(str)
-
         if is_training:
             df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
         else:
@@ -108,12 +105,17 @@ class RecomendadorActividades:
         X = df[self.feature_columns]
         y = df["rendimiento"]
 
-        # ===== STAGE 1 =====
-        y1 = y.apply(lambda x: 0 if x == "bajo" else 1)
-
-        X_train, X_val, y1_train, y1_val = train_test_split(
-            X, y1, test_size=0.2, stratify=y1, random_state=42
+        X_model, X_test, y_model, y_test = train_test_split(
+            X, y, test_size=0.2, stratify=y, random_state=42
         )
+
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_model, y_model, test_size=0.25, stratify=y_model, random_state=42
+        )
+
+        # ===== STAGE 1 =====
+        y1_train = y_train.apply(lambda x: 0 if x == "bajo" else 1)
+        y1_val = y_val.apply(lambda x: 0 if x == "bajo" else 1)
 
         self.model_stage1 = XGBClassifier(
             n_estimators=400,
@@ -131,21 +133,20 @@ class RecomendadorActividades:
 
         best_acc1 = 0
         for thr in np.arange(0.4, 0.8, 0.02):
-            preds = (probs1[:, 0] > thr).astype(int)
+            preds = np.where(probs1[:, 0] > thr, 0, 1)
             acc = accuracy_score(y1_val, preds)
             if acc > best_acc1:
                 best_acc1 = acc
                 self.stage1_threshold = thr
 
         # ===== STAGE 2 =====
-        df2 = df[df["rendimiento"] != "bajo"]
+        train_mask = y_train != "bajo"
+        val_mask = y_val != "bajo"
 
-        X2 = df2[self.feature_columns]
-        y2 = df2["rendimiento"].map({"medio": 0, "alto": 1})
-
-        X2_train, X2_val, y2_train, y2_val = train_test_split(
-            X2, y2, test_size=0.2, stratify=y2, random_state=42
-        )
+        X2_train = X_train[train_mask]
+        y2_train = y_train[train_mask].map({"medio": 0, "alto": 1})
+        X2_val = X_val[val_mask]
+        y2_val = y_val[val_mask].map({"medio": 0, "alto": 1})
 
         scale_pos_weight = (len(y2_train) - sum(y2_train)) / sum(y2_train)
 
@@ -166,11 +167,15 @@ class RecomendadorActividades:
 
         best_acc2 = 0
         for thr in np.arange(0.3, 0.8, 0.01):
-            preds = (probs2[:, 0] > thr).astype(int)
+            preds = np.where(probs2[:, 0] > thr, 0, 1)
             acc = accuracy_score(y2_val, preds)
             if acc > best_acc2:
                 best_acc2 = acc
                 self.best_threshold = thr
+
+        test_preds = self._predict_labels(X_test)
+        self.accuracy = accuracy_score(y_test, test_preds)
+        self.precision = precision_score(y_test, test_preds, average="weighted", zero_division=0)
 
     def evaluar(self, df):
         df = self.preprocess_data(df, is_training=True)
@@ -178,11 +183,16 @@ class RecomendadorActividades:
         X = df[self.feature_columns]
         y_real = df["rendimiento"]
 
+        preds = self._predict_labels(X)
+
+        self.accuracy = accuracy_score(y_real, preds)
+        self.precision = precision_score(y_real, preds, average="weighted", zero_division=0)
+
+    def _predict_labels(self, X):
         preds = []
 
         for i in range(len(X)):
             row = X.iloc[[i]]
-
             probs1 = self.model_stage1.predict_proba(row)[0]
 
             if probs1[0] > self.stage1_threshold:
@@ -195,8 +205,7 @@ class RecomendadorActividades:
                 else:
                     preds.append("alto")
 
-        self.accuracy = accuracy_score(y_real, preds)
-        self.precision = precision_score(y_real, preds, average="weighted")
+        return preds
 
     def predict(self, data):
         data = self.preprocess_data(data, is_training=False)
