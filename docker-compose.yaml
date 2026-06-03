@@ -33,6 +33,7 @@ services:
       - ./data-science/data:/app/data
     networks:
       - pipre-infra-net
+      - cloud-network
     healthcheck:
       test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=4)" ]
       interval: 5s
@@ -58,8 +59,8 @@ services:
       ml-ia:
         condition: service_healthy
     networks:
-      - pipre-infra-net
       - cloud-network
+      - pipre-infra-net
     logging: *default-logging
 
   frontend:
