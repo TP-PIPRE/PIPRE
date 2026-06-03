@@ -132,44 +132,6 @@ export interface SimulationResponse {
   result: string;
 }
 
-// PMV02.5 – Resultados de Retos y Ranking
-export interface ResultadoRequestDTO {
-  studentId: string;
-  studentName: string;
-  courseId: string;
-  courseName: string;
-  challengeId: string;
-  challengeTitle: string;
-  environment: string;
-  score: number;
-  blocks: number;
-  energy: number;
-}
-
-export interface ResultadoResponseDTO {
-  id: string;
-  studentId: string;
-  studentName: string;
-  courseId: string;
-  courseName: string;
-  challengeId: string;
-  challengeTitle: string;
-  environment: string;
-  score: number;
-  blocks: number;
-  energy: number;
-  completedAt: string;
-}
-
-export interface RankingEntryDTO {
-  position: number;
-  studentId: string;
-  studentName: string;
-  totalScore: number;
-  challengesCompleted: number;
-  lastUpdated: string;
-}
-
 // PMV03 – Analítica inteligente
 export interface ModuleProgressRequest {
   id_student: string;
