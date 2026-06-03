@@ -30,7 +30,6 @@ services:
     container_name: pipre-ml-ia
     volumes:
       - ./data-science/saved_models:/app/saved_models
-      - ./data-science/data:/app/data
     networks:
       - cloud-network
     logging: *default-logging
