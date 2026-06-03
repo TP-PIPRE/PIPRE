@@ -22,6 +22,7 @@ public class CourseSeederService {
     private final LessonRepositoryPort lessonRepositoryPort;
     private final ModuleRepositoryPort moduleRepositoryPort;
     private final CourseRepositoryPort courseRepositoryPort;
+    private final SimulationRepositoryPort simulationRepositoryPort;
 
     @Transactional
     public void seedCourses() {
@@ -71,6 +72,16 @@ public class CourseSeederService {
                                 .build();
                         activityRepositoryPort.save(activity);
                         String idActivity = activity.getIdActivity();
+                        for (int m = 1; m <= 2; m++) {
+                            User randomStudent = faker.options().nextElement(students);
+                            Simulation simulation = Simulation.builder()
+                                    .idSimulation(UUID.randomUUID().toString())
+                                    .result(faker.options().option("SUCCESS", "FAILURE"))
+                                    .idActivity(idActivity)
+                                    .idStudent(randomStudent.getIdUser())
+                                    .build();
+                            simulationRepositoryPort.save(simulation);
+                        }
                     }
                 }
             }
