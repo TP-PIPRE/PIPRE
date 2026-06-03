@@ -1,32 +1,23 @@
 package com.pipre.backend.domain.entities;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public class Module {
 
     private final String idModule;
     private final String title;
-    private final String description;
-    private final Boolean isAvailable;
-    private final Integer moduleOrder;
-    private final BigDecimal percentageMeta;
-    private final List<String> idLessonList;
     private final String idCourse;
+    private final List<String> idLessonList;
 
-    public Module(Builder builder) {
-        this.idModule = builder.idModule;
-        this.title = builder.title;
-        this.description = builder.description;
-        this.isAvailable = builder.isAvailable;
-        this.moduleOrder = builder.moduleOrder;
-        this.percentageMeta = builder.percentageMeta;
-        this.idLessonList = builder.idLessonList;
-        this.idCourse = builder.idCourse;
+    Module(String idModule, String title, String idCourse, List<String> idLessonList) {
+        this.idModule = idModule;
+        this.title = title;
+        this.idCourse = idCourse;
+        this.idLessonList = idLessonList;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static ModuleBuilder builder() {
+        return new ModuleBuilder();
     }
 
     public String getIdModule() {
@@ -37,86 +28,49 @@ public class Module {
         return this.title;
     }
 
-    public String getDescription() {
-        return this.description;
-    }
-
-    public Boolean getIsAvailable() {
-        return this.isAvailable;
-    }
-
-    public Integer getModuleOrder() {
-        return this.moduleOrder;
-    }
-
-    public BigDecimal getPercentageMeta() {
-        return this.percentageMeta;
+    public String getIdCourse() {
+        return this.idCourse;
     }
 
     public List<String> getIdLessonList() {
         return this.idLessonList;
     }
 
-    public String getIdCourse() {
-        return this.idCourse;
-    }
-
-    public static class Builder {
+    public static class ModuleBuilder {
         private String idModule;
         private String title;
-        private String description;
-        private Boolean isAvailable;
-        private Integer moduleOrder;
-        private BigDecimal percentageMeta;
-        private List<String> idLessonList;
         private String idCourse;
+        private List<String> idLessonList;
 
-        public Builder() {
+        ModuleBuilder() {
         }
 
-        public Builder idModule(String idModule) {
+        public ModuleBuilder idModule(String idModule) {
             this.idModule = idModule;
             return this;
         }
 
-        public Builder title(String title) {
+        public ModuleBuilder title(String title) {
             this.title = title;
             return this;
         }
 
-        public Builder description(String description) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder isAvailable(Boolean isAvailable) {
-            this.isAvailable = isAvailable;
-            return this;
-        }
-
-        public Builder moduleOrder(Integer moduleOrder) {
-            this.moduleOrder = moduleOrder;
-            return this;
-        }
-
-        public Builder percentageMeta(BigDecimal percentageMeta) {
-            this.percentageMeta = percentageMeta;
-            return this;
-        }
-
-        public Builder idLessonList(List<String> idLessonList) {
-            this.idLessonList = idLessonList;
-            return this;
-        }
-
-        public Builder idCourse(String idCourse) {
+        public ModuleBuilder idCourse(String idCourse) {
             this.idCourse = idCourse;
             return this;
         }
 
-        public Module build() {
-            return new Module(this);
+        public ModuleBuilder idLessonList(List<String> idLessonList) {
+            this.idLessonList = idLessonList;
+            return this;
         }
 
+        public Module build() {
+            return new Module(this.idModule, this.title, this.idCourse, this.idLessonList);
+        }
+
+        public String toString() {
+            return "Module.ModuleBuilder(idModule=" + this.idModule + ", title=" + this.title + ", idCourse=" + this.idCourse + ", idLessonList=" + this.idLessonList + ")";
+        }
     }
 }

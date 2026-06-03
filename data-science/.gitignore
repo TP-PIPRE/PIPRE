@@ -1,13 +1,16 @@
-venv/
 # Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pkl
 
 # Entorno virtual
 venv/
 ../.env/
+
+# Artefactos generados por entrenamiento
+saved_models/
 
 # Archivos de sistema
 .DS_Store

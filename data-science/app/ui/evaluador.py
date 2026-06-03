@@ -1,4 +1,5 @@
 import pandas as pd
+from app.application.metrics import round_metric
 
 
 def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
@@ -11,8 +12,8 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
 
         "RIA1 - Desempeño": {
             "resultado": ria1.predict(data),
-            "accuracy": ria1.accuracy,
-            "precision": ria1.precision,
+            "accuracy": round_metric(ria1.accuracy),
+            "precision": round_metric(ria1.precision),
             "importancias": dict(zip(
                 ria1.feature_columns,
                 ria1.model.feature_importances_
@@ -22,8 +23,8 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
 
         "RIA3 - Recomendación": {
             "resultado": ria3.predict(data),
-            "accuracy": ria3.accuracy,
-            "precision": ria3.precision,
+            "accuracy": round_metric(ria3.accuracy),
+            "precision": round_metric(ria3.precision),
             "importancias": dict(zip(
                 ria3.feature_columns,
                 ria3.model_stage1.feature_importances_
@@ -40,8 +41,8 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
 
         "RIA11 - Tiempo": {
             "resultado": ria11.predict(data),
-            "accuracy": ria11.accuracy,
-            "precision": ria11.precision,
+            "accuracy": round_metric(ria11.accuracy),
+            "precision": round_metric(ria11.precision),
             "importancias": dict(zip(
                 ria11.feature_columns,
                 ria11.model.feature_importances_
@@ -51,8 +52,8 @@ def generar_resultados(df, ria1, ria3, ria8, ria11, ria12):
 
         "RIA12 - Código": {
             "resultado": ria12.predict(data),
-            "accuracy": ria12.accuracy,
-            "precision": ria12.precision,
+            "accuracy": round_metric(ria12.accuracy),
+            "precision": round_metric(ria12.precision),
             "importancias": dict(zip(
                 ria12.feature_columns,
                 ria12.model.feature_importances_

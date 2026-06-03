@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
 @RequiredArgsConstructor
 public class UpdateCoursesService implements UpdateCoursesUseCase {
@@ -18,7 +17,6 @@ public class UpdateCoursesService implements UpdateCoursesUseCase {
     @Override
     @Transactional
     public void execute(String idCourse, RegisterCourseCommand requestDTO) {
-
         Course course = courseRepositoryPort.findById(idCourse)
                 .orElseThrow(() -> new BusinessException("El curso no existe"));
 

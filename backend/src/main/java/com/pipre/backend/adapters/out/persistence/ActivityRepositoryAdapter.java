@@ -1,15 +1,17 @@
 package com.pipre.backend.adapters.out.persistence;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpaEntity;
-import com.pipre.backend.adapters.out.persistence.mapper.ActivityMapper;
 import com.pipre.backend.adapters.out.persistence.jpaRepositories.ActivityJpaRepository;
 import com.pipre.backend.adapters.out.persistence.jpaRepositories.LessonJpaRepository;
+import com.pipre.backend.adapters.out.persistence.mapper.ActivityMapper;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import com.pipre.backend.domain.entities.Activity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
 public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
@@ -33,6 +35,12 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
                     .ifPresent(entity::setLessonJpaEntity);
         }
         activityJpaRepository.save(entity);
+    }
+
+    @Override
+    public Optional<Activity> findById(String idActivity) {
+        return activityJpaRepository.findById(idActivity)
+                .map(ActivityMapper::toDomain);
     }
 
 }

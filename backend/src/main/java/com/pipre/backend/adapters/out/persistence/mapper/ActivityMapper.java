@@ -13,9 +13,7 @@ public class ActivityMapper {
         ActivityJpaEntity entity = new ActivityJpaEntity();
         entity.setIdActivity(domain.getIdActivity());
         entity.setName(domain.getName());
-        entity.setDifficulty(domain.getDifficulty());
         entity.setLogicLevel(domain.getLogicLevel());
-        entity.setType(domain.getType());
         return entity;
 
     }
@@ -29,13 +27,11 @@ public class ActivityMapper {
                 .stream()
                 .map(SimulationJpaEntity::getIdSimulation)
                 .toList();
-        return new Activity.Builder()
+        return Activity.builder()
                 .idActivity(entity.getIdActivity())
                 .name(entity.getName())
-                .difficulty(entity.getDifficulty())
                 .logicLevel(entity.getLogicLevel())
-                .type(entity.getType())
-                .idimulationList(idimulationList)
+                .idSimulationList(idimulationList)
                 .idLesson(idLesson)
                 .build();
     }

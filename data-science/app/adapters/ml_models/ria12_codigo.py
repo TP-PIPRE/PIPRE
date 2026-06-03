@@ -12,25 +12,37 @@ class EvaluadorCodigo:
         self.model = RandomForestClassifier(
             n_estimators=100,
             max_depth=10,
+            class_weight="balanced",
             random_state=42
         )
 
         self.le_nivel = LabelEncoder()
+        self.le_emocion = LabelEncoder()
 
-        # 🔥 FEATURES TRANSFORMADAS (sin leak)
+        # FEATURES TRANSFORMADAS 
         self.feature_columns = [
+            "errores",
+            "intentos",
+            "interacciones_ia",
+            "ayuda_solicitada",
+            "actividades_completadas",
+            "dias_inactivo",
+            "edad",
+            "grado",
             "ratio_error",
-            "ratio_codigo",
             "intentos_normalizados",
-            "complejidad",
-            "nivel_logico"
+            "ia_por_error",
+            "ayuda_por_error",
+            "actividad_por_inactividad",
+            "nivel_logico",
+            "emocion_detectada"
         ]
 
         self.accuracy = 0
         self.precision = 0
 
     # =========================
-    # 🔥 PREPROCESS
+    #  PREPROCESS
     # =========================
     def preprocess_data(self, df, is_training=False):
 
@@ -39,37 +51,60 @@ class EvaluadorCodigo:
         base_cols = [
             "errores",
             "intentos",
-            "uso_codigo",
-            "uso_bloques",
-            "nivel_logico"
+            "interacciones_ia",
+            "ayuda_solicitada",
+            "actividades_completadas",
+            "dias_inactivo",
+            "edad",
+            "grado",
+            "nivel_logico",
+            "emocion_detectada"
         ]
 
-        # 🔧 asegurar columnas
+        #  asegurar columnas
         for col in base_cols:
             if col not in df.columns:
                 df[col] = 0
 
-        # 🔧 asegurar numéricos
-        for col in base_cols[:-1]:
+        #  asegurar numéricos
+        for col in [
+            "errores",
+            "intentos",
+            "interacciones_ia",
+            "ayuda_solicitada",
+            "actividades_completadas",
+            "dias_inactivo",
+            "edad",
+            "grado"
+        ]:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
 
         # 🔥 encoding nivel lógico (ANTES del target)
         df["nivel_logico"] = df["nivel_logico"].astype(str)
+        df["emocion_detectada"] = df["emocion_detectada"].astype(str)
 
         if is_training:
             df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
+            df["emocion_detectada"] = self.le_emocion.fit_transform(df["emocion_detectada"])
         else:
             df["nivel_logico"] = df["nivel_logico"].apply(
                 lambda x: x if x in self.le_nivel.classes_ else self.le_nivel.classes_[0]
             )
             df["nivel_logico"] = self.le_nivel.transform(df["nivel_logico"])
+            df["emocion_detectada"] = df["emocion_detectada"].apply(
+                lambda x: x if x in self.le_emocion.classes_ else self.le_emocion.classes_[0]
+            )
+            df["emocion_detectada"] = self.le_emocion.transform(df["emocion_detectada"])
 
-        # 🔥 TARGET (sin error ahora)
+        #  TARGET (sin error ahora)
         if is_training:
             df["calidad_codigo"] = (
-                df["uso_codigo"] * 2 -
-                df["errores"] * 3 +
+                -df["errores"] * 3 +
                 df["intentos"] * 1.5 +
+                df["interacciones_ia"] * 1.2 +
+                df["actividades_completadas"] * 1.4 -
+                df["ayuda_solicitada"] * 1.1 -
+                df["dias_inactivo"] * 1.2 +
                 df["nivel_logico"] * 5
             )
 
@@ -79,11 +114,12 @@ class EvaluadorCodigo:
                 labels=[0, 1, 2]
             )
 
-        # 🔥 FEATURES DERIVADAS (sin copiar fórmula)
+        #  FEATURES DERIVADAS (sin copiar fórmula)
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
-        df["ratio_codigo"] = df["uso_codigo"] / (df["intentos"] + 1)
         df["intentos_normalizados"] = df["intentos"] / (df["errores"] + 1)
-        df["complejidad"] = df["errores"] * df["uso_codigo"]
+        df["ia_por_error"] = df["interacciones_ia"] / (df["errores"] + 1)
+        df["ayuda_por_error"] = df["ayuda_solicitada"] / (df["errores"] + 1)
+        df["actividad_por_inactividad"] = df["actividades_completadas"] / (df["dias_inactivo"] + 1)
 
         # 🔧 limpieza
         df.replace([np.inf, -np.inf], 0, inplace=True)
@@ -92,7 +128,7 @@ class EvaluadorCodigo:
         return df
 
     # =========================
-    # 🔥 TRAIN
+    #  TRAIN
     # =========================
     def train(self, df):
 
@@ -115,7 +151,7 @@ class EvaluadorCodigo:
         )
 
     # =========================
-    # 🔥 PREDICT
+    #  PREDICT
     # =========================
     def predict(self, data):
 

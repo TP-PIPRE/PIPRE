@@ -5,12 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "group_students")
 @NoArgsConstructor
 @Getter
 @Setter
-public class GroupStudentJpaEntity {
+public class RankingJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)
     private String idRanking;
@@ -23,6 +25,6 @@ public class GroupStudentJpaEntity {
     @JoinColumn(name = "id_student", nullable = false)
     private UserJpaEntity studentJpaEntity;
 
-    private Integer totalPoints;
     private Integer position;
+    private BigDecimal totalPoints;
 }

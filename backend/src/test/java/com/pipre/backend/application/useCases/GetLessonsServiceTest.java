@@ -26,7 +26,7 @@ class GetLessonsServiceTest {
     @DisplayName("Debería retornar todas las lecciones")
     void shouldReturnAllLessons() {
         // Arrange
-        Lesson lesson = new Lesson.Builder().idLesson("les-1").title("Lección 1").build();
+        Lesson lesson = Lesson.builder().idLesson("les-1").title("Lección 1").build();
         when(lessonRepositoryPort.findAll()).thenReturn(List.of(lesson));
 
         // Act
@@ -34,7 +34,7 @@ class GetLessonsServiceTest {
 
         // Assert
         assertFalse(result.isEmpty());
-        assertEquals("les-1", result.get(0).idLesson());
+        assertEquals("les-1", result.getFirst().idLesson());
         verify(lessonRepositoryPort, times(1)).findAll();
     }
 }

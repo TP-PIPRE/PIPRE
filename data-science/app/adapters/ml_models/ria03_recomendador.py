@@ -24,11 +24,9 @@ class RecomendadorActividades:
         self.feature_columns = [
             "nivel_logico",
             "dias_inactivo",
-            "uso_codigo",
             "interacciones_ia",
             "intentos",
             "ratio_ia",
-            "actividad_total",
             "inactividad_relativa",
             "engagement",
             "consistencia",
@@ -41,7 +39,7 @@ class RecomendadorActividades:
 
         base_cols = [
             "nivel_logico", "dias_inactivo",
-            "uso_codigo", "interacciones_ia", "intentos"
+            "interacciones_ia", "intentos"
         ]
 
         for col in base_cols:
@@ -81,13 +79,12 @@ class RecomendadorActividades:
 
         # FEATURES
         df["ratio_ia"] = df["interacciones_ia"] / (df["intentos"] + 1)
-        df["actividad_total"] = df["uso_codigo"] + df["interacciones_ia"]
         df["inactividad_relativa"] = df["dias_inactivo"] / (df["dias_inactivo"] + df["intentos"] + 1)
 
-        df["engagement"] = (df["uso_codigo"] + df["interacciones_ia"]) / (df["dias_inactivo"] + 1)
+        df["engagement"] = df["interacciones_ia"] / (df["dias_inactivo"] + 1)
         df["consistencia"] = df["intentos"] / (df["dias_inactivo"] + 1)
 
-        df["intensidad_total"] = df["uso_codigo"] + df["interacciones_ia"] + df["intentos"]
+        df["intensidad_total"] = df["interacciones_ia"] + df["intentos"]
         df["eficiencia"] = df["intentos"] / (df["interacciones_ia"] + 1)
 
         df.replace([np.inf, -np.inf], 0, inplace=True)

@@ -1,28 +1,26 @@
-import pandas as pd
-
-from app.application.services.pipeline_service import PipelineIA
+from app.infrastructure.container import create_dataset_repository, create_pipeline
 from app.ui.evaluador import generar_resultados
 from app.ui.ui_resultados import mostrar_resultados
 
 
 def main():
 
-    # 🔹 cargar dataset
-    df = pd.read_excel("data/dataset.xlsx")
+    #  cargar dataset
+    df = create_dataset_repository().load()
 
-    # 🔹 pipeline
-    pipeline = PipelineIA()
+    #  pipeline
+    pipeline = create_pipeline()
     pipeline.train(df)
 
     ria1, ria3, ria8, ria11, ria12 = pipeline.get_models()
 
-    # 🔁 función reutilizable
+    # función reutilizable
     def evaluar():
         return generar_resultados(df, ria1, ria3, ria8, ria11, ria12)
 
     resultados = evaluar()
 
-    # 🔥 UI
+    #  UI
     mostrar_resultados(resultados, evaluar)
 
 

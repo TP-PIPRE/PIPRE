@@ -25,11 +25,6 @@ public class LessonJpaEntity {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
-    private String content;
-
-    private String resourceType;
-
     @OneToMany(mappedBy = "lessonJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ActivityJpaEntity> activityJpaEntityList = new ArrayList<>();
 

@@ -14,6 +14,8 @@ public class DataSeeder {
 
     private final UserRolesSeederService userSeederService;
     private final CourseSeederService courseSeederService;
+    private final GroupSeederService groupSeederService;
+
 //    private final ProgressSeederService progressSeederService;
 //    private final SupportAnalyticSeederService supportAnalyticSeederService;
 //    private final GroupSeederService groupSeederService;
@@ -24,6 +26,7 @@ public class DataSeeder {
             if (!userSeederService.isDatabaseSeeded()) {
                 userSeederService.seedUsers();
                 courseSeederService.seedCourses();
+                groupSeederService.seedCourses();
 //                progressSeederService.seedProgress();
 //                supportAnalyticSeederService.seedAnalytics();
 //                groupSeederService.seedGroups();

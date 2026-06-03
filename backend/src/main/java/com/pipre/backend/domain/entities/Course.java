@@ -9,18 +9,16 @@ public class Course {
     private final String name;
     private final String description;
     private final String level;
-    private final String objective;
     private final LocalDateTime createdAt;
     private final List<String> idModuleList;
 
-    public Course(String idCourse, String name, String description, String level, String objective, LocalDateTime createdAt, List<String> idModuleList) {
-        this.idCourse = idCourse;
-        this.name = name;
-        this.description = description;
-        this.level = level;
-        this.objective = objective;
-        this.createdAt = createdAt;
-        this.idModuleList = idModuleList;
+    public Course(Builder builder) {
+        this.idCourse = builder.idCourse;
+        this.name = builder.name;
+        this.description = builder.description;
+        this.level = builder.level;
+        this.createdAt = builder.createdAt;
+        this.idModuleList = builder.idModuleList;
     }
 
     public static Builder builder() {
@@ -41,10 +39,6 @@ public class Course {
 
     public String getLevel() {
         return this.level;
-    }
-
-    public String getObjective() {
-        return this.objective;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -69,7 +63,6 @@ public class Course {
                 .name(this.name)
                 .description(this.description)
                 .level(this.level)
-                .objective(this.objective)
                 .createdAt(this.createdAt)
                 .idModuleList(this.idModuleList);
     }
@@ -78,7 +71,6 @@ public class Course {
         private String name;
         private String description;
         private String level;
-        private String objective;
         private LocalDateTime createdAt;
         private List<String> idModuleList;
 
@@ -105,11 +97,6 @@ public class Course {
             return this;
         }
 
-        public Builder objective(String objective) {
-            this.objective = objective;
-            return this;
-        }
-
         public Builder createdAt(LocalDateTime createdAt) {
             this.createdAt = createdAt;
             return this;
@@ -121,11 +108,8 @@ public class Course {
         }
 
         public Course build() {
-            return new Course(this.idCourse, this.name, this.description, this.level, this.objective, this.createdAt, this.idModuleList);
+            return new Course(this);
         }
 
-        public String toString() {
-            return "Course.CourseBuilder(idCourse=" + this.idCourse + ", name=" + this.name + ", description=" + this.description + ", level=" + this.level + ", objective=" + this.objective + ", createdAt=" + this.createdAt + ", idModuleList=" + this.idModuleList + ")";
-        }
     }
 }
