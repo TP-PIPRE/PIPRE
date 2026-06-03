@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import type { Block, BlockCategory, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngine";
 import { useThemeStore } from "../../infrastructure/store/themeStore";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 
@@ -69,8 +70,6 @@ interface SimuladorContextType {
   lastScore: number;
   completeChallenge: () => void;
   dismissChallengeCompletion: () => void;
-  getCourseRanking: () => { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[];
-  getGlobalRanking: () => { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[];
 
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
@@ -225,17 +224,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     const mission = missions[currentMissionIndex];
     if (!mission) return;
 
-    /* BACKEND: Enviar resultado al API
-     * if (courseId && challengeId) {
-     *   simuladorUseCase.current.submitResult(
-     *     getAuthState().user?.id || "",
-     *     challengeId,
-     *     result.score,
-     *     { completed: result.completed, blocks: blocks.length, energy }
-     *   );
-     * }
-     */
-
     let points = 1000;
     if (blocks.length <= mission.maxBlocks) points += 500;
     points += energy * 10;
@@ -254,11 +242,12 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       setCurrentMissionIndex((prev) => prev + 1);
     } else if (!isFreeMode && challengeData) {
       // Todas las misiones completadas → completar el reto
-      setTimeout(() => {
+      setTimeout(async () => {
         const total = score + points;
+        const user = getAuthState().user;
         const result: StudentResult = {
-          studentId: "user1",
-          studentName: "Estudiante Demo",
+          studentId: user?.id || "user1",
+          studentName: user?.name || "Estudiante",
           courseId: courseId || "unknown",
           courseName: "",
           challengeId: challengeId || "unknown",
@@ -269,7 +258,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
           energy: Math.round(energy),
           completedAt: new Date().toISOString(),
         };
-        simuladorUseCase.current.saveResult(result);
+        await simuladorUseCase.current.saveResult(result);
         setLastScore(total);
         setChallengeCompleted(true);
         addLog(`¡Reto completado! Puntaje: ${total} pts`, "success");
@@ -277,12 +266,13 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const completeChallenge = () => {
+  const completeChallenge = async () => {
     const totalScore = score;
+    const user = getAuthState().user;
 
     const result: StudentResult = {
-      studentId: "user1",
-      studentName: "Estudiante Demo",
+      studentId: user?.id || "user1",
+      studentName: user?.name || "Estudiante",
       courseId: courseId || "unknown",
       courseName: "",
       challengeId: challengeId || "unknown",
@@ -294,15 +284,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       completedAt: new Date().toISOString(),
     };
 
-    /* BACKEND: usar apiService.resultados.save cuando esté conectado:
-     * try {
-     *   await apiService.resultados.save({ ... });
-     * } catch (err) {
-     *   console.error("Error saving result:", err);
-     * }
-     */
-
-    simuladorUseCase.current.saveResult(result);
+    await simuladorUseCase.current.saveResult(result);
     setLastScore(totalScore);
     setChallengeCompleted(true);
     addLog(`¡Reto completado! Puntaje: ${totalScore} pts`, "success");
@@ -310,14 +292,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
   const dismissChallengeCompletion = () => {
     setChallengeCompleted(false);
-  };
-
-  const getCourseRanking = () => {
-    return simuladorUseCase.current.getCourseRanking(courseId || "unknown");
-  };
-
-  const getGlobalRanking = () => {
-    return simuladorUseCase.current.getGlobalRanking();
   };
 
   const addLog = (
@@ -757,8 +731,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         lastScore,
         completeChallenge,
         dismissChallengeCompletion,
-        getCourseRanking,
-        getGlobalRanking,
         currentTheme,
       }}
     >

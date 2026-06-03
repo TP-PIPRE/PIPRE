@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
-import type { RankingEntryDTO } from "../../infrastructure/api/models/apiModels";
+import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 
-const MOCK_RANKING_SEED: { name: string; group: string; xp: number }[] = [
-  { name: "Ana Sofía Lopez", group: "Robótica A", xp: 12500 },
-  { name: "Carlos Ruiz", group: "Mecatrónica B", xp: 11800 },
-  { name: "Elena García", group: "Robótica A", xp: 11250 },
-  { name: "Marcos Soto", group: "Sistemas I", xp: 10900 },
-  { name: "Lucía Méndez", group: "Robótica A", xp: 10450 },
+const MOCK_RANKING_SEED: { id: string; name: string; group: string; xp: number }[] = [
+  { id: "student-2", name: "Ana Sofía Lopez", group: "Robótica A", xp: 12500 },
+  { id: "student-3", name: "Carlos Ruiz", group: "Mecatrónica B", xp: 11800 },
+  { id: "student-4", name: "Elena García", group: "Robótica A", xp: 11250 },
+  { id: "student-5", name: "Marcos Soto", group: "Sistemas I", xp: 10900 },
+  { id: "student-6", name: "Lucía Méndez", group: "Robótica A", xp: 10450 },
 ];
 
 interface RankingEntry {
@@ -27,15 +27,31 @@ export const RankingPage: React.FC = () => {
   const [courses, setCourses] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const mapFromDto = (data: RankingDTO[]): RankingEntry[] =>
+    data.map((dto) => {
+      const seed = MOCK_RANKING_SEED.find(s => s.id === dto.id_student);
+      return {
+        position: dto.position,
+        studentId: dto.id_student,
+        studentName: seed?.name ?? `Estudiante ${dto.id_student}`,
+        totalScore: dto.total_points,
+        challengesCompleted: 0,
+        lastUpdated: new Date().toISOString(),
+        group: seed?.group,
+      };
+    });
+
   const fetchRanking = async () => {
     setIsLoading(true);
     try {
-      if (activeTab === "global") {
-        const data = await apiService.ranking.getGlobalRanking();
-        setRankingData(data.length > 0 ? data : getFallbackGlobal());
+      const groupId = "group-1";
+      const data = await apiService.ranking.getGroupRanking(groupId);
+      if (data && data.length > 0) {
+        setRankingData(mapFromDto(data));
       } else {
-        const data = await apiService.ranking.getCourseRanking(selectedCourse);
-        setRankingData(data.length > 0 ? data : getFallbackCourse(selectedCourse));
+        setRankingData(
+          activeTab === "global" ? getFallbackGlobal() : getFallbackCourse(selectedCourse),
+        );
       }
     } catch {
       setRankingData(
@@ -49,7 +65,7 @@ export const RankingPage: React.FC = () => {
   const getFallbackGlobal = (): RankingEntry[] => {
     return MOCK_RANKING_SEED.map((s, i) => ({
       position: i + 1,
-      studentId: `mock-${i}`,
+      studentId: s.id,
       studentName: s.name,
       totalScore: s.xp,
       challengesCompleted: Math.floor(Math.random() * 5) + 1,
@@ -64,7 +80,7 @@ export const RankingPage: React.FC = () => {
       : MOCK_RANKING_SEED.filter((_, i) => i % 2 === 1);
     return courseFiltered.map((s, i) => ({
       position: i + 1,
-      studentId: `mock-${i}`,
+      studentId: s.id,
       studentName: s.name,
       totalScore: s.xp - Math.floor(Math.random() * 2000),
       challengesCompleted: Math.floor(Math.random() * 3) + 1,

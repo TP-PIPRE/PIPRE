@@ -22,9 +22,7 @@ import type {
   DropoutRiskResponse,
   ChallengeRequestDTO,
   ChallengeResponseDTO,
-  ResultadoRequestDTO,
-  ResultadoResponseDTO,
-  RankingEntryDTO,
+
 } from "./models/apiModels";
 
 export const apiService = {
@@ -130,30 +128,7 @@ export const apiService = {
     },
   },
 
-  // PMV02.5 – Resultados de Retos y Ranking
-  resultados: {
-    save: async (data: ResultadoRequestDTO) => {
-      const response = await axiosInstance.post<ResultadoResponseDTO>("resultados", data);
-      return response.data;
-    },
-    getByStudent: async (studentId: string) => {
-      const response = await axiosInstance.get<ResultadoResponseDTO[]>(`resultados/estudiante/${studentId}`);
-      return response.data;
-    },
-    getByCourse: async (courseId: string) => {
-      const response = await axiosInstance.get<ResultadoResponseDTO[]>(`resultados/curso/${courseId}`);
-      return response.data;
-    },
-  },
   ranking: {
-    getCourseRanking: async (courseId: string) => {
-      const response = await axiosInstance.get<RankingEntryDTO[]>(`ranking/curso/${courseId}`);
-      return response.data;
-    },
-    getGlobalRanking: async () => {
-      const response = await axiosInstance.get<RankingEntryDTO[]>("ranking/global");
-      return response.data;
-    },
     getGroupRanking: async (idGroup: string) => {
       const response = await axiosInstance.get<RankingDTO[]>(
         `group-students/${idGroup}`,
