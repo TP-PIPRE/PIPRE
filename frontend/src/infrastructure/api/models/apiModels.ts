@@ -36,6 +36,8 @@ export interface CourseRequestDTO {
 export interface CourseResponseDTO {
   id_course: string;
   name: string;
+  description?: string;
+  level?: string;
 }
 
 export interface ModuleRequestDTO {
@@ -66,6 +68,38 @@ export interface ActivityRequestDTO {
 export interface ActivityResponseDTO {
   id_activity: string;
   name: string;
+}
+
+// DTOs para Retos (Challenges)
+export interface ChallengeRequestDTO {
+  id_course: string;
+  title: string;
+  description: string;
+  order: number;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  points: number;
+  simulatorConfig?: any; // Configuración específica para el simulador
+  expectedOutput?: string; // Resultado esperado para validación
+  reward?: {
+    type: "BADGE" | "POINTS" | "UNLOCK_NEXT";
+    value: string | number;
+  };
+}
+
+export interface ChallengeResponseDTO {
+  id: string;
+  id_course: string;
+  title: string;
+  description: string;
+  order: number;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  points: number;
+  simulatorConfig?: any;
+  expectedOutput?: string;
+  reward?: {
+    type: "BADGE" | "POINTS" | "UNLOCK_NEXT";
+    value: string | number;
+  };
 }
 
 // PMV02 – Gamificación y ranking
@@ -116,6 +150,7 @@ export interface DropoutRiskResponse {
   performance: string;
   motivation_level: string;
 }
+
 // En src/infrastructure/models/apiModels.ts
 export interface HomeResponseDTO {
   status: string; // Ejemplo: "ok" | "error"

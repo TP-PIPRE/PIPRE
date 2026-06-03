@@ -3,7 +3,7 @@ export interface ISimulatorEngine {
   dispose(): void;
   resize(width: number, height: number): void;
 
-  // Acciones
+  // Acciones base
   moveForward(distance: number, duration: number): Promise<void>;
   rotateCore(degrees: number, duration: number): Promise<void>;
 
@@ -14,7 +14,14 @@ export interface ISimulatorEngine {
   updateHardware(installedHardware: string[]): void;
 
   // Tema
-  updateTheme(themeColors: Record<string, string>): void; // <-- AGREGA ESTA LÍNEA
+  updateTheme(themeColors: Record<string, string>): void;
+
+  // Partículas y feedback visual
+  triggerParticles(
+    x: number,
+    z: number,
+    type: "move" | "success" | "collision" | "scan" | "attack" | "magic",
+  ): void;
 
   // Control
   stop(): void;

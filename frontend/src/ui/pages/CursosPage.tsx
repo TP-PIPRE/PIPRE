@@ -1,23 +1,37 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
+import type {
+  CourseResponseDTO,
+  ChallengeResponseDTO,
+} from "../../infrastructure/api/models/apiModels";
 
 const MOCK_COURSES = [
   {
     idCourse: "1",
     name: "Robótica Nivel 1: Fundamentos (Local)",
     description: "Aprende las bases de la robótica y electrónica.",
+    level: "Básico",
   },
   {
     idCourse: "2",
     name: "Programación de Microcontroladores (Local)",
     description: "Domina el lenguaje C++ para control de hardware.",
+    level: "Intermedio",
   },
 ];
 
 export const CursosPage: React.FC = () => {
-  const [courses, setCourses] = useState<any[]>([]);
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState<CourseResponseDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCourseChallenges, setSelectedCourseChallenges] = useState<
+    ChallengeResponseDTO[]
+  >([]);
+  const [isChallengesVisible, setIsChallengesVisible] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -27,12 +41,12 @@ export const CursosPage: React.FC = () => {
         if (data && data.length > 0) {
           setCourses(data);
         } else {
-          setCourses(MOCK_COURSES);
+          setCourses(MOCK_COURSES as unknown as CourseResponseDTO[]);
         }
         setError(null);
       } catch (err) {
         console.error("Error fetching courses, using fallback:", err);
-        setCourses(MOCK_COURSES);
+        setCourses(MOCK_COURSES as unknown as CourseResponseDTO[]);
       } finally {
         setIsLoading(false);
       }
@@ -40,6 +54,19 @@ export const CursosPage: React.FC = () => {
 
     fetchCourses();
   }, []);
+
+  const fetchChallenges = async (courseId: string) => {
+    try {
+      const challenges = await apiService.challenges.getByCourse(courseId);
+      setSelectedCourseChallenges(challenges);
+      setIsChallengesVisible(
+        isChallengesVisible === courseId ? null : courseId,
+      );
+    } catch (err) {
+      console.error("Error fetching challenges:", err);
+      setSelectedCourseChallenges([]);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -112,7 +139,7 @@ export const CursosPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {courses.map((course) => (
             <div
-              key={course.idCourse}
+              key={course.id_course}
               className="border border-border overflow-hidden group hover:shadow-lg transition-shadow duration-300"
               style={{
                 backgroundColor: "var(--surface)",
@@ -142,7 +169,8 @@ export const CursosPage: React.FC = () => {
                   className="text-xs mb-6 line-clamp-2"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  Accede a los contenidos y desafíos de {course.name}.
+                  {course.description ||
+                    "Accede a los contenidos y desafíos de este curso."}
                 </p>
 
                 {/* Barra de progreso */}
@@ -171,7 +199,10 @@ export const CursosPage: React.FC = () => {
                 >
                   Módulos Disponibles
                 </h3>
+
+                {/* Botón para ver retos */}
                 <div
+                  onClick={() => fetchChallenges(course.id_course)}
                   className="flex items-center justify-between p-3 border border-border/50 rounded-lg transition-all cursor-pointer hover:bg-[var(--surface-brighter)]"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
@@ -185,23 +216,98 @@ export const CursosPage: React.FC = () => {
                         className="text-xs font-semibold"
                         style={{ color: "var(--text)" }}
                       >
-                        Contenido General
+                        Retos del Curso
                       </p>
                       <p
                         className="text-[10px]"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        Inicia el curso para ver los módulos
+                        {isChallengesVisible === course.id_course
+                          ? `${selectedCourseChallenges.length} retos disponibles`
+                          : "Haz clic para ver los retos"}
                       </p>
                     </div>
                   </div>
                   <span
-                    className="material-symbols-outlined text-lg"
+                    className={`material-symbols-outlined text-lg transition-transform ${
+                      isChallengesVisible === course.id_course
+                        ? "rotate-90"
+                        : ""
+                    }`}
                     style={{ color: "var(--text-muted)" }}
                   >
                     chevron_right
                   </span>
                 </div>
+
+                {/* Lista de retos (si está visible) */}
+                {isChallengesVisible === course.id_course && (
+                  <div className="mt-4 space-y-3">
+                    {selectedCourseChallenges.length > 0 ? (
+                      selectedCourseChallenges
+                        .sort((a, b) => a.order - b.order) // Ordenar por `order`
+                        .map((challenge) => (
+                          <div
+                            key={challenge.id}
+                            className="p-3 bg-[var(--surface-brighter)] border border-border/30 rounded-lg flex justify-between items-center"
+                            style={{ borderRadius: "var(--theme-radius)" }}
+                          >
+                            <div>
+                              <p
+                                className="text-xs font-semibold"
+                                style={{ color: "var(--text)" }}
+                              >
+                                {challenge.title}
+                              </p>
+                              <p
+                                className="text-[10px] line-clamp-1"
+                                style={{ color: "var(--text-muted)" }}
+                              >
+                                {challenge.description}
+                              </p>
+                              <div className="flex gap-3 mt-1">
+                                <span
+                                  className="text-[10px]"
+                                  style={{ color: "var(--text-muted)" }}
+                                >
+                                  Orden: {challenge.order}
+                                </span>
+                                <span
+                                  className="text-[10px]"
+                                  style={{ color: "var(--text-muted)" }}
+                                >
+                                  Dificultad: {challenge.difficulty}
+                                </span>
+                                <span
+                                  className="text-[10px]"
+                                  style={{ color: "var(--text-muted)" }}
+                                >
+                                  Puntos: {challenge.points}
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/simulador/${course.id_course}`);
+                              }}
+                              className="text-[10px] font-bold uppercase tracking-widest hover:underline"
+                              style={{ color: "var(--primary)" }}
+                            >
+                              Iniciar
+                            </button>
+                          </div>
+                        ))
+                    ) : (
+                      <p
+                        className="text-[10px] text-center"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        No hay retos disponibles para este curso.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Botón de acción */}
