@@ -1,8 +1,10 @@
 package com.pipre.backend.adapters.in.web.dto;
 
+import java.math.BigDecimal;
+
 public record RatingResponseDTO(
         String result,
-        Float accuracy,
-        Float precision
+        BigDecimal accuracy,
+        BigDecimal precision
 ) {
 }

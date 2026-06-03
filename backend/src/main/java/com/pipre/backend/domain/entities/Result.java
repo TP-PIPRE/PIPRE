@@ -1,17 +1,23 @@
 package com.pipre.backend.domain.entities;
 
+import java.math.BigDecimal;
+
 public class Result {
 
     private final String idResult;
     private final Integer attempts;
     private final Integer errors;
+    private final BigDecimal score;
+    private final String resultSimulation;
     private final String idStudent;
     private final String idActivity;
 
-    Result(String idResult, Integer attempts, Integer errors, String idStudent, String idActivity) {
+    Result(String idResult, Integer attempts, Integer errors, BigDecimal score, String resultSimulation, String idStudent, String idActivity) {
         this.idResult = idResult;
         this.attempts = attempts;
         this.errors = errors;
+        this.score = score;
+        this.resultSimulation = resultSimulation;
         this.idStudent = idStudent;
         this.idActivity = idActivity;
     }
@@ -32,6 +38,14 @@ public class Result {
         return this.errors;
     }
 
+    public BigDecimal getScore() {
+        return this.score;
+    }
+
+    public String getResultSimulation() {
+        return this.resultSimulation;
+    }
+
     public String getIdStudent() {
         return this.idStudent;
     }
@@ -44,6 +58,8 @@ public class Result {
         private String idResult;
         private Integer attempts;
         private Integer errors;
+        private BigDecimal score;
+        private String resultSimulation;
         private String idStudent;
         private String idActivity;
 
@@ -65,6 +81,16 @@ public class Result {
             return this;
         }
 
+        public ResultBuilder score(BigDecimal score) {
+            this.score = score;
+            return this;
+        }
+
+        public ResultBuilder resultSimulation(String resultSimulation) {
+            this.resultSimulation = resultSimulation;
+            return this;
+        }
+
         public ResultBuilder idStudent(String idStudent) {
             this.idStudent = idStudent;
             return this;
@@ -76,11 +102,11 @@ public class Result {
         }
 
         public Result build() {
-            return new Result(this.idResult, this.attempts, this.errors, this.idStudent, this.idActivity);
+            return new Result(this.idResult, this.attempts, this.errors, this.score, this.resultSimulation, this.idStudent, this.idActivity);
         }
 
         public String toString() {
-            return "Result.ResultBuilder(idResult=" + this.idResult + ", attempts=" + this.attempts + ", errors=" + this.errors + ", idStudent=" + this.idStudent + ", idActivity=" + this.idActivity + ")";
+            return "Result.ResultBuilder(idResult=" + this.idResult + ", attempts=" + this.attempts + ", errors=" + this.errors + ", score=" + this.score + ", resultSimulation=" + this.resultSimulation + ", idStudent=" + this.idStudent + ", idActivity=" + this.idActivity + ")";
         }
     }
 }

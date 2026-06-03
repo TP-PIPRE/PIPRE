@@ -11,9 +11,6 @@ services:
 
   ml-ia:
     container_name: dev-ml-ia
-    networks:
-      - pipre-infra-net
-      - cloud-network
 
   frontend:
     container_name: dev-front

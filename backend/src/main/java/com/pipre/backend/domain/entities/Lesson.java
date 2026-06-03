@@ -6,14 +6,18 @@ public class Lesson {
 
     private final String idLesson;
     private final String title;
-    private final List<String> idActivityList;
     private final String idModule;
+    private final List<String> idActivityList;
 
-    public Lesson(Builder builder) {
-        this.idLesson = builder.idLesson;
-        this.title = builder.title;
-        this.idActivityList = builder.idActivityList;
-        this.idModule = builder.idModule;
+    Lesson(String idLesson, String title, String idModule, List<String> idActivityList) {
+        this.idLesson = idLesson;
+        this.title = title;
+        this.idModule = idModule;
+        this.idActivityList = idActivityList;
+    }
+
+    public static LessonBuilder builder() {
+        return new LessonBuilder();
     }
 
     public String getIdLesson() {
@@ -24,43 +28,49 @@ public class Lesson {
         return this.title;
     }
 
-    public List<String> getIdActivityList() {
-        return this.idActivityList;
-    }
-
     public String getIdModule() {
         return this.idModule;
     }
 
-    public static class Builder {
+    public List<String> getIdActivityList() {
+        return this.idActivityList;
+    }
+
+    public static class LessonBuilder {
         private String idLesson;
         private String title;
-        private List<String> idActivityList;
         private String idModule;
+        private List<String> idActivityList;
 
-        public Builder idLesson(String idLesson) {
+        LessonBuilder() {
+        }
+
+        public LessonBuilder idLesson(String idLesson) {
             this.idLesson = idLesson;
             return this;
         }
 
-        public Builder title(String title) {
+        public LessonBuilder title(String title) {
             this.title = title;
             return this;
         }
 
-        public Builder idActivityList(List<String> idActivityList) {
-            this.idActivityList = idActivityList;
-            return this;
-        }
-
-        public Builder idModule(String idModule) {
+        public LessonBuilder idModule(String idModule) {
             this.idModule = idModule;
             return this;
         }
 
-        public Lesson build() {
-            return new Lesson(this);
+        public LessonBuilder idActivityList(List<String> idActivityList) {
+            this.idActivityList = idActivityList;
+            return this;
         }
 
+        public Lesson build() {
+            return new Lesson(this.idLesson, this.title, this.idModule, this.idActivityList);
+        }
+
+        public String toString() {
+            return "Lesson.LessonBuilder(idLesson=" + this.idLesson + ", title=" + this.title + ", idModule=" + this.idModule + ", idActivityList=" + this.idActivityList + ")";
+        }
     }
 }

@@ -28,8 +28,8 @@ class GetActivitiesServiceTest {
     @DisplayName("Debería retornar una lista de ActivityResponseDTO")
     void shouldReturnActivityResponseDTOList() {
         // Arrange
-        Activity activity1 = new Activity.Builder().idActivity("id-1").name("Actividad 1").build();
-        Activity activity2 = new Activity.Builder().idActivity("id-2").name("Actividad 2").build();
+        Activity activity1 = Activity.builder().idActivity("id-1").name("Actividad 1").build();
+        Activity activity2 = Activity.builder().idActivity("id-2").name("Actividad 2").build();
 
         when(repositoryPort.findAll()).thenReturn(List.of(activity1, activity2));
 

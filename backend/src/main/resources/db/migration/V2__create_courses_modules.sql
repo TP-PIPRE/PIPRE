@@ -30,6 +30,7 @@ CREATE TABLE activities (
     id_activity VARCHAR(36) PRIMARY KEY,
     id_lesson VARCHAR(36),
     name VARCHAR(255) NOT NULL,
+    logic_level VARCHAR(50) NOT NULL,
 
     CONSTRAINT fk_activities_lesson FOREIGN KEY (id_lesson)
         REFERENCES lessons(id_lesson)
@@ -40,15 +41,7 @@ CREATE TABLE simulations (
     id_simulation VARCHAR(36) PRIMARY KEY,
     id_student VARCHAR(36),
     id_activity VARCHAR(36),
-    is_random BOOLEAN,
-    blocks_usage INTEGER,
-    code_usage INTEGER,
-    sensor_error DECIMAL(10,2),
-    blockly_code TEXT,
-    python_code TEXT,
-    resolution_time INTEGER,
     result VARCHAR(255),
-    date TIMESTAMP,
 
     CONSTRAINT fk_simulation_student FOREIGN KEY (id_student)
         REFERENCES users(id_user)

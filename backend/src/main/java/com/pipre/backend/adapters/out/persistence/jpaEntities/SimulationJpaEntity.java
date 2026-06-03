@@ -5,9 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "simulations")
 @NoArgsConstructor
@@ -26,19 +23,5 @@ public class SimulationJpaEntity {
     @JoinColumn(name = "id_activity", nullable = false)
     private ActivityJpaEntity activityJpaEntity;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal sensorError;
-
-    @Column(columnDefinition = "TEXT")
-    private String blocklyCode;
-
-    @Column(columnDefinition = "TEXT")
-    private String pythonCode;
-
-    private Boolean isRandom;
-    private Integer blocksUsage;
-    private Integer codeUsage;
-    private Integer resolutionTime;
     private String result;
-    private LocalDateTime date;
 }

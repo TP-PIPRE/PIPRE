@@ -12,7 +12,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class GetCoursesService implements GetCoursesUseCase {
-
     private final CourseRepositoryPort repositoryPort;
 
     @Override
