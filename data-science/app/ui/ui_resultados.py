@@ -104,6 +104,22 @@ class AppResultados:
             fg="#2c3e50"
         ).pack(padx=20, pady=10)
 
+        detalle = data.get("detalle")
+        if detalle:
+            box_detalle = tk.LabelFrame(center_frame, text="Detalle", font=("Arial", 11, "bold"))
+            box_detalle.pack(pady=10)
+
+            detalle_texto = "\n".join(
+                f"{k}: {v}" for k, v in detalle.items()
+            )
+
+            tk.Label(
+                box_detalle,
+                text=detalle_texto,
+                font=("Arial", 11),
+                justify="left"
+            ).pack(padx=20, pady=10)
+
         # =========================
         #  RIA8
         # =========================
