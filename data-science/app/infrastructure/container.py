@@ -2,6 +2,7 @@ from app.adapters.ml_models.ria01_desempeño import ClasificadorDesempeno
 from app.adapters.ml_models.ria03_recomendador import RecomendadorActividades
 from app.adapters.ml_models.ria04_dificultad import AjusteAdaptativoDificultad
 from app.adapters.ml_models.ria08_anomalias import DetectorAnomalias
+from app.adapters.ml_models.ria10_pedagogica import RecomendadorPedagogico
 from app.adapters.ml_models.ria11_tiempo import ClasificadorTiempo
 from app.adapters.ml_models.ria12_codigo import EvaluadorCodigo
 from app.adapters.repositories.dataset_repository import ExcelDatasetRepository
@@ -11,6 +12,7 @@ from app.application.services.ria01_service import RIA01Service
 from app.application.services.ria03_service import RIA03Service
 from app.application.services.ria04_service import RIA04Service
 from app.application.services.ria08_service import RIA08Service
+from app.application.services.ria10_service import RIA10Service
 from app.application.services.ria11_service import RIA11Service
 from app.infrastructure.settings import (
     DATASET_PATH,
@@ -18,6 +20,7 @@ from app.infrastructure.settings import (
     RIA03_MODEL_PATH,
     RIA04_MODEL_PATH,
     RIA08_MODEL_PATH,
+    RIA10_MODEL_PATH,
     RIA11_MODEL_PATH,
 )
 
@@ -42,6 +45,10 @@ def create_ria08_model_repository():
     return JoblibModelRepository(RIA08_MODEL_PATH)
 
 
+def create_ria10_model_repository():
+    return JoblibModelRepository(RIA10_MODEL_PATH)
+
+
 def create_ria11_model_repository():
     return JoblibModelRepository(RIA11_MODEL_PATH)
 
@@ -60,6 +67,10 @@ def create_ria04_service():
 
 def create_ria08_service():
     return RIA08Service(DetectorAnomalias())
+
+
+def create_ria10_service():
+    return RIA10Service(RecomendadorPedagogico())
 
 
 def create_ria11_service():

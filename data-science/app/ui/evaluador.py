@@ -2,27 +2,39 @@ from app.application.metrics import round_metric
 
 
 DIFFICULTY_LABELS = {
-    "low": "baja",
-    "medium": "media",
-    "high": "alta",
+    "low": "dificultad baja",
+    "medium": "dificultad media",
+    "high": "dificultad alta",
+}
+
+DIFFICULTY_RECOMMENDATIONS = {
+    "low": "Bajar dificultad y reforzar bases.",
+    "medium": "Mantener dificultad actual.",
+    "high": "Subir dificultad con mayor reto.",
 }
 
 REASON_LABELS = {
-    "strong_results": "resultados sólidos",
-    "high_error_ratio": "alta proporción de errores",
-    "high_frustration": "alta frustración",
-    "strong_recent_progress": "buen progreso reciente",
-    "unstable_performance": "desempeño inestable",
-    "balanced_performance": "desempeño equilibrado",
-    "mixed_adaptation_signals": "señales mixtas de adaptación",
+    "strong_results": "Buen rendimiento.",
+    "high_error_ratio": "Errores altos.",
+    "high_frustration": "Frustracion elevada.",
+    "strong_recent_progress": "Buen progreso reciente.",
+    "unstable_performance": "Desempeno inestable.",
+    "balanced_performance": "Desempeno equilibrado.",
+    "mixed_adaptation_signals": "Senales mixtas.",
 }
 
 
 def traducir_detalle_dificultad(detalle):
+    difficulty_level = detalle.get("difficulty_level")
+
     return {
         "nivel_dificultad": DIFFICULTY_LABELS.get(
-            detalle.get("difficulty_level"),
-            detalle.get("difficulty_level")
+            difficulty_level,
+            difficulty_level
+        ),
+        "recomendacion": DIFFICULTY_RECOMMENDATIONS.get(
+            difficulty_level,
+            "Ajustar dificultad segun desempeno."
         ),
         "razones": [
             REASON_LABELS.get(reason, reason)

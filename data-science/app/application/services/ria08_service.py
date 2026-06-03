@@ -22,4 +22,12 @@ class RIA08Service:
             raise RuntimeError("Model is not trained")
 
         df = pd.DataFrame([data_dict])
-        return self.model.predict_detailed(df)
+        result = self.model.predict_detailed(df)
+
+        return {
+            "result": result["result"],
+            "details": {
+                "reasons": result["reasons"],
+                "dataset_anomaly_ratio": result["dataset_anomaly_ratio"],
+            },
+        }

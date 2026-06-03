@@ -33,6 +33,17 @@ class RIA08Input(BaseModel):
     inactive_days: int
 
 
+class RIA10Input(BaseModel):
+    attempts: int
+    errors: int
+    ai_interactions: float
+    inactive_days: int
+    help_requested: int
+    completed_activities: int
+    grade: int
+    logical_level: str
+
+
 class RIA11Input(BaseModel):
     attempts: int
     errors: int

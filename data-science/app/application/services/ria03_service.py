@@ -33,7 +33,7 @@ class RIA03Service:
         recommendation = self.model.predict(df)
 
         return {
-            "recommendation": self._normalize_recommendation(recommendation),
+            "result": self._normalize_recommendation(recommendation),
             "accuracy": round_metric(getattr(self.model, "accuracy", None)),
             "precision": round_metric(getattr(self.model, "precision", None)),
         }
