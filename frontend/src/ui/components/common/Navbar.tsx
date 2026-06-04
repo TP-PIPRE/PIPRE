@@ -6,6 +6,7 @@ import {
 } from "../../../infrastructure/store/authStore";
 import { useThemeStore } from "../../../infrastructure/store/themeStore";
 import { themes } from "../../../shared/constants/themes";
+import { RobotIcon } from "./RobotIcon";
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated } = getAuthState();
@@ -53,10 +54,10 @@ export const Navbar: React.FC = () => {
           className="flex items-center gap-3 px-6 hover:bg-surface/40 transition-all group"
         >
           <div
-            className="w-8 h-8 bg-primary flex items-center justify-center font-bold text-bg text-lg shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
+            className="w-8 h-8 bg-primary text-bg flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
-            P
+            <RobotIcon size={20} />
           </div>
           <div className="hidden sm:flex flex-col leading-none">
             <span className="text-sm font-bold tracking-widest text-text">
