@@ -1,4 +1,15 @@
+import { useState } from "react";
 import { useDashboardDocente } from "../../application/hooks/useDashboardDocente";
+import { aiService } from "../../infrastructure/api/aiService";
+import type {
+  Ria01PredictRequest,
+  Ria03RecommendRequest,
+  Ria04DifficultyRequest,
+  Ria08AnomalyRequest,
+  Ria11TimeRequest,
+  RiaInfoResponse,
+} from "../../infrastructure/api/models/aiModels";
+import { RobotIcon } from "../components/common/RobotIcon";
 
 // Mock original (retos, estudiantes, métricas)
 const mockDashboardData = {
@@ -76,32 +87,7 @@ const mockDashboardData = {
   ],
 };
 
-// Mock para el dashboard de IA (nuevo)
-const mockIADashboardData = {
-  datosEvaluados: [
-    { variable: "id_estudiante", valor: "ALUM-097" },
-    { variable: "edad", valor: "6" },
-    { variable: "grado", valor: "1" },
-    { variable: "tiempo_sesion_min", valor: "41" },
-    { variable: "intentos", valor: "6" },
-    { variable: "errores", valor: "9" },
-  ],
-  resultado: "Desempeño bajo",
-  metricasIA: [
-    { nombre: "Accuracy", valor: 0.87 },
-    { nombre: "Precisión", valor: 0.87 },
-  ],
-  importanciaVariables: [
-    { nombre: "uso_codigo", importancia: 0.25 },
-    { nombre: "errores", importancia: 0.23 },
-    { nombre: "ratio_error", importancia: 0.18 },
-    { nombre: "tiempo_sesion_min", importancia: 0.12 },
-    { nombre: "intensidad_uso", importancia: 0.08 },
-    { nombre: "dependencia_ia", importancia: 0.06 },
-    { nombre: "interacciones_ia", importancia: 0.05 },
-    { nombre: "intentos", importancia: 0.03 },
-  ],
-};
+
 
 // Componente para el gráfico de barras horizontal (SVG puro)
 const HorizontalBarChart = ({
@@ -203,11 +189,309 @@ const HorizontalBarChart = ({
   );
 };
 
+// --- Constantes y datos de ejemplo para IA ---
+const SAMPLE_STUDENTS = [
+  {
+    id: "1",
+    name: "Lucía Méndez",
+    data: {
+      attempts: 4, errors: 2, logical_level: "medio", ai_interactions: 7,
+      inactive_days: 4, score: 78.5, success_rate: 0.82, help_requested: 2,
+      completed_activities: 6, age: 12, grade: 6,
+    },
+  },
+  {
+    id: "2",
+    name: "Mateo Rivera",
+    data: {
+      attempts: 6, errors: 4, logical_level: "alto", ai_interactions: 12,
+      inactive_days: 2, score: 92.0, success_rate: 0.95, help_requested: 0,
+      completed_activities: 9, age: 14, grade: 8,
+    },
+  },
+  {
+    id: "3",
+    name: "Sofía Chen",
+    data: {
+      attempts: 3, errors: 5, logical_level: "bajo", ai_interactions: 3,
+      inactive_days: 8, score: 45.0, success_rate: 0.55, help_requested: 5,
+      completed_activities: 3, age: 10, grade: 4,
+    },
+  },
+  {
+    id: "4",
+    name: "Marcos Soto",
+    data: {
+      attempts: 5, errors: 1, logical_level: "medio", ai_interactions: 9,
+      inactive_days: 1, score: 88.0, success_rate: 0.90, help_requested: 1,
+      completed_activities: 7, age: 13, grade: 7,
+    },
+  },
+  {
+    id: "5",
+    name: "Elena García",
+    data: {
+      attempts: 2, errors: 3, logical_level: "bajo", ai_interactions: 5,
+      inactive_days: 6, score: 60.0, success_rate: 0.65, help_requested: 3,
+      completed_activities: 4, age: 11, grade: 5,
+    },
+  },
+];
+
+const DEFAULT_FORM = {
+  attempts: 4, errors: 2, logical_level: "medio", ai_interactions: 7,
+  inactive_days: 3, score: 75.0, success_rate: 0.82, help_requested: 2,
+  completed_activities: 5, age: 12, grade: 6,
+};
+
+type TabId = "ria01" | "ria03" | "ria04" | "ria08" | "ria11";
+
+interface TabDef {
+  id: TabId;
+  label: string;
+  icon: React.ReactNode;
+  fields: { key: string; label: string; type: "number" | "select"; step?: number }[];
+}
+
+const TABS: TabDef[] = [
+  {
+    id: "ria01", label: "RIA01 - Desempeño", icon: <RobotIcon size={16} />,
+    fields: [
+      { key: "attempts", label: "Intentos", type: "number" },
+      { key: "errors", label: "Errores", type: "number" },
+      { key: "logical_level", label: "Nivel Lógico", type: "select" },
+      { key: "ai_interactions", label: "Interacciones IA", type: "number" },
+    ],
+  },
+  {
+    id: "ria03", label: "RIA03 - Recomendaciones", icon: <RobotIcon size={16} />,
+    fields: [
+      { key: "logical_level", label: "Nivel Lógico", type: "select" },
+      { key: "inactive_days", label: "Días Inactivo", type: "number" },
+      { key: "ai_interactions", label: "Interacciones IA", type: "number" },
+      { key: "attempts", label: "Intentos", type: "number" },
+    ],
+  },
+  {
+    id: "ria04", label: "RIA04 - Dificultad", icon: <RobotIcon size={16} />,
+    fields: [
+      { key: "score", label: "Puntaje", type: "number", step: 0.1 },
+      { key: "success_rate", label: "Tasa de Éxito", type: "number", step: 0.01 },
+      { key: "errors", label: "Errores", type: "number" },
+      { key: "attempts", label: "Intentos", type: "number" },
+      { key: "help_requested", label: "Ayudas Solicitadas", type: "number" },
+      { key: "completed_activities", label: "Actividades Completadas", type: "number" },
+      { key: "inactive_days", label: "Días Inactivo", type: "number" },
+      { key: "logical_level", label: "Nivel Lógico", type: "select" },
+    ],
+  },
+  {
+    id: "ria08", label: "RIA08 - Anomalías", icon: <RobotIcon size={16} />,
+    fields: [
+      { key: "attempts", label: "Intentos", type: "number" },
+      { key: "errors", label: "Errores", type: "number" },
+      { key: "score", label: "Puntaje", type: "number", step: 0.1 },
+      { key: "inactive_days", label: "Días Inactivo", type: "number" },
+    ],
+  },
+  {
+    id: "ria11", label: "RIA11 - Tiempo", icon: <RobotIcon size={16} />,
+    fields: [
+      { key: "attempts", label: "Intentos", type: "number" },
+      { key: "errors", label: "Errores", type: "number" },
+      { key: "ai_interactions", label: "Interacciones IA", type: "number" },
+      { key: "inactive_days", label: "Días Inactivo", type: "number" },
+      { key: "help_requested", label: "Ayudas Solicitadas", type: "number" },
+      { key: "completed_activities", label: "Actividades Completadas", type: "number" },
+      { key: "age", label: "Edad", type: "number" },
+      { key: "grade", label: "Grado", type: "number" },
+      { key: "logical_level", label: "Nivel Lógico", type: "select" },
+    ],
+  },
+];
+
+const ResultDisplay = ({ result, activeTab }: { result: unknown; activeTab: TabId }) => {
+  const r = result as Record<string, unknown>;
+  return (
+    <div className="space-y-3">
+      {Object.entries(r).map(([key, val]) => (
+        <div key={key} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider min-w-[160px]" style={{ color: "var(--text-muted)" }}>
+            {key}
+          </span>
+          <span className="text-xs font-mono font-semibold" style={{ color: "var(--text)" }}>
+            {typeof val === "boolean" ? (val ? "Sí" : "No") : String(val ?? "-")}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ModelInfoDisplay = ({ info }: { info: RiaInfoResponse }) => {
+  return (
+    <div className="space-y-6">
+      {info.modelo && (
+        <div className="flex items-center gap-4 pb-4 border-b border-border/30">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider min-w-[120px]" style={{ color: "var(--text-muted)" }}>Modelo</span>
+          <span className="text-xs font-mono font-semibold" style={{ color: "var(--text)" }}>{info.modelo}</span>
+        </div>
+      )}
+      {info.version && (
+        <div className="flex items-center gap-4 pb-4 border-b border-border/30">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider min-w-[120px]" style={{ color: "var(--text-muted)" }}>Versión</span>
+          <span className="text-xs font-mono font-semibold" style={{ color: "var(--text)" }}>{info.version}</span>
+        </div>
+      )}
+      {info.estado && (
+        <div className="flex items-center gap-4 pb-4 border-b border-border/30">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider min-w-[120px]" style={{ color: "var(--text-muted)" }}>Estado</span>
+          <span className="text-xs font-mono font-semibold" style={{ color: "var(--text)" }}>{info.estado}</span>
+        </div>
+      )}
+      {info.metricas && Object.keys(info.metricas).length > 0 && (
+        <div>
+          <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>Métricas</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Object.entries(info.metricas).map(([key, val]) => (
+              <div key={key} className="bg-bg/50 border border-border/30 p-3 rounded-md">
+                <span className="block text-[9px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
+                <span className="text-sm font-mono font-bold" style={{ color: "var(--primary)" }}>{typeof val === "number" ? val.toFixed(4) : String(val)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {info.features && info.features.length > 0 && (
+        <div>
+          <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>Features</h4>
+          <div className="flex flex-wrap gap-2">
+            {info.features.map((f) => (
+              <span key={f} className="text-[10px] font-mono border border-border/30 px-2 py-1 rounded-md" style={{ color: "var(--text)" }}>{f}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {info.umbrales && Object.keys(info.umbrales).length > 0 && (
+        <div>
+          <h4 className="text-[10px] font-mono font-bold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>Umbrales</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Object.entries(info.umbrales).map(([key, val]) => (
+              <div key={key} className="bg-bg/50 border border-border/30 p-3 rounded-md">
+                <span className="block text-[9px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
+                <span className="text-sm font-mono font-bold" style={{ color: "var(--primary)" }}>{String(val)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {info.ratio_anomalias !== undefined && (
+        <div className="flex items-center gap-4 pb-4 border-b border-border/30">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider min-w-[120px]" style={{ color: "var(--text-muted)" }}>Ratio Anomalías</span>
+          <span className="text-xs font-mono font-semibold" style={{ color: "var(--text)" }}>{(info.ratio_anomalias * 100).toFixed(1)}%</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const DocenteDashboard = () => {
   const { dashboardData, loading, error } = useDashboardDocente();
   const dataToShow = error
     ? mockDashboardData
     : dashboardData || mockDashboardData;
+
+  const [activeTab, setActiveTab] = useState<TabId>("ria01");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [formData, setFormData] = useState(DEFAULT_FORM);
+  const [result, setResult] = useState<unknown>(null);
+  const [consultLoading, setConsultLoading] = useState(false);
+  const [consultError, setConsultError] = useState<string | null>(null);
+  const [modelInfo, setModelInfo] = useState<RiaInfoResponse | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [modelInfoLoading, setModelInfoLoading] = useState(false);
+
+  const activeTabData = TABS.find((t) => t.id === activeTab)!;
+
+  const handleStudentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setSelectedStudentId(id);
+    setResult(null);
+    setConsultError(null);
+    setModelInfo(null);
+    setShowInfo(false);
+    if (id) {
+      const student = SAMPLE_STUDENTS.find((s) => s.id === id);
+      if (student) {
+        setFormData((prev) => ({ ...prev, ...student.data }));
+      }
+    }
+  };
+
+  const getInfoEndpoint = (): Promise<RiaInfoResponse> => {
+    const endpoints = {
+      ria01: aiService.getRia01Info(),
+      ria03: aiService.getRia03Info(),
+      ria04: aiService.getRia04Info(),
+      ria08: aiService.getRia08Info(),
+      ria11: aiService.getRia11Info(),
+    } as const;
+    return endpoints[activeTab];
+  };
+
+  const handleToggleInfo = async () => {
+    if (showInfo) {
+      setShowInfo(false);
+      return;
+    }
+    setShowInfo(true);
+    if (!modelInfo) {
+      setModelInfoLoading(true);
+      try {
+        const info = await getInfoEndpoint();
+        setModelInfo(info);
+      } catch {
+        setModelInfo(null);
+      } finally {
+        setModelInfoLoading(false);
+      }
+    }
+  };
+
+  const handleConsult = async () => {
+    setConsultLoading(true);
+    setConsultError(null);
+    setResult(null);
+    setModelInfo(null);
+    setShowInfo(false);
+
+    try {
+      let res: unknown;
+      switch (activeTab) {
+        case "ria01":
+          res = await aiService.predictRia01(formData as Ria01PredictRequest);
+          break;
+        case "ria03":
+          res = await aiService.recommendRia03(formData as Ria03RecommendRequest);
+          break;
+        case "ria04":
+          res = await aiService.adjustDifficultyRia04(formData as Ria04DifficultyRequest);
+          break;
+        case "ria08":
+          res = await aiService.detectAnomalyRia08(formData as Ria08AnomalyRequest);
+          break;
+        case "ria11":
+          res = await aiService.classifyTimeRia11(formData as Ria11TimeRequest);
+          break;
+      }
+      setResult(res);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al consultar el modelo";
+      setConsultError(msg);
+    } finally {
+      setConsultLoading(false);
+    }
+  };
 
   if (loading && !dataToShow)
     return (
@@ -462,10 +746,9 @@ export const DocenteDashboard = () => {
         </div>
       </div>
 
-      {/* --- NUEVAS SECCIONES DEL DASHBOARD DE IA --- */}
+      {/* --- SECCIÓN DE ANALÍTICA IA CON TABS --- */}
       <div className="border-t border-border my-8" />
 
-      {/* Título del Dashboard de IA */}
       <div className="mb-6">
         <h2
           className="text-xl font-mono font-bold tracking-tight mb-2"
@@ -478,124 +761,166 @@ export const DocenteDashboard = () => {
         </p>
       </div>
 
-      {/* Datos evaluados (Tabla) */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
+      {/* Selector de Estudiante */}
+      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 border border-border bg-surface rounded-lg">
+        <label className="text-xs font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+          Estudiante
+        </label>
+        <select
+          value={selectedStudentId}
+          onChange={handleStudentChange}
+          className="flex-1 min-w-[200px] bg-bg border border-border px-3 py-2 text-xs font-mono outline-none focus:border-primary transition-all rounded-md"
           style={{ color: "var(--text)" }}
         >
-          Datos evaluados
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr
-                className="text-xs uppercase tracking-wider border-b"
-                style={{
-                  borderColor: "var(--border)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                <th className="pb-2 font-normal">Variable</th>
-                <th className="pb-2 font-normal">Valor</th>
-              </tr>
-            </thead>
-            <tbody
-              className="divide-y"
-              style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
+          <option value="">Seleccionar estudiante...</option>
+          {SAMPLE_STUDENTS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-[9px] font-mono italic" style={{ color: "var(--text-muted)" }}>
+          Los datos se cargarán automáticamente al seleccionar
+        </span>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-0 overflow-x-auto pb-px">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative group flex items-center gap-2 px-4 py-3 text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${
+                isActive
+                  ? "bg-surface text-primary border-t border-l border-r border-border rounded-t-lg shadow-[0_-2px_8px_rgba(0,0,0,0.04)] z-10"
+                  : "bg-bg/50 text-text-muted border-b border-border hover:text-text hover:bg-surface/60"
+              }`}
+              style={{
+                marginBottom: isActive ? "0px" : undefined,
+                borderBottomColor: isActive ? "var(--bg)" : undefined,
+              }}
             >
-              {mockIADashboardData.datosEvaluados.map((d, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-surface/30 transition-colors duration-300"
+              <span className={isActive ? "opacity-100" : "opacity-50 group-hover:opacity-80 transition-opacity"}>
+                {tab.icon}
+              </span>
+              {tab.label}
+              {isActive && (
+                <span
+                  className="absolute left-0 right-0 bottom-0 h-0.5 rounded-full mx-3"
+                  style={{ backgroundColor: "var(--primary)" }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Contenido del tab activo */}
+      <div className="border border-border bg-surface p-6 mb-6 transition-all duration-300 rounded-t-none rounded-b-lg -mt-px">
+        <h3 className="text-sm font-mono font-bold uppercase tracking-wider mb-6" style={{ color: "var(--text)" }}>
+          {activeTabData.label}
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {activeTabData.fields.map((field) => (
+            <div key={field.key}>
+              <label
+                className="block text-[10px] font-mono font-bold uppercase tracking-wider mb-1.5"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {field.label}
+              </label>
+              {field.type === "select" ? (
+                <select
+                  value={String(formData[field.key as keyof typeof formData] ?? "")}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  className="w-full bg-bg border border-border px-3 py-2 text-xs font-mono outline-none focus:border-primary transition-all rounded-md"
+                  style={{ color: "var(--text)" }}
                 >
-                  <td
-                    className="py-2 font-mono text-xs"
-                    style={{ color: "var(--text)" }}
-                  >
-                    {d.variable}
-                  </td>
-                  <td
-                    className="py-2 font-mono text-xs"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {d.valor}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <option value="bajo">Bajo</option>
+                  <option value="medio">Medio</option>
+                  <option value="alto">Alto</option>
+                </select>
+              ) : (
+                <input
+                  type="number"
+                  step={field.step ?? 1}
+                  value={String(formData[field.key as keyof typeof formData] ?? "")}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, [field.key]: field.step ? parseFloat(e.target.value) : parseInt(e.target.value) }))}
+                  className="w-full bg-bg border border-border px-3 py-2 text-xs font-mono outline-none focus:border-primary transition-all rounded-md"
+                  style={{ color: "var(--text)" }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleConsult}
+            disabled={consultLoading}
+            className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {consultLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-bg border-t-transparent rounded-full animate-spin" />
+                Consultando...
+              </>
+            ) : (
+              <>
+                <RobotIcon size={16} />
+                Consultar
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleToggleInfo}
+            className="px-4 py-3 text-[10px] font-mono font-bold uppercase tracking-wider border border-border text-text-muted hover:text-text hover:border-primary/30 transition-all duration-300 rounded-lg"
+          >
+            {showInfo ? "Ocultar info del modelo" : "Ver info del modelo"}
+          </button>
+
+          {consultError && (
+            <span className="text-xs font-mono text-red-500 ml-auto">
+              {consultError}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Resultado */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
-          style={{ color: "var(--text)" }}
-        >
-          Resultado
-        </h3>
-        <div
-          className="bg-surface p-4 rounded-lg text-center font-mono font-bold"
-          style={{
-            backgroundColor: "var(--surface)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          {mockIADashboardData.resultado}
+      {result && (
+        <div className="border border-border bg-surface p-6 mb-6 transition-all duration-300 rounded-lg">
+          <h3 className="text-sm font-mono font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text)" }}>
+            Resultado
+          </h3>
+          <ResultDisplay result={result} activeTab={activeTab} />
         </div>
-      </div>
+      )}
 
-      {/* Métricas de IA */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
-          style={{ color: "var(--text)" }}
-        >
-          Métricas
-        </h3>
-        <div className="flex gap-8">
-          {mockIADashboardData.metricasIA.map((m) => (
-            <div key={m.nombre} className="flex flex-col">
-              <span
-                className="text-xs font-mono"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {m.nombre}:
-              </span>
-              <span
-                className="text-lg font-mono font-bold"
-                style={{ color: "var(--text)" }}
-              >
-                {m.valor}
-              </span>
+      {/* Model Info */}
+      {showInfo && (
+        <div className="border border-border bg-surface p-6 mb-6 transition-all duration-300 rounded-lg">
+          <h3 className="text-sm font-mono font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text)" }}>
+            Información del Modelo
+          </h3>
+          {modelInfoLoading ? (
+            <div className="flex items-center gap-3 py-4">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Cargando información del modelo...</span>
             </div>
-          ))}
+          ) : modelInfo ? (
+            <ModelInfoDisplay info={modelInfo} />
+          ) : (
+            <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+              Haz clic en "Consultar" primero para ver la información del modelo.
+            </p>
+          )}
         </div>
-      </div>
-
-      {/* Gráfico de Importancia de Variables */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4 text-center"
-          style={{ color: "var(--text)" }}
-        >
-          Importancia de Variables
-        </h3>
-        <div className="w-full overflow-x-auto">
-          <HorizontalBarChart data={mockIADashboardData.importanciaVariables} />
-        </div>
-      </div>
-
-      {/* Botón "Evaluar otra fila" */}
-      <div className="mt-8 flex justify-center">
-        <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
-          <span className="material-symbols-outlined text-sm">refresh</span>
-          Evaluar otra fila
-        </button>
-      </div>
+      )}
     </main>
   );
 };

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FaRobot,
   FaCode,
   FaGamepad,
   FaMicrochip,
@@ -10,10 +9,15 @@ import {
 import { apiService } from "../../infrastructure/api/apiService";
 import type { Course } from "../../shared/types/Course";
 import { Modal } from "../components/common/Modal";
+import { RobotIcon } from "../components/common/RobotIcon";
+
+const RobotIconCat = ({ className }: { className?: string }) => (
+  <RobotIcon size={20} className={className} />
+);
 
 const CATEGORIES = [
   { key: "all", label: "Todos", icon: null },
-  { key: "curso", label: "Cursos", icon: FaRobot },
+  { key: "curso", label: "Cursos", icon: RobotIconCat },
   { key: "simulador", label: "Simuladores", icon: FaGamepad },
 ];
 
@@ -259,7 +263,7 @@ export const PaginaInicio = () => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-primary/10 group-hover:text-primary/30 transition-colors duration-500">
-                    <FaRobot className="text-5xl group-hover:scale-110 transition-transform" />
+                    <RobotIcon size={48} className="group-hover:scale-110 transition-transform opacity-20 group-hover:opacity-40" />
                   </div>
                 )}
                 {/* Type badge */}

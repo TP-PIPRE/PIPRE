@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../application/hooks/useAuth";
 import { apiService } from "../../infrastructure/api/apiService";
+import { RobotIcon } from "../components/common/RobotIcon";
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -69,13 +70,9 @@ export const LoginPage: React.FC = () => {
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-6">
           <div
-            className="w-20 h-20 flex items-center justify-center font-bold text-bg text-3xl mb-4 shadow-2xl hover:rotate-12 transition-transform duration-500"
-            style={{
-              backgroundColor: "var(--primary)",
-              borderRadius: "var(--theme-radius)",
-            }}
+            className="w-20 h-20 text-bg flex items-center justify-center mb-4 hover:rotate-12 transition-transform duration-500"
           >
-            P
+            <RobotIcon size={48} />
           </div>
           <h1 className="text-3xl font-bold tracking-widest text-text mb-2">
             PIPRE
