@@ -1,33 +1,74 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import type {
   CourseResponseDTO,
-  ChallengeResponseDTO,
-  ChallengeRequestDTO,
   CourseRequestDTO,
+  ModuleResponseDTO,
+  LessonResponseDTO,
 } from "../../infrastructure/api/models/apiModels";
 import { Modal } from "../components/common/Modal";
 
 const MOCK_COURSES = [
   {
-    id_course: "1",
+    idCourse: "1",
     name: "Robótica Nivel 1: Fundamentos (Local)",
     level: "Básico",
     description: "Curso introductorio a la robótica.",
   },
   {
-    id_course: "2",
+    idCourse: "2",
     name: "Programación de Microcontroladores (Local)",
     level: "Intermedio",
     description: "Curso avanzado de programación.",
   },
   {
-    id_course: "3",
+    idCourse: "3",
     name: "Diseño y Mecánica de Robots (Local)",
     level: "Avanzado",
     description: "Curso de diseño mecánico.",
   },
 ];
+
+interface ChallengeView {
+  idActivity: string;
+  courseId: string;
+  title: string;
+  description: string;
+  order: number;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  points: number;
+  type?: string;
+  deleted?: boolean;
+  simulatorConfig?: {
+    environment: string;
+    maxBlocks: number;
+    missions: Array<{ id: string; title: string; objective: string; maxBlocks: number }>;
+    allowedHardware?: string[];
+    startingPosition?: { x: number; z: number };
+    targetPosition?: { x: number; z: number };
+  };
+  expectedOutput?: string;
+  reward?: { type: string; value: number };
+}
+
+interface ChallengeFormData {
+  title: string;
+  description: string;
+  order: number;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
+  points: number;
+  simulatorConfig: {
+    environment: string;
+    maxBlocks: number;
+    missions: Array<{ id: string; title: string; objective: string; maxBlocks: number }>;
+    allowedHardware?: string[];
+    startingPosition?: { x: number; z: number };
+    targetPosition?: { x: number; z: number };
+  };
+  expectedOutput: string;
+  reward: { type: string; value: number };
+}
 
 export const DocenteRetosPage: React.FC = () => {
   // Estados para cursos
@@ -38,7 +79,7 @@ export const DocenteRetosPage: React.FC = () => {
   >(null);
   const [selectedCourse, setSelectedCourse] =
     useState<CourseResponseDTO | null>(null);
-  const [formData, setFormData] = useState<Omit<CourseRequestDTO, "id_course">>(
+  const [formData, setFormData] = useState<Omit<CourseRequestDTO, "idCourse">>(
     {
       name: "",
       description: "",
@@ -48,17 +89,16 @@ export const DocenteRetosPage: React.FC = () => {
 
   // Estados para retos
   const [selectedCourseChallenges, setSelectedCourseChallenges] = useState<
-    ChallengeResponseDTO[]
+    ChallengeView[]
   >([]);
   const [isChallengesModalOpen, setIsChallengesModalOpen] = useState(false);
   const [challengeModalType, setChallengeModalType] = useState<
     "create" | "edit" | null
   >(null);
   const [selectedChallenge, setSelectedChallenge] =
-    useState<ChallengeResponseDTO | null>(null);
-  const [challengeFormData, setChallengeFormData] = useState<
-    Partial<ChallengeRequestDTO>
-  >({
+    useState<ChallengeView | null>(null);
+  const [challengeFormData, setChallengeFormData] =
+    useState<ChallengeFormData>({
     title: "",
     description: "",
     order: 0,
@@ -73,6 +113,10 @@ export const DocenteRetosPage: React.FC = () => {
     reward: { type: "POINTS", value: 0 },
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [modules, setModules] = useState<ModuleResponseDTO[]>([]);
+  const [lessons, setLessons] = useState<LessonResponseDTO[]>([]);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>("");
+  const [selectedLessonId, setSelectedLessonId] = useState<string>("");
 
   // Cargar cursos
   const fetchCourses = async () => {
@@ -92,11 +136,26 @@ export const DocenteRetosPage: React.FC = () => {
     }
   };
 
-  // Cargar retos de un curso
+  // Cargar retos de un curso desde simulations API
   const fetchChallengesByCourse = async (courseId: string) => {
     try {
-      const challenges = await apiService.challenges.getByCourse(courseId);
-      setSelectedCourseChallenges(challenges);
+      const authUser = getAuthState().user;
+      const userId = authUser?.id || "config-store";
+      const sims = await apiService.simulations.getByUser(userId);
+      const parsed = sims
+        .map((s) => {
+          try {
+            const data = JSON.parse(s.result);
+            return { ...data, id_simulation: s.id_simulation } as ChallengeView;
+          } catch {
+            return null;
+          }
+        })
+        .filter((c): c is ChallengeView =>
+          c !== null && c.type === "challenge" && c.courseId === courseId && !c.deleted
+        )
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      setSelectedCourseChallenges(parsed);
     } catch (err) {
       console.error("Error fetching challenges:", err);
       setSelectedCourseChallenges([]);
@@ -116,8 +175,8 @@ export const DocenteRetosPage: React.FC = () => {
       } else if (modalType === "edit" && selectedCourse) {
         await apiService.courses.update({
           ...formData,
-          id_course: selectedCourse.id_course,
-        } as CourseRequestDTO & { id_course: string });
+          idCourse: selectedCourse.idCourse,
+        } as CourseRequestDTO & { idCourse: string });
       }
       setModalType(null);
       fetchCourses();
@@ -180,48 +239,128 @@ export const DocenteRetosPage: React.FC = () => {
     });
   };
 
-  // Reordenar retos — mover arriba/abajo
-  const moveChallengeOrder = async (challengeId: string, direction: "up" | "down") => {
-    const idx = selectedCourseChallenges.findIndex((c) => c.id === challengeId);
-    if (idx < 0) return;
-    const sorted = [...selectedCourseChallenges].sort((a, b) => a.order - b.order);
-    const currentIdx = sorted.findIndex((c) => c.id === challengeId);
-    if (direction === "up" && currentIdx > 0) {
-      const temp = sorted[currentIdx].order;
-      sorted[currentIdx].order = sorted[currentIdx - 1].order;
-      sorted[currentIdx - 1].order = temp;
-    } else if (direction === "down" && currentIdx < sorted.length - 1) {
-      const temp = sorted[currentIdx].order;
-      sorted[currentIdx].order = sorted[currentIdx + 1].order;
-      sorted[currentIdx + 1].order = temp;
-    } else {
-      return;
+  // Reordenar retos — mover arriba/abajo y persistir
+  const moveChallengeOrder = async (idActivity: string, direction: "up" | "down") => {
+    try {
+      const sorted = [...selectedCourseChallenges].sort((a, b) => a.order - b.order);
+      const currentIdx = sorted.findIndex((c) => c.idActivity === idActivity);
+      if (currentIdx < 0) return;
+      if (direction === "up" && currentIdx > 0) {
+        const temp = sorted[currentIdx].order;
+        sorted[currentIdx].order = sorted[currentIdx - 1].order;
+        sorted[currentIdx - 1].order = temp;
+      } else if (direction === "down" && currentIdx < sorted.length - 1) {
+        const temp = sorted[currentIdx].order;
+        sorted[currentIdx].order = sorted[currentIdx + 1].order;
+        sorted[currentIdx + 1].order = temp;
+      } else {
+        return;
+      }
+      // Persistir reorden: actualizar ambos retos afectados
+      const toUpdate = [sorted[currentIdx], direction === "up" ? sorted[currentIdx - 1] : sorted[currentIdx + 1]];
+      const authUser = getAuthState().user;
+      const userId = authUser?.id || "config-store";
+      const sims = await apiService.simulations.getByUser(userId);
+      for (const ch of toUpdate) {
+        const existing = sims.find((s) => {
+          try { const r = JSON.parse(s.result); return r.idActivity === ch.idActivity; }
+          catch { return false; }
+        });
+        if (existing) {
+          const data = JSON.parse(existing.result);
+          data.order = ch.order;
+          data.updatedAt = new Date().toISOString();
+          await apiService.simulations.postResult({
+            id_student: userId,
+            id_activity: ch.idActivity,
+            result: JSON.stringify(data),
+          });
+        }
+      }
+      setSelectedCourseChallenges([...sorted]);
+    } catch (err) {
+      console.error("Error reordering challenges:", err);
     }
-    /* BACKEND: PATCH /api/v1/challenges/reorder con { challengeId, newOrder } */
-    setSelectedCourseChallenges([...sorted]);
   };
 
-  // Manejar envío de reto
+  // Cargar módulos de un curso
+  const fetchModulesForCourse = async (courseId: string) => {
+    try {
+      const data = await apiService.modules.getByCourse(courseId);
+      setModules(data);
+      if (data.length > 0) {
+        setSelectedModuleId(data[0].idModule);
+        const les = await apiService.lessons.getByModule(data[0].idModule);
+        setLessons(les);
+        if (les.length > 0) setSelectedLessonId(les[0].idLesson);
+      }
+    } catch {
+      setModules([]);
+      setLessons([]);
+    }
+  };
+
   const handleChallengeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateChallengeForm()) return;
     try {
       if (!selectedCourse) return;
 
-      if (challengeModalType === "create") {
-        await apiService.challenges.create({
-          ...challengeFormData,
-          id_course: selectedCourse.id_course,
-        } as ChallengeRequestDTO);
-      } else if (challengeModalType === "edit" && selectedChallenge) {
-        await apiService.challenges.update(
-          selectedChallenge.id,
-          challengeFormData as Partial<ChallengeRequestDTO>,
-        );
+      const authUser = getAuthState().user;
+      const idStudent = authUser?.id || "config-store";
+
+      let idActivity = selectedChallenge?.idActivity || "";
+
+      if (challengeModalType === "create" || !idActivity) {
+        if (!selectedLessonId) {
+          await fetchModulesForCourse(selectedCourse.idCourse);
+          if (!selectedLessonId) {
+            console.error("No se encontraron lecciones para este curso");
+            return;
+          }
+        }
+        // Workaround: POST /activities fails (missing logicLevel in DTO).
+        // Use GET /activities/lesson/{idLesson} to fetch an existing idActivity.
+        const activities = await apiService.activities.getByLesson(selectedLessonId);
+        if (activities && activities.length > 0) {
+          idActivity = activities[0].idActivity;
+        } else {
+          console.error("No se encontraron actividades existentes para esta lección");
+          return;
+        }
       }
+
+      const payload = {
+        type: "challenge",
+        idActivity,
+        courseId: selectedCourse.idCourse,
+        title: challengeFormData.title,
+        description: challengeFormData.description,
+        order: challengeFormData.order,
+        difficulty: challengeFormData.difficulty,
+        points: challengeFormData.points,
+        environment: challengeFormData.simulatorConfig?.environment || "battle",
+        maxBlocks: challengeFormData.simulatorConfig?.maxBlocks || 10,
+        missions: challengeFormData.simulatorConfig?.missions || [],
+        allowedHardware: challengeFormData.simulatorConfig?.allowedHardware || [],
+        startingPosition: challengeFormData.simulatorConfig?.startingPosition || { x: 0, z: 0 },
+        targetPosition: challengeFormData.simulatorConfig?.targetPosition || { x: 10, z: 10 },
+        expectedOutput: challengeFormData.expectedOutput,
+        reward: challengeFormData.reward,
+        deleted: false,
+        createdAt: selectedChallenge?.idActivity ? undefined : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await apiService.simulations.postResult({
+        id_student: idStudent,
+        id_activity: idActivity,
+        result: JSON.stringify(payload),
+      });
+
       setChallengeModalType(null);
       setFormErrors({});
-      fetchChallengesByCourse(selectedCourse.id_course);
+      fetchChallengesByCourse(selectedCourse.idCourse);
     } catch (err) {
       console.error("Error saving challenge:", err);
     }
@@ -231,9 +370,9 @@ export const DocenteRetosPage: React.FC = () => {
   const handleDeleteCourse = async () => {
     if (selectedCourse) {
       try {
-        await apiService.courses.delete(selectedCourse.id_course);
+        await apiService.courses.delete(selectedCourse.idCourse);
         setCourses((prev) =>
-          prev.filter((c) => c.id_course !== selectedCourse.id_course),
+          prev.filter((c) => c.idCourse !== selectedCourse.idCourse),
         );
       } catch (err) {
         console.error("Error deleting course:", err);
@@ -242,11 +381,18 @@ export const DocenteRetosPage: React.FC = () => {
     }
   };
 
-  // Eliminar reto
-  const handleDeleteChallenge = async (challengeId: string) => {
+  // Eliminar reto (soft delete via simulations API)
+  const handleDeleteChallenge = async (idActivity: string) => {
     try {
-      await apiService.challenges.delete(challengeId);
-      fetchChallengesByCourse(selectedCourse!.id_course);
+      const courseId = selectedCourse!.idCourse;
+      const authUser = getAuthState().user;
+      const userId = authUser?.id || "config-store";
+      await apiService.simulations.postResult({
+        id_student: userId,
+        id_activity: idActivity,
+        result: JSON.stringify({ deleted: true, type: "challenge", courseId }),
+      });
+      fetchChallengesByCourse(courseId);
     } catch (err) {
       console.error("Error deleting challenge:", err);
     }
@@ -507,6 +653,7 @@ export const DocenteRetosPage: React.FC = () => {
                           expectedOutput: "",
                           reward: { type: "POINTS", value: 0 },
                         });
+                        if (selectedCourse) fetchModulesForCourse(selectedCourse.idCourse);
                       }}
                       className="btn-premium px-4 py-2 text-[10px] font-bold uppercase tracking-widest"
                     >
@@ -520,7 +667,7 @@ export const DocenteRetosPage: React.FC = () => {
                         .sort((a, b) => a.order - b.order)
                         .map((challenge) => (
                           <div
-                            key={challenge.id}
+                            key={challenge.idActivity}
                             className="p-4 bg-bg/50 border border-border/20 rounded-lg flex justify-between items-center"
                             style={{ borderRadius: "var(--theme-radius)" }}
                           >
@@ -539,7 +686,7 @@ export const DocenteRetosPage: React.FC = () => {
                               <div className="flex flex-col gap-0.5 mr-1">
                                 <button
                                   type="button"
-                                  onClick={() => moveChallengeOrder(challenge.id, "up")}
+                                  onClick={() => moveChallengeOrder(challenge.idActivity, "up")}
                                   className="text-text-muted/30 hover:text-primary text-[10px] leading-none"
                                   title="Subir orden"
                                 >
@@ -547,7 +694,7 @@ export const DocenteRetosPage: React.FC = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => moveChallengeOrder(challenge.id, "down")}
+                                  onClick={() => moveChallengeOrder(challenge.idActivity, "down")}
                                   className="text-text-muted/30 hover:text-primary text-[10px] leading-none"
                                   title="Bajar orden"
                                 >
@@ -567,16 +714,17 @@ export const DocenteRetosPage: React.FC = () => {
                                     difficulty: challenge.difficulty,
                                     points: challenge.points,
                                     simulatorConfig: {
-                                      environment: sim.environment || "battle",
-                                      maxBlocks: sim.maxBlocks || 10,
-                                      missions: sim.missions || [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
-                                      allowedHardware: sim.allowedHardware || [],
-                                      startingPosition: sim.startingPosition || { x: 0, z: 0 },
-                                      targetPosition: sim.targetPosition || { x: 10, z: 10 },
+                                      environment: (sim as any).environment || "battle",
+                                      maxBlocks: (sim as any).maxBlocks || 10,
+                                      missions: (sim as any).missions || [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
+                                      allowedHardware: (sim as any).allowedHardware || [],
+                                      startingPosition: (sim as any).startingPosition || { x: 0, z: 0 },
+                                      targetPosition: (sim as any).targetPosition || { x: 10, z: 10 },
                                     },
-                                    expectedOutput: challenge.expectedOutput,
-                                    reward: challenge.reward,
+                                    expectedOutput: challenge.expectedOutput || "",
+                                    reward: challenge.reward || { type: "POINTS", value: 0 },
                                   });
+                                  if (selectedCourse) fetchModulesForCourse(selectedCourse.idCourse);
                                 }}
                                 className="text-primary hover:underline text-xs"
                               >
@@ -584,7 +732,7 @@ export const DocenteRetosPage: React.FC = () => {
                               </button>
                               <button
                                 onClick={() =>
-                                  handleDeleteChallenge(challenge.id)
+                                  handleDeleteChallenge(challenge.idActivity)
                                 }
                                 className="text-danger hover:underline text-xs"
                               >
@@ -605,6 +753,43 @@ export const DocenteRetosPage: React.FC = () => {
               // ✅ Formulario integrado (sin fondo negro, mismo estilo que el modal)
               <form onSubmit={handleChallengeSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                      Módulo
+                    </label>
+                    <select
+                      value={selectedModuleId}
+                      onChange={async (e) => {
+                        setSelectedModuleId(e.target.value);
+                        try {
+                          const les = await apiService.lessons.getByModule(e.target.value);
+                          setLessons(les);
+                          if (les.length > 0) setSelectedLessonId(les[0].idLesson);
+                        } catch { setLessons([]); }
+                      }}
+                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      style={{ borderRadius: "var(--theme-radius)" }}
+                    >
+                      {modules.map((m) => (
+                        <option key={m.idModule} value={m.idModule}>{m.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                      Lección
+                    </label>
+                    <select
+                      value={selectedLessonId}
+                      onChange={(e) => setSelectedLessonId(e.target.value)}
+                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      style={{ borderRadius: "var(--theme-radius)" }}
+                    >
+                      {lessons.map((l) => (
+                        <option key={l.idLesson} value={l.idLesson}>{l.title}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
                       Título
@@ -773,7 +958,7 @@ export const DocenteRetosPage: React.FC = () => {
                       </div>
                       {formErrors.missions && <p className="text-danger text-[9px] mb-2">{formErrors.missions}</p>}
 
-                      {(challengeFormData.simulatorConfig?.missions || []).map((mission: any, mi: number) => (
+                      {(challengeFormData.simulatorConfig?.missions || []).map((mission: any, _mi: number) => (
                         <div key={mission.id} className="flex gap-2 items-start mb-2 p-2 bg-bg/30 border border-border/10" style={{ borderRadius: "var(--theme-radius)" }}>
                           <div className="flex-1 space-y-1">
                             <input
@@ -860,7 +1045,7 @@ export const DocenteRetosPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {courses.map((course) => (
           <div
-            key={course.id_course}
+            key={course.idCourse}
             className="group relative bg-surface/40 border border-border/20 p-8 transition-all duration-700 hover:border-primary/30 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
@@ -916,14 +1101,14 @@ export const DocenteRetosPage: React.FC = () => {
                   <span className="w-1.5 h-1.5 bg-success/60 rounded-full group-hover:bg-success group-hover:animate-pulse transition-colors" />
                   Online
                 </span>
-                <span>Node: {(course.id_course || "").split("-")[0]}</span>
+                <span>Node: {(course.idCourse || "").split("-")[0]}</span>
               </div>
 
               <div className="flex gap-4 pt-6 border-t border-border/10">
                 <button
                   onClick={() => {
                     setSelectedCourse(course);
-                    fetchChallengesByCourse(course.id_course);
+                    fetchChallengesByCourse(course.idCourse);
                     setIsChallengesModalOpen(true);
                   }}
                   className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-bg/60 border border-border/10 hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"

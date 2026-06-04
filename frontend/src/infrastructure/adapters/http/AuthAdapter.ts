@@ -5,6 +5,22 @@ import type { User } from "../../../shared/types/User";
 const LOGIN_ENDPOINT = "auth/login";
 const REGISTER_ENDPOINT = "users";
 
+const STORAGE_KEY = "pipre_registered_users";
+
+function getStoredUserIds(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function storeUserId(email: string, uuid: string): void {
+  const users = getStoredUserIds();
+  users[email] = uuid;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+}
+
 export class AuthAdapter implements IAuthRepository {
   async login(
     email: string,
@@ -12,11 +28,8 @@ export class AuthAdapter implements IAuthRepository {
   ): Promise<{ user: User; token: string }> {
     try {
       const response = await axiosInstance.post(LOGIN_ENDPOINT, { email, password });
-
-      // El backend devuelve el token como un string simple
       const token = response.data;
 
-      // Intentamos obtener el rol del token (JWT)
       let role = "student";
       try {
         const payloadBase64 = token.split(".")[1];
@@ -27,18 +40,20 @@ export class AuthAdapter implements IAuthRepository {
         else if (backendRole === "teacher") role = "docente";
         else if (backendRole === "student") role = "student";
         else {
-          // Fallback por email si el rol no viene claro en el token
           if (email.includes("admin")) role = "admin";
           else if (email.includes("docente")) role = "docente";
         }
       } catch (e) {
-        // Fallback total si el token no es JWT
         if (email.includes("admin")) role = "admin";
         else if (email.includes("docente")) role = "docente";
       }
 
+      // Look up real UUID stored during registration
+      const storedUsers = getStoredUserIds();
+      const uuid = storedUsers[email] || "";
+
       const user: User = {
-        id: role === "admin" ? "1" : (role === "docente" ? "2" : "3"),
+        id: uuid,
         name: role === "admin" ? "Admin" : (role === "docente" ? "Profesor" : "Estudiante"),
         email: email,
         role: role,
@@ -62,17 +77,22 @@ export class AuthAdapter implements IAuthRepository {
     grade: string,
   ): Promise<User> {
     try {
-      const response = await axiosInstance.post(REGISTER_ENDPOINT, {
-        first_name: name,
-        last_name: lastname,
+      const response = await axiosInstance.post<string>(REGISTER_ENDPOINT, {
+        firstName: name,
+        lastName: lastname,
         email,
-        password,
+        passwordHash: password,
         age,
         grade,
-        role: "student" as const,
+        role: "student",
       });
 
-      return response.data;
+      const uuid = response.data;
+      storeUserId(email, uuid);
+
+      // Auto-login after registration
+      const { user } = await this.login(email, password);
+      return user;
     } catch (error: any) {
       throw new Error(
         error.response?.data?.message || 

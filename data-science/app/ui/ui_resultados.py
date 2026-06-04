@@ -37,7 +37,7 @@ class AppResultados:
     def crear_panel(self, frame, ria, data):
 
         # =========================
-        # 🔥 SCROLL
+        # SCROLL
         # =========================
         canvas = tk.Canvas(frame)
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
@@ -56,7 +56,7 @@ class AppResultados:
         scrollbar.pack(side="right", fill="y")
 
         # =========================
-        # 🎯 FRAME CENTRAL (CENTRADO REAL)
+        #  FRAME CENTRAL (CENTRADO REAL)
         # =========================
         wrapper = tk.Frame(container)
         wrapper.pack(expand=True)
@@ -65,7 +65,7 @@ class AppResultados:
         center_frame.pack()
 
         # =========================
-        # 🔝 DATOS
+        #  DATOS
         # =========================
         input_data = data.get("input_data", None)
 
@@ -92,7 +92,7 @@ class AppResultados:
             tabla.pack(padx=20, pady=10)
 
         # =========================
-        # 🧠 RESULTADO
+        #  RESULTADO
         # =========================
         box_result = tk.LabelFrame(center_frame, text="Resultado", font=("Arial", 11, "bold"))
         box_result.pack(pady=10)
@@ -104,8 +104,24 @@ class AppResultados:
             fg="#2c3e50"
         ).pack(padx=20, pady=10)
 
+        detalle = data.get("detalle")
+        if detalle:
+            box_detalle = tk.LabelFrame(center_frame, text="Detalle", font=("Arial", 11, "bold"))
+            box_detalle.pack(pady=10)
+
+            detalle_texto = "\n".join(
+                f"{k}: {v}" for k, v in detalle.items()
+            )
+
+            tk.Label(
+                box_detalle,
+                text=detalle_texto,
+                font=("Arial", 11),
+                justify="left"
+            ).pack(padx=20, pady=10)
+
         # =========================
-        # 🔹 RIA8
+        #  RIA8
         # =========================
         if "RIA8" in ria:
             box_anom = tk.LabelFrame(center_frame, text="Análisis de anomalías", font=("Arial", 11, "bold"))
@@ -123,7 +139,7 @@ class AppResultados:
 
         else:
             # =========================
-            # 📊 MÉTRICAS
+            #  MÉTRICAS
             # =========================
             box_metricas = tk.LabelFrame(center_frame, text="Métricas", font=("Arial", 11, "bold"))
             box_metricas.pack(pady=10)
@@ -136,25 +152,25 @@ class AppResultados:
 
             tk.Label(
                 frame_metrics,
-                text=f"Accuracy: {accuracy:.2f}",
+                text=f"Accuracy: {accuracy:.4f}",
                 width=20
             ).grid(row=0, column=0, padx=20, pady=5)
 
             tk.Label(
                 frame_metrics,
-                text=f"Precision: {precision:.2f}",
+                text=f"Precision: {precision:.4f}",
                 width=20
             ).grid(row=0, column=1, padx=20, pady=5)
 
             # =========================
-            # 📈 GRÁFICO
+            # GRÁFICO
             # =========================
             importancias = data.get("importancias", None)
             if importancias:
                 self.crear_grafico_importancia(center_frame, importancias)
 
         # =========================
-        # 🔘 BOTÓN (AHORA SÍ FUNCIONA)
+        # BOTÓN (AHORA SÍ FUNCIONA)
         # =========================
         if self.evaluar_otro:
             btn_frame = tk.Frame(center_frame)
@@ -172,7 +188,7 @@ class AppResultados:
             ).pack()
 
     # =========================
-    # 🔁 REEVALUAR
+    # REEVALUAR
     # =========================
     def ejecutar_evaluacion(self):
         nuevos_resultados = self.evaluar_otro()
@@ -188,7 +204,7 @@ class AppResultados:
         self.crear_interfaz()
 
     # =========================
-    # 📈 GRÁFICO
+    # GRÁFICO
     # =========================
     def crear_grafico_importancia(self, frame, importancias):
 
@@ -224,7 +240,7 @@ class AppResultados:
 
         plt.close(fig)
 # =========================
-# 🚀 LAUNCHER
+#  LAUNCHER
 # =========================
 def mostrar_resultados(resultados, evaluar_otro=None):
     root = tk.Tk()

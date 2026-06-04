@@ -25,12 +25,12 @@ class GetRolesServiceTest {
     @Test
     @DisplayName("Debería retornar todos los roles mapeados a DTO")
     void shouldReturnAllRoles() {
-        Role role = new Role.Builder().idRole("r1").name("ADMIN").build();
+        Role role = Role.builder().idRole("r1").name("ADMIN").build();
         when(repositoryPort.findAll()).thenReturn(List.of(role));
 
         List<RoleResponseDTO> result = getRolesService.execute();
 
         assertFalse(result.isEmpty());
-        assertEquals("ADMIN", result.get(0).name());
+        assertEquals("ADMIN", result.getFirst().name());
     }
 }

@@ -1,7 +1,7 @@
 // PMV01 – Plataforma educativa base
 export interface UserRequestDTO {
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   age: number;
   grade: string;
   email: string;
@@ -11,20 +11,20 @@ export interface UserRequestDTO {
 }
 
 export interface UserResponseDTO {
-  id_user: string;
-  first_name: string;
-  last_name: string;
+  idUser: string;
+  firstName: string;
+  lastName: string;
   email: string;
 }
 
 export interface RoleDTO {
-  id_role: string;
+  idRole: string;
   name: string;
 }
 
 export interface GroupDTO {
-  id_group: string;
-  group_name: string;
+  idGroup: string;
+  groupName: string;
 }
 
 export interface CourseRequestDTO {
@@ -34,90 +34,58 @@ export interface CourseRequestDTO {
 }
 
 export interface CourseResponseDTO {
-  id_course: string;
+  idCourse: string;
   name: string;
   description?: string;
   level?: string;
 }
 
 export interface ModuleRequestDTO {
-  id_course: string;
+  idCourse: string;
   title: string;
 }
 
 export interface ModuleResponseDTO {
-  id_module: string;
+  idModule: string;
   title: string;
 }
 
 export interface LessonRequestDTO {
-  id_module: string;
+  idModule: string;
   title: string;
 }
 
 export interface LessonResponseDTO {
-  id_lesson: string;
+  idLesson: string;
   title: string;
 }
 
 export interface ActivityRequestDTO {
-  id_lesson: string;
+  idLesson: string;
   name: string;
 }
 
 export interface ActivityResponseDTO {
-  id_activity: string;
+  idActivity: string;
   name: string;
-}
-
-// DTOs para Retos (Challenges)
-export interface ChallengeRequestDTO {
-  id_course: string;
-  title: string;
-  description: string;
-  order: number;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  points: number;
-  simulatorConfig?: any; // Configuración específica para el simulador
-  expectedOutput?: string; // Resultado esperado para validación
-  reward?: {
-    type: "BADGE" | "POINTS" | "UNLOCK_NEXT";
-    value: string | number;
-  };
-}
-
-export interface ChallengeResponseDTO {
-  id: string;
-  id_course: string;
-  title: string;
-  description: string;
-  order: number;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
-  points: number;
-  simulatorConfig?: any;
-  expectedOutput?: string;
-  reward?: {
-    type: "BADGE" | "POINTS" | "UNLOCK_NEXT";
-    value: string | number;
-  };
 }
 
 // PMV02 – Gamificación y ranking
 export interface ActivityResultRequest {
-  id_student: string;
-  id_activity: string;
+  idStudent: string;
+  idActivity: string;
   score: number;
   attempts: number;
 }
 
 export interface ActivityResultResponse {
-  id_activity: string;
+  idActivity: string;
   score: number;
 }
 
 export interface RankingDTO {
-  id_student: string;
-  total_points: number;
+  idStudent: string;
+  totalPoints: number;
   position: number;
 }
 
@@ -130,44 +98,6 @@ export interface SimulationRequest {
 export interface SimulationResponse {
   id_simulation: string;
   result: string;
-}
-
-// PMV02.5 – Resultados de Retos y Ranking
-export interface ResultadoRequestDTO {
-  studentId: string;
-  studentName: string;
-  courseId: string;
-  courseName: string;
-  challengeId: string;
-  challengeTitle: string;
-  environment: string;
-  score: number;
-  blocks: number;
-  energy: number;
-}
-
-export interface ResultadoResponseDTO {
-  id: string;
-  studentId: string;
-  studentName: string;
-  courseId: string;
-  courseName: string;
-  challengeId: string;
-  challengeTitle: string;
-  environment: string;
-  score: number;
-  blocks: number;
-  energy: number;
-  completedAt: string;
-}
-
-export interface RankingEntryDTO {
-  position: number;
-  studentId: string;
-  studentName: string;
-  totalScore: number;
-  challengesCompleted: number;
-  lastUpdated: string;
 }
 
 // PMV03 – Analítica inteligente

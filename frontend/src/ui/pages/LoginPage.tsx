@@ -24,16 +24,16 @@ export const LoginPage: React.FC = () => {
       if (isLogin) {
         await login(email, password);
       } else {
-        const first_name = formData.get("first_name") as string;
-        const last_name = formData.get("last_name") as string;
+        const firstName = formData.get("firstName") as string;
+        const lastName = formData.get("lastName") as string;
         const age = parseInt(formData.get("age") as string);
         const grade = formData.get("grade") as string;
         const institution = formData.get("institution") as string;
         const zone = formData.get("zone") as string;
 
-        await apiService.users.create({
-          first_name,
-          last_name,
+        const uuid = await apiService.users.create({
+          firstName,
+          lastName,
           age,
           grade,
           email,
@@ -41,6 +41,11 @@ export const LoginPage: React.FC = () => {
           institution,
           zone,
         });
+
+        // Store UUID for login lookup
+        const storedUsers = JSON.parse(localStorage.getItem("pipre_registered_users") || "{}");
+        storedUsers[email] = uuid;
+        localStorage.setItem("pipre_registered_users", JSON.stringify(storedUsers));
 
         setSuccessMessage("Nodo de usuario creado. Identifícate para entrar.");
         setIsLogin(true);
@@ -106,7 +111,7 @@ export const LoginPage: React.FC = () => {
                     Nombre
                   </label>
                   <input
-                    name="first_name"
+                    name="firstName"
                     required
                     className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
                     style={{ borderRadius: "var(--theme-radius)" }}
@@ -117,7 +122,7 @@ export const LoginPage: React.FC = () => {
                     Apellido
                   </label>
                   <input
-                    name="last_name"
+                    name="lastName"
                     required
                     className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
                     style={{ borderRadius: "var(--theme-radius)" }}

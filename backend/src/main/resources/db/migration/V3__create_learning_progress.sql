@@ -4,10 +4,9 @@ CREATE TABLE activity_results (
     id_activity VARCHAR(36),
     attempts INTEGER,
     errors INTEGER,
-    score DECIMAL(5,2),
-    done_count INTEGER,
-    success_rate DECIMAL(5,2),
-    date TIMESTAMP,
+    score DECIMAL(10,2),
+    result_simulation VARCHAR(50),
+    date_attempted TIMESTAMP,
 
     CONSTRAINT fk_results_student FOREIGN KEY (id_student)
         REFERENCES users(id_user)

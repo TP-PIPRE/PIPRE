@@ -88,6 +88,9 @@ const SimuladorInner = () => {
             <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">
               Modo Reto
             </span>
+            <span className="text-[8px] font-mono px-2 py-0.5 border border-yellow-500/30 uppercase tracking-widest" style={{ backgroundColor: "rgba(234,179,8,0.1)", borderRadius: "var(--theme-radius)", color: "var(--text-muted)" }}>
+              Demo
+            </span>
             {challengeData && (
               <>
                 <span className="text-text-muted/30">|</span>

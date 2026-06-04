@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useRef } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { Block, BlockCategory, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngine";
 import { useThemeStore } from "../../infrastructure/store/themeStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
+import { getAuthState } from "../../infrastructure/store/authStore";
 
 interface LogEntry {
   time: string;
@@ -69,8 +70,6 @@ interface SimuladorContextType {
   lastScore: number;
   completeChallenge: () => void;
   dismissChallengeCompletion: () => void;
-  getCourseRanking: () => { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[];
-  getGlobalRanking: () => { position: number; studentId: string; studentName: string; totalScore: number; challengesCompleted: number; lastUpdated: string }[];
 
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
@@ -91,7 +90,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [challengeData, setChallengeData] = useState<ChallengeData | null>(null);
   const [challenges, setChallenges] = useState<ChallengeData[]>([]);
 
-  const [portAssignments, setPortAssignments] = useState<Record<string, string>>({});
+  const [portAssignments, setPortAssignments] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem("pipre_port_assignments");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [blocks, setBlocks] = useState<Block[]>([]);
   const { currentTheme } = useThemeStore();
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -109,6 +115,10 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const stopRequested = useRef(false);
 
   const simuladorUseCase = useRef(new SimuladorUseCase());
+
+  useEffect(() => {
+    localStorage.setItem("pipre_port_assignments", JSON.stringify(portAssignments));
+  }, [portAssignments]);
 
   const getDefaultMissions = (env: EnvironmentType): Mission[] => {
     const config = ENVIRONMENT_CONFIGS[env];
@@ -154,10 +164,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const loadChallengeFromCourse = async (cId: string) => {
-    /* BACKEND: usar apiService cuando esté conectado:
-     * const challenges = await apiService.challenges.getByCourse(cId);
-     */
-    const courseChallenges = simuladorUseCase.current.loadChallengesByCourse(cId);
+    const courseChallenges = await simuladorUseCase.current.loadChallengesByCourse(cId);
     setChallenges(courseChallenges);
     setCourseId(cId);
     setIsFreeMode(false);
@@ -255,12 +262,13 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     } else if (!isFreeMode && challengeData) {
       // Todas las misiones completadas → completar el reto
       setTimeout(() => {
+        const authUser = getAuthState().user;
         const total = score + points;
         const result: StudentResult = {
-          studentId: "user1",
-          studentName: "Estudiante Demo",
+          studentId: authUser?.id || courseId || "unknown",
+          studentName: authUser?.name || "Estudiante Demo",
           courseId: courseId || "unknown",
-          courseName: "",
+          courseName: challengeData?.idCourse === "1" ? "Robótica Nivel 1" : challengeData?.idCourse === "2" ? "Programación de Microcontroladores" : "",
           challengeId: challengeId || "unknown",
           challengeTitle: challengeData?.title || "Reto sin título",
           environment,
@@ -269,7 +277,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
           energy: Math.round(energy),
           completedAt: new Date().toISOString(),
         };
-        simuladorUseCase.current.saveResult(result);
+        simuladorUseCase.current.saveResult(result).catch(console.warn);
         setLastScore(total);
         setChallengeCompleted(true);
         addLog(`¡Reto completado! Puntaje: ${total} pts`, "success");
@@ -278,13 +286,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const completeChallenge = () => {
+    const authUser = getAuthState().user;
     const totalScore = score;
 
     const result: StudentResult = {
-      studentId: "user1",
-      studentName: "Estudiante Demo",
+      studentId: authUser?.id || courseId || "unknown",
+      studentName: authUser?.name || "Estudiante Demo",
       courseId: courseId || "unknown",
-      courseName: "",
+      courseName: challengeData?.idCourse === "1" ? "Robótica Nivel 1" : challengeData?.idCourse === "2" ? "Programación de Microcontroladores" : "",
       challengeId: challengeId || "unknown",
       challengeTitle: challengeData?.title || "Reto sin título",
       environment,
@@ -294,15 +303,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       completedAt: new Date().toISOString(),
     };
 
-    /* BACKEND: usar apiService.resultados.save cuando esté conectado:
-     * try {
-     *   await apiService.resultados.save({ ... });
-     * } catch (err) {
-     *   console.error("Error saving result:", err);
-     * }
-     */
-
-    simuladorUseCase.current.saveResult(result);
+    simuladorUseCase.current.saveResult(result).catch(console.warn);
     setLastScore(totalScore);
     setChallengeCompleted(true);
     addLog(`¡Reto completado! Puntaje: ${totalScore} pts`, "success");
@@ -310,14 +311,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
   const dismissChallengeCompletion = () => {
     setChallengeCompleted(false);
-  };
-
-  const getCourseRanking = () => {
-    return simuladorUseCase.current.getCourseRanking(courseId || "unknown");
-  };
-
-  const getGlobalRanking = () => {
-    return simuladorUseCase.current.getGlobalRanking();
   };
 
   const addLog = (
@@ -757,8 +750,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         lastScore,
         completeChallenge,
         dismissChallengeCompletion,
-        getCourseRanking,
-        getGlobalRanking,
         currentTheme,
       }}
     >

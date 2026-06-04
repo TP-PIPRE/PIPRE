@@ -1,20 +1,15 @@
-import pandas as pd
-
-from app.domain.models.ria01_desempeño import ClasificadorDesempeno
-from app.domain.models.ria03_recomendador import RecomendadorActividades
-from app.domain.models.ria08_anomalias import DetectorAnomalias
-from app.domain.models.ria11_tiempo import ClasificadorTiempo
-from app.domain.models.ria12_codigo import EvaluadorCodigo
+from app.domain.ports.pipeline_usecase import PipelineUseCase
 
 
-class PipelineIA:
+class PipelineIA(PipelineUseCase):
 
-    def __init__(self):
-        self.ria1 = ClasificadorDesempeno()
-        self.ria3 = RecomendadorActividades()
-        self.ria8 = DetectorAnomalias()
-        self.ria11 = ClasificadorTiempo()
-        self.ria12 = EvaluadorCodigo()
+    def __init__(self, ria1, ria3, ria4, ria8, ria11, ria12):
+        self.ria1 = ria1
+        self.ria3 = ria3
+        self.ria4 = ria4
+        self.ria8 = ria8
+        self.ria11 = ria11
+        self.ria12 = ria12
 
         self._trained = False
 
@@ -22,7 +17,8 @@ class PipelineIA:
         self.ria1.train(df)
 
         self.ria3.train(df)
-        self.ria3.evaluar(df)
+
+        self.ria4.train(df)
 
         self.ria8.train(df)
 
@@ -32,4 +28,4 @@ class PipelineIA:
         self._trained = True
 
     def get_models(self):
-        return self.ria1, self.ria3, self.ria8, self.ria11, self.ria12
+        return self.ria1, self.ria3, self.ria4, self.ria8, self.ria11, self.ria12

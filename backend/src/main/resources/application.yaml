@@ -1,6 +1,8 @@
 spring:
+
   application:
     name: PipreBackend
+
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/pipre_database}
     username: ${POSTGRES_USER:pipre_user}
@@ -8,6 +10,7 @@ spring:
     hikari:
       connection-timeout: 3000
       initialization-fail-timeout: 3000
+
   jpa:
     show-sql: true
     open-in-view: false
@@ -16,21 +19,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
   flyway:
     enabled: true
-  docker:
-    compose:
-      file: docker-compose.yaml,docker-compose.override.yml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, info
-  endpoint:
-    health:
-      show-details: always
+
 springdoc:
   swagger-ui:
     enabled: true
   api-docs:
     enabled: true
+external:
+  fast-api:
+    url: ${FAST_API_URL:http://dev-ml-ia:8000}

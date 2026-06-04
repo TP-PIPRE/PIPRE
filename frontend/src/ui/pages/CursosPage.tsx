@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import type {
   CourseResponseDTO,
-  ChallengeResponseDTO,
 } from "../../infrastructure/api/models/apiModels";
+
+interface ChallengeView {
+  id: string;
+  idActivity: string;
+  title: string;
+  description: string;
+  order: number;
+  difficulty: string;
+  points: number;
+}
 
 const MOCK_COURSES = [
   {
@@ -27,7 +37,7 @@ export const CursosPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCourseChallenges, setSelectedCourseChallenges] = useState<
-    ChallengeResponseDTO[]
+    ChallengeView[]
   >([]);
   const [isChallengesVisible, setIsChallengesVisible] = useState<string | null>(
     null,
@@ -57,8 +67,32 @@ export const CursosPage: React.FC = () => {
 
   const fetchChallenges = async (courseId: string) => {
     try {
-      const challenges = await apiService.challenges.getByCourse(courseId);
-      setSelectedCourseChallenges(challenges);
+      const authUser = getAuthState().user;
+      const userId = authUser?.id || "";
+      const sims = await apiService.simulations.getByUser(userId);
+      const parsed = sims
+        .map((s) => {
+          try {
+            const data = JSON.parse(s.result);
+            if (data.type === "challenge" && data.courseId === courseId && !data.deleted) {
+              return {
+                id: data.idActivity,
+                idActivity: data.idActivity,
+                title: data.title || "Sin título",
+                description: data.description || "",
+                order: data.order || 0,
+                difficulty: data.difficulty || "EASY",
+                points: data.points || 0,
+              } as ChallengeView;
+            }
+            return null;
+          } catch {
+            return null;
+          }
+        })
+        .filter((c): c is ChallengeView => c !== null)
+        .sort((a, b) => a.order - b.order);
+      setSelectedCourseChallenges(parsed);
       setIsChallengesVisible(
         isChallengesVisible === courseId ? null : courseId,
       );
@@ -139,7 +173,7 @@ export const CursosPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {courses.map((course) => (
             <div
-              key={course.id_course}
+              key={course.idCourse}
               className="border border-border overflow-hidden group hover:shadow-lg transition-shadow duration-300"
               style={{
                 backgroundColor: "var(--surface)",
@@ -202,7 +236,7 @@ export const CursosPage: React.FC = () => {
 
                 {/* Botón para ver retos */}
                 <div
-                  onClick={() => fetchChallenges(course.id_course)}
+                  onClick={() => fetchChallenges(course.idCourse)}
                   className="flex items-center justify-between p-3 border border-border/50 rounded-lg transition-all cursor-pointer hover:bg-[var(--surface-brighter)]"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
@@ -222,7 +256,7 @@ export const CursosPage: React.FC = () => {
                         className="text-[10px]"
                         style={{ color: "var(--text-muted)" }}
                       >
-                        {isChallengesVisible === course.id_course
+                        {isChallengesVisible === course.idCourse
                           ? `${selectedCourseChallenges.length} retos disponibles`
                           : "Haz clic para ver los retos"}
                       </p>
@@ -230,7 +264,7 @@ export const CursosPage: React.FC = () => {
                   </div>
                   <span
                     className={`material-symbols-outlined text-lg transition-transform ${
-                      isChallengesVisible === course.id_course
+                      isChallengesVisible === course.idCourse
                         ? "rotate-90"
                         : ""
                     }`}
@@ -241,7 +275,7 @@ export const CursosPage: React.FC = () => {
                 </div>
 
                 {/* Lista de retos (si está visible) */}
-                {isChallengesVisible === course.id_course && (
+                {isChallengesVisible === course.idCourse && (
                   <div className="mt-4 space-y-3">
                     {selectedCourseChallenges.length > 0 ? (
                       selectedCourseChallenges
@@ -289,7 +323,7 @@ export const CursosPage: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/simulador/${course.id_course}`);
+                                navigate(`/simulador/${course.idCourse}`);
                               }}
                               className="text-[10px] font-bold uppercase tracking-widest hover:underline"
                               style={{ color: "var(--primary)" }}

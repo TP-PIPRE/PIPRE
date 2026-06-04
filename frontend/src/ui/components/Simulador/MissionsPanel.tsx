@@ -8,8 +8,6 @@ export const MissionsPanel = () => {
     missions,
     currentMissionIndex,
     blocks,
-    completeMission,
-    isRunning,
     isFreeMode,
     challengeCompleted,
     lastScore,

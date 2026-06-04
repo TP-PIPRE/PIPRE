@@ -1,0 +1,7 @@
+[
+  { "idCourse": "C001", "name": "Robótica Nivel 1: Fundamentos", "description": "Curso introductorio", "level": "Básico" },
+  { "idCourse": "C002", "name": "Programación de Microcontroladores", "description": "Curso de C++", "level": "Intermedio" },
+  { "idCourse": "C003", "name": "Diseño y Mecánica de Robots", "description": "Curso de diseño", "level": "Avanzado" },
+  { "idCourse": "C004", "name": "Sistemas Embebidos", "description": "Curso de sistemas", "level": "Avanzado" },
+  { "idCourse": "C005", "name": "Visión Artificial", "description": "Curso de visión", "level": "Intermedio" }
+]

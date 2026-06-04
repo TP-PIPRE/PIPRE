@@ -5,6 +5,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: pipre-database
+    ports:
+      - "5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
@@ -28,9 +30,8 @@ services:
     container_name: pipre-ml-ia
     volumes:
       - ./data-science/saved_models:/app/saved_models
-      - ./data-science/data:/app/data
     networks:
-      - pipre-infra-net
+      - cloud-network
     logging: *default-logging
 
   backend:
@@ -38,17 +39,18 @@ services:
     image: pipre-backend
     container_name: pipre-backend
     ports:
-      - "8080:8080"
+      - "${PORT_BACK:-8080}:8080"
     environment:
       - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
+      - FAST_API_URL=${FAST_API_URL:-http://dev-ml-ia:8000}
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - pipre-infra-net
       - cloud-network
+      - pipre-infra-net
     logging: *default-logging
 
   frontend:
@@ -59,12 +61,13 @@ services:
     image: pipre-frontend
     container_name: pipre-frontend
     ports:
-      - "3000:3000"
+      - "${PORT_FRONT:-3000}:3000"
     environment:
       - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
     networks:
       - cloud-network
     logging: *default-logging
+
 networks:
   pipre-infra-net:
     internal: true

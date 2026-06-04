@@ -4,7 +4,6 @@ export class ParticleSystem {
   private scene: THREE.Scene;
   private particles: THREE.Points | null = null;
   private particleCount = 100;
-  private positions: Float32Array;
   private velocities: Float32Array;
   private lifetimes: Float32Array;
   private maxLifetime = 1.5;
@@ -12,7 +11,6 @@ export class ParticleSystem {
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
-    this.positions = new Float32Array(this.particleCount * 3);
     this.velocities = new Float32Array(this.particleCount);
     this.lifetimes = new Float32Array(this.particleCount);
   }

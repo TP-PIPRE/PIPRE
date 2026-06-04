@@ -18,10 +18,6 @@ public class CreateActivityService implements CreateActivityUseCase {
     public String execute(CreateActivityCommand cmd) {
         Activity newActivity = ActivityFactory.createNewActivity(
                 cmd.name(),
-                null,
-                null,
-                null,
-                null,
                 cmd.idLesson()
         );
         activityRepositoryPort.save(newActivity);

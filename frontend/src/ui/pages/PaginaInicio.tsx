@@ -29,6 +29,7 @@ const DEMO_RETOS: Course[] = [
       "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
     imagen: "",
     tipo: "curso",
+    challenges: [],
   },
   {
     id: "demo-2",
@@ -37,6 +38,7 @@ const DEMO_RETOS: Course[] = [
       "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
     imagen: "",
     tipo: "simulador",
+    challenges: [],
   },
   {
     id: "demo-3",
@@ -45,6 +47,7 @@ const DEMO_RETOS: Course[] = [
       "Controla una garra mecánica para clasificar objetos por color.",
     imagen: "",
     tipo: "simulador",
+    challenges: [],
   },
 ];
 
@@ -60,11 +63,12 @@ export const PaginaInicio = () => {
       try {
         const data = await apiService.courses.getAll();
         const mapped: Course[] = data.map((c) => ({
-          id: c.id_course,
+          id: c.idCourse,
           nombre: c.name,
           descripcion: "Explora los fundamentos de este módulo industrial.",
           imagen: "",
           tipo: "curso",
+          challenges: [],
         }));
         setCursos(mapped);
       } catch {

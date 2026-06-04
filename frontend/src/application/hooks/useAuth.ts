@@ -14,10 +14,8 @@ export const useAuth = () => {
     try {
       const { user, token } = await authAdapter.login(email, password);
 
-      // Guarda en cookies
       setAuthState(user, token);
 
-      // Redirigir según el rol del usuario
       if (user.role === "docente") {
         navigate("/docente/dashboard");
       } else {
@@ -31,12 +29,30 @@ export const useAuth = () => {
     }
   };
 
+  const register = async (
+    name: string,
+    lastname: string,
+    email: string,
+    password: string,
+    age: number,
+    grade: string,
+  ) => {
+    try {
+      const user = await authAdapter.register(name, lastname, email, password, age, grade);
+      return user;
+    } catch (err) {
+      throw new Error(
+        "Error al registrar: " +
+          (err instanceof Error ? err.message : String(err)),
+      );
+    }
+  };
+
   const logout = () => {
-    clearAuthState(); // Elimina cookies
+    clearAuthState();
     navigate("/login");
   };
 
-  // Obtener el estado actual de autenticación
   const { user, token, isAuthenticated } = getAuthState();
 
   return {
@@ -44,6 +60,7 @@ export const useAuth = () => {
     token,
     isAuthenticated,
     login,
+    register,
     logout,
   };
 };

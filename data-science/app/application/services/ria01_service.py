@@ -1,11 +1,22 @@
 import pandas as pd
-from app.domain.models.ria01_desempeño import ClasificadorDesempeno
+from app.application.metrics import round_metric
+from app.domain.ports.ria01_usecase import RIA01UseCase
 
-class RIA01Service:
 
-    def __init__(self):
-        self.model = ClasificadorDesempeno()
+class RIA01Service(RIA01UseCase):
+    RESULT_LABELS = {
+        "bajo": "low",
+        "medio": "medium",
+        "alto": "high",
+    }
+
+    def __init__(self, model):
+        self.model = model
         self._trained = False
+
+    def set_model(self, model):
+        self.model = model
+        self._trained = True
 
     def train(self, df):
         self.model.train(df)
@@ -13,14 +24,13 @@ class RIA01Service:
 
     def predict(self, data_dict):
         if not self._trained:
-            raise Exception("Modelo no entrenado")
+            raise RuntimeError("Model is not trained")
 
         df = pd.DataFrame([data_dict])
-        resultado = self.model.predict(df)
+        label = self.model.predict(df)
 
         return {
-            "resultado": resultado,
-            "accuracy": getattr(self.model, "accuracy", None),
-            "precision": getattr(self.model, "precision", None),
-            "features_used": self.model.feature_columns
+            "result": self.RESULT_LABELS.get(label, label),
+            "accuracy": round_metric(getattr(self.model, "accuracy", None)),
+            "precision": round_metric(getattr(self.model, "precision", None))
         }

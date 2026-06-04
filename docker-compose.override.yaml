@@ -1,0 +1,21 @@
+name: dev-app
+
+services:
+  postgres:
+    container_name: dev-db
+    ports:
+      - "${PORT_DB:-5432}:5432"
+
+  backend:
+    container_name: dev-back
+
+  ml-ia:
+    container_name: dev-ml-ia
+
+  frontend:
+    container_name: dev-front
+    environment:
+      - REACT_APP_API_URL=https://dev-back.yoshua-cloud.dedyn.io
+    build:
+      args:
+        - REACT_APP_API_URL=https://dev-back.yoshua-cloud.dedyn.io

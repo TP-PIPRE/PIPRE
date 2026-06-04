@@ -6,24 +6,20 @@ public class Activity {
 
     private final String idActivity;
     private final String name;
-    private final String difficulty;
-    private final Integer logicLevel;
-    private final String type;
-    private final List<String> idimulationList;
+    private final String logicLevel;
     private final String idLesson;
+    private final List<String> idSimulationList;
 
-    public Activity(Builder builder) {
-        this.idActivity = builder.idActivity;
-        this.name = builder.name;
-        this.difficulty = builder.difficulty;
-        this.logicLevel = builder.logicLevel;
-        this.type = builder.type;
-        this.idimulationList = builder.idimulationList;
-        this.idLesson = builder.idLesson;
+    Activity(String idActivity, String name, String logicLevel, String idLesson, List<String> idSimulationList) {
+        this.idActivity = idActivity;
+        this.name = name;
+        this.logicLevel = logicLevel;
+        this.idLesson = idLesson;
+        this.idSimulationList = idSimulationList;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static ActivityBuilder builder() {
+        return new ActivityBuilder();
     }
 
     public String getIdActivity() {
@@ -34,75 +30,59 @@ public class Activity {
         return this.name;
     }
 
-    public String getDifficulty() {
-        return this.difficulty;
-    }
-
-    public Integer getLogicLevel() {
+    public String getLogicLevel() {
         return this.logicLevel;
-    }
-
-    public String getType() {
-        return this.type;
-    }
-
-    public List<String> getIdimulationList() {
-        return this.idimulationList;
     }
 
     public String getIdLesson() {
         return this.idLesson;
     }
 
-    public static class Builder {
+    public List<String> getIdSimulationList() {
+        return this.idSimulationList;
+    }
+
+    public static class ActivityBuilder {
         private String idActivity;
         private String name;
-        private String difficulty;
-        private Integer logicLevel;
-        private String type;
-        private List<String> idimulationList;
+        private String logicLevel;
         private String idLesson;
+        private List<String> idSimulationList;
 
-        public Builder() {
+        ActivityBuilder() {
         }
 
-        public Builder idActivity(String idActivity) {
+        public ActivityBuilder idActivity(String idActivity) {
             this.idActivity = idActivity;
             return this;
         }
 
-        public Builder name(String name) {
+        public ActivityBuilder name(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder difficulty(String difficulty) {
-            this.difficulty = difficulty;
-            return this;
-        }
-
-        public Builder logicLevel(Integer logicLevel) {
+        public ActivityBuilder logicLevel(String logicLevel) {
             this.logicLevel = logicLevel;
             return this;
         }
 
-        public Builder type(String type) {
-            this.type = type;
-            return this;
-        }
-
-        public Builder idimulationList(List<String> idimulationList) {
-            this.idimulationList = idimulationList;
-            return this;
-        }
-
-        public Builder idLesson(String idLesson) {
+        public ActivityBuilder idLesson(String idLesson) {
             this.idLesson = idLesson;
             return this;
         }
 
+        public ActivityBuilder idSimulationList(List<String> idSimulationList) {
+            this.idSimulationList = idSimulationList;
+            return this;
+        }
+
         public Activity build() {
-            return new Activity(this);
+            return new Activity(this.idActivity, this.name, this.logicLevel, this.idLesson, this.idSimulationList);
+        }
+
+        public String toString() {
+            return "Activity.ActivityBuilder(idActivity=" + this.idActivity + ", name=" + this.name + ", logicLevel=" + this.logicLevel + ", idLesson=" + this.idLesson + ", idSimulationList=" + this.idSimulationList + ")";
         }
     }
 }
