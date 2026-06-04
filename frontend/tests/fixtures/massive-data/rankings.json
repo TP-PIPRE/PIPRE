@@ -1,0 +1,7 @@
+[
+  { "idStudent": "STU001", "totalPoints": 12500, "position": 1 },
+  { "idStudent": "STU002", "totalPoints": 11800, "position": 2 },
+  { "idStudent": "STU003", "totalPoints": 11250, "position": 3 },
+  { "idStudent": "STU004", "totalPoints": 10900, "position": 4 },
+  { "idStudent": "STU005", "totalPoints": 10450, "position": 5 }
+]
