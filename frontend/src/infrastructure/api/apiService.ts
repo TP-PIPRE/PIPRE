@@ -20,19 +20,13 @@ import type {
   ModuleProgressRequest,
   HelpRequest,
   DropoutRiskResponse,
-  ChallengeRequestDTO,
-  ChallengeResponseDTO,
-
 } from "./models/apiModels";
 
 export const apiService = {
   // PMV01 – Plataforma educativa base
   users: {
     create: async (data: UserRequestDTO) => {
-      const response = await axiosInstance.post<{
-        id_user: string;
-        message: string;
-      }>("users", data);
+      const response = await axiosInstance.post<string>("users", data);
       return response.data;
     },
     getById: async (id: string) => {
@@ -63,7 +57,7 @@ export const apiService = {
     create: async (data: CourseRequestDTO) => {
       await axiosInstance.post("courses", data);
     },
-    update: async (data: CourseRequestDTO & { id_course: string }) => {
+    update: async (data: CourseRequestDTO & { idCourse: string }) => {
       await axiosInstance.put("courses", data);
     },
     delete: async (id: string) => {
@@ -100,7 +94,8 @@ export const apiService = {
       return response.data;
     },
     create: async (data: ActivityRequestDTO) => {
-      await axiosInstance.post("activities", data);
+      const response = await axiosInstance.post<{ idActivity: string }>("activities", data);
+      return response.data;
     },
   },
 
@@ -165,23 +160,6 @@ export const apiService = {
         `dropout-risk/${idStudent}`,
       );
       return response.data;
-    },
-  },
-  challenges: {
-    getByCourse: async (courseId: string) => {
-      const response = await axiosInstance.get<ChallengeResponseDTO[]>(
-        `challenges/course/${courseId}`,
-      );
-      return response.data;
-    },
-    create: async (data: ChallengeRequestDTO) => {
-      await axiosInstance.post("challenges", data);
-    },
-    update: async (id: string, data: Partial<ChallengeRequestDTO>) => {
-      await axiosInstance.put(`challenges/${id}`, data);
-    },
-    delete: async (id: string) => {
-      await axiosInstance.delete(`challenges/${id}`);
     },
   },
 };

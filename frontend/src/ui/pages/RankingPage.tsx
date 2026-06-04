@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
+import type { StudentResult } from "../../shared/types/Simulador";
 
 const MOCK_RANKING_SEED: { id: string; name: string; group: string; xp: number }[] = [
   { id: "student-2", name: "Ana Sofía Lopez", group: "Robótica A", xp: 12500 },
@@ -29,17 +30,92 @@ export const RankingPage: React.FC = () => {
 
   const mapFromDto = (data: RankingDTO[]): RankingEntry[] =>
     data.map((dto) => {
-      const seed = MOCK_RANKING_SEED.find(s => s.id === dto.id_student);
+      const seed = MOCK_RANKING_SEED.find(s => s.id === dto.idStudent);
       return {
         position: dto.position,
-        studentId: dto.id_student,
-        studentName: seed?.name ?? `Estudiante ${dto.id_student}`,
-        totalScore: dto.total_points,
+        studentId: dto.idStudent,
+        studentName: seed?.name ?? `Estudiante ${dto.idStudent}`,
+        totalScore: dto.totalPoints,
         challengesCompleted: 0,
         lastUpdated: new Date().toISOString(),
         group: seed?.group,
       };
     });
+
+  const getLocalResults = (courseId?: string): RankingEntry[] => {
+    try {
+      const stored = localStorage.getItem("pipre_results");
+      if (!stored) return [];
+      const results: StudentResult[] = JSON.parse(stored);
+      const filtered = courseId ? results.filter((r) => r.courseId === courseId) : results;
+      if (filtered.length === 0) return [];
+
+      const map = new Map<string, { totalScore: number; challenges: Set<string>; lastUpdated: string }>();
+      for (const r of filtered) {
+        const existing = map.get(r.studentId);
+        if (existing) {
+          existing.totalScore = Math.max(existing.totalScore, r.score);
+          existing.challenges.add(r.challengeId);
+          if (r.completedAt > existing.lastUpdated) existing.lastUpdated = r.completedAt;
+        } else {
+          map.set(r.studentId, {
+            totalScore: r.score,
+            challenges: new Set([r.challengeId]),
+            lastUpdated: r.completedAt,
+          });
+        }
+      }
+
+      return Array.from(map.entries())
+        .map(([studentId, data]) => {
+          const seed = MOCK_RANKING_SEED.find((s) => s.id === studentId);
+          return {
+            position: 0,
+            studentId,
+            studentName: seed?.name || `Estudiante ${studentId}`,
+            totalScore: data.totalScore,
+            challengesCompleted: data.challenges.size,
+            lastUpdated: data.lastUpdated,
+            group: seed?.group,
+          };
+        })
+        .sort((a, b) => b.totalScore - a.totalScore)
+        .map((entry, i) => ({ ...entry, position: i + 1 }));
+    } catch {
+      return [];
+    }
+  };
+
+  const getFallbackGlobal = (): RankingEntry[] => {
+    const local = getLocalResults();
+    if (local.length > 0) return local;
+    return MOCK_RANKING_SEED.map((s, i) => ({
+      position: i + 1,
+      studentId: s.id,
+      studentName: s.name,
+      totalScore: s.xp,
+      challengesCompleted: Math.floor(Math.random() * 5) + 1,
+      lastUpdated: new Date().toISOString(),
+      group: s.group,
+    }));
+  };
+
+  const getFallbackCourse = (courseId: string): RankingEntry[] => {
+    const local = getLocalResults(courseId);
+    if (local.length > 0) return local;
+    const courseFiltered = courseId === "1"
+      ? MOCK_RANKING_SEED.filter((_, i) => i % 2 === 0)
+      : MOCK_RANKING_SEED.filter((_, i) => i % 2 === 1);
+    return courseFiltered.map((s, i) => ({
+      position: i + 1,
+      studentId: s.id,
+      studentName: s.name,
+      totalScore: s.xp - Math.floor(Math.random() * 2000),
+      challengesCompleted: Math.floor(Math.random() * 3) + 1,
+      lastUpdated: new Date().toISOString(),
+      group: s.group,
+    }));
+  };
 
   const fetchRanking = async () => {
     setIsLoading(true);
@@ -62,33 +138,6 @@ export const RankingPage: React.FC = () => {
     }
   };
 
-  const getFallbackGlobal = (): RankingEntry[] => {
-    return MOCK_RANKING_SEED.map((s, i) => ({
-      position: i + 1,
-      studentId: s.id,
-      studentName: s.name,
-      totalScore: s.xp,
-      challengesCompleted: Math.floor(Math.random() * 5) + 1,
-      lastUpdated: new Date().toISOString(),
-      group: s.group,
-    }));
-  };
-
-  const getFallbackCourse = (courseId: string): RankingEntry[] => {
-    const courseFiltered = courseId === "1"
-      ? MOCK_RANKING_SEED.filter((_, i) => i % 2 === 0)
-      : MOCK_RANKING_SEED.filter((_, i) => i % 2 === 1);
-    return courseFiltered.map((s, i) => ({
-      position: i + 1,
-      studentId: s.id,
-      studentName: s.name,
-      totalScore: s.xp - Math.floor(Math.random() * 2000),
-      challengesCompleted: Math.floor(Math.random() * 3) + 1,
-      lastUpdated: new Date().toISOString(),
-      group: s.group,
-    }));
-  };
-
   useEffect(() => {
     fetchRanking();
   }, [activeTab, selectedCourse]);
@@ -98,7 +147,7 @@ export const RankingPage: React.FC = () => {
       try {
         const data = await apiService.courses.getAll();
         if (data && data.length > 0) {
-          setCourses(data.map((c) => ({ id: c.id_course, name: c.name })));
+          setCourses(data.map((c) => ({ id: c.idCourse, name: c.name })));
         } else {
           setCourses([
             { id: "1", name: "Robótica Nivel 1" },
@@ -116,7 +165,6 @@ export const RankingPage: React.FC = () => {
   }, []);
 
   const top3 = rankingData.slice(0, 3);
-  const rest = rankingData.slice(3);
 
   return (
     <main
