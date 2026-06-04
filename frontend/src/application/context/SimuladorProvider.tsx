@@ -5,9 +5,9 @@ import type { ReactNode } from "react";
 import type { Block, BlockCategory, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngine";
 import { useThemeStore } from "../../infrastructure/store/themeStore";
-import { getAuthState } from "../../infrastructure/store/authStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
+import { getAuthState } from "../../infrastructure/store/authStore";
 
 interface LogEntry {
   time: string;
@@ -247,7 +247,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         const user = getAuthState().user;
         const result: StudentResult = {
           studentId: user?.id || "user1",
-          studentName: user?.name || "Estudiante",
+          studentName: user?.name || "Estudiante Demo",
           courseId: courseId || "unknown",
           courseName: "",
           challengeId: challengeId || "unknown",
@@ -272,7 +272,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
     const result: StudentResult = {
       studentId: user?.id || "user1",
-      studentName: user?.name || "Estudiante",
+      studentName: user?.name || "Estudiante Demo",
       courseId: courseId || "unknown",
       courseName: "",
       challengeId: challengeId || "unknown",
