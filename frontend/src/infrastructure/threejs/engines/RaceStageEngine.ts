@@ -17,7 +17,6 @@ export class RaceStageEngine implements ISimulatorEngine {
   private clock: THREE.Clock;
   private controls!: MapControls;
   private isRunning = false;
-  private lapCount = 0;
   private checkpoints: { mesh: THREE.Mesh; passed: boolean }[] = [];
 
   constructor() {

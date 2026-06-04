@@ -1,10 +1,12 @@
 import { apiService } from "../../infrastructure/api/apiService";
+import { getAuthState } from "../../infrastructure/store/authStore";
+
 import type { Block, MissionTemplate, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 
 export interface ChallengeData {
   id: string;
-  id_course: string;
+  idCourse: string;
   title: string;
   description: string;
   order: number;
@@ -17,99 +19,51 @@ export interface ChallengeData {
   reward?: { type: string; value: string | number };
 }
 
-const MOCK_CHALLENGES: Record<string, ChallengeData[]> = {
-  "1": [
-    {
-      id: "ch-battle-1",
-      id_course: "1",
-      title: "Introducción al Combate",
-      description: "Aprende los movimientos básicos de tu robot de batalla.",
-      order: 1,
-      difficulty: "EASY",
-      points: 100,
-      environment: "battle",
-      missions: [
-        { id: "cb1", title: "Movimiento Básico", objective: "Avanza hacia el centro de la arena.", maxBlocks: 1 },
-      ],
-      maxBlocks: 1,
-    },
-    {
-      id: "ch-space-1",
-      id_course: "1",
-      title: "Aterrizaje Lunar",
-      description: "Pilota tu módulo hasta la superficie lunar.",
-      order: 2,
-      difficulty: "EASY",
-      points: 100,
-      environment: "space",
-      missions: [
-        { id: "cs1", title: "Descenso", objective: "Despega y aterriza en la zona marcada.", maxBlocks: 2 },
-      ],
-      maxBlocks: 2,
-    },
-  ],
-  "2": [
-    {
-      id: "ch-maze-1",
-      id_course: "2",
-      title: "El Faro del Laberinto",
-      description: "Enciende los faros mágicos para iluminar el camino.",
-      order: 1,
-      difficulty: "EASY",
-      points: 150,
-      environment: "maze",
-      missions: [
-        { id: "cm1", title: "Iluminación", objective: "Usa [ILUMINAR] para revelar el camino.", maxBlocks: 2 },
-      ],
-      maxBlocks: 2,
-    },
-    {
-      id: "ch-race-1",
-      id_course: "2",
-      title: "Primera Vuelta",
-      description: "Completa una vuelta a la pista de obstáculos.",
-      order: 2,
-      difficulty: "MEDIUM",
-      points: 200,
-      environment: "obstacle",
-      missions: [
-        { id: "cr1", title: "Vuelta Rápida", objective: "Llega a la meta esquivando los obstáculos.", maxBlocks: 4 },
-      ],
-      maxBlocks: 4,
-    },
-  ],
-};
-
 export class SimuladorUseCase {
-  /* BACKEND:
-   * Cargar retos desde el API:
-   * async loadChallengesByCourse(courseId: string): Promise<ChallengeData[]> {
-   *   try {
-   *     const response = await apiService.challenges.getByCourse(courseId);
-   *     return response.map((c: ChallengeResponseDTO) => ({
-   *       id: c.id,
-   *       id_course: c.id_course,
-   *       title: c.title,
-   *       description: c.description,
-   *       order: c.order,
-   *       difficulty: c.difficulty,
-   *       points: c.points,
-   *       environment: c.simulatorConfig?.environment || "battle",
-   *       missions: c.simulatorConfig?.missions || [],
-   *       maxBlocks: c.simulatorConfig?.maxBlocks || 10,
-   *       expectedOutput: c.expectedOutput,
-   *       reward: c.reward,
-   *     }));
-   *   } catch (error) {
-   *     console.error("Error loading challenges, using fallback:", error);
-   *     return this.getFallbackChallenges(courseId);
-   *   }
-   * }
-   */
+  async loadChallengesByCourse(courseId: string): Promise<ChallengeData[]> {
+    try {
+      const authUser = getAuthState().user;
+      const userId = authUser?.id || "config-store";
+      const sims = await apiService.simulations.getByUser(userId);
+      const configs = sims
+        .map((s) => {
+          try {
+            return { ...JSON.parse(s.result), id_simulation: s.id_simulation };
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean) as any[];
 
-  loadChallengesByCourse(courseId: string): ChallengeData[] {
-    /* BACKEND: Reemplazar con llamada al API real usando apiService.challenges.getByCourse(courseId) */
-    return MOCK_CHALLENGES[courseId] || [];
+      const grouped = new Map<string, any>();
+      for (const c of configs) {
+        const key = c.id_activity || c.id_simulation;
+        if (!grouped.has(key) || (c.id_simulation > grouped.get(key).id_simulation)) {
+          grouped.set(key, c);
+        }
+      }
+
+      return Array.from(grouped.values())
+        .filter((c: any) => c.type === "challenge" && c.courseId === courseId && !c.deleted)
+        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+        .map((c: any) => ({
+          id: c.id_activity || c.id_simulation,
+          idCourse: c.courseId,
+          title: c.title || "Sin título",
+          description: c.description || "",
+          order: c.order || 1,
+          difficulty: c.difficulty || "EASY",
+          points: c.points || 100,
+          environment: c.environment || "battle",
+          missions: c.missions || [],
+          maxBlocks: c.maxBlocks || 10,
+          expectedOutput: c.expectedOutput,
+          reward: c.reward,
+        }));
+    } catch (error) {
+      console.error("Error loading challenges from API:", error);
+      return [];
+    }
   }
 
   getEnvironmentConfig(environment: EnvironmentType) {
@@ -191,44 +145,34 @@ export class SimuladorUseCase {
     return points;
   }
 
-  // Almacenamiento mock en memoria (reemplazar con BD)
-  // Shared between use case and ranking page
-  mockResults: StudentResult[] = [];
-
-  private mockStudentSeed: { id: string; name: string; courseId: string; courseName: string }[] = [
-    { id: "student-2", name: "Ana Sofía Lopez", courseId: "1", courseName: "Robótica Nivel 1" },
-    { id: "student-3", name: "Carlos Ruiz", courseId: "2", courseName: "Programación de Microcontroladores" },
-    { id: "student-4", name: "Elena García", courseId: "1", courseName: "Robótica Nivel 1" },
-    { id: "student-5", name: "Marcos Soto", courseId: "2", courseName: "Programación de Microcontroladores" },
-    { id: "student-6", name: "Lucía Méndez", courseId: "1", courseName: "Robótica Nivel 1" },
-  ];
-
-  async saveResult(result: StudentResult): Promise<StudentResult> {
+  async saveResult(result: StudentResult): Promise<void> {
     try {
       await apiService.results.postResult({
-        id_student: result.studentId,
-        id_activity: result.challengeId,
+        idStudent: result.studentId,
+        idActivity: result.challengeId,
         score: result.score,
         attempts: 1,
       });
     } catch (error) {
-      console.warn("Backend no accesible, guardando resultado localmente:", error);
+      console.warn("Backend no disponible, guardando resultado localmente:", error);
     }
 
-    const existingIndex = this.mockResults.findIndex(
+    // Persistir en localStorage para compartir entre páginas
+    const stored = localStorage.getItem("pipre_results");
+    const results: StudentResult[] = stored ? JSON.parse(stored) : [];
+
+    const existingIndex = results.findIndex(
       (r) => r.studentId === result.studentId && r.courseId === result.courseId && r.challengeId === result.challengeId,
     );
 
     if (existingIndex >= 0) {
-      const existing = this.mockResults[existingIndex];
-      if (result.score > existing.score) {
-        this.mockResults[existingIndex] = { ...result, completedAt: new Date().toISOString() };
+      if (result.score > results[existingIndex].score) {
+        results[existingIndex] = { ...result, completedAt: new Date().toISOString() };
       }
-      return this.mockResults[existingIndex];
+    } else {
+      results.push({ ...result, completedAt: result.completedAt || new Date().toISOString() });
     }
 
-    const saved: StudentResult = { ...result, completedAt: result.completedAt || new Date().toISOString() };
-    this.mockResults.push(saved);
-    return saved;
+    localStorage.setItem("pipre_results", JSON.stringify(results));
   }
 }

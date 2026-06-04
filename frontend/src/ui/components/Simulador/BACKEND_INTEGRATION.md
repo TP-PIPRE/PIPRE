@@ -1,110 +1,133 @@
 # Integración con Backend — Simuladores 3D PIPRE
 
-## Estado Actual
+## Estado Actual (Junio 2026)
 
-Los simuladores funcionan **100% con datos mock en frontend**. No hay dependencia de backend para operar. Esta guía documenta cada punto de integración para conectar con el backend real.
+Los simuladores, el ranking, la gestión de retos y la autenticación están **conectados al backend real**. Solo quedan como mock los endpoints que el backend aún no expone (ranking histórico global).
 
 **Backend real**: `https://pipre-backend.yoshua-cloud.dedyn.io/api/v1`
 
 ## Convenciones Generales
 
-- **Autenticación**: Todas las requests deben incluir header `Authorization: Bearer <jwt>` (excepto login/register)
+- **Autenticación**: JWT Bearer via `axiosInstance.ts` interceptor (excepto login/register)
 - **Roles**: `DOCENTE` puede CRUD cursos; `ESTUDIANTE` puede leer cursos y enviar resultados
-- **IDs**: tipo `VARCHAR(255)` para compatibilidad con UUIDs o IDs alfanuméricos
+- **IDs**: `VARCHAR(255)` — UUIDs devueltos por backend
+- **CamelCase**: Backend devuelve `idCourse`, `idModule`, `idLesson`, `idActivity`, `firstName`, `lastName`
+- **Simulaciones**: El request body usa snake_case (`id_student`, `id_activity`, `result`), igual que la respuesta (`id_simulation`, `result`)
 
 ---
 
-## 1. Endpoints del API Real
+## 1. Endpoints del API Real — Estado
 
-### Cursos
-| Método | Endpoint | Propósito |
-|--------|----------|-----------|
-| `GET` | `/api/v1/courses` | Todos los cursos |
-| `GET` | `/api/v1/courses/{id}` | Curso por ID |
-| `POST` | `/api/v1/courses` | Crear curso |
-| `PUT` | `/api/v1/courses` | Actualizar curso |
-| `DELETE` | `/api/v1/courses/{id}` | Eliminar curso |
+### Autenticación ✅
+| Método | Endpoint | Estado |
+|--------|----------|--------|
+| `POST` | `/auth/login` | ✅ 200, devuelve JWT string |
+| `POST` | `/users` | ✅ 201, devuelve UUID string |
+| `GET` | `/auth/me` | ✅ Funciona |
 
-### Resultados de Actividades
-| Método | Endpoint | Propósito |
-|--------|----------|-----------|
-| `POST` | `/api/v1/activity-results` | Guardar resultado (usado por simulador) |
-| `GET` | `/api/v1/activity-results/user/{idStudent}` | Resultados de un estudiante |
+### Cursos ✅
+| Método | Endpoint | Estado |
+|--------|----------|--------|
+| `GET` | `/courses` | ✅ 200, `[{idCourse, name, description?, level?}]` |
+| `POST` | `/courses` | ✅ 201 |
+| `PUT` | `/courses` | ✅ 200 |
+| `DELETE` | `/courses/{id}` | ✅ 200 |
 
-### Simulaciones
-| Método | Endpoint | Propósito |
-|--------|----------|-----------|
-| `POST` | `/api/v1/simulations` | Guardar simulación |
-| `GET` | `/api/v1/simulations/user/{idStudent}` | Simulaciones de un estudiante |
+### Módulos, Lecciones, Actividades ✅
+| Método | Endpoint | Estado |
+|--------|----------|--------|
+| `GET` | `/modules/course/{idCourse}` | ✅ `[{idModule, title}]` |
+| `GET` | `/lessons/module/{idModule}` | ✅ `[{idLesson, title}]` |
+| `GET` | `/activities/lesson/{idLesson}` | ✅ `[{idActivity, name}]` |
+| `POST` | `/activities` | ❌ **BUG**: Falla 400 — `CreateActivityCommand` DTO no incluye `logicLevel`, pero columna DB `logic_level` es NOT NULL |
 
-### Grupos / Ranking
-| Método | Endpoint | Propósito |
-|--------|----------|-----------|
-| `GET` | `/api/v1/group-students/{idGroup}` | Estudiantes de un grupo (usado para ranking) |
-| `POST` | `/api/v1/group-students` | Agregar estudiante a grupo |
+### Simulaciones (usado como store de retos) ✅
+| Método | Endpoint | Estado |
+|--------|----------|--------|
+| `POST` | `/simulations` | ✅ 201 — body: `{id_student, id_activity, result}` |
+| `GET` | `/simulations/user/{userId}` | ✅ 200 — `[{id_simulation, result}]` (NO incluye `id_activity`) |
 
-### Autenticación
-| Método | Endpoint | Propósito |
-|--------|----------|-----------|
-| `POST` | `/api/v1/auth/login` | Iniciar sesión |
-| `POST` | `/api/v1/auth/register` | Registrar usuario |
-| `GET` | `/api/v1/auth/me` | Usuario actual desde token |
+### Resultados de Actividades ✅
+| Método | Endpoint | Estado |
+|--------|----------|--------|
+| `POST` | `/activity-results` | ✅ 201 (con JWT) |
+| `GET` | `/activity-results/user/{idStudent}` | ✅ Existe (no usado actualmente) |
+
+### Grupos / Ranking ✅
+| Método | Endpoint | Estado |
+|--------|----------|--------|
+| `GET` | `/group-students/{idGroup}` | ✅ 200 — `[{idStudent, totalPoints, position}]` |
+| `POST` | `/group-students` | ✅ Existe |
 
 ---
 
-## 2. Endpoints Faltantes en el Backend (frontend solo mock)
+## 2. Endpoints Faltantes en el Backend (frontend usa workarounds)
 
-Estos endpoints **NO existen** en el backend real. El frontend usa datos mock en memoria:
-
-| Endpoint Faltante | Estado Actual | Frontend |
-|-------------------|---------------|----------|
-| `GET/POST/PUT/DELETE /api/v1/challenges/*` | No existe | `DocenteRetosPage.tsx` usa mock en localStorage |
-| `POST /api/v1/resultados` | No existe | `SimuladorUseCase.ts` usa mock en memoria (`mockResults`) |
-| `GET /api/v1/resultados/estudiante/{id}` | No existe | No usado (removido de apiService) |
-| `GET /api/v1/resultados/curso/{id}` | No existe | No usado (removido de apiService) |
-| `GET /api/v1/ranking/curso/{id}` | No existe | No usado (removido de apiService) |
-| `GET /api/v1/ranking/global` | No existe | No usado (removido de apiService) |
-| `POST/GET /api/v1/ensamblaje*` | No existe | No implementado |
+| Endpoint Faltante | Workaround en Frontend |
+|-------------------|------------------------|
+| `GET/POST/PUT/DELETE /challenges/*` | Todo el CRUD de retos se hace via `POST /simulations` + `GET /simulations/user/{userId}`. El `result` JSON contiene `{type: "challenge", courseId, title, ...}`. Soft-delete via `deleted: true`. |
+| `GET /ranking/curso/{id}` / `GET /ranking/global` | `RankingPage.tsx` usa `GET /group-students/{idGroup}` + localStorage fallback (`pipre_results`) |
+| `POST/GET /ensamblaje*` | No implementado — port assignments guardados en localStorage (`pipre_assignments`) |
 
 ---
 
 ## 3. Puntos de Integración en el Código
 
+### `infrastructure/api/apiService.ts`
+- **`simulations.postResult()`** → `POST /simulations` — guarda/actualiza retos y resultados de simulación
+- **`simulations.getByUser(userId)`** → `GET /simulations/user/{userId}` — carga retos
+- **`activities.getByLesson(lessonId)`** → `GET /activities/lesson/{idLesson}` — workaround para obtener `idActivity` (reemplaza a `activities.create()` que está roto)
+- **`courses.getAll/create/update/delete`** → endpoints correspondientes
+- **`modules.getByCourse(courseId)`** → `GET /modules/course/{idCourse}`
+- **`lessons.getByModule(moduleId)`** → `GET /lessons/module/{idModule}`
+- **`results.postResult()`** → `POST /activity-results`
+- **`ranking.getGroupRanking(groupId)`** → `GET /group-students/{idGroup}`
+
 ### `application/usecases/SimuladorUseCase.ts`
-- **`saveResult()`** (línea 210): Actualmente guarda en `mockResults[]` en memoria (array local).
-  **Conexión real**: Reemplazar con `apiService.results.postResult({ id_student, id_activity, score, attempts })`
-  → `POST /api/v1/activity-results`
-- **`loadChallengesByCourse()`** (línea 64-81): Retorna `MOCK_CHALLENGES` estático.
-  Endpoint real NO existe; queda como mock hasta que el backend implemente `GET /api/v1/challenges/course/{id}`.
-- **`getCourseRanking()`** y **`getGlobalRanking()`**: Removidos de `apiService.ts`. Ranking ahora usa `apiService.ranking.getGroupRanking()`.
-
-### `application/context/SimuladorProvider.tsx`
-- **`completeChallenge()`**: Llama a `simuladorUseCase.saveResult()`. Cuando se implemente backend, el saveResult enviará a `POST /api/v1/activity-results`.
-
-### `ui/pages/RankingPage.tsx`
-- Llama a `apiService.ranking.getGroupRanking("group-1")` → `GET /api/v1/group-students/{idGroup}`
-- **Mock fallback**: `MOCK_RANKING_SEED` (5 estudiantes) en caso de error de red.
+- **`loadChallengesByCourse()`**: Usa `getAuthState().user.id` (UUID real desde registro) para llamar a `GET /simulations/user/{userId}`. Deduplica por `id_activity` (parseado de `result` JSON), conserva último `id_simulation`.
+- **`saveResult()`**: Guarda en localStorage (`pipre_results`) como fallback. Cuando se envíe al backend, usa `POST /activity-results`.
 
 ### `ui/pages/DocenteRetosPage.tsx`
-- **Puramente mock**: CRUD de retos en localStorage.
-- Backend NO tiene endpoints de challenges; esta página quedará mock hasta que se implementen.
+- **Crear reto**: `handleChallengeSubmit()` — usa `GET /activities/lesson/{idLesson}` para obtener `idActivity` (workaround), luego guarda via `POST /simulations` con `result: JSON.stringify({type:"challenge", courseId, title, ...})`
+- **Listar retos**: `fetchChallengesByCourse()` — `GET /simulations/user/{userId}`, parsea `result` JSON, filtra por `type==="challenge" && courseId===courseId && !deleted`
+- **Eliminar reto**: `handleDeleteChallenge()` — soft-delete via `POST /simulations` con `result: JSON.stringify({deleted:true, type:"challenge", courseId})`
+- **Reordenar**: `moveChallengeOrder()` — actualiza `order` en el `result` JSON y persiste via `POST /simulations`
 
-### `ui/pages/Simulador.tsx`
-- **Línea 63**: `loadChallengeFromCourse(courseId)` — mock, parámetro viene de la ruta `/simulador/{courseId}`.
+### `ui/pages/CursosPage.tsx`
+- **fetchChallenges**: Ahora usa `GET /simulations/user/{userId}` con parsing de JSON (mismo approach que DocenteRetosPage)
+
+### `ui/pages/RankingPage.tsx`
+- **fetchRanking**: `GET /group-students/{idGroup}` → mapea `RankingDTO` a `RankingEntry`. Fallback: `localStorage pipre_results` + `MOCK_RANKING_SEED`.
+
+### `ui/pages/LoginPage.tsx`
+- Formularios en camelCase (`firstName`, `lastName`). Registro captura UUID y lo guarda en `localStorage pipre_registered_users`.
+
+### `infrastructure/adapters/http/AuthAdapter.ts`
+- `register()`: Envía camelCase, recibe UUID, lo guarda en `pipre_registered_users` en localStorage
+- `login()`: Busca UUID en localStorage por email del JWT (los usuarios creados antes de este fix no tienen UUID, no pueden usar simulaciones)
 
 ---
 
 ## 4. Flujo Completo (con Backend)
 
 ```
-1. Docente crea curso → POST /api/v1/courses
-2. Docente crea retos → (MOCK: localStorage, sin backend)
-3. Estudiante ingresa a /cursos → GET /api/v1/courses
-4. Estudiante ve retos → (MOCK: SimuladorUseCase.loadChallengesByCourse)
-5. Estudiante programa y ejecuta → feedback visual/sonoro local
-6. Estudiante completa TODAS las misiones → se calcula puntaje
-7. Se envía resultado → POST /api/v1/activity-results
-8. Ranking carga datos → GET /api/v1/group-students/{idGroup}
+1. Docente crea/edita reto en DocenteRetosPage
+   → GET /activities/lesson/{idLesson} (para obtener idActivity)
+   → POST /simulations (guarda reto como JSON en result)
+
+2. Estudiante ingresa a /cursos
+   → GET /courses
+   → GET /simulations/user/{userId} (carga retos, filtra por courseId, type="challenge")
+
+3. Estudiante programa y ejecuta en simulador
+   → feedback visual/sonoro local (100% frontend)
+
+4. Estudiante completa reto
+   → POST /activity-results (guarda puntaje)
+   → localStorage pipre_results (fallback)
+
+5. Ranking
+   → GET /group-students/{idGroup} → renderiza top 3 + tabla
 ```
 
 ---
@@ -123,41 +146,40 @@ CREATE TABLE activity_result (
 );
 ```
 
-**Lógica de upsert (conservar mayor puntaje):**
-```sql
-INSERT INTO activity_result (id_student, id_activity, score, attempts)
-VALUES (?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE
-  score = GREATEST(score, VALUES(score)),
-  attempts = attempts + 1;
-```
+---
+
+## 6. Bugs Conocidos y Workarounds
+
+### `POST /activities` — Falla 400 🐛
+- **Causa**: `CreateActivityCommand` DTO no incluye `logicLevel`, pero columna DB `logic_level` tiene `NOT NULL`
+- **Workaround**: Usar `GET /activities/lesson/{idLesson}` para obtener un `idActivity` existente y reutilizarlo como placeholder. Todos los retos se diferencian por `type: "challenge"` en el `result` JSON, no por `id_activity`.
+- **Fix permanente**: El backend debe agregar `logicLevel` al DTO o hacer la columna nullable.
+
+### `GET /simulations/user/{userId}` — No devuelve `id_activity`
+- **Causa**: La respuesta solo incluye `id_simulation` y `result`
+- **Workaround**: Parsear `result.idActivity` desde el JSON y deduplicar por ese campo, manteniendo el último `id_simulation` por grupo.
+- **Impacto**: El reordenamiento de retos requiere parsear todos los resultados para encontrar el match.
+
+### Usuarios sin UUID en localStorage
+- **Causa**: Usuarios registrados antes de implementar `pipre_registered_users` no tienen UUID asociado
+- **Impacto**: No pueden usar simulaciones
+- **Fix**: Solo aplica a usuarios legacy. Nuevos registros guardan UUID automáticamente.
 
 ---
 
-## 6. Cómo Activar el Backend
-
-### Controladores Java existentes en el backend real
+## 7. Controladores Java (Backend)
 
 | Controlador | Endpoints | Estado |
 |-------------|-----------|--------|
-| `AuthController` | `POST /auth/login`, `POST /auth/register`, `GET /auth/me` | ✅ Existe |
-| `CourseController` | `GET/POST/PUT/DELETE /courses` | ✅ Existe |
-| `ActivityResultController` | `POST /activity-results`, `GET /activity-results/user/{id}` | ✅ Existe |
-| `SimulationController` | `POST /simulations`, `GET /simulations/user/{id}` | ✅ Existe |
-| `GroupStudentController` | `GET /group-students/{id}`, `POST /group-students` | ✅ Existe |
+| `AuthController` | `POST /auth/login`, `POST /auth/register`, `GET /auth/me` | ✅ |
+| `CourseController` | `GET/POST/PUT/DELETE /courses` | ✅ |
+| `ActivityResultController` | `POST /activity-results`, `GET /activity-results/user/{id}` | ✅ |
+| `SimulationController` | `POST /simulations`, `GET /simulations/user/{id}` | ✅ |
+| `GroupStudentController` | `GET /group-students/{id}`, `POST /group-students` | ✅ |
 
-### Controladores a implementar en el backend
+### Controladores a implementar (futuro)
 
 | Controlador | Endpoints | Prioridad |
 |-------------|-----------|-----------|
-| `ChallengeController` | `GET/POST/PUT/DELETE /challenges`, `GET /challenges/course/{id}` | Alta (desbloquea editor de retos) |
-| `EnsamblajeController` | `POST/GET /ensamblaje` | Media (persistencia de hardware) |
-
-### Pasos de activación
-
-1. **Autenticación JWT** ya funciona.
-2. **Courses** ya funciona.
-3. **Activity-results** ya funciona — conectar `SimuladorUseCase.saveResult()`.
-4. **Group-students** ya funciona — RankingPage ya conectado.
-5. **Challenges** no existe — queda mock hasta implementar `ChallengeController`.
-6. **Ensamblaje** no existe — queda pendiente para versión futura.
+| `ChallengeController` | `GET/POST/PUT/DELETE /challenges`, `GET /challenges/course/{id}` | Alta (eliminaría workaround de simulations) |
+| `EnsamblajeController` | `POST/GET /ensamblaje` | Media (persistencia real de hardware) |

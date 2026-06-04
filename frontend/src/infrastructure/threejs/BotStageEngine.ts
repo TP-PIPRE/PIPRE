@@ -492,6 +492,13 @@ export class BotStageEngine implements ISimulatorEngine {
     // Logic to interrupt animations could be added here
   }
 
+  public triggerParticles(
+    _x: number,
+    _z: number,
+    _type: "move" | "success" | "collision" | "scan" | "attack" | "magic",
+  ): void {
+  }
+
   public reset(): void {
     this.botGroup.position.set(0, 0, 0);
     this.botGroup.rotation.set(0, 0, 0);

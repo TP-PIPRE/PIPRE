@@ -237,7 +237,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     });
   }
 
-  async attack(power: number, duration: number): Promise<void> {
+  async attack(_power: number, duration: number): Promise<void> {
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "attack");
     // Flash cannon
     if (this.botParts.cannon.visible) {
@@ -249,7 +249,6 @@ export class BattleStageEngine implements ISimulatorEngine {
       }
     }
     // Check hit on nearest enemy
-    let hit = false;
     for (const enemy of this.enemies) {
       const dx = enemy.position.x - this.botGroup.position.x;
       const dz = enemy.position.z - this.botGroup.position.z;
@@ -258,7 +257,6 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.triggerParticles(enemy.position.x, enemy.position.z, "collision");
         enemy.material = new THREE.MeshStandardMaterial({ color: "#ffcccc", transparent: true, opacity: 0.5 });
         this.score += 100;
-        hit = true;
       }
     }
     return new Promise((resolve) => setTimeout(resolve, duration));
@@ -296,7 +294,6 @@ export class BattleStageEngine implements ISimulatorEngine {
       mat.emissiveIntensity = 1.5;
       setTimeout(() => { mat.emissiveIntensity = 0; }, 200);
     }
-    let hit = false;
     for (const enemy of this.enemies) {
       const dx = enemy.position.x - this.botGroup.position.x;
       const dz = enemy.position.z - this.botGroup.position.z;
@@ -304,7 +301,6 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.triggerParticles(enemy.position.x, enemy.position.z, "collision");
         enemy.material = new THREE.MeshStandardMaterial({ color: "#ffcccc", transparent: true, opacity: 0.5 });
         this.score += 150;
-        hit = true;
       }
     }
     return new Promise((resolve) => setTimeout(resolve, duration));
