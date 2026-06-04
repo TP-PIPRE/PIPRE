@@ -32,7 +32,9 @@ public class CourseController {
     }
 
     @PutMapping("/{idCourse}")
-    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, RegisterCourseCommand requestDTO) {
+    public ResponseEntity<Void> putCourse(
+            @PathVariable String idCourse,
+            @RequestBody RegisterCourseCommand requestDTO) {
         updateCoursesUseCase.execute(idCourse, requestDTO);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }

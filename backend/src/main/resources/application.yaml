@@ -8,8 +8,9 @@ spring:
     username: ${POSTGRES_USER:pipre_user}
     password: ${POSTGRES_PASSWORD:pipre_password}
     hikari:
-      connection-timeout: 3000
+      connection-timeout: 30000
       initialization-fail-timeout: 3000
+      maximum-pool-size: 30
 
   jpa:
     show-sql: true
