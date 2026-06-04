@@ -1,0 +1,7 @@
+[
+  { "id_simulation": "S001", "result": "{\"type\":\"challenge\",\"courseId\":\"C001\",\"title\":\"Reto 1\",\"description\":\"Mueve el robot\",\"order\":1,\"difficulty\":\"EASY\",\"points\":50}" },
+  { "id_simulation": "S002", "result": "{\"type\":\"challenge\",\"courseId\":\"C001\",\"title\":\"Reto 2\",\"description\":\"Gira y avanza\",\"order\":2,\"difficulty\":\"EASY\",\"points\":75}" },
+  { "id_simulation": "S003", "result": "{\"type\":\"challenge\",\"courseId\":\"C001\",\"title\":\"Reto 3\",\"description\":\"Esquivar obstáculos\",\"order\":3,\"difficulty\":\"MEDIUM\",\"points\":100}" },
+  { "id_simulation": "S004", "result": "{\"type\":\"challenge\",\"courseId\":\"C002\",\"title\":\"Reto A\",\"description\":\"Control básico\",\"order\":1,\"difficulty\":\"EASY\",\"points\":50}" },
+  { "id_simulation": "S005", "result": "{\"type\":\"challenge\",\"courseId\":\"C003\",\"title\":\"Diseño Mecánico\",\"description\":\"Ensamblar\",\"order\":1,\"difficulty\":\"HARD\",\"points\":200}" }
+]
