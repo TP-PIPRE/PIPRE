@@ -91,106 +91,6 @@ const mockDashboardData = {
 
 
 
-// Componente para el gráfico de barras horizontal (SVG puro)
-const HorizontalBarChart = ({
-  data,
-}: {
-  data: { nombre: string; importancia: number }[];
-}) => {
-  const maxImportancia = Math.max(...data.map((d) => d.importancia));
-  const barHeight = 20;
-  const barSpacing = 10;
-  const width = 500;
-  const height = data.length * (barHeight + barSpacing);
-
-  return (
-    <svg
-      width="100%"
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="overflow-visible"
-    >
-      {data.map((d, index) => {
-        const barWidth = (d.importancia / maxImportancia) * (width - 120);
-        const y = index * (barHeight + barSpacing);
-        return (
-          <g key={d.nombre}>
-            <rect
-              x={120}
-              y={y}
-              width={barWidth}
-              height={barHeight}
-              fill="var(--primary)"
-              rx={2}
-              ry={2}
-            />
-            <text
-              x={115}
-              y={y + barHeight / 2 + 5}
-              textAnchor="end"
-              dominantBaseline="middle"
-              className="text-xs font-mono"
-              style={{ fill: "var(--text-muted)" }}
-            >
-              {d.nombre}
-            </text>
-            <text
-              x={120 + barWidth + 5}
-              y={y + barHeight / 2 + 5}
-              textAnchor="start"
-              dominantBaseline="middle"
-              className="text-xs font-mono"
-              style={{ fill: "var(--text)" }}
-            >
-              {d.importancia.toFixed(2)}
-            </text>
-          </g>
-        );
-      })}
-      <line
-        x1={120}
-        y1={0}
-        x2={120}
-        y2={height}
-        stroke="var(--border)"
-        strokeWidth={1}
-      />
-      <line
-        x1={120}
-        y1={height}
-        x2={width}
-        y2={height}
-        stroke="var(--border)"
-        strokeWidth={1}
-      />
-      {[0, 0.05, 0.1, 0.15, 0.2, 0.25].map((val) => {
-        const x = 120 + (val / maxImportancia) * (width - 120);
-        return (
-          <text
-            key={val}
-            x={x}
-            y={height + 15}
-            textAnchor="middle"
-            className="text-xs font-mono"
-            style={{ fill: "var(--text-muted)" }}
-          >
-            {val.toFixed(2)}
-          </text>
-        );
-      })}
-      <text
-        x={width / 2}
-        y={height + 30}
-        textAnchor="middle"
-        className="text-xs font-mono"
-        style={{ fill: "var(--text-muted)" }}
-      >
-        Importancia
-      </text>
-    </svg>
-  );
-};
-
 // --- Constantes y datos de ejemplo para IA (fallback) ---
 const FALLBACK_STUDENTS = [
   {
@@ -246,35 +146,6 @@ const DEFAULT_FORM = {
   completed_activities: 5, age: 12, grade: 6,
 };
 
-const GaugeChart = ({ value, label, max = 100, color = "var(--primary)" }: { value: number; label: string; max?: number; color?: string }) => {
-  const r = 36;
-  const cx = 40;
-  const cy = 44;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference * (1 - Math.min(value / max, 1));
-  return (
-    <svg width="80" height="56" viewBox="0 0 80 56" className="shrink-0">
-      <path d={`M 4 44 A ${r} ${r} 0 0 1 76 44`} fill="none" stroke="var(--border)" strokeWidth="6" strokeLinecap="round" />
-      <path d={`M 4 44 A ${r} ${r} 0 0 1 76 44`} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} />
-      <text x={cx} y={cy - 2} textAnchor="middle" className="text-[9px] font-mono font-bold" fill="var(--text)">{Math.round(value)}%</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" className="text-[6px] font-mono" fill="var(--text-muted)">{label}</text>
-    </svg>
-  );
-};
-
-const MetricBar = ({ label, value, max = 1, color = "var(--primary)" }: { label: string; value: number; max?: number; color?: string }) => {
-  const pct = Math.min((value / max) * 100, 100);
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-[9px] font-mono min-w-[80px] text-right" style={{ color: "var(--text-muted)" }}>{label}</span>
-      <div className="flex-1 h-3 bg-bg border border-border/30 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
-      </div>
-      <span className="text-[9px] font-mono min-w-[32px]" style={{ color: "var(--text)" }}>{typeof value === "number" ? value.toFixed(2) : value}</span>
-    </div>
-  );
-};
-
 const StatusBadge = ({ label, level }: { label: string; level: "alto" | "medio" | "bajo" | "positivo" | "negativo" | "normal" }) => {
   const colors: Record<string, string> = { alto: "bg-red-500/10 text-red-500 border-red-500/20", medio: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20", bajo: "bg-green-500/10 text-green-500 border-green-500/20", positivo: "bg-green-500/10 text-green-500 border-green-500/20", negativo: "bg-red-500/10 text-red-500 border-red-500/20", normal: "bg-blue-500/10 text-blue-500 border-blue-500/20" };
   return <span className={`text-[10px] font-mono font-bold px-3 py-1.5 border rounded-full ${colors[level] ?? "bg-primary/10 text-primary border-primary/20"}`}>{label}</span>;
@@ -301,32 +172,6 @@ const Tooltip = ({ children, x, y, visible }: { children: React.ReactNode; x: nu
         <polygon points="0,0 4,4 8,0" fill="var(--bg)" stroke="var(--border)" strokeWidth="0.5" />
       </svg>
     </div>
-  );
-};
-
-const InteractiveGauge = ({ value, label, max = 100, color = "var(--primary)", onClick }: { value: number; label: string; max?: number; color?: string; onClick?: () => void }) => {
-  const r = 36;
-  const cx = 40;
-  const cy = 44;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference * (1 - Math.min(value / max, 1));
-  const [hovered, setHovered] = useState(false);
-  return (
-    <svg
-      width="80" height="56" viewBox="0 0 80 56"
-      className={`shrink-0 cursor-${onClick ? "pointer" : "default"} transition-transform duration-300 ${hovered ? "scale-110" : ""}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
-    >
-      <path d={`M 4 44 A ${r} ${r} 0 0 1 76 44`} fill="none" stroke="var(--border)" strokeWidth="6" strokeLinecap="round" />
-      <path d={`M 4 44 A ${r} ${r} 0 0 1 76 44`} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} opacity={hovered ? 0.8 : 1} />
-      {hovered && (
-        <path d={`M 4 44 A ${r} ${r} 0 0 1 76 44`} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} opacity={0.2} />
-      )}
-      <text x={cx} y={cy - 2} textAnchor="middle" className="text-[9px] font-mono font-bold" fill="var(--text)">{Math.round(value)}%</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" className="text-[6px] font-mono" fill="var(--text-muted)">{label}</text>
-    </svg>
   );
 };
 
@@ -377,8 +222,7 @@ const ScatterChart = ({
                 stroke={isAnomaly ? "#ef4444" : "var(--primary)"}
                 strokeWidth={tooltip?.d === d ? 3 : 1}
                 className="transition-all duration-200 cursor-pointer"
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.closest("svg")?.getBoundingClientRect();
+                onMouseEnter={() => {
                   setTooltip({ d, px: cx, py: cy });
                 }}
                 onMouseLeave={() => setTooltip(null)}
@@ -737,7 +581,7 @@ const ResultDisplay = ({ result, activeTab }: { result: unknown; activeTab: TabI
           </div>
           <div className="flex-1">
             <p className="text-base font-mono font-bold" style={{ color: isAnomaly ? "#ef4444" : "#22c55e" }}>{isAnomaly ? "Anomalía Detectada" : "Comportamiento Normal"}</p>
-            {r.detalles && <p className="text-[11px] font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>{String(r.detalles)}</p>}
+            {!!r.detalles && <p className="text-[11px] font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>{String(r.detalles)}</p>}
           </div>
           <StatusBadge label={isAnomaly ? "Requiere atención" : "Todo en orden"} level={isAnomaly ? "negativo" : "positivo"} />
         </div>
@@ -1441,7 +1285,7 @@ export const DocenteDashboard = () => {
 
       <div className="space-y-6 mt-8">
         {/* Resultado */}
-      {result && (
+      {result !== null && (
         <div className="border border-border/80 bg-surface transition-all duration-300 rounded-xl overflow-hidden animate-fade-in-soft">
           <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border/30">
             <div className="flex items-center gap-3">

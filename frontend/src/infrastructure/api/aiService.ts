@@ -1,4 +1,4 @@
-import aiAxiosInstance from "./aiAxiosInstance";
+import { aiAxiosInstance } from "./axiosInstance";
 import { AI_ENDPOINTS } from "./aiEndpoints";
 import type {
   Ria01PredictRequest,
@@ -13,10 +13,15 @@ import type {
   Ria11TimeResponse,
   RiaInfoResponse,
   HealthResponse,
+  CodeFeedbackRequest,
+  CodeFeedbackResponse,
+  PSeIntGenerateRequest,
+  PSeIntGenerateResponse,
+  AggregatedFeaturesResponse,
 } from "./models/aiModels";
 
 export const aiService = {
-  predictRia01: async (data: Ria01PredictRequest) => {
+  predict: async (data: Ria01PredictRequest) => {
     const response = await aiAxiosInstance.post<Ria01PredictResponse>(
       AI_ENDPOINTS.RIA01_PREDICT,
       data,
@@ -24,7 +29,7 @@ export const aiService = {
     return response.data;
   },
 
-  recommendRia03: async (data: Ria03RecommendRequest) => {
+  recommend: async (data: Ria03RecommendRequest) => {
     const response = await aiAxiosInstance.post<Ria03RecommendResponse>(
       AI_ENDPOINTS.RIA03_RECOMMEND,
       data,
@@ -32,7 +37,7 @@ export const aiService = {
     return response.data;
   },
 
-  adjustDifficultyRia04: async (data: Ria04DifficultyRequest) => {
+  difficulty: async (data: Ria04DifficultyRequest) => {
     const response = await aiAxiosInstance.post<Ria04DifficultyResponse>(
       AI_ENDPOINTS.RIA04_DIFFICULTY,
       data,
@@ -40,7 +45,7 @@ export const aiService = {
     return response.data;
   },
 
-  detectAnomalyRia08: async (data: Ria08AnomalyRequest) => {
+  anomaly: async (data: Ria08AnomalyRequest) => {
     const response = await aiAxiosInstance.post<Ria08AnomalyResponse>(
       AI_ENDPOINTS.RIA08_ANOMALY,
       data,
@@ -48,7 +53,7 @@ export const aiService = {
     return response.data;
   },
 
-  classifyTimeRia11: async (data: Ria11TimeRequest) => {
+  timePrediction: async (data: Ria11TimeRequest) => {
     const response = await aiAxiosInstance.post<Ria11TimeResponse>(
       AI_ENDPOINTS.RIA11_TIME,
       data,
@@ -56,45 +61,57 @@ export const aiService = {
     return response.data;
   },
 
-  getRia01Info: async () => {
-    const response = await aiAxiosInstance.get<RiaInfoResponse>(
-      AI_ENDPOINTS.RIA01_INFO,
-    );
+  getInfo: async (endpoint: string) => {
+    const response = await aiAxiosInstance.get<RiaInfoResponse>(endpoint);
     return response.data;
   },
 
-  getRia03Info: async () => {
-    const response = await aiAxiosInstance.get<RiaInfoResponse>(
-      AI_ENDPOINTS.RIA03_INFO,
-    );
-    return response.data;
-  },
-
-  getRia04Info: async () => {
-    const response = await aiAxiosInstance.get<RiaInfoResponse>(
-      AI_ENDPOINTS.RIA04_INFO,
-    );
-    return response.data;
-  },
-
-  getRia08Info: async () => {
-    const response = await aiAxiosInstance.get<RiaInfoResponse>(
-      AI_ENDPOINTS.RIA08_INFO,
-    );
-    return response.data;
-  },
-
-  getRia11Info: async () => {
-    const response = await aiAxiosInstance.get<RiaInfoResponse>(
-      AI_ENDPOINTS.RIA11_INFO,
-    );
-    return response.data;
-  },
-
-  getHealth: async () => {
+  health: async () => {
     const response = await aiAxiosInstance.get<HealthResponse>(
       AI_ENDPOINTS.HEALTH,
     );
     return response.data;
   },
+
+  analyzeCode: async (data: CodeFeedbackRequest) => {
+    const response = await aiAxiosInstance.post<CodeFeedbackResponse>(
+      AI_ENDPOINTS.CODE_FEEDBACK_ANALYZE,
+      data,
+    );
+    return response.data;
+  },
+
+  generatePSeInt: async (data: PSeIntGenerateRequest) => {
+    const response = await aiAxiosInstance.post<PSeIntGenerateResponse>(
+      AI_ENDPOINTS.RIA12_PSEINT,
+      data,
+    );
+    return response.data;
+  },
+
+  getFeaturesByGroup: async (idGroup: string) => {
+    const response = await aiAxiosInstance.get<AggregatedFeaturesResponse[]>(
+      AI_ENDPOINTS.FEATURES_AGGREGATE_GROUP(idGroup),
+    );
+    return response.data;
+  },
+
+  getFeaturesByStudent: async (idStudent: string) => {
+    const response = await aiAxiosInstance.get<AggregatedFeaturesResponse>(
+      AI_ENDPOINTS.FEATURES_AGGREGATE_STUDENT(idStudent),
+    );
+    return response.data;
+  },
+
+  predictRia01: async (data: Ria01PredictRequest) => aiService.predict(data),
+  recommendRia03: async (data: Ria03RecommendRequest) => aiService.recommend(data),
+  adjustDifficultyRia04: async (data: Ria04DifficultyRequest) => aiService.difficulty(data),
+  detectAnomalyRia08: async (data: Ria08AnomalyRequest) => aiService.anomaly(data),
+  classifyTimeRia11: async (data: Ria11TimeRequest) => aiService.timePrediction(data),
+
+  getRia01Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA01_INFO),
+  getRia03Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA03_INFO),
+  getRia04Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA04_INFO),
+  getRia08Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA08_INFO),
+  getRia11Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA11_INFO),
 };

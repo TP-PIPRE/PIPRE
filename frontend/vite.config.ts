@@ -16,8 +16,14 @@ export default defineConfig({
       "/api/v1": {
         target: "https://pipre-backend.yoshua-cloud.dedyn.io/",
         changeOrigin: true,
-        secure: false, // Permite conexiones a backends con certificados no válidos (solo para desarrollo)
-        rewrite: (path) => path, // No reescribe la ruta, envíala tal cual al backend
+        secure: false,
+        rewrite: (path) => path,
+      },
+      "/api/ia": {
+        target: "https://pipre-ml-ia.yoshua-cloud.dedyn.io/",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/ia/, ""),
       },
     },
   },

@@ -38,6 +38,8 @@ interface ChallengeView {
   order: number;
   difficulty: "EASY" | "MEDIUM" | "HARD";
   points: number;
+  complexity?: "LOW" | "MEDIUM" | "HIGH";
+  logicLevel?: number;
   type?: string;
   deleted?: boolean;
   simulatorConfig?: {
@@ -58,6 +60,9 @@ interface ChallengeFormData {
   order: number;
   difficulty: "EASY" | "MEDIUM" | "HARD";
   points: number;
+  complexity: "LOW" | "MEDIUM" | "HIGH";
+  logicLevel: number;
+  type: "robotics";
   simulatorConfig: {
     environment: string;
     maxBlocks: number;
@@ -104,8 +109,11 @@ export const DocenteRetosPage: React.FC = () => {
     order: 0,
     difficulty: "EASY",
     points: 0,
+    complexity: "MEDIUM",
+    logicLevel: 3,
+    type: "robotics",
     simulatorConfig: {
-      environment: "battle",
+      environment: "obstacle",
       maxBlocks: 10,
       missions: [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
     },
@@ -311,23 +319,20 @@ export const DocenteRetosPage: React.FC = () => {
 
       let idActivity = selectedChallenge?.idActivity || "";
 
-      if (challengeModalType === "create" || !idActivity) {
+      if (!selectedLessonId) {
+        await fetchModulesForCourse(selectedCourse.idCourse);
         if (!selectedLessonId) {
-          await fetchModulesForCourse(selectedCourse.idCourse);
-          if (!selectedLessonId) {
-            console.error("No se encontraron lecciones para este curso");
-            return;
-          }
-        }
-        // Workaround: POST /activities fails (missing logicLevel in DTO).
-        // Use GET /activities/lesson/{idLesson} to fetch an existing idActivity.
-        const activities = await apiService.activities.getByLesson(selectedLessonId);
-        if (activities && activities.length > 0) {
-          idActivity = activities[0].idActivity;
-        } else {
-          console.error("No se encontraron actividades existentes para esta lección");
+          console.error("No se encontraron lecciones para este curso");
           return;
         }
+      }
+
+      if (challengeModalType === "create" || !idActivity) {
+        const created = await apiService.activities.create({
+          idLesson: selectedLessonId,
+          name: challengeFormData.title,
+        });
+        idActivity = created.idActivity;
       }
 
       const payload = {
@@ -338,8 +343,10 @@ export const DocenteRetosPage: React.FC = () => {
         description: challengeFormData.description,
         order: challengeFormData.order,
         difficulty: challengeFormData.difficulty,
+        complexity: challengeFormData.complexity,
+        logicLevel: challengeFormData.logicLevel,
         points: challengeFormData.points,
-        environment: challengeFormData.simulatorConfig?.environment || "battle",
+        environment: challengeFormData.simulatorConfig?.environment || "obstacle",
         maxBlocks: challengeFormData.simulatorConfig?.maxBlocks || 10,
         missions: challengeFormData.simulatorConfig?.missions || [],
         allowedHardware: challengeFormData.simulatorConfig?.allowedHardware || [],
@@ -381,7 +388,7 @@ export const DocenteRetosPage: React.FC = () => {
     }
   };
 
-  // Eliminar reto (soft delete via simulations API)
+  // Eliminar reto (activities API + soft delete via simulations)
   const handleDeleteChallenge = async (idActivity: string) => {
     try {
       const courseId = selectedCourse!.idCourse;
@@ -645,8 +652,11 @@ export const DocenteRetosPage: React.FC = () => {
                           order: selectedCourseChallenges.length + 1,
                           difficulty: "EASY",
                           points: 0,
+                          complexity: "MEDIUM",
+                          logicLevel: 3,
+                          type: "robotics",
                           simulatorConfig: {
-                            environment: "battle",
+                            environment: "obstacle",
                             maxBlocks: 10,
                             missions: [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
                           },
@@ -713,6 +723,9 @@ export const DocenteRetosPage: React.FC = () => {
                                     order: challenge.order,
                                     difficulty: challenge.difficulty,
                                     points: challenge.points,
+                                    complexity: challenge.complexity || "MEDIUM",
+                                    logicLevel: challenge.logicLevel ?? 3,
+                                    type: "robotics",
                                     simulatorConfig: {
                                       environment: (sim as any).environment || "battle",
                                       maxBlocks: (sim as any).maxBlocks || 10,
@@ -874,6 +887,46 @@ export const DocenteRetosPage: React.FC = () => {
                       placeholder="Ej: 50"
                     />
                     {formErrors.points && <p className="text-danger text-[9px] mt-1">{formErrors.points}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                      Complejidad
+                    </label>
+                    <select
+                      value={challengeFormData.complexity || "MEDIUM"}
+                      onChange={(e) =>
+                        setChallengeFormData({
+                          ...challengeFormData,
+                          complexity: e.target.value as "LOW" | "MEDIUM" | "HIGH",
+                        })
+                      }
+                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      style={{ borderRadius: "var(--theme-radius)" }}
+                    >
+                      <option value="LOW">Baja</option>
+                      <option value="MEDIUM">Media</option>
+                      <option value="HIGH">Alta</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                      Nivel Lógico
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={challengeFormData.logicLevel || 3}
+                      onChange={(e) =>
+                        setChallengeFormData({
+                          ...challengeFormData,
+                          logicLevel: Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      style={{ borderRadius: "var(--theme-radius)" }}
+                      placeholder="Ej: 3"
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">

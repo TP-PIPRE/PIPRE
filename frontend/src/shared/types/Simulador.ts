@@ -9,12 +9,18 @@ export interface Block {
   params: Record<string, string>;
 }
 
+export interface ParamOption {
+  label: string;
+  value: string;
+}
+
 export interface BlockDefinition {
   type: string;
   label: string;
   category: BlockCategory;
   hardwareRequired?: string;
   params?: Record<string, string>;
+  paramOptions?: Record<string, ParamOption[]>;
 }
 
 export interface PortSlotDefinition {
@@ -23,6 +29,7 @@ export interface PortSlotDefinition {
   label: string;
   icon: string;
   accepts: string[];
+  category?: "movement" | "sensor" | "weapon" | "power" | "special";
 }
 
 export interface HardwarePeripheral {

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import type { Block, BlockCategory, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngine";
@@ -8,6 +8,9 @@ import { useThemeStore } from "../../infrastructure/store/themeStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import { getAuthState } from "../../infrastructure/store/authStore";
+import type { SimulationResult } from "../../shared/types/RobotSimulation";
+import { useRobotSimulations } from "../hooks/useRobotSimulations";
+import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 
 interface LogEntry {
   time: string;
@@ -35,6 +38,11 @@ interface SimuladorContextType {
   loadChallengeFromCourse: (courseId: string) => Promise<void>;
   selectChallenge: (challenge: ChallengeData) => void;
   setFreeMode: () => void;
+
+  selectedGroupId: string | null;
+  setSelectedGroupId: (id: string) => void;
+  selectedActivity: ActivityResponseDTO | null;
+  setSelectedActivity: (a: ActivityResponseDTO | null) => void;
 
   portAssignments: Record<string, string>;
   assignHardware: (slotId: string, hardwareId: string) => void;
@@ -74,6 +82,11 @@ interface SimuladorContextType {
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
   currentTheme: Record<string, any>;
+
+  submitRobotSimulation: () => Promise<void>;
+  simulationLoading: boolean;
+  simulationError: string | null;
+  lastSimulationResult: SimulationResult | null;
 }
 
 const SimuladorContext = createContext<SimuladorContextType | undefined>(
@@ -113,6 +126,17 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const engineRef = useRef<ISimulatorEngine | null>(null);
   const blockIdCounter = useRef(0);
   const stopRequested = useRef(false);
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityResponseDTO | null>(null);
+  const [lastSimulationResult, setLastSimulationResult] = useState<SimulationResult | null>(null);
+  const startTimeRef = useRef<number>(0);
+
+  const {
+    submitSimulation,
+    loading: simulationLoading,
+    error: simulationError,
+  } = useRobotSimulations();
 
   const simuladorUseCase = useRef(new SimuladorUseCase());
 
@@ -309,16 +333,63 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     addLog(`¡Reto completado! Puntaje: ${totalScore} pts`, "success");
   };
 
-  const dismissChallengeCompletion = () => {
-    setChallengeCompleted(false);
-  };
-
   const addLog = (
     msg: string,
     type: "info" | "warn" | "error" | "success" = "info",
   ) => {
     const time = new Date().toLocaleTimeString();
     setLogs((prev) => [...prev, { time: `[${time}]`, msg, type }]);
+  };
+
+  const submitRobotSimulation = useCallback(async () => {
+    const authUser = getAuthState().user;
+    const userId = authUser?.id || (import.meta.env.DEV ? "dev-mock-user" : null);
+    if (!userId) {
+      addLog("No hay usuario autenticado para registrar simulación", "error");
+      return;
+    }
+    if (!selectedActivity && !challengeId) {
+      addLog("No hay actividad o reto seleccionado", "warn");
+      return;
+    }
+
+    const blocklyCode = blocks.map((b) => `${b.type}(${JSON.stringify(b.params)})`).join("\n");
+    const result: SimulationResult = score >= missions.filter((m) => m.isCompleted).length * 1000 ? "SUCCESS" : score > 0 ? "PARTIAL" : "FAILED";
+
+    const sim = await submitSimulation({
+      idStudent: userId,
+      idActivity: selectedActivity?.idActivity ?? challengeId ?? "",
+      blocklyCode,
+      pseudocode: "",
+      pseintDiagram: "",
+      blocksUsage: blocks.length,
+      codeUsage: blocks.filter((b) => (b.category as string) === "logic" || (b.category as string) === "control").length,
+      sensorError: Math.random() * 0.3,
+      resolutionTime: Date.now() - (startTimeRef.current || Date.now()),
+      environment,
+      missions: missions.map((m) => ({
+        id: m.id,
+        title: m.title,
+        objective: m.objective,
+        isCompleted: m.isCompleted,
+        maxBlocks: m.maxBlocks,
+        environment,
+        startingPosition: { x: 0, z: 0 },
+        targetPosition: { x: 30, z: 0 },
+      })),
+      startingPosition: { x: 0, z: 0 },
+      targetPosition: { x: 30, z: 0 },
+      result,
+    });
+
+    if (sim) {
+      setLastSimulationResult(result);
+      addLog(`Simulación registrada: ${result}`, "success");
+    }
+  }, [submitSimulation, selectedActivity, challengeId, blocks, missions, environment, score, addLog, setLastSimulationResult]);
+
+  const dismissChallengeCompletion = () => {
+    setChallengeCompleted(false);
   };
 
   const assignHardware = (slotId: string, hardwareId: string) => {
@@ -400,6 +471,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
     setIsRunning(true);
     stopRequested.current = false;
+    startTimeRef.current = Date.now();
     addLog("Iniciando programa...", "success");
 
     if (engineRef.current) {
@@ -733,6 +805,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         clearWorkspace,
         updateBlockParam,
 
+        selectedGroupId,
+        setSelectedGroupId,
+        selectedActivity,
+        setSelectedActivity,
+
         engineRef,
         executeProgram,
         isRunning,
@@ -751,6 +828,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         completeChallenge,
         dismissChallengeCompletion,
         currentTheme,
+
+        submitRobotSimulation,
+        simulationLoading,
+        simulationError,
+        lastSimulationResult,
       }}
     >
       {children}

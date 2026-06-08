@@ -1,13 +1,11 @@
-// PMV01 – Plataforma educativa base
 export interface UserRequestDTO {
   firstName: string;
   lastName: string;
-  age: number;
-  grade: string;
   email: string;
   passwordHash: string;
-  institution: string;
-  zone: string;
+  grade: string;
+  age: number;
+  roleIdList: string[];
 }
 
 export interface UserResponseDTO {
@@ -36,8 +34,6 @@ export interface CourseRequestDTO {
 export interface CourseResponseDTO {
   idCourse: string;
   name: string;
-  description?: string;
-  level?: string;
 }
 
 export interface ModuleRequestDTO {
@@ -60,7 +56,7 @@ export interface LessonResponseDTO {
   title: string;
 }
 
-export interface ActivityRequestDTO {
+export interface CreateActivityCommand {
   idLesson: string;
   name: string;
 }
@@ -70,7 +66,6 @@ export interface ActivityResponseDTO {
   name: string;
 }
 
-// PMV02 – Gamificación y ranking
 export interface ActivityResultRequest {
   idStudent: string;
   idActivity: string;
@@ -100,28 +95,19 @@ export interface SimulationResponse {
   result: string;
 }
 
-// PMV03 – Analítica inteligente
 export interface ModuleProgressRequest {
-  id_student: string;
-  id_module: string;
+  idStudent: string;
+  idModule: string;
   percentage: number;
 }
 
 export interface HelpRequest {
-  id_student: string;
-  times_requested: number;
-  ai_interactions: number;
+  idStudent: string;
+  idActivity?: string;
+  description: string;
 }
 
 export interface DropoutRiskResponse {
-  risk_level: string;
-  performance: string;
-  motivation_level: string;
-}
-
-// En src/infrastructure/models/apiModels.ts
-export interface HomeResponseDTO {
-  status: string; // Ejemplo: "ok" | "error"
-  message?: string;
-  data?: any; // Ajusta según lo que devuelva el endpoint /home
+  riesgo: number;
+  nivel: string;
 }

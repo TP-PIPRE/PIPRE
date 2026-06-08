@@ -1,4 +1,5 @@
 import axiosInstance from "./axiosInstance";
+import { API_ENDPOINTS } from "./endpoints";
 import type {
   UserRequestDTO,
   UserResponseDTO,
@@ -10,7 +11,7 @@ import type {
   ModuleResponseDTO,
   LessonRequestDTO,
   LessonResponseDTO,
-  ActivityRequestDTO,
+  CreateActivityCommand,
   ActivityResponseDTO,
   ActivityResultRequest,
   ActivityResultResponse,
@@ -23,7 +24,6 @@ import type {
 } from "./models/apiModels";
 
 export const apiService = {
-  // PMV01 – Plataforma educativa base
   users: {
     create: async (data: UserRequestDTO) => {
       const response = await axiosInstance.post<string>("users", data);
@@ -39,29 +39,34 @@ export const apiService = {
       const response = await axiosInstance.get<RoleDTO[]>("roles");
       return response.data;
     },
-    assignToUser: async (data: { id_user: string; id_role: string }) => {
-      await axiosInstance.post("role/user", data);
+    assignToUser: async (data: { idUser: string; idRole: string }) => {
+      await axiosInstance.post("roles/user", {
+        idUser: data.idUser,
+        idRole: data.idRole,
+      });
     },
   },
   groups: {
     getAll: async () => {
-      const response = await axiosInstance.get<GroupDTO[]>("groups");
+      const response = await axiosInstance.get<GroupDTO[]>(
+        API_ENDPOINTS.GROUPS,
+      );
       return response.data;
     },
   },
   courses: {
     getAll: async () => {
-      const response = await axiosInstance.get<CourseResponseDTO[]>("courses");
+      const response = await axiosInstance.get<CourseResponseDTO[]>(API_ENDPOINTS.COURSES);
       return response.data;
     },
     create: async (data: CourseRequestDTO) => {
-      await axiosInstance.post("courses", data);
+      await axiosInstance.post(API_ENDPOINTS.COURSES, data);
     },
     update: async (data: CourseRequestDTO & { idCourse: string }) => {
-      await axiosInstance.put("courses", data);
+      await axiosInstance.put(API_ENDPOINTS.COURSE_BY_ID(data.idCourse), data);
     },
     delete: async (id: string) => {
-      await axiosInstance.delete(`courses/${id}`);
+      await axiosInstance.delete(API_ENDPOINTS.COURSE_BY_ID(id));
     },
   },
   modules: {
@@ -89,69 +94,77 @@ export const apiService = {
   activities: {
     getByLesson: async (idLesson: string) => {
       const response = await axiosInstance.get<ActivityResponseDTO[]>(
-        `activities/lesson/${idLesson}`,
+        API_ENDPOINTS.ACTIVITIES_BY_LESSON(idLesson),
       );
       return response.data;
     },
-    create: async (data: ActivityRequestDTO) => {
-      const response = await axiosInstance.post<{ idActivity: string }>("activities", data);
+    create: async (data: CreateActivityCommand) => {
+      const response = await axiosInstance.post<{ idActivity: string }>(
+        API_ENDPOINTS.ACTIVITIES,
+        data,
+      );
       return response.data;
     },
   },
-
-  // PMV02 – Gamificación y ranking
   results: {
     postResult: async (data: ActivityResultRequest) => {
-      await axiosInstance.post("activity-results", data);
+      await axiosInstance.post(API_ENDPOINTS.ACTIVITY_RESULTS, data);
     },
     getByUser: async (idStudent: string) => {
       const response = await axiosInstance.get<ActivityResultResponse[]>(
-        `activity-results/user/${idStudent}`,
+        API_ENDPOINTS.ACTIVITY_RESULTS_BY_USER(idStudent),
       );
       return response.data;
     },
   },
   simulations: {
     postResult: async (data: SimulationRequest) => {
-      await axiosInstance.post("simulations", data);
+      return axiosInstance.post(API_ENDPOINTS.SIMULATIONS, data);
     },
     getByUser: async (idStudent: string) => {
       const response = await axiosInstance.get<SimulationResponse[]>(
-        `simulations/user/${idStudent}`,
+        API_ENDPOINTS.SIMULATIONS_BY_USER(idStudent),
       );
       return response.data;
     },
   },
-
   ranking: {
     getGroupRanking: async (idGroup: string) => {
       const response = await axiosInstance.get<RankingDTO[]>(
-        `group-students/${idGroup}`,
+        API_ENDPOINTS.GROUP_STUDENTS(idGroup),
       );
       return response.data;
     },
-    addToGroup: async (data: { id_group: string; id_student: string }) => {
+    addToGroup: async (data: { idGroup: string; idStudent: string }) => {
       await axiosInstance.post("group-students", data);
     },
   },
-
-  // PMV03 – Analítica inteligente
+  performance: {
+    rating: async (data: { idActivity: string; idResult: string; idHelpRequest?: string }) => {
+      const response = await axiosInstance.post<{
+        result: string;
+        accuracy: number;
+        precision: number;
+      }>(API_ENDPOINTS.PERFORMANCE_RATING, data);
+      return response.data;
+    },
+  },
   analytics: {
     postProgress: async (data: ModuleProgressRequest) => {
       await axiosInstance.post("module-progress", data);
     },
     getProgressByUser: async (idStudent: string) => {
       const response = await axiosInstance.get<
-        { id_module: string; percentage: number }[]
+        { idModule: string; percentage: number }[]
       >(`module-progress/user/${idStudent}`);
       return response.data;
     },
     postHelpRequest: async (data: HelpRequest) => {
-      await axiosInstance.post("help-requests", data);
+      await axiosInstance.post(API_ENDPOINTS.HELP_REQUESTS, data);
     },
     getHelpRequests: async (idStudent: string) => {
-      const response = await axiosInstance.get<{ times_requested: number }[]>(
-        `help-requests/${idStudent}`,
+      const response = await axiosInstance.get<{ timesRequested: number }[]>(
+        API_ENDPOINTS.HELP_REQUESTS_BY_USER(idStudent),
       );
       return response.data;
     },
