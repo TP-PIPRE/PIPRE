@@ -202,10 +202,14 @@ export const PaginaInicio = () => {
                   CANCELAR MISIÓN
                 </button>
                 <button
-                  onClick={() => navigate("/simulador")}
+                  onClick={() =>
+                    selectedReto.tipo === "curso"
+                      ? navigate("/cursos")
+                      : navigate("/simulador")
+                  }
                   className="flex-[2] btn-premium py-5 text-[11px] font-black tracking-[0.3em] shadow-2xl shadow-primary/20"
                 >
-                  INICIAR SECUENCIA →
+                  {selectedReto.tipo === "curso" ? "VER CURSOS →" : "INICIAR SECUENCIA →"}
                 </button>
               </div>
             </div>
@@ -253,7 +257,7 @@ export const PaginaInicio = () => {
           {filteredItems.map((item) => (
             <article
               key={item.id}
-              onClick={() => setSelectedReto(item)}
+              onClick={() => item.tipo === "curso" ? navigate("/cursos") : setSelectedReto(item)}
               className="group bg-surface/30 border border-border/10 flex flex-col cursor-pointer transition-all duration-700 hover:border-primary/20 hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden"
               style={{ borderRadius: "var(--theme-radius)" }}
             >

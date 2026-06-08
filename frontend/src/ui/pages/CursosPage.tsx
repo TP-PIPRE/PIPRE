@@ -68,7 +68,8 @@ export const CursosPage: React.FC = () => {
   const fetchChallenges = async (courseId: string) => {
     try {
       const authUser = getAuthState().user;
-      const userId = authUser?.id || "";
+      const userId = authUser?.id;
+      if (!userId) return;
       const sims = await apiService.simulations.getByUser(userId);
       const parsed = sims
         .map((s) => {

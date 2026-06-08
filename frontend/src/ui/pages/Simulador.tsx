@@ -1,15 +1,21 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SimuladorProvider, useSimulador } from "../../application/context/SimuladorProvider";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import { HardwarePanel } from "../components/Simulador/HardwarePanel";
 import { Toolbox } from "../components/Simulador/Toolbox";
 import { Workspace } from "../components/Simulador/Workspace";
 import { Stage3D } from "../components/Simulador/Stage3D";
 import { Console } from "../components/Simulador/Console";
 import { MissionsPanel } from "../components/Simulador/MissionsPanel";
+import { GroupSelector } from "../components/Simulador/GroupSelector";
+import { ActivityList } from "../components/Simulador/ActivityList";
+import { ScenarioMap } from "../components/Simulador/ScenarioMap";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import type { EnvironmentType } from "../../shared/types/Simulador";
+import { apiService } from "../../infrastructure/api/apiService";
+import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 
 const ENVIRONMENTS: { id: EnvironmentType; icon: string }[] = [
   { id: "battle", icon: "sports_kabaddi" },
@@ -53,8 +59,16 @@ const EnvironmentSelector = () => {
 const SimuladorInner = () => {
   const { courseId } = useParams<{ courseId?: string }>();
   const navigate = useNavigate();
-  const { loadChallengeFromCourse, isFreeMode, setFreeMode, challenges, selectChallenge, challengeData } = useSimulador();
+  const {
+    loadChallengeFromCourse, isFreeMode, setFreeMode,
+    challenges, selectChallenge, challengeData,
+    selectedGroupId, setSelectedGroupId,
+    selectedActivity, setSelectedActivity,
+    environment, submitRobotSimulation, simulationLoading,
+  } = useSimulador();
   const [showChallengeList, setShowChallengeList] = useState(false);
+  const [activities, setActivities] = useState<ActivityResponseDTO[]>([]);
+  const [showGroupPanel, setShowGroupPanel] = useState(true);
 
   useEffect(() => {
     if (courseId) {
@@ -69,11 +83,26 @@ const SimuladorInner = () => {
     navigate("/cursos");
   };
 
+  const handleGroupSelect = useCallback(async (groupId: string) => {
+    setSelectedGroupId(groupId);
+    try {
+      const data = await apiService.activities.getByLesson(groupId);
+      setActivities(data);
+    } catch {
+      setActivities([]);
+    }
+  }, [setSelectedGroupId]);
+
+  const handleActivitySelect = useCallback((activity: ActivityResponseDTO) => {
+    setSelectedActivity(activity);
+    setShowGroupPanel(false);
+  }, [setSelectedActivity]);
+
   return (
     <div className="flex flex-col h-screen">
       <EnvironmentSelector />
 
-      {/* Challenge mode banner */}
+      {/* Top bar */}
       {!isFreeMode && (
         <div className="flex items-center justify-between px-4 py-2 border-b border-border" style={{ backgroundColor: "var(--surface-brighter)" }}>
           <div className="flex items-center gap-4">
@@ -87,9 +116,6 @@ const SimuladorInner = () => {
             <span className="text-text-muted/30">|</span>
             <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">
               Modo Reto
-            </span>
-            <span className="text-[8px] font-mono px-2 py-0.5 border border-yellow-500/30 uppercase tracking-widest" style={{ backgroundColor: "rgba(234,179,8,0.1)", borderRadius: "var(--theme-radius)", color: "var(--text-muted)" }}>
-              Demo
             </span>
             {challengeData && (
               <>
@@ -134,10 +160,70 @@ const SimuladorInner = () => {
         </div>
       )}
 
+      {/* Free mode group/activity selection */}
+      {isFreeMode && showGroupPanel && (
+        <div className="px-4 py-3 border-b border-border flex items-start gap-6" style={{ backgroundColor: "var(--surface)" }}>
+          <div className="w-56">
+            <GroupSelector
+              selectedGroupId={selectedGroupId}
+              onSelect={handleGroupSelect}
+            />
+          </div>
+          {selectedGroupId && activities.length > 0 && (
+            <div className="w-56">
+              <ActivityList
+                activities={activities}
+                selectedId={selectedActivity?.idActivity ?? null}
+                onSelect={handleActivitySelect}
+              />
+            </div>
+          )}
+          {selectedGroupId && activities.length === 0 && (
+            <p className="text-[10px] text-text-muted self-center italic">
+              No hay actividades para este grupo.
+            </p>
+          )}
+          {selectedActivity && (
+            <button
+              onClick={() => setShowGroupPanel(false)}
+              className="ml-auto text-[10px] text-primary font-bold uppercase tracking-wider"
+            >
+              Cerrar panel
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Show group panel button */}
+      {isFreeMode && !showGroupPanel && (
+        <div className="px-4 py-1.5 border-b border-border flex items-center gap-4" style={{ backgroundColor: "var(--surface)" }}>
+          <button
+            onClick={() => setShowGroupPanel(true)}
+            className="text-[10px] text-primary font-bold uppercase tracking-wider"
+          >
+            Cambiar grupo/actividad
+          </button>
+          {selectedActivity && (
+            <span className="text-[10px] text-text-muted">
+              Actividad: <span className="text-text font-semibold">{selectedActivity.name}</span>
+            </span>
+          )}
+        </div>
+      )}
+
       <main className="flex-1 p-4 overflow-auto">
         <div className="h-full w-full max-w-[1920px] mx-auto grid grid-cols-12 grid-rows-[repeat(12,minmax(0,1fr))] gap-4">
-          {/* Column 1: Hardware & Missions (3 cols) */}
+          {/* Column 1: Scenario & Missions (3 cols) */}
           <div className="col-span-3 row-span-12 flex flex-col gap-4 min-h-0">
+            {selectedActivity && isFreeMode && (
+              <div className="shrink-0">
+                <ScenarioMap
+                  environment={environment}
+                  startingPosition={{ x: 0, z: 0 }}
+                  targetPosition={{ x: 30, z: 0 }}
+                />
+              </div>
+            )}
             <div
               className="min-h-0 panel-border flex-1 overflow-auto rounded-lg"
               style={{ backgroundColor: "var(--surface)" }}
@@ -187,6 +273,16 @@ const SimuladorInner = () => {
             >
               <Console />
             </div>
+            {/* Submit simulation button */}
+            <button
+              onClick={submitRobotSimulation}
+              disabled={simulationLoading || !getAuthState().isAuthenticated}
+              className="w-full p-3 text-sm font-bold uppercase tracking-wider border border-primary/40 text-primary hover:bg-primary/10 transition-colors disabled:opacity-40"
+              style={{ borderRadius: "var(--theme-radius)" }}
+              title={!getAuthState().isAuthenticated ? "Inicia sesión para guardar avances" : ""}
+            >
+              {simulationLoading ? "Registrando simulación..." : "Registrar simulación"}
+            </button>
           </div>
         </div>
       </main>

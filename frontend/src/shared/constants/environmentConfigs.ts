@@ -56,10 +56,18 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       },
       {
         type: "rotar_nucleo",
-        label: "ROTAR(90)",
+        label: "ROTAR(90°)",
         category: "action",
         hardwareRequired: "Tracción Oruga",
         params: { grados: "90" },
+        paramOptions: {
+          grados: [
+            { label: "← Izquierda 90°", value: "-90" },
+            { label: "→ Derecha 90°", value: "90" },
+            { label: "⟳ Media vuelta 180°", value: "180" },
+            { label: "⟳ Vuelta completa 360°", value: "360" },
+          ],
+        },
       },
       {
         type: "atacar",
@@ -216,10 +224,18 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       },
       {
         type: "rotar_nucleo",
-        label: "GIRAR(90)",
+        label: "GIRAR(90°)",
         category: "action",
         hardwareRequired: "Ruedas Lunares",
         params: { grados: "90" },
+        paramOptions: {
+          grados: [
+            { label: "← Izquierda 90°", value: "-90" },
+            { label: "→ Derecha 90°", value: "90" },
+            { label: "⟳ Media vuelta 180°", value: "180" },
+            { label: "⟳ Vuelta completa 360°", value: "360" },
+          ],
+        },
       },
       {
         type: "despegar",
@@ -378,10 +394,18 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       },
       {
         type: "rotar_nucleo",
-        label: "ROTAR(90)",
+        label: "ROTAR(90°)",
         category: "action",
         hardwareRequired: "Botas de Velocidad",
         params: { grados: "90" },
+        paramOptions: {
+          grados: [
+            { label: "← Izquierda 90°", value: "-90" },
+            { label: "→ Derecha 90°", value: "90" },
+            { label: "⟳ Media vuelta 180°", value: "180" },
+            { label: "⟳ Vuelta completa 360°", value: "360" },
+          ],
+        },
       },
       {
         type: "iluminar",
@@ -551,10 +575,18 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       },
       {
         type: "rotar_nucleo",
-        label: "GIRAR(45)",
+        label: "GIRAR(90°)",
         category: "action",
         hardwareRequired: "Ruedas de Carrera",
-        params: { grados: "45" },
+        params: { grados: "90" },
+        paramOptions: {
+          grados: [
+            { label: "← Izquierda 90°", value: "-90" },
+            { label: "→ Derecha 90°", value: "90" },
+            { label: "⟳ Media vuelta 180°", value: "180" },
+            { label: "⟳ Vuelta completa 360°", value: "360" },
+          ],
+        },
       },
       {
         type: "acelerar",
