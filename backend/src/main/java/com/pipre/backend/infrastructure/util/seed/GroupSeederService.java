@@ -33,7 +33,7 @@ public class GroupSeederService {
     @Transactional
     public void seedCourses() {
 
-        int NUMBER_OF_GROUPS = 3;
+        int NUMBER_OF_GROUPS = 1;
         String studentRoleId = getRoleIdByName("STUDENT");
 
         List<String> studentsIdList = userRepositoryPort.findAll().stream()
@@ -65,7 +65,7 @@ public class GroupSeederService {
             System.out.println(assignedStudents);
             System.out.println(studentsPerGroup);
 
-            for (String studentId: assignedStudents) {
+            for (String studentId : assignedStudents) {
                 double randomValue = ThreadLocalRandom.current().nextDouble(10.0, 500.0);
                 BigDecimal randomPoints = BigDecimal.valueOf(randomValue).setScale(2, RoundingMode.HALF_UP);
                 Ranking ranking = Ranking.builder()
