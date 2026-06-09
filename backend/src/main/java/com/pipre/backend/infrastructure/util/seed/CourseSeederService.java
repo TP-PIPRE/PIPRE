@@ -3,6 +3,8 @@ package com.pipre.backend.infrastructure.util.seed;
 import com.pipre.backend.application.ports.output.*;
 import com.pipre.backend.domain.entities.*;
 import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.activity.Activity;
+import com.pipre.backend.domain.entities.activity.ActivityLevel;
 import com.pipre.backend.domain.entities.course.Course;
 import com.pipre.backend.domain.entities.course.CourseLevel;
 
@@ -76,7 +78,8 @@ public class CourseSeederService {
                         Activity activity = Activity.builder()
                                 .idActivity(UUID.randomUUID().toString())
                                 .name("Actividad de " + faker.hacker().verb())
-                                .logicLevel(faker.options().option("low", "medium", "high"))
+                                .logicLevel(faker.options().option(ActivityLevel.LOW, ActivityLevel.MEDIUM,
+                                        ActivityLevel.HIGH))
                                 .idLesson(lessonId)
                                 .build();
                         activityRepositoryPort.save(activity);
