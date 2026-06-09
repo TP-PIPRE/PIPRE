@@ -7,4 +7,5 @@ import java.util.List;
 public interface LessonRepositoryPort {
     List<Lesson> findAll();
     void save(Lesson newLesson);
+    boolean existsById(String idLesson);
 }

@@ -35,4 +35,9 @@ public class LessonRepositoryAdapter implements LessonRepositoryPort {
         }
         lessonJpaRepository.save(entity);
     }
+
+    @Override
+    public boolean existsById(String idLesson) {
+        return lessonJpaRepository.existsById(idLesson);
+    }
 }

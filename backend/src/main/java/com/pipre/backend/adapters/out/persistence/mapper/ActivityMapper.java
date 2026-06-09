@@ -2,38 +2,31 @@ package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.SimulationJpaEntity;
-import com.pipre.backend.domain.entities.Activity;
+import com.pipre.backend.domain.entities.activity.Activity;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ActivityMapper {
-    public static ActivityJpaEntity toJpaEntity(Activity domain) {
-        if (domain == null) return null;
-        ActivityJpaEntity entity = new ActivityJpaEntity();
-        entity.setIdActivity(domain.getIdActivity());
-        entity.setName(domain.getName());
-        entity.setLogicLevel(domain.getLogicLevel());
-        return entity;
+@Mapper(componentModel = "spring")
+public interface ActivityMapper {
 
-    }
-    public static Activity toDomain(ActivityJpaEntity entity) {
-        String idLesson = (entity.getLessonJpaEntity() == null)
-                ? null
-                : entity.getLessonJpaEntity().getIdLesson();
-        List<String> idimulationList = (entity.getSimulationJpaEntityList() == null)
-                ? new ArrayList<>()
-                : entity.getSimulationJpaEntityList()
-                .stream()
+    @Mapping(target = "lessonJpaEntity", ignore = true)
+    @Mapping(target = "simulationJpaEntityList", ignore = true)
+    ActivityJpaEntity toJpaEntity(Activity domain);
+
+    @Mapping(target = "idLesson", source = "lessonJpaEntity.idLesson")
+    @Mapping(target = "idSimulationList", source = "simulationJpaEntityList")
+    Activity toDomain(ActivityJpaEntity entity);
+
+    default List<String> mapSimulations(List<SimulationJpaEntity> simulations) {
+        if (simulations == null) {
+            return new ArrayList<>();
+        }
+        return simulations.stream()
                 .map(SimulationJpaEntity::getIdSimulation)
                 .toList();
-        return Activity.builder()
-                .idActivity(entity.getIdActivity())
-                .name(entity.getName())
-                .logicLevel(entity.getLogicLevel())
-                .idSimulationList(idimulationList)
-                .idLesson(idLesson)
-                .build();
     }
-
 }
