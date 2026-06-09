@@ -1,24 +1,34 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.course;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class Course {
 
     private final String idCourse;
     private final String name;
     private final String description;
-    private final String level;
+    private final CourseLevel level;
     private final LocalDateTime createdAt;
     private final List<String> idModuleList;
 
     public Course(Builder builder) {
-        this.idCourse = builder.idCourse;
-        this.name = builder.name;
+        this.idCourse = validateNotEmpty(builder.idCourse, "El ID del curso no puede estar vacío");
+        this.name = validateNotEmpty(builder.name, "El nombre del curso no puede estar vacío");
         this.description = builder.description;
-        this.level = builder.level;
-        this.createdAt = builder.createdAt;
-        this.idModuleList = builder.idModuleList;
+        this.level = Objects.requireNonNull(builder.level, "El nivel del curso no puede ser nulo");
+        this.createdAt = Objects.requireNonNull(builder.createdAt, "La fecha de creación no puede ser nula");
+        this.idModuleList = builder.idModuleList != null ? new ArrayList<>(builder.idModuleList) : new ArrayList<>();
+    }
+
+    private String validateNotEmpty(String value, String message) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
     }
 
     public static Builder builder() {
@@ -37,7 +47,7 @@ public class Course {
         return this.description;
     }
 
-    public String getLevel() {
+    public CourseLevel getLevel() {
         return this.level;
     }
 
@@ -46,15 +56,35 @@ public class Course {
     }
 
     public List<String> getIdModuleList() {
-        return this.idModuleList;
+        return Collections.unmodifiableList(this.idModuleList);
     }
 
-    public Course updateCourse(String name, String description, String level) {
+    public Course changeDetails(String name, String description, CourseLevel level) {
         return this.toBuilder()
                 .name(name)
                 .description(description)
                 .level(level)
                 .build();
+    }
+
+    public void assignModule(String idModule) {
+        if (idModule == null || idModule.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del módulo no puede ser nulo o vacío");
+        }
+        if (this.idModuleList.contains(idModule)) {
+            throw new IllegalArgumentException("El módulo ya está asignado a este curso");
+        }
+        this.idModuleList.add(idModule);
+    }
+
+    public void removeModule(String idModule) {
+        if (idModule == null || idModule.trim().isEmpty()) {
+            throw new IllegalArgumentException("El ID del módulo no puede ser nulo o vacío");
+        }
+        if (!this.idModuleList.contains(idModule)) {
+            throw new IllegalArgumentException("El módulo no está asignado a este curso");
+        }
+        this.idModuleList.remove(idModule);
     }
 
     public Builder toBuilder() {
@@ -66,11 +96,12 @@ public class Course {
                 .createdAt(this.createdAt)
                 .idModuleList(this.idModuleList);
     }
+
     public static class Builder {
         private String idCourse;
         private String name;
         private String description;
-        private String level;
+        private CourseLevel level;
         private LocalDateTime createdAt;
         private List<String> idModuleList;
 
@@ -92,7 +123,7 @@ public class Course {
             return this;
         }
 
-        public Builder level(String level) {
+        public Builder level(CourseLevel level) {
             this.level = level;
             return this;
         }
@@ -110,6 +141,5 @@ public class Course {
         public Course build() {
             return new Course(this);
         }
-
     }
 }
