@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
+import com.pipre.backend.application.dto.CourseDTO;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -16,10 +16,10 @@ public class GetCoursesService implements GetCoursesUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CourseResponseDTO> execute() {
+    public List<CourseDTO> execute() {
         return repositoryPort.findAll()
                 .stream()
-                .map(course -> new CourseResponseDTO(
+                .map(course -> new CourseDTO(
                         course.getIdCourse(),
                         course.getName()
                 ))

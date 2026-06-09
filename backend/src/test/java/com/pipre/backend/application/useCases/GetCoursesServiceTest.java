@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
+import com.pipre.backend.application.dto.CourseDTO;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import com.pipre.backend.domain.entities.Course;
 import org.junit.jupiter.api.DisplayName;
@@ -18,8 +18,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class GetCoursesServiceTest {
 
-    @Mock private CourseRepositoryPort repositoryPort;
-    @InjectMocks private GetCoursesService getCoursesService;
+    @Mock
+    private CourseRepositoryPort repositoryPort;
+    @InjectMocks
+    private GetCoursesService getCoursesService;
 
     @Test
     @DisplayName("Debería retornar la lista de todos los cursos")
@@ -29,7 +31,7 @@ class GetCoursesServiceTest {
         when(repositoryPort.findAll()).thenReturn(List.of(course));
 
         // Act
-        List<CourseResponseDTO> result = getCoursesService.execute();
+        List<CourseDTO> result = getCoursesService.execute();
 
         // Assert
         assertEquals(1, result.size());

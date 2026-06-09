@@ -22,7 +22,9 @@ spring:
 
   flyway:
     enabled: true
-
+  threads:
+    virtual:
+      enabled: true
 springdoc:
   swagger-ui:
     enabled: true
