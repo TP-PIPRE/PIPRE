@@ -6,8 +6,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.*;
-
 @Configuration
 @RequiredArgsConstructor
 public class DataSeeder {
@@ -16,10 +14,6 @@ public class DataSeeder {
     private final CourseSeederService courseSeederService;
     private final GroupSeederService groupSeederService;
 
-//    private final ProgressSeederService progressSeederService;
-//    private final SupportAnalyticSeederService supportAnalyticSeederService;
-//    private final GroupSeederService groupSeederService;
-
     @Bean
     CommandLineRunner seed() {
         return args -> {
@@ -27,9 +21,6 @@ public class DataSeeder {
                 userSeederService.seedUsers();
                 courseSeederService.seedCourses();
                 groupSeederService.seedCourses();
-//                progressSeederService.seedProgress();
-//                supportAnalyticSeederService.seedAnalytics();
-//                groupSeederService.seedGroups();
                 System.out.println("Base de datos sembrada");
             } else {
                 System.out.println("La base de datos ya contiene datos. No se sembró nada.");
