@@ -3,6 +3,9 @@ package com.pipre.backend.infrastructure.util.seed;
 import com.pipre.backend.application.ports.output.*;
 import com.pipre.backend.domain.entities.*;
 import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.course.Course;
+import com.pipre.backend.domain.entities.course.CourseLevel;
+
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
@@ -44,7 +47,7 @@ public class CourseSeederService {
                     .idCourse(UUID.randomUUID().toString())
                     .name(faker.educator().course())
                     .description(faker.lorem().sentence(8))
-                    .level(faker.options().option("low", "medium", "high"))
+                    .level(faker.options().option(CourseLevel.LOW, CourseLevel.MEDIUM, CourseLevel.HIGH))
                     .createdAt(LocalDateTime.now().minusDays(
                             faker.number().numberBetween(1, 120)))
                     .build();
