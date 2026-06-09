@@ -1,7 +1,7 @@
 package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.application.commands.RegisterCourseCommand;
-import com.pipre.backend.adapters.in.web.dto.CourseResponseDTO;
+import com.pipre.backend.application.dto.CourseDTO;
 import com.pipre.backend.application.ports.input.CreateCourseUseCase;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
@@ -21,7 +21,7 @@ public class CourseController {
     private final UpdateCoursesUseCase updateCoursesUseCase;
 
     @GetMapping
-    public ResponseEntity<List<CourseResponseDTO>> getCourses() {
+    public ResponseEntity<List<CourseDTO>> getCourses() {
         return ResponseEntity.ok(getCoursesUseCase.execute());
     }
 
@@ -32,7 +32,7 @@ public class CourseController {
     }
 
     @PutMapping("/{idCourse}")
-    public ResponseEntity<Void> putCourse(@RequestBody  @PathVariable String idCourse, RegisterCourseCommand requestDTO) {
+    public ResponseEntity<Void> putCourse(@PathVariable String idCourse, @RequestBody RegisterCourseCommand requestDTO) {
         updateCoursesUseCase.execute(idCourse, requestDTO);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
