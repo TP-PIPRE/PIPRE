@@ -4,7 +4,7 @@ import com.pipre.backend.adapters.out.persistence.jpaEntities.GroupJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaRepositories.GroupJpaRepository;
 import com.pipre.backend.adapters.out.persistence.mapper.GroupMapper;
 import com.pipre.backend.application.ports.output.GroupRepositoryPort;
-import com.pipre.backend.domain.entities.Group;
+import com.pipre.backend.domain.entities.group.Group;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -15,24 +15,25 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GroupRepositoryAdapter implements GroupRepositoryPort {
     private final GroupJpaRepository groupJpaRepository;
+    private final GroupMapper groupMapper;
 
     @Override
     public List<Group> findAll() {
         return groupJpaRepository.findAll()
                 .stream()
-                .map(GroupMapper::toDomain)
+                .map(groupMapper::toDomain)
                 .toList();
     }
 
     @Override
     public Optional<Group> findById(String idGroup) {
         return groupJpaRepository.findById(idGroup)
-                .map(GroupMapper::toDomain);
+                .map(groupMapper::toDomain);
     }
 
     @Override
     public void save(Group group) {
-        GroupJpaEntity entity = GroupMapper.toJpaEntity(group);
+        GroupJpaEntity entity = groupMapper.toJpaEntity(group);
         groupJpaRepository.save(entity);
     }
 }

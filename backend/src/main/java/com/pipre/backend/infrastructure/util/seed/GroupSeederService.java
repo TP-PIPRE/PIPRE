@@ -4,7 +4,7 @@ import com.pipre.backend.application.ports.output.GroupRepositoryPort;
 import com.pipre.backend.application.ports.output.RankingRepositoryPort;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.domain.entities.Group;
+import com.pipre.backend.domain.entities.group.Group;
 import com.pipre.backend.domain.entities.Ranking;
 import com.pipre.backend.domain.entities.role.Role;
 import com.pipre.backend.domain.entities.user.User;

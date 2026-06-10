@@ -1,6 +1,6 @@
 package com.pipre.backend.application.ports.output;
 
-import com.pipre.backend.domain.entities.Group;
+import com.pipre.backend.domain.entities.group.Group;
 
 import java.util.List;
 import java.util.Optional;
