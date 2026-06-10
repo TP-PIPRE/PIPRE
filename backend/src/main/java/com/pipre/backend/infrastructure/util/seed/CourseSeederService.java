@@ -3,7 +3,7 @@ package com.pipre.backend.infrastructure.util.seed;
 import com.pipre.backend.application.ports.output.*;
 import com.pipre.backend.domain.entities.*;
 import com.pipre.backend.domain.entities.user.User;
-import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.module.Module;
 import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.activity.ActivityLevel;
 import com.pipre.backend.domain.entities.course.Course;
