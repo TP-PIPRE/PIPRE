@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { apiService } from "../../../infrastructure/api/apiService";
-import type { Group } from "../../../shared/types/Group";
+import { specService } from "../../../infrastructure/api/specService";
+import type { GroupInfo } from "../../../shared/types/SpecContracts";
 
 interface GroupSelectorProps {
   selectedGroupId: string | null;
@@ -11,17 +11,13 @@ export const GroupSelector = ({
   selectedGroupId,
   onSelect,
 }: GroupSelectorProps) => {
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<GroupInfo[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiService.groups
+    specService.groups
       .getAll()
-      .then((data) => {
-        setGroups(
-          data.map((g) => ({ idGroup: g.idGroup, groupName: g.groupName })),
-        );
-      })
+      .then(setGroups)
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -49,8 +45,8 @@ export const GroupSelector = ({
           Seleccionar grupo...
         </option>
         {groups.map((g) => (
-          <option key={g.idGroup} value={g.idGroup}>
-            {g.groupName}
+          <option key={g.id} value={g.id}>
+            {g.name}
           </option>
         ))}
       </select>

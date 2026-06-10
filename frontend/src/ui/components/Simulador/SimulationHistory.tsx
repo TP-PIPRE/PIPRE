@@ -1,9 +1,9 @@
-import type { ParsedSimulation } from "../../../application/hooks/useRobotSimulations";
+import type { RoboticsSimulationResponse } from "../../../shared/types/SpecContracts";
 import { SimulationResultPanel } from "./SimulationResultPanel";
 
 interface SimulationHistoryProps {
-  simulations: ParsedSimulation[];
-  onSelect?: (sim: ParsedSimulation) => void;
+  simulations: RoboticsSimulationResponse[];
+  onSelect?: (sim: RoboticsSimulationResponse) => void;
 }
 
 export const SimulationHistory = ({

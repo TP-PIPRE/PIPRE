@@ -1,9 +1,9 @@
-import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
+import type { ActivityResponse } from "../../../shared/types/SpecContracts";
 
 interface ActivityListProps {
-  activities: ActivityResponseDTO[];
+  activities: ActivityResponse[];
   selectedId: string | null;
-  onSelect: (activity: ActivityResponseDTO) => void;
+  onSelect: (activity: ActivityResponse) => void;
 }
 
 export const ActivityList = ({
@@ -14,7 +14,7 @@ export const ActivityList = ({
   if (activities.length === 0) {
     return (
       <div className="p-6 text-center text-text-muted text-sm border border-dashed border-border">
-        No hay actividades disponibles para esta lección.
+        No hay actividades disponibles para este grupo.
       </div>
     );
   }
@@ -25,10 +25,10 @@ export const ActivityList = ({
         Actividades
       </h3>
       {activities.map((a) => {
-        const isSelected = a.idActivity === selectedId;
+        const isSelected = a.id === selectedId;
         return (
           <button
-            key={a.idActivity}
+            key={a.id}
             onClick={() => onSelect(a)}
             className={`w-full text-left p-3 border text-sm transition-all duration-200 ${
               isSelected
@@ -38,12 +38,10 @@ export const ActivityList = ({
             style={{ borderRadius: "var(--theme-radius)" }}
           >
             <div className="font-semibold">{a.name}</div>
-            {a.difficulty && (
-              <div className="text-[10px] text-text-muted mt-1 uppercase tracking-wider">
-                {a.difficulty}
-                {a.type && ` · ${a.type}`}
-              </div>
-            )}
+            <div className="text-[10px] text-text-muted mt-1 uppercase tracking-wider">
+              {a.difficulty}
+              {a.type && ` · ${a.type}`}
+            </div>
           </button>
         );
       })}
