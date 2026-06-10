@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.RoleResponseDTO;
+import com.pipre.backend.application.dto.RoleDTO;
 import com.pipre.backend.application.ports.input.GetRolesUseCase;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +17,10 @@ public class GetRolesService implements GetRolesUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RoleResponseDTO> execute() {
+    public List<RoleDTO> execute() {
         return repositoryPort.findAll()
                 .stream()
-                .map(role -> new RoleResponseDTO(
+                .map(role -> new RoleDTO(
                         role.getIdRole(),
                         role.getName()
                 ))
