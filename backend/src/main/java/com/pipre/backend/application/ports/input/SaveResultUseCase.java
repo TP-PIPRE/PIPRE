@@ -1,7 +1,7 @@
 package com.pipre.backend.application.ports.input;
 
-import com.pipre.backend.adapters.in.web.dto.ResultRequestDTO;
+import com.pipre.backend.application.commands.SaveResultCommand;
 
 public interface SaveResultUseCase {
-    String execute(ResultRequestDTO requestDTO);
+    String execute(SaveResultCommand command);
 }
