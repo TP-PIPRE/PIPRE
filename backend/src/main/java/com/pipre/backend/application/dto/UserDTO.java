@@ -1,6 +1,6 @@
-package com.pipre.backend.adapters.in.web.dto;
+package com.pipre.backend.application.dto;
 
-public record UserResponseDTO(
+public record UserDTO(
     String idUser,
     String firstName,
     String lastName,

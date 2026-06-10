@@ -1,4 +1,4 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.role;
 
 public class Role {
 

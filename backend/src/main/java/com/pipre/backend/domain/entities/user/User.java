@@ -1,4 +1,4 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.user;
 
 import com.pipre.backend.domain.exceptions.BusinessException;
 
@@ -11,35 +11,28 @@ public class User {
     private final String idUser;
     private final String firstName;
     private final String lastName;
-    private final String email;
+    private final Email email;
     private final String passwordHash;
     private final String grade;
-    private final Integer age;
+    private final Age age;
     private final Boolean isActive;
     private final LocalDateTime registeredAt;
     private final List<String> idRoleList;
 
     public User(Builder builder) {
-        if (builder.email == null || builder.email.isBlank()) {
-            throw new BusinessException("El email del usuario es obligatorio.");
-        }
-
-        if (builder.age != null && builder.age < 0) {
-            throw new BusinessException("La edad no puede ser negativa.");
-        }
+        this.email = new Email(builder.email);
+        this.age = new Age(builder.age);
 
         this.idUser = builder.idUser;
         this.firstName = builder.firstName;
         this.lastName = builder.lastName;
-        this.email = builder.email;
         this.passwordHash = builder.passwordHash;
         this.grade = builder.grade;
-        this.age = builder.age;
         this.isActive = builder.isActive;
         this.registeredAt = builder.registeredAt;
         this.idRoleList = builder.idRoleList != null
                         ? List.copyOf(builder.idRoleList)
-                        :List.of();
+                        : List.of();
     }
 
     public User addRole(String roleId) {
@@ -58,13 +51,17 @@ public class User {
                 .idUser(this.idUser)
                 .firstName(this.firstName)
                 .lastName(this.lastName)
-                .email(this.email)
+                .email(this.getEmail())
                 .passwordHash(this.passwordHash)
                 .grade(this.grade)
-                .age(this.age)
+                .age(this.getAge())
                 .isActive(this.isActive)
                 .registeredAt(this.registeredAt)
                 .idRoleList(this.idRoleList);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static class Builder {
@@ -108,7 +105,7 @@ public class User {
     }
 
     public String getEmail() {
-        return email;
+        return email != null ? email.value() : null;
     }
 
     public String getPasswordHash() {
@@ -120,10 +117,10 @@ public class User {
     }
 
     public Integer getAge() {
-        return age;
+        return age != null ? age.value() : null;
     }
 
-    public Boolean getActive() {
+    public Boolean getIsActive() {
         return isActive;
     }
 
@@ -134,5 +131,4 @@ public class User {
     public List<String> getIdRoleList() {
         return idRoleList;
     }
-
 }

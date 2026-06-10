@@ -2,6 +2,7 @@ package com.pipre.backend.infrastructure.util.seed;
 
 import com.pipre.backend.application.ports.output.*;
 import com.pipre.backend.domain.entities.*;
+import com.pipre.backend.domain.entities.user.User;
 import com.pipre.backend.domain.entities.Module;
 import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.activity.ActivityLevel;
@@ -32,7 +33,7 @@ public class CourseSeederService {
     @Transactional
     public void seedCourses() {
         List<User> students = userRepositoryPort.findAll().stream()
-                .filter(User::getActive)
+                .filter(User::getIsActive)
                 .toList();
 
         if (students.isEmpty())
