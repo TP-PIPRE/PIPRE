@@ -1,7 +1,10 @@
 package com.pipre.backend.adapters.in.web.controller;
 
-import com.pipre.backend.adapters.in.web.dto.GroupResponseDTO;
+import com.pipre.backend.application.dto.GroupDTO;
 import com.pipre.backend.application.ports.input.GetGroupsUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,12 +16,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/groups")
 @RequiredArgsConstructor
+@Tag(name = "Grupos")
 public class GroupController {
 
     private final GetGroupsUseCase getGroupsUseCase;
 
     @GetMapping
-    public ResponseEntity<List<GroupResponseDTO>> getGroups() {
+    @Operation(summary = "Obtener todos los grupos")
+    @ApiResponse(responseCode = "200", description = "Grupos obtenidos exitosamente")
+    public ResponseEntity<List<GroupDTO>> getGroups() {
         return ResponseEntity.ok(getGroupsUseCase.execute());
     }
 }

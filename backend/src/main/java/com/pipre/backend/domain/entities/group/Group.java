@@ -1,5 +1,6 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.group;
 
+import com.pipre.backend.domain.exceptions.BusinessException;
 import java.util.List;
 
 public class Group {
@@ -9,9 +10,15 @@ public class Group {
     private final List<String> idGroupStudentList;
 
     Group(String idGroup, String groupName, List<String> idGroupStudentList) {
+        if (idGroup == null || idGroup.isBlank()) {
+            throw new BusinessException("El ID del grupo es obligatorio.");
+        }
+        if (groupName == null || groupName.isBlank()) {
+            throw new BusinessException("El nombre del grupo es obligatorio.");
+        }
         this.idGroup = idGroup;
         this.groupName = groupName;
-        this.idGroupStudentList = idGroupStudentList;
+        this.idGroupStudentList = idGroupStudentList != null ? List.copyOf(idGroupStudentList) : List.of();
     }
 
     public static GroupBuilder builder() {
