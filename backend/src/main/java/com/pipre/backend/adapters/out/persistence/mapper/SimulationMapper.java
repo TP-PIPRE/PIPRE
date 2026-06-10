@@ -3,42 +3,41 @@ package com.pipre.backend.adapters.out.persistence.mapper;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.SimulationJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.UserJpaEntity;
-import com.pipre.backend.domain.entities.Simulation;
+import com.pipre.backend.domain.entities.simulation.Simulation;
+import com.pipre.backend.domain.entities.simulation.SimulationResult;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public class SimulationMapper {
-    public static SimulationJpaEntity toJpaEntity(com.pipre.backend.domain.entities.Simulation domain) {
-        if (domain == null) return null;
-        SimulationJpaEntity entity = new SimulationJpaEntity();
-        entity.setIdSimulation(domain.getIdSimulation());
-        entity.setResult(domain.getResult());
-        if (domain.getIdStudent() != null) {
-            UserJpaEntity studentEntity = new UserJpaEntity();
-            studentEntity.setIdUser(domain.getIdStudent());
-            entity.setStudentJpaEntity(studentEntity);
-        }
+@Mapper(componentModel = "spring")
+public interface SimulationMapper {
 
-        if (domain.getIdActivity() != null) {
-            ActivityJpaEntity activityEntity = new ActivityJpaEntity();
-            activityEntity.setIdActivity(domain.getIdActivity());
-            entity.setActivityJpaEntity(activityEntity);
-        }
+    @Mapping(target = "studentJpaEntity", source = "idStudent")
+    @Mapping(target = "activityJpaEntity", source = "idActivity")
+    SimulationJpaEntity toJpaEntity(Simulation domain);
+
+    @Mapping(target = "idStudent", source = "studentJpaEntity.idUser")
+    @Mapping(target = "idActivity", source = "activityJpaEntity.idActivity")
+    Simulation toDomain(SimulationJpaEntity entity);
+
+    default UserJpaEntity mapStudent(String idStudent) {
+        if (idStudent == null) return null;
+        UserJpaEntity entity = new UserJpaEntity();
+        entity.setIdUser(idStudent);
         return entity;
     }
-    public static com.pipre.backend.domain.entities.Simulation toDomain(SimulationJpaEntity entity) {
-        if (entity == null) return null;
 
-        String idStudent = (entity.getStudentJpaEntity() == null)
-                ? null
-                : entity.getStudentJpaEntity().getIdUser();
-        String idActivity = (entity.getActivityJpaEntity() == null)
-                ? null
-                : entity.getActivityJpaEntity().getIdActivity();
+    default ActivityJpaEntity mapActivity(String idActivity) {
+        if (idActivity == null) return null;
+        ActivityJpaEntity entity = new ActivityJpaEntity();
+        entity.setIdActivity(idActivity);
+        return entity;
+    }
 
-        return Simulation.builder()
-                .idSimulation(entity.getIdSimulation())
-                .result(entity.getResult())
-                .idStudent(idStudent)
-                .idActivity(idActivity)
-                .build();
+    default String mapResult(SimulationResult result) {
+        return result != null ? result.name() : null;
+    }
+
+    default SimulationResult mapResult(String result) {
+        return result != null ? SimulationResult.fromString(result) : null;
     }
 }
