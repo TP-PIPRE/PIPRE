@@ -1,5 +1,6 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.lesson;
 
+import com.pipre.backend.domain.exceptions.BusinessException;
 import java.util.List;
 
 public class Lesson {
@@ -10,10 +11,19 @@ public class Lesson {
     private final List<String> idActivityList;
 
     Lesson(String idLesson, String title, String idModule, List<String> idActivityList) {
+        if (idLesson == null || idLesson.isBlank()) {
+            throw new BusinessException("El ID de la lección es obligatorio.");
+        }
+        if (title == null || title.isBlank()) {
+            throw new BusinessException("El título de la lección es obligatorio.");
+        }
+        if (idModule == null || idModule.isBlank()) {
+            throw new BusinessException("El ID del módulo es obligatorio.");
+        }
         this.idLesson = idLesson;
         this.title = title;
         this.idModule = idModule;
-        this.idActivityList = idActivityList;
+        this.idActivityList = idActivityList != null ? List.copyOf(idActivityList) : List.of();
     }
 
     public static LessonBuilder builder() {
