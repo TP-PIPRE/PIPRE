@@ -1,7 +1,8 @@
 package com.pipre.backend.domain.factories;
 
-import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.module.Module;
 
+import java.util.List;
 import java.util.UUID;
 
 public class ModuleFactory {
@@ -12,7 +13,7 @@ public class ModuleFactory {
         return Module.builder()
                 .idModule(UUID.randomUUID().toString())
                 .title(title)
-                .idLessonList(null)
+                .idLessonList(List.of())
                 .idCourse(idCourse)
                 .build();
     }

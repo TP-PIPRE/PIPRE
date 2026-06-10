@@ -1,6 +1,6 @@
 package com.pipre.backend.application.ports.output;
 
-import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.module.Module;
 
 import java.util.List;
 
