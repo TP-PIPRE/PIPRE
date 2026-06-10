@@ -14,12 +14,13 @@ import java.util.List;
 public class RoleRepositoryAdapter implements RoleRepositoryPort {
 
     private final RoleJpaRepository jpaRepository;
+    private final RoleMapper roleMapper;
 
     @Override
     public List<Role> findAll() {
         return jpaRepository.findAll()
                 .stream()
-                .map(RoleMapper::toDomain)
+                .map(roleMapper::toDomain)
                 .toList();
     }
 

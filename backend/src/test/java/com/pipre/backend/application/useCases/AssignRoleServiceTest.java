@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.RoleUserRequestDTO;
+import com.pipre.backend.application.commands.AssignRoleCommand;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.domain.entities.user.User;
@@ -38,7 +38,7 @@ class AssignRoleServiceTest {
         // Arrange (Preparación)
         String userId = "user-123";
         String roleId = "role-456";
-        RoleUserRequestDTO dto = new RoleUserRequestDTO(userId, roleId);
+        AssignRoleCommand command = new AssignRoleCommand(userId, roleId);
 
         // Creamos un usuario de dominio
         User user = new User.Builder()
@@ -52,7 +52,7 @@ class AssignRoleServiceTest {
         when(roleRepositoryPort.existsById(roleId)).thenReturn(true);
 
         // Act (Acción)
-        assignRoleService.execute(dto);
+        assignRoleService.execute(command);
 
         // Assert (Verificación)
         // Verificamos que se llamó al save con el usuario actualizado
@@ -68,7 +68,7 @@ class AssignRoleServiceTest {
         // Arrange
         String userId = "user-123";
         String roleId = "invalid-role";
-        RoleUserRequestDTO dto = new RoleUserRequestDTO(userId, roleId);
+        AssignRoleCommand command = new AssignRoleCommand(userId, roleId);
 
         User user = new User.Builder().idUser(userId).email("a@a.com").build();
 
@@ -77,7 +77,7 @@ class AssignRoleServiceTest {
 
         // Act & Assert
         BusinessException exception = assertThrows(BusinessException.class, () -> {
-            assignRoleService.execute(dto);
+            assignRoleService.execute(command);
         });
 
         assertEquals("El rol no existe", exception.getMessage());
