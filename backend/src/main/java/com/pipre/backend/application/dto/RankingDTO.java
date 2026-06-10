@@ -1,10 +1,9 @@
-package com.pipre.backend.adapters.in.web.dto;
+package com.pipre.backend.application.dto;
 
 import java.math.BigDecimal;
 
-public record RankingResponseDTO(
+public record RankingDTO(
         String idStudent,
         BigDecimal totalPoints,
         Integer position
-) {
-}
+) {}
