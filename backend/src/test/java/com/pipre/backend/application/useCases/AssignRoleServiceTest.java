@@ -3,7 +3,7 @@ package com.pipre.backend.application.useCases;
 import com.pipre.backend.adapters.in.web.dto.RoleUserRequestDTO;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.domain.entities.User;
+import com.pipre.backend.domain.entities.user.User;
 import com.pipre.backend.domain.exceptions.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

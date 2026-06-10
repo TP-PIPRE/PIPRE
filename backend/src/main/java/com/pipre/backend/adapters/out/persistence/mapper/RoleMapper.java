@@ -1,7 +1,7 @@
 package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.RoleJpaEntity;
-import com.pipre.backend.domain.entities.Role;
+import com.pipre.backend.domain.entities.role.Role;
 
 public class RoleMapper {
     public static RoleJpaEntity toJpaEntity(Role domain) {

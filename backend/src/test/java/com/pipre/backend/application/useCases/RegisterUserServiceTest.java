@@ -2,7 +2,9 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.commands.RegisterUserCommand;
 import com.pipre.backend.application.ports.output.PasswordEncoderPort;
+import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
+import com.pipre.backend.domain.entities.role.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +23,7 @@ import static org.mockito.Mockito.*;
 class RegisterUserServiceTest {
 
     @Mock private UserRepositoryPort userRepositoryPort;
+    @Mock private RoleRepositoryPort roleRepositoryPort;
     @Mock private PasswordEncoderPort passwordEncoderPort;
     @InjectMocks private RegisterUserService registerUserService;
 
@@ -31,7 +34,10 @@ class RegisterUserServiceTest {
         RegisterUserCommand cmd = new RegisterUserCommand(
                 "Luis", "García", "luis@pipre.com", "password123", "6to", 12, List.of("role-uuid")
         );
+        Role mockRole = Role.builder().idRole("role-uuid").name("STUDENT").description("").build();
+
         when(userRepositoryPort.existsByEmail(cmd.email())).thenReturn(false);
+        when(roleRepositoryPort.findAll()).thenReturn(List.of(mockRole));
         when(passwordEncoderPort.encode("password123")).thenReturn("hashed_password_xyz");
 
         // Act
@@ -55,7 +61,7 @@ class RegisterUserServiceTest {
                 "exists@p.com",
                 "1",
                 "1",
-                10, List.of());
+                10, List.of("role-uuid"));
         when(userRepositoryPort.existsByEmail("exists@p.com")).thenReturn(true);
 
         assertThrows(RuntimeException.class, () -> registerUserService.execute(cmd));

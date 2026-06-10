@@ -1,8 +1,9 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.UserResponseDTO;
+import com.pipre.backend.application.dto.UserDTO;
 import com.pipre.backend.application.ports.input.GetUserByIdUseCase;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
+import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,14 +16,14 @@ public class GetUserByIdService implements GetUserByIdUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponseDTO execute(String userId) {
+    public UserDTO execute(String userId) {
         return repositoryPort.findById(userId)
-                .map(user -> new UserResponseDTO(
+                .map(user -> new UserDTO(
                         user.getIdUser(),
                         user.getFirstName(),
                         user.getLastName(),
                         user.getEmail()
                 ))
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
     }
 }

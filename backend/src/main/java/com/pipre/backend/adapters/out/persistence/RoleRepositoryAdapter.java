@@ -3,7 +3,7 @@ package com.pipre.backend.adapters.out.persistence;
 import com.pipre.backend.adapters.out.persistence.mapper.RoleMapper;
 import com.pipre.backend.adapters.out.persistence.jpaRepositories.RoleJpaRepository;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
-import com.pipre.backend.domain.entities.Role;
+import com.pipre.backend.domain.entities.role.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

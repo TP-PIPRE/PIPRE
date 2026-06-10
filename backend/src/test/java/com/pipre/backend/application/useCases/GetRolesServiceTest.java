@@ -2,7 +2,7 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.adapters.in.web.dto.RoleResponseDTO;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
-import com.pipre.backend.domain.entities.Role;
+import com.pipre.backend.domain.entities.role.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
