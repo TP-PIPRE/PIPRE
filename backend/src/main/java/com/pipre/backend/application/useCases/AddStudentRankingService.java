@@ -5,7 +5,7 @@ import com.pipre.backend.application.ports.input.AddStudentRankingUseCase;
 import com.pipre.backend.application.ports.output.RankingRepositoryPort;
 import com.pipre.backend.application.ports.output.ResultRepositoryPort;
 import com.pipre.backend.domain.entities.Ranking;
-import com.pipre.backend.domain.entities.Result;
+import com.pipre.backend.domain.entities.result.Result;
 import com.pipre.backend.domain.factories.RankingFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

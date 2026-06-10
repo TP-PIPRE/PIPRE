@@ -1,5 +1,6 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.result;
 
+import com.pipre.backend.domain.exceptions.BusinessException;
 import java.math.BigDecimal;
 
 public class Result {
@@ -13,6 +14,25 @@ public class Result {
     private final String idActivity;
 
     Result(String idResult, Integer attempts, Integer errors, BigDecimal score, String resultSimulation, String idStudent, String idActivity) {
+        if (idResult == null || idResult.isBlank()) {
+            throw new BusinessException("El ID del resultado es obligatorio.");
+        }
+        if (idStudent == null || idStudent.isBlank()) {
+            throw new BusinessException("El ID del estudiante es obligatorio.");
+        }
+        if (idActivity == null || idActivity.isBlank()) {
+            throw new BusinessException("El ID de la actividad es obligatorio.");
+        }
+        if (attempts != null && attempts < 0) {
+            throw new BusinessException("El número de intentos no puede ser negativo.");
+        }
+        if (errors != null && errors < 0) {
+            throw new BusinessException("El número de errores no puede ser negativo.");
+        }
+        if (score != null && score.compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("El puntaje no puede ser negativo.");
+        }
+
         this.idResult = idResult;
         this.attempts = attempts;
         this.errors = errors;
