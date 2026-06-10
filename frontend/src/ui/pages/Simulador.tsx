@@ -14,8 +14,8 @@ import { ActivityList } from "../components/Simulador/ActivityList";
 import { ScenarioMap } from "../components/Simulador/ScenarioMap";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import type { EnvironmentType } from "../../shared/types/Simulador";
-import { apiService } from "../../infrastructure/api/apiService";
-import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
+import { specService } from "../../infrastructure/api/specService";
+import type { ActivityResponse } from "../../shared/types/SpecContracts";
 
 const ENVIRONMENTS: { id: EnvironmentType; icon: string }[] = [
   { id: "battle", icon: "sports_kabaddi" },
@@ -67,7 +67,7 @@ const SimuladorInner = () => {
     environment, submitRobotSimulation, simulationLoading,
   } = useSimulador();
   const [showChallengeList, setShowChallengeList] = useState(false);
-  const [activities, setActivities] = useState<ActivityResponseDTO[]>([]);
+  const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [showGroupPanel, setShowGroupPanel] = useState(true);
 
   useEffect(() => {
@@ -86,14 +86,14 @@ const SimuladorInner = () => {
   const handleGroupSelect = useCallback(async (groupId: string) => {
     setSelectedGroupId(groupId);
     try {
-      const data = await apiService.activities.getByLesson(groupId);
+      const data = await specService.groups.getActivities(groupId);
       setActivities(data);
     } catch {
       setActivities([]);
     }
   }, [setSelectedGroupId]);
 
-  const handleActivitySelect = useCallback((activity: ActivityResponseDTO) => {
+  const handleActivitySelect = useCallback((activity: ActivityResponse) => {
     setSelectedActivity(activity);
     setShowGroupPanel(false);
   }, [setSelectedActivity]);
@@ -173,7 +173,7 @@ const SimuladorInner = () => {
             <div className="w-56">
               <ActivityList
                 activities={activities}
-                selectedId={selectedActivity?.idActivity ?? null}
+                selectedId={selectedActivity?.id ?? null}
                 onSelect={handleActivitySelect}
               />
             </div>
@@ -218,9 +218,9 @@ const SimuladorInner = () => {
             {selectedActivity && isFreeMode && (
               <div className="shrink-0">
                 <ScenarioMap
-                  environment={environment}
-                  startingPosition={{ x: 0, z: 0 }}
-                  targetPosition={{ x: 30, z: 0 }}
+                  environment={selectedActivity.environment || environment}
+                  startingPosition={selectedActivity.startingPosition}
+                  targetPosition={selectedActivity.targetPosition}
                 />
               </div>
             )}

@@ -1,30 +1,25 @@
-import type { ParsedSimulation } from "../../../application/hooks/useRobotSimulations";
+import type { RoboticsSimulationResponse } from "../../../shared/types/SpecContracts";
 
 interface SimulationResultPanelProps {
-  simulation: ParsedSimulation;
+  simulation: RoboticsSimulationResponse;
 }
+
+const resultColors: Record<string, string> = {
+  SUCCESS: "text-success",
+  PARTIAL: "text-accent",
+  FAILURE: "text-danger",
+};
+
+const resultLabels: Record<string, string> = {
+  SUCCESS: "Éxito",
+  PARTIAL: "Parcial",
+  FAILURE: "Fallido",
+};
 
 export const SimulationResultPanel = ({
   simulation,
 }: SimulationResultPanelProps) => {
-  const p = simulation.payload;
-  const result = p.result || "unknown";
-
-  const resultColors: Record<string, string> = {
-    SUCCESS: "text-success",
-    PARTIAL: "text-accent",
-    FAILED: "text-danger",
-    ABANDONED: "text-text-muted",
-    TIMEOUT: "text-warning",
-  };
-
-  const resultLabels: Record<string, string> = {
-    SUCCESS: "Éxito",
-    PARTIAL: "Parcial",
-    FAILED: "Fallido",
-    ABANDONED: "Abandonado",
-    TIMEOUT: "Tiempo agotado",
-  };
+  const { result, predictedScore, environment, missions, startingPosition, targetPosition } = simulation;
 
   return (
     <div
@@ -40,9 +35,7 @@ export const SimulationResultPanel = ({
           <div className="text-[10px] text-text-muted uppercase tracking-wider">
             Estado
           </div>
-          <div
-            className={`text-lg font-black mt-1 ${resultColors[result] ?? "text-text"}`}
-          >
+          <div className={`text-lg font-black mt-1 ${resultColors[result] ?? "text-text"}`}>
             {resultLabels[result] ?? result}
           </div>
         </div>
@@ -52,45 +45,46 @@ export const SimulationResultPanel = ({
             Puntaje
           </div>
           <div className="text-lg font-black text-primary mt-1">
-            {p.predictedScore ?? p.blocksUsage ?? "-"}
+            {predictedScore ?? "-"}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="p-2 bg-bg border border-border text-center">
-          <div className="text-xs font-bold text-text">{p.blocksUsage}</div>
+          <div className="text-xs font-bold text-text">{environment}</div>
           <div className="text-[8px] text-text-muted uppercase tracking-wider mt-0.5">
-            Bloques
-          </div>
-        </div>
-        <div className="p-2 bg-bg border border-border text-center">
-          <div className="text-xs font-bold text-text">{p.codeUsage}</div>
-          <div className="text-[8px] text-text-muted uppercase tracking-wider mt-0.5">
-            Código
+            Entorno
           </div>
         </div>
         <div className="p-2 bg-bg border border-border text-center">
           <div className="text-xs font-bold text-text">
-            {p.sensorError != null ? `${(p.sensorError * 100).toFixed(0)}%` : "-"}
+            {missions?.length ?? 0} misiones
           </div>
           <div className="text-[8px] text-text-muted uppercase tracking-wider mt-0.5">
-            Error
-          </div>
-        </div>
-        <div className="p-2 bg-bg border border-border text-center">
-          <div className="text-xs font-bold text-text">
-            {p.resolutionTime != null ? `${(p.resolutionTime / 1000).toFixed(1)}s` : "-"}
-          </div>
-          <div className="text-[8px] text-text-muted uppercase tracking-wider mt-0.5">
-            Tiempo
+            Misiones
           </div>
         </div>
       </div>
 
-      {simulation.date && (
-        <div className="text-[10px] text-text-muted">
-          {new Date(simulation.date).toLocaleString("es-ES")}
+      {startingPosition && targetPosition && (
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="p-2 bg-bg border border-border text-center">
+            <div className="text-xs font-bold text-success">
+              ({startingPosition.x}, {startingPosition.z})
+            </div>
+            <div className="text-[8px] text-text-muted uppercase tracking-wider mt-0.5">
+              Inicio
+            </div>
+          </div>
+          <div className="p-2 bg-bg border border-border text-center">
+            <div className="text-xs font-bold text-danger">
+              ({targetPosition.x}, {targetPosition.z})
+            </div>
+            <div className="text-[8px] text-text-muted uppercase tracking-wider mt-0.5">
+              Objetivo
+            </div>
+          </div>
         </div>
       )}
     </div>

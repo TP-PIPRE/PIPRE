@@ -8,9 +8,9 @@ import { useThemeStore } from "../../infrastructure/store/themeStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import { getAuthState } from "../../infrastructure/store/authStore";
-import type { SimulationResult } from "../../shared/types/RobotSimulation";
+import type { SimulationResultType } from "../../shared/types/SpecContracts";
 import { useRobotSimulations } from "../hooks/useRobotSimulations";
-import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
+import type { ActivityResponse } from "../../shared/types/SpecContracts";
 
 interface LogEntry {
   time: string;
@@ -41,8 +41,8 @@ interface SimuladorContextType {
 
   selectedGroupId: string | null;
   setSelectedGroupId: (id: string) => void;
-  selectedActivity: ActivityResponseDTO | null;
-  setSelectedActivity: (a: ActivityResponseDTO | null) => void;
+  selectedActivity: ActivityResponse | null;
+  setSelectedActivity: (a: ActivityResponse | null) => void;
 
   portAssignments: Record<string, string>;
   assignHardware: (slotId: string, hardwareId: string) => void;
@@ -86,7 +86,7 @@ interface SimuladorContextType {
   submitRobotSimulation: () => Promise<void>;
   simulationLoading: boolean;
   simulationError: string | null;
-  lastSimulationResult: SimulationResult | null;
+  lastSimulationResult: SimulationResultType | null;
 }
 
 const SimuladorContext = createContext<SimuladorContextType | undefined>(
@@ -128,8 +128,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const stopRequested = useRef(false);
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [selectedActivity, setSelectedActivity] = useState<ActivityResponseDTO | null>(null);
-  const [lastSimulationResult, setLastSimulationResult] = useState<SimulationResult | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityResponse | null>(null);
+  const [lastSimulationResult, setLastSimulationResult] = useState<SimulationResultType | null>(null);
   const startTimeRef = useRef<number>(0);
 
   const {
@@ -341,6 +341,29 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     setLogs((prev) => [...prev, { time: `[${time}]`, msg, type }]);
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (!selectedActivity) return;
+    setIsFreeMode(true);
+    if (selectedActivity.environment) {
+      setEnvironmentState(selectedActivity.environment);
+    }
+    const activityMissions: Mission[] = (selectedActivity.missions || []).map((m) => ({
+      id: m.id,
+      title: m.title,
+      objective: m.objective,
+      isCompleted: false,
+      maxBlocks: m.maxBlocks,
+    }));
+    setMissions(activityMissions);
+    setCurrentMissionIndex(0);
+    setPortAssignments(autoAssignDefaults(selectedActivity.environment));
+    setBlocks([]);
+    setEnergy(100);
+    setScore(0);
+    addLog(`Actividad cargada: ${selectedActivity.name}`, "success");
+  }, [selectedActivity]);
+
   const submitRobotSimulation = useCallback(async () => {
     const authUser = getAuthState().user;
     const userId = authUser?.id || (import.meta.env.DEV ? "dev-mock-user" : null);
@@ -354,11 +377,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     }
 
     const blocklyCode = blocks.map((b) => `${b.type}(${JSON.stringify(b.params)})`).join("\n");
-    const result: SimulationResult = score >= missions.filter((m) => m.isCompleted).length * 1000 ? "SUCCESS" : score > 0 ? "PARTIAL" : "FAILED";
+    const result: SimulationResultType = score >= missions.filter((m) => m.isCompleted).length * 1000 ? "SUCCESS" : score > 0 ? "PARTIAL" : "FAILURE";
+
+    const startPos = selectedActivity?.startingPosition ?? { x: 0, z: 0 };
+    const targetPos = selectedActivity?.targetPosition ?? { x: 30, z: 0 };
 
     const sim = await submitSimulation({
       idStudent: userId,
-      idActivity: selectedActivity?.idActivity ?? challengeId ?? "",
+      idActivity: selectedActivity?.id ?? challengeId ?? "",
       blocklyCode,
       pseudocode: "",
       pseintDiagram: "",
@@ -373,12 +399,9 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         objective: m.objective,
         isCompleted: m.isCompleted,
         maxBlocks: m.maxBlocks,
-        environment,
-        startingPosition: { x: 0, z: 0 },
-        targetPosition: { x: 30, z: 0 },
       })),
-      startingPosition: { x: 0, z: 0 },
-      targetPosition: { x: 30, z: 0 },
+      startingPosition: startPos,
+      targetPosition: targetPos,
       result,
     });
 
