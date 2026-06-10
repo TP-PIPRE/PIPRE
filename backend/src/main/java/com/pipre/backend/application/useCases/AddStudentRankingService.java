@@ -1,10 +1,10 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.RankingRequestDTO;
+import com.pipre.backend.application.commands.AddStudentRankingCommand;
 import com.pipre.backend.application.ports.input.AddStudentRankingUseCase;
 import com.pipre.backend.application.ports.output.RankingRepositoryPort;
 import com.pipre.backend.application.ports.output.ResultRepositoryPort;
-import com.pipre.backend.domain.entities.Ranking;
+import com.pipre.backend.domain.entities.ranking.Ranking;
 import com.pipre.backend.domain.entities.result.Result;
 import com.pipre.backend.domain.factories.RankingFactory;
 import lombok.RequiredArgsConstructor;
@@ -21,19 +21,19 @@ public class AddStudentRankingService implements AddStudentRankingUseCase {
 
     @Override
     @Transactional
-    public void execute(RankingRequestDTO requestDTO) {
-        BigDecimal totalPoints = resultRepositoryPort.findByIdStudent(requestDTO.idStudent())
+    public void execute(AddStudentRankingCommand command) {
+        BigDecimal totalPoints = resultRepositoryPort.findByIdStudent(command.idStudent())
                 .stream()
                 .map(Result::getScore)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Ranking ranking = RankingFactory.createNewRanking(
-                requestDTO.idGroup(),
-                requestDTO.idStudent(),
+                command.idGroup(),
+                command.idStudent(),
                 totalPoints
         );
 
         rankingRepositoryPort.save(ranking);
-        rankingRepositoryPort.sortRanking(requestDTO.idGroup());
+        rankingRepositoryPort.sortRanking(command.idGroup());
     }
 }
