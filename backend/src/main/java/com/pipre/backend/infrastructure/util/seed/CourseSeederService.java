@@ -8,6 +8,7 @@ import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.activity.ActivityLevel;
 import com.pipre.backend.domain.entities.course.Course;
 import com.pipre.backend.domain.entities.course.CourseLevel;
+import com.pipre.backend.domain.entities.lesson.Lesson;
 import com.pipre.backend.domain.entities.simulation.Simulation;
 import com.pipre.backend.domain.entities.simulation.SimulationResult;
 
