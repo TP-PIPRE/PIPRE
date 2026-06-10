@@ -1,7 +1,7 @@
 package com.pipre.backend.application.ports.output;
 
 
-import com.pipre.backend.domain.entities.Simulation;
+import com.pipre.backend.domain.entities.simulation.Simulation;
 
 import java.util.List;
 

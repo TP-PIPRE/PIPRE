@@ -8,6 +8,8 @@ import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.activity.ActivityLevel;
 import com.pipre.backend.domain.entities.course.Course;
 import com.pipre.backend.domain.entities.course.CourseLevel;
+import com.pipre.backend.domain.entities.simulation.Simulation;
+import com.pipre.backend.domain.entities.simulation.SimulationResult;
 
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
@@ -87,12 +89,12 @@ public class CourseSeederService {
                         String idActivity = activity.getIdActivity();
                         for (int m = 1; m <= NUMBER_OF_SIMULATIONS; m++) {
                             User randomStudent = faker.options().nextElement(students);
-                            Simulation simulation = Simulation.builder()
-                                    .idSimulation(UUID.randomUUID().toString())
-                                    .result(faker.options().option("SUCCESS", "FAILURE"))
-                                    .idActivity(idActivity)
-                                    .idStudent(randomStudent.getIdUser())
-                                    .build();
+                             Simulation simulation = Simulation.builder()
+                                     .idSimulation(UUID.randomUUID().toString())
+                                     .result(faker.options().option(SimulationResult.SUCCESS, SimulationResult.FAILURE))
+                                     .idActivity(idActivity)
+                                     .idStudent(randomStudent.getIdUser())
+                                     .build();
                             simulationRepositoryPort.save(simulation);
                         }
                     }

@@ -1,9 +1,9 @@
 package com.pipre.backend.application.ports.input;
 
-import com.pipre.backend.adapters.in.web.dto.SimulationResponseDTO;
+import com.pipre.backend.application.dto.SimulationDTO;
 
 import java.util.List;
 
 public interface GetSimulationsUseCase {
-    List<SimulationResponseDTO> execute(String idStudent);
+    List<SimulationDTO> execute(String idStudent);
 }
