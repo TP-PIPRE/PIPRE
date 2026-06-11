@@ -1,6 +1,6 @@
 package com.pipre.backend.domain.factories;
 
-import com.pipre.backend.domain.entities.Ranking;
+import com.pipre.backend.domain.entities.ranking.Ranking;
 
 import java.math.BigDecimal;
 import java.util.UUID;

@@ -2,6 +2,8 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
+import com.pipre.backend.domain.entities.course.CourseLevel;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,8 +30,7 @@ class CreateCourseServiceTest {
         RegisterCourseCommand cmd = new RegisterCourseCommand(
                 "Robótica Educativa",
                 "Descripción del curso",
-                "Básico"
-        );
+                "low");
 
         // Act
         String courseId = createCourseService.execute(cmd);
@@ -38,10 +39,8 @@ class CreateCourseServiceTest {
         assertNotNull(courseId);
 
         // Verificamos que se guardó un objeto Course con los datos correctos
-        verify(courseRepositoryPort, times(1)).save(argThat(course ->
-                course.getName().equals("Robótica Educativa") &&
-                        course.getLevel().equals("Básico") &&
-                        course.getIdCourse().equals(courseId)
-        ));
+        verify(courseRepositoryPort, times(1)).save(argThat(course -> course.getName().equals("Robótica Educativa") &&
+                course.getLevel() == CourseLevel.LOW &&
+                course.getIdCourse().equals(courseId)));
     }
 }

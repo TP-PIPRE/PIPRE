@@ -3,7 +3,7 @@ package com.pipre.backend.application.useCases;
 import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.application.ports.input.CreateCourseUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
-import com.pipre.backend.domain.entities.Course;
+import com.pipre.backend.domain.entities.course.Course;
 import com.pipre.backend.domain.factories.CourseFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,8 +22,7 @@ public class CreateCourseService implements CreateCourseUseCase {
                 cmd.name(),
                 cmd.description(),
                 cmd.level(),
-                null
-        );
+                null);
         courseRepositoryPort.save(newCourse);
         return newCourse.getIdCourse();
     }

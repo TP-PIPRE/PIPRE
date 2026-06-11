@@ -1,8 +1,9 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.ModuleResponseDTO;
+import com.pipre.backend.application.dto.ModuleDTO;
 import com.pipre.backend.application.ports.input.GetModulesUseCase;
 import com.pipre.backend.application.ports.output.ModuleRepositoryPort;
+import com.pipre.backend.domain.entities.module.Module;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +18,10 @@ public class GetModulesService implements GetModulesUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ModuleResponseDTO> execute(String idCourse) {
+    public List<ModuleDTO> execute(String idCourse) {
         return moduleRepositoryPort.findAllByIdCourse(idCourse)
                 .stream()
-                .map(module -> new ModuleResponseDTO(
+                .map(module -> new ModuleDTO(
                         module.getIdModule(),
                         module.getTitle()
                 ))

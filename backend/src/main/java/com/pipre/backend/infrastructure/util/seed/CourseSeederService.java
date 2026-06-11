@@ -2,7 +2,16 @@ package com.pipre.backend.infrastructure.util.seed;
 
 import com.pipre.backend.application.ports.output.*;
 import com.pipre.backend.domain.entities.*;
-import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.user.User;
+import com.pipre.backend.domain.entities.module.Module;
+import com.pipre.backend.domain.entities.activity.Activity;
+import com.pipre.backend.domain.entities.activity.ActivityLevel;
+import com.pipre.backend.domain.entities.course.Course;
+import com.pipre.backend.domain.entities.course.CourseLevel;
+import com.pipre.backend.domain.entities.lesson.Lesson;
+import com.pipre.backend.domain.entities.simulation.Simulation;
+import com.pipre.backend.domain.entities.simulation.SimulationResult;
+
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
@@ -27,25 +36,31 @@ public class CourseSeederService {
     @Transactional
     public void seedCourses() {
         List<User> students = userRepositoryPort.findAll().stream()
-                .filter(User::getActive)
+                .filter(User::getIsActive)
                 .toList();
 
-        if (students.isEmpty()) return;
+        if (students.isEmpty())
+            return;
 
-        for (int i = 0; i < 3; i++) {
+        int NUMBER_OF_COURSES = 1;
+        int NUMBER_OF_MODULES = 1;
+        int NUMBER_OF_LESSONS = 1;
+        int NUMBER_OF_ACTIVITIES = 1;
+        int NUMBER_OF_SIMULATIONS = 1;
+
+        for (int i = 0; i < NUMBER_OF_COURSES; i++) {
             Course course = Course.builder()
                     .idCourse(UUID.randomUUID().toString())
                     .name(faker.educator().course())
                     .description(faker.lorem().sentence(8))
-                    .level(faker.options().option("low", "medium", "high"))
+                    .level(faker.options().option(CourseLevel.LOW, CourseLevel.MEDIUM, CourseLevel.HIGH))
                     .createdAt(LocalDateTime.now().minusDays(
-                            faker.number().numberBetween(1,120)
-                    ))
+                            faker.number().numberBetween(1, 120)))
                     .build();
             courseRepositoryPort.save(course);
             String courseId = course.getIdCourse();
 
-            for (int j = 1; j <= 3; j++) {
+            for (int j = 1; j <= NUMBER_OF_MODULES; j++) {
                 Module module = Module.builder()
                         .idModule(UUID.randomUUID().toString())
                         .title("Módulo de " + faker.educator().subjectWithNumber())
@@ -54,7 +69,7 @@ public class CourseSeederService {
                 moduleRepositoryPort.save(module);
                 String moduleId = module.getIdModule();
 
-                for (int k = 1; k <= 2; k++) {
+                for (int k = 1; k <= NUMBER_OF_LESSONS; k++) {
                     Lesson lesson = Lesson.builder()
                             .idLesson(UUID.randomUUID().toString())
                             .title("Lección de " + faker.educator().subjectWithNumber())
@@ -63,23 +78,24 @@ public class CourseSeederService {
                     lessonRepositoryPort.save(lesson);
                     String lessonId = lesson.getIdLesson();
 
-                    for (int l = 1; l <= 2; l++) {
+                    for (int l = 1; l <= NUMBER_OF_ACTIVITIES; l++) {
                         Activity activity = Activity.builder()
                                 .idActivity(UUID.randomUUID().toString())
                                 .name("Actividad de " + faker.hacker().verb())
-                                .logicLevel(faker.options().option("low", "medium", "high"))
+                                .logicLevel(faker.options().option(ActivityLevel.LOW, ActivityLevel.MEDIUM,
+                                        ActivityLevel.HIGH))
                                 .idLesson(lessonId)
                                 .build();
                         activityRepositoryPort.save(activity);
                         String idActivity = activity.getIdActivity();
-                        for (int m = 1; m <= 2; m++) {
+                        for (int m = 1; m <= NUMBER_OF_SIMULATIONS; m++) {
                             User randomStudent = faker.options().nextElement(students);
-                            Simulation simulation = Simulation.builder()
-                                    .idSimulation(UUID.randomUUID().toString())
-                                    .result(faker.options().option("SUCCESS", "FAILURE"))
-                                    .idActivity(idActivity)
-                                    .idStudent(randomStudent.getIdUser())
-                                    .build();
+                             Simulation simulation = Simulation.builder()
+                                     .idSimulation(UUID.randomUUID().toString())
+                                     .result(faker.options().option(SimulationResult.SUCCESS, SimulationResult.FAILURE))
+                                     .idActivity(idActivity)
+                                     .idStudent(randomStudent.getIdUser())
+                                     .build();
                             simulationRepositoryPort.save(simulation);
                         }
                     }

@@ -3,7 +3,7 @@ package com.pipre.backend.application.useCases;
 import com.pipre.backend.application.commands.CreateLessonCommand;
 import com.pipre.backend.application.ports.input.CreateLessonUseCase;
 import com.pipre.backend.application.ports.output.LessonRepositoryPort;
-import com.pipre.backend.domain.entities.Lesson;
+import com.pipre.backend.domain.entities.lesson.Lesson;
 import com.pipre.backend.domain.factories.LessonFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
