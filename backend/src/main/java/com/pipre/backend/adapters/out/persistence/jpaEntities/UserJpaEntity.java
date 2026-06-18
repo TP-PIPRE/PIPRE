@@ -38,6 +38,12 @@ public class UserJpaEntity {
     private Boolean isActive;
     private LocalDateTime registeredAt;
 
+    @Column(name = "failed_attempts")
+    private Integer failedAttempts = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_role",

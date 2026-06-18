@@ -18,6 +18,8 @@ public class User {
     private final Boolean isActive;
     private final LocalDateTime registeredAt;
     private final List<String> idRoleList;
+    private final Integer failedAttempts;
+    private final LocalDateTime lockedUntil;
 
     public User(Builder builder) {
         this.email = new Email(builder.email);
@@ -30,6 +32,8 @@ public class User {
         this.grade = builder.grade;
         this.isActive = builder.isActive;
         this.registeredAt = builder.registeredAt;
+        this.failedAttempts = builder.failedAttempts != null ? builder.failedAttempts : 0;
+        this.lockedUntil = builder.lockedUntil;
         this.idRoleList = builder.idRoleList != null
                         ? List.copyOf(builder.idRoleList)
                         : List.of();
@@ -57,6 +61,8 @@ public class User {
                 .age(this.getAge())
                 .isActive(this.isActive)
                 .registeredAt(this.registeredAt)
+                .failedAttempts(this.failedAttempts)
+                .lockedUntil(this.lockedUntil)
                 .idRoleList(this.idRoleList);
     }
 
@@ -75,6 +81,8 @@ public class User {
         private Boolean isActive;
         private LocalDateTime registeredAt;
         private List<String> idRoleList;
+        private Integer failedAttempts;
+        private LocalDateTime lockedUntil;
 
         public Builder idUser(String idUser) {this.idUser = idUser; return this; }
         public Builder firstName(String firstName) {this.firstName = firstName; return this; }
@@ -86,6 +94,8 @@ public class User {
         public Builder isActive(Boolean isActive) {this.isActive = isActive; return this; }
         public Builder registeredAt(LocalDateTime registeredAt) {this.registeredAt = registeredAt; return this; }
         public Builder idRoleList(List<String> idRoleList) {this.idRoleList = idRoleList; return this; }
+        public Builder failedAttempts(Integer failedAttempts) {this.failedAttempts = failedAttempts; return this; }
+        public Builder lockedUntil(LocalDateTime lockedUntil) {this.lockedUntil = lockedUntil; return this; }
 
         public User build() {
             return new User(this);
@@ -126,6 +136,14 @@ public class User {
 
     public LocalDateTime getRegisteredAt() {
         return registeredAt;
+    }
+
+    public Integer getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public LocalDateTime getLockedUntil() {
+        return lockedUntil;
     }
 
     public List<String> getIdRoleList() {
