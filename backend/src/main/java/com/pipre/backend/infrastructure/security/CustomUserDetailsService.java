@@ -32,11 +32,13 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .map(roleId -> new SimpleGrantedAuthority("ROLE_" + roleMap.getOrDefault(roleId, "UNKNOWN").toUpperCase()))
                 .collect(Collectors.toList());
 
+        boolean accountNonLocked = user.getLockedUntil() == null || user.getLockedUntil().isBefore(java.time.LocalDateTime.now());
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPasswordHash(),
                 user.getIsActive(),
-                true, true, true,
+                true, true, accountNonLocked,
                 authorities
         );
     }

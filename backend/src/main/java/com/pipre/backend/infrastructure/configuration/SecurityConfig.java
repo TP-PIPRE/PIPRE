@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.pipre.backend.infrastructure.security.LoginRateLimiterFilter;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -48,6 +50,7 @@ public class SecurityConfig {
                         // 4. El resto requiere autenticación
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(new LoginRateLimiterFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtTokenFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
