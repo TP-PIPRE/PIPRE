@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/modules")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class ModuleController {
     private final CreateModuleUseCase createModuleUseCase;
 
     @GetMapping("course/{idCourse}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener todos los módulos de un curso")
     @ApiResponse(responseCode = "200", description = "Módulos obtenidos exitosamente")
     public ResponseEntity<List<ModuleDTO>> getModules(@PathVariable String idCourse) {
@@ -31,6 +34,7 @@ public class ModuleController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Crear un nuevo módulo")
     @ApiResponse(responseCode = "201", description = "Módulo creado exitosamente")
     public ResponseEntity<Void> postModule(@RequestBody CreateModuleCommand requestDTO) {

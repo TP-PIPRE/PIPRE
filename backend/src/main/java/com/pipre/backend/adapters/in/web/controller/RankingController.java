@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/group-students")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class RankingController {
     private final AddStudentRankingUseCase addStudentRankingUseCase;
 
     @GetMapping("/{idGroup}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener el ranking del grupo ordenado por posición")
     @ApiResponse(responseCode = "200", description = "Ranking obtenido exitosamente")
     public ResponseEntity<List<RankingDTO>> getGroupRanking(@PathVariable String idGroup) {
@@ -31,6 +34,7 @@ public class RankingController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Asignar un estudiante a un grupo y registrar su ranking inicial")
     @ApiResponse(responseCode = "201", description = "Estudiante asignado y ranking creado/actualizado exitosamente")
     public ResponseEntity<Void> assignGroupStudent(@RequestBody AddStudentRankingCommand command) {

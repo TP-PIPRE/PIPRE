@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/activity-results")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class ResultController {
     private final SaveResultUseCase saveResultUseCase;
 
     @GetMapping("/user/{idStudent}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
     @Operation(summary = "Obtener resultados de actividades por estudiante")
     @ApiResponse(responseCode = "200", description = "Resultados obtenidos exitosamente")
     public ResponseEntity<List<ResultDTO>> getStudentResult(@PathVariable String idStudent) {
@@ -31,6 +34,7 @@ public class ResultController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Guardar un nuevo resultado de actividad")
     @ApiResponse(responseCode = "201", description = "Resultado guardado exitosamente")
     public ResponseEntity<Void> saveResult(@RequestBody SaveResultCommand command) {

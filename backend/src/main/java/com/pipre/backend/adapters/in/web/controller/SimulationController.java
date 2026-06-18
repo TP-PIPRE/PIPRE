@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/simulations")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class SimulationController {
     private final CreateSimulationUseCase createSimulationUseCase;
 
     @GetMapping("/user/{idStudent}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
     @Operation(summary = "Obtener todas las simulaciones de un estudiante")
     @ApiResponse(responseCode = "200", description = "Simulaciones obtenidas exitosamente")
     public ResponseEntity<List<SimulationDTO>> getSimulations(@PathVariable String idStudent) {
@@ -31,6 +34,7 @@ public class SimulationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Crear una nueva simulación")
     @ApiResponse(responseCode = "201", description = "Simulación creada exitosamente")
     public ResponseEntity<Void> createSimulation(@RequestBody CreateSimulationCommand command) {

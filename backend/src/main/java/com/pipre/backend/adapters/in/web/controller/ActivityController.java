@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @RestController
@@ -23,6 +23,7 @@ public class ActivityController {
     private final CreateActivityUseCase createActivityUseCase;
 
     @GetMapping("/lesson/{idLesson}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener actividades por lección")
     @ApiResponse(responseCode = "200", description = "Actividades obtenidas exitosamente")
     public ResponseEntity<List<ActivityDTO>> getActivities(@PathVariable String idLesson) {
@@ -30,6 +31,7 @@ public class ActivityController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Crear una nueva actividad")
     @ApiResponse(responseCode = "201", description = "Actividad creada exitosamente")
     public ResponseEntity<Void> postActivity(@RequestBody CreateActivityCommand requestDTO) {
