@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/courses")
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class CourseController {
     private final UpdateCoursesUseCase updateCoursesUseCase;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener lista de cursos")
     @ApiResponse(responseCode = "200", description = "Lista obtenida exitosamente")
     public ResponseEntity<List<CourseDTO>> getCourses() {
@@ -32,6 +35,7 @@ public class CourseController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Crear un nuevo curso")
     @ApiResponse(responseCode = "201", description = "Curso creado exitosamente")
     public ResponseEntity<Void> postCourse(@RequestBody RegisterCourseCommand requestDTO) {
@@ -40,6 +44,7 @@ public class CourseController {
     }
 
     @PutMapping("/{idCourse}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Actualizar un curso existente")
     @ApiResponse(responseCode = "204", description = "Curso actualizado exitosamente")
     public ResponseEntity<Void> putCourse(@PathVariable String idCourse,

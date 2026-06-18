@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/groups")
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class GroupController {
     private final GetGroupsUseCase getGroupsUseCase;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener todos los grupos")
     @ApiResponse(responseCode = "200", description = "Grupos obtenidos exitosamente")
     public ResponseEntity<List<GroupDTO>> getGroups() {

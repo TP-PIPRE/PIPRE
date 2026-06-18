@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -22,6 +24,7 @@ public class UserController {
     private final GetUserByIdUseCase getUserByIdUseCase;
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#userId)")
     @Operation(summary = "Obtener usuario por ID")
     @ApiResponse(responseCode = "200", description = "Usuario obtenido exitosamente")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String userId) {
