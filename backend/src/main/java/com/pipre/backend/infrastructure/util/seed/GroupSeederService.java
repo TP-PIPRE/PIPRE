@@ -71,7 +71,7 @@ public class GroupSeederService {
                 Ranking ranking = Ranking.builder()
                         .idRanking(UUID.randomUUID().toString())
                         .totalPoints(randomPoints)
-                        .position(0)
+                        .position(1)
                         .idGroup(groupId)
                         .idStudent(studentId)
                         .build();
