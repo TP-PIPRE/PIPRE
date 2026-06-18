@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Registrar nuevo usuario")
     @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente")
-    public ResponseEntity<String> registerUser(@RequestBody RegisterUserCommand command) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterUserCommand command) {
         String newUserId = registerUserUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(newUserId);
     }

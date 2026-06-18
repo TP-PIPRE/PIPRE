@@ -22,17 +22,41 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
+        String token = null;
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+        // Try extracting JWT from cookies
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        // Fallback to Authorization Bearer header
+        if (token == null) {
+            String header = request.getHeader("Authorization");
+            if (header != null && header.startsWith("Bearer ")) {
+                token = header.substring(7);
+            }
+        }
+
+        if (token != null) {
             try {
                 DecodedJWT decodedJWT = jwtUtils.validateToken(token);
                 String username = jwtUtils.extractUsername(decodedJWT);
 
-                // Si el token es válido, "autenticamos" al usuario en el contexto de Spring
+                java.util.List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+                java.util.List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = null;
+                if (roles != null) {
+                    authorities = roles.stream()
+                            .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
+                            .toList();
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, null); // Aquí irían los roles
+                        new UsernamePasswordAuthenticationToken(username, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
