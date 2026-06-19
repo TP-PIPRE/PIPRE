@@ -2,38 +2,30 @@ package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ModuleJpaEntity;
-import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.module.Module;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class ModuleMapper {
-    public static ModuleJpaEntity toJpaEntity(Module domain) {
-        if (domain == null) return null;
-        ModuleJpaEntity entity = new ModuleJpaEntity();
-        entity.setIdModule(domain.getIdModule());
-        entity.setTitle(domain.getTitle());
-        return entity;
-    }
-    public static Module toDomain(ModuleJpaEntity entity) {
-        if (entity == null) return null;
+@Mapper(componentModel = "spring")
+public interface ModuleMapper {
 
-        String idCourse = (entity.getCourseJpaEntity() == null)
-                ? null
-                : entity.getCourseJpaEntity().getIdCourse();
-        List<String> idLessonList = (entity.getLessonJpaEntityList() == null)
-                ? new ArrayList<>()
-                : entity.getLessonJpaEntityList()
-                        .stream()
-                        .map(LessonJpaEntity::getIdLesson)
-                        .collect(Collectors.toList());
+    @Mapping(target = "courseJpaEntity", ignore = true)
+    @Mapping(target = "lessonJpaEntityList", ignore = true)
+    ModuleJpaEntity toJpaEntity(Module domain);
 
-        return Module.builder()
-                .idModule(entity.getIdModule())
-                .idCourse(idCourse)
-                .title(entity.getTitle())
-                .idLessonList(idLessonList)
-                .build();
+    @Mapping(target = "idCourse", source = "courseJpaEntity.idCourse")
+    @Mapping(target = "idLessonList", source = "lessonJpaEntityList")
+    Module toDomain(ModuleJpaEntity entity);
+
+    default List<String> mapLessons(List<LessonJpaEntity> lessons) {
+        if (lessons == null) {
+            return new ArrayList<>();
+        }
+        return lessons.stream()
+                .map(LessonJpaEntity::getIdLesson)
+                .toList();
     }
 }

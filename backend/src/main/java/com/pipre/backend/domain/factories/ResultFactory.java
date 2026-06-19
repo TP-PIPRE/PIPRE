@@ -1,6 +1,6 @@
 package com.pipre.backend.domain.factories;
 
-import com.pipre.backend.domain.entities.Result;
+import com.pipre.backend.domain.entities.result.Result;
 
 import java.math.BigDecimal;
 import java.util.UUID;

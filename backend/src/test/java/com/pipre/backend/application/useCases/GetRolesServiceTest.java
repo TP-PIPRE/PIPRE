@@ -1,8 +1,8 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.RoleResponseDTO;
+import com.pipre.backend.application.dto.RoleDTO;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
-import com.pipre.backend.domain.entities.Role;
+import com.pipre.backend.domain.entities.role.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +28,7 @@ class GetRolesServiceTest {
         Role role = Role.builder().idRole("r1").name("ADMIN").build();
         when(repositoryPort.findAll()).thenReturn(List.of(role));
 
-        List<RoleResponseDTO> result = getRolesService.execute();
+        List<RoleDTO> result = getRolesService.execute();
 
         assertFalse(result.isEmpty());
         assertEquals("ADMIN", result.getFirst().name());

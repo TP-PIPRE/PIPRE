@@ -4,10 +4,10 @@ import com.pipre.backend.application.ports.output.GroupRepositoryPort;
 import com.pipre.backend.application.ports.output.RankingRepositoryPort;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.domain.entities.Group;
-import com.pipre.backend.domain.entities.Ranking;
-import com.pipre.backend.domain.entities.Role;
-import com.pipre.backend.domain.entities.User;
+import com.pipre.backend.domain.entities.group.Group;
+import com.pipre.backend.domain.entities.ranking.Ranking;
+import com.pipre.backend.domain.entities.role.Role;
+import com.pipre.backend.domain.entities.user.User;
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ public class GroupSeederService {
     @Transactional
     public void seedCourses() {
 
-        int NUMBER_OF_GROUPS = 3;
+        int NUMBER_OF_GROUPS = 1;
         String studentRoleId = getRoleIdByName("STUDENT");
 
         List<String> studentsIdList = userRepositoryPort.findAll().stream()
@@ -65,7 +65,7 @@ public class GroupSeederService {
             System.out.println(assignedStudents);
             System.out.println(studentsPerGroup);
 
-            for (String studentId: assignedStudents) {
+            for (String studentId : assignedStudents) {
                 double randomValue = ThreadLocalRandom.current().nextDouble(10.0, 500.0);
                 BigDecimal randomPoints = BigDecimal.valueOf(randomValue).setScale(2, RoundingMode.HALF_UP);
                 Ranking ranking = Ranking.builder()

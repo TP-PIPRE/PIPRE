@@ -1,6 +1,6 @@
 package com.pipre.backend.application.ports.output;
 
-import com.pipre.backend.domain.entities.Ranking;
+import com.pipre.backend.domain.entities.ranking.Ranking;
 
 import java.util.List;
 

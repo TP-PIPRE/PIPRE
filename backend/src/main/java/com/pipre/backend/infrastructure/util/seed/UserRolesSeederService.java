@@ -4,7 +4,7 @@ import com.pipre.backend.application.commands.RegisterUserCommand;
 import com.pipre.backend.application.ports.input.RegisterUserUseCase;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.domain.entities.Role;
+import com.pipre.backend.domain.entities.role.Role;
 import lombok.RequiredArgsConstructor;
 import net.datafaker.Faker;
 import org.springframework.stereotype.Service;

@@ -1,8 +1,8 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.ModuleResponseDTO;
+import com.pipre.backend.application.dto.ModuleDTO;
 import com.pipre.backend.application.ports.output.ModuleRepositoryPort;
-import com.pipre.backend.domain.entities.Module;
+import com.pipre.backend.domain.entities.module.Module;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,11 +26,11 @@ class GetModulesServiceTest {
     void shouldReturnModulesByCourseId() {
         // Arrange
         String courseId = "course-123";
-        Module module = Module.builder().idModule("mod-1").title("Módulo Test").build();
+        Module module = Module.builder().idModule("mod-1").title("Módulo Test").idCourse(courseId).build();
         when(moduleRepositoryPort.findAllByIdCourse(courseId)).thenReturn(List.of(module));
 
         // Act
-        List<ModuleResponseDTO> result = getModulesService.execute(courseId);
+        List<ModuleDTO> result = getModulesService.execute(courseId);
 
         // Assert
         assertEquals(1, result.size());

@@ -1,7 +1,7 @@
 package com.pipre.backend.infrastructure.security;
 
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
-import com.pipre.backend.domain.entities.User;
+import com.pipre.backend.domain.entities.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
@@ -28,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPasswordHash(),
-                user.getActive(),
+                user.getIsActive(),
                 true, true, true,
                 authorities
         );

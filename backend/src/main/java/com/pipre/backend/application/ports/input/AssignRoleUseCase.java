@@ -1,7 +1,7 @@
 package com.pipre.backend.application.ports.input;
 
-import com.pipre.backend.adapters.in.web.dto.RoleUserRequestDTO;
+import com.pipre.backend.application.commands.AssignRoleCommand;
 
 public interface AssignRoleUseCase {
-    void execute(RoleUserRequestDTO requestDTO);
+    void execute(AssignRoleCommand command);
 }
