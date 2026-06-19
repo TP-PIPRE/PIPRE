@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.SimulationResponseDTO;
+import com.pipre.backend.application.dto.SimulationDTO;
 import com.pipre.backend.application.ports.input.GetSimulationsUseCase;
 import com.pipre.backend.application.ports.output.SimulationRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +13,14 @@ import java.util.List;
 public class GetSimulationsService implements GetSimulationsUseCase {
 
     private final SimulationRepositoryPort simulationRepositoryPort;
+
     @Override
-    public List<SimulationResponseDTO> execute(String idStudent) {
+    public List<SimulationDTO> execute(String idStudent) {
         return simulationRepositoryPort.getAllByStudentId(idStudent)
                 .stream()
-                .map(s -> new SimulationResponseDTO(
+                .map(s -> new SimulationDTO(
                         s.getIdSimulation(),
-                        s.getResult()
+                        s.getResult().name()
                 ))
                 .toList();
     }

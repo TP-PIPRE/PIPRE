@@ -1,6 +1,6 @@
 package com.pipre.backend.application.ports.output;
 
-import com.pipre.backend.domain.entities.Role;
+import com.pipre.backend.domain.entities.role.Role;
 
 import java.util.List;
 

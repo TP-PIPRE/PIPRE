@@ -2,40 +2,30 @@ package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.RoleJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.UserJpaEntity;
-import com.pipre.backend.domain.entities.User;
+import com.pipre.backend.domain.entities.user.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public class UserMapper {
-    public static UserJpaEntity toJpaEntity(User domain) {
-        if(domain == null) return null;
-        UserJpaEntity entity = new UserJpaEntity();
+import java.util.ArrayList;
+import java.util.List;
 
-        entity.setIdUser(domain.getIdUser());
-        entity.setFirstName(domain.getFirstName());
-        entity.setLastName(domain.getLastName());
-        entity.setEmail(domain.getEmail());
-        entity.setPasswordHash(domain.getPasswordHash());
-        entity.setGrade(domain.getGrade());
-        entity.setAge(domain.getAge());
-        entity.setIsActive(domain.getActive());
-        entity.setRegisteredAt(domain.getRegisteredAt());
+@Mapper(componentModel = "spring")
+public interface UserMapper {
 
-        return entity;
-    }
+    @Mapping(target = "roleJpaEntityList", ignore = true)
+    @Mapping(target = "isActive", source = "isActive")
+    UserJpaEntity toJpaEntity(User domain);
 
-    public static User toDomain(UserJpaEntity entity) {
-        if (entity == null) return null;
+    @Mapping(target = "idRoleList", source = "roleJpaEntityList")
+    @Mapping(target = "isActive", source = "isActive")
+    User toDomain(UserJpaEntity entity);
 
-        return new User.Builder()
-                .idUser(entity.getIdUser())
-                .firstName(entity.getFirstName())
-                .lastName(entity.getLastName())
-                .email(entity.getEmail())
-                .passwordHash(entity.getPasswordHash())
-                .grade(entity.getGrade())
-                .age(entity.getAge())
-                .isActive(entity.getIsActive())
-                .registeredAt(entity.getRegisteredAt())
-                .idRoleList(entity.getRoleJpaEntityList().stream().map(RoleJpaEntity::getIdRole).toList())
-                .build();
+    default List<String> mapRoles(List<RoleJpaEntity> roles) {
+        if (roles == null) {
+            return new ArrayList<>();
+        }
+        return roles.stream()
+                .map(RoleJpaEntity::getIdRole)
+                .toList();
     }
 }

@@ -25,7 +25,6 @@ public class ActivityJpaEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
     private String logicLevel;
 
     @OneToMany(mappedBy = "activityJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)

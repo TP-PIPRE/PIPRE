@@ -2,43 +2,24 @@ package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.CourseJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ModuleJpaEntity;
-import com.pipre.backend.domain.entities.Course;
+import com.pipre.backend.domain.entities.course.Course;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public class CourseMapper {
+@Mapper(componentModel = "spring")
+public interface CourseMapper {
 
-    public static CourseJpaEntity toJpaEntity(Course domain) {
-        if(domain == null) return null;
+    @Mapping(target = "moduleJpaEntityList", ignore = true)
+    CourseJpaEntity toJpaEntity(Course domain);
 
-        CourseJpaEntity entity = new CourseJpaEntity();
-        entity.setIdCourse(domain.getIdCourse());
-        entity.setName(domain.getName());
-        entity.setDescription(domain.getDescription());
-        entity.setLevel(domain.getLevel());
-        entity.setCreatedAt(domain.getCreatedAt());
-        return entity;
-    }
+    @Mapping(target = "idModuleList", source = "moduleJpaEntityList")
+    Course toDomain(CourseJpaEntity entity);
 
-    public static Course toDomain(CourseJpaEntity entity) {
-        if (entity == null) return null;
-
-        List<String> idModuleList = (entity.getModuleJpaEntityList() == null)
-                ? new ArrayList<>()
-                : entity.getModuleJpaEntityList()
-                        .stream()
-                        .map(ModuleJpaEntity::getIdModule)
-                        .collect(Collectors.toList());
-
-        return new Course.Builder()
-                .idCourse(entity.getIdCourse())
-                .name(entity.getName())
-                .description(entity.getDescription())
-                .level(entity.getLevel())
-                .createdAt(entity.getCreatedAt())
-                .idModuleList(idModuleList)
-                .build();
+    default String mapModuleToString(ModuleJpaEntity module) {
+        if (module == null) {
+            return null;
+        }
+        return module.getIdModule();
     }
 }

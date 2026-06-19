@@ -3,7 +3,8 @@ package com.pipre.backend.application.useCases;
 import com.pipre.backend.application.commands.RegisterCourseCommand;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
-import com.pipre.backend.domain.entities.Course;
+import com.pipre.backend.domain.entities.course.Course;
+import com.pipre.backend.domain.entities.course.CourseLevel;
 import com.pipre.backend.domain.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,10 +21,11 @@ public class UpdateCoursesService implements UpdateCoursesUseCase {
         Course course = courseRepositoryPort.findById(idCourse)
                 .orElseThrow(() -> new BusinessException("El curso no existe"));
 
-        Course courseUpdated = course.updateCourse(
+        CourseLevel courseLevel = CourseLevel.fromString(requestDTO.level());
+        Course courseUpdated = course.changeDetails(
                 requestDTO.name(),
                 requestDTO.description(),
-                requestDTO.level());
+                courseLevel);
         courseRepositoryPort.save(courseUpdated);
     }
 }
