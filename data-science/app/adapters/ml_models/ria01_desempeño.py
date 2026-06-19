@@ -12,6 +12,7 @@ class ClasificadorDesempeno:
         self.le_nivel = LabelEncoder()
         self.le_target = LabelEncoder()
         self.verbose = verbose
+        self.model_version = "ria01-v4"
 
         self.feature_columns = [
             "intentos",
@@ -25,18 +26,38 @@ class ClasificadorDesempeno:
     def construir_rendimiento(self, df):
         df = df.copy()
 
+        if "rendimiento" in df.columns:
+            rendimiento = (
+                df["rendimiento"]
+                .astype(str)
+                .str.strip()
+                .str.lower()
+                .replace({
+                    "desempeño bajo": "bajo",
+                    "desempeno bajo": "bajo",
+                    "desempeño medio": "medio",
+                    "desempeno medio": "medio",
+                    "desempeño alto": "alto",
+                    "desempeno alto": "alto",
+                })
+            )
+            valid_labels = {"bajo", "medio", "alto"}
+            if rendimiento.isin(valid_labels).all() and rendimiento.nunique() >= 2:
+                df["rendimiento"] = rendimiento
+                return df
+
         tasa_exito = pd.to_numeric(df["tasa_exito"], errors="coerce").fillna(0)
         if tasa_exito.max() > 1:
             tasa_exito = tasa_exito / 100
 
         score = (
-            (df["puntaje"] * 0.5) +
-            (tasa_exito * 50 * 0.5)
+            (pd.to_numeric(df["puntaje"], errors="coerce").fillna(0) * 0.5) +
+            (tasa_exito * 100 * 0.5)
         )
 
         df["rendimiento"] = pd.cut(
             score,
-            bins=[-float("inf"), 50, 75, float("inf")],
+            bins=[-float("inf"), 67, 83, float("inf")],
             labels=["bajo", "medio", "alto"]
         )
 
@@ -67,20 +88,23 @@ class ClasificadorDesempeno:
         df["ratio_error"] = df["errores"] / (df["intentos"] + 1)
         df["dependencia_ia"] = df["interacciones_ia"] / (df["intentos"] + 1)
 
-        #  asegurar tipo
-        df["nivel_logico"] = df["nivel_logico"].astype(str)
+        df["nivel_logico"] = self._encode_logical_level(df["nivel_logico"])
 
         #  encoding
         if is_training:
-            df["nivel_logico"] = self.le_nivel.fit_transform(df["nivel_logico"])
             df["rendimiento"] = self.le_target.fit_transform(df["rendimiento"])
-        else:
-            df["nivel_logico"] = df["nivel_logico"].apply(
-                lambda x: x if x in self.le_nivel.classes_ else self.le_nivel.classes_[0]
-            )
-            df["nivel_logico"] = self.le_nivel.transform(df["nivel_logico"])
 
         return df
+
+    def _encode_logical_level(self, values):
+        return (
+            values
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .map({"bajo": 0, "medio": 1, "alto": 2})
+            .fillna(1)
+        )
 
     def train(self, df):
         df = self.preprocess_data(df, is_training=True)
@@ -126,6 +150,9 @@ class ClasificadorDesempeno:
                 print(f"{name}: {round(val, 3)}")
 
     def predict(self, data):
+        if self.model is None:
+            raise ValueError("El modelo debe entrenarse antes de predecir.")
+
         data = self.preprocess_data(data, is_training=False)
 
         for col in self.feature_columns:
