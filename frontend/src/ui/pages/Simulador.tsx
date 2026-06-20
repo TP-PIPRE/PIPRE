@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SimuladorProvider, useSimulador } from "../../application/context/SimuladorProvider";
 import { getAuthState } from "../../infrastructure/store/authStore";
@@ -9,12 +9,10 @@ import { Workspace } from "../components/Simulador/Workspace";
 import { Stage3D } from "../components/Simulador/Stage3D";
 import { Console } from "../components/Simulador/Console";
 import { MissionsPanel } from "../components/Simulador/MissionsPanel";
-import { GroupSelector } from "../components/Simulador/GroupSelector";
-import { ActivityList } from "../components/Simulador/ActivityList";
+import { ActivityCascade } from "../components/Simulador/ActivityCascade";
 import { ScenarioMap } from "../components/Simulador/ScenarioMap";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import type { EnvironmentType } from "../../shared/types/Simulador";
-import { specService } from "../../infrastructure/api/specService";
 import type { ActivityResponse } from "../../shared/types/SpecContracts";
 
 const ENVIRONMENTS: { id: EnvironmentType; icon: string }[] = [
@@ -62,13 +60,11 @@ const SimuladorInner = () => {
   const {
     loadChallengeFromCourse, isFreeMode, setFreeMode,
     challenges, selectChallenge, challengeData,
-    selectedGroupId, setSelectedGroupId,
     selectedActivity, setSelectedActivity,
     environment, submitRobotSimulation, simulationLoading,
   } = useSimulador();
   const [showChallengeList, setShowChallengeList] = useState(false);
-  const [activities, setActivities] = useState<ActivityResponse[]>([]);
-  const [showGroupPanel, setShowGroupPanel] = useState(true);
+  const [showPanel, setShowPanel] = useState(true);
 
   useEffect(() => {
     if (courseId) {
@@ -83,20 +79,10 @@ const SimuladorInner = () => {
     navigate("/cursos");
   };
 
-  const handleGroupSelect = useCallback(async (groupId: string) => {
-    setSelectedGroupId(groupId);
-    try {
-      const data = await specService.groups.getActivities(groupId);
-      setActivities(data);
-    } catch {
-      setActivities([]);
-    }
-  }, [setSelectedGroupId]);
-
-  const handleActivitySelect = useCallback((activity: ActivityResponse) => {
+  const handleActivitySelect = (activity: ActivityResponse) => {
     setSelectedActivity(activity);
-    setShowGroupPanel(false);
-  }, [setSelectedActivity]);
+    setShowPanel(false);
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -160,48 +146,36 @@ const SimuladorInner = () => {
         </div>
       )}
 
-      {/* Free mode group/activity selection */}
-      {isFreeMode && showGroupPanel && (
-        <div className="px-4 py-3 border-b border-border flex items-start gap-6" style={{ backgroundColor: "var(--surface)" }}>
-          <div className="w-56">
-            <GroupSelector
-              selectedGroupId={selectedGroupId}
-              onSelect={handleGroupSelect}
-            />
-          </div>
-          {selectedGroupId && activities.length > 0 && (
+      {/* Free mode activity selection */}
+      {isFreeMode && showPanel && (
+        <div className="px-4 py-3 border-b border-border" style={{ backgroundColor: "var(--surface)" }}>
+          <div className="flex items-start gap-6">
             <div className="w-56">
-              <ActivityList
-                activities={activities}
-                selectedId={selectedActivity?.id ?? null}
+              <ActivityCascade
+                selectedActivityId={selectedActivity?.idActivity ?? null}
                 onSelect={handleActivitySelect}
               />
             </div>
-          )}
-          {selectedGroupId && activities.length === 0 && (
-            <p className="text-[10px] text-text-muted self-center italic">
-              No hay actividades para este grupo.
-            </p>
-          )}
-          {selectedActivity && (
-            <button
-              onClick={() => setShowGroupPanel(false)}
-              className="ml-auto text-[10px] text-primary font-bold uppercase tracking-wider"
-            >
-              Cerrar panel
-            </button>
-          )}
+            {selectedActivity && (
+              <button
+                onClick={() => setShowPanel(false)}
+                className="text-[10px] text-primary font-bold uppercase tracking-wider"
+              >
+                Cerrar panel
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Show group panel button */}
-      {isFreeMode && !showGroupPanel && (
+      {/* Show panel button */}
+      {isFreeMode && !showPanel && (
         <div className="px-4 py-1.5 border-b border-border flex items-center gap-4" style={{ backgroundColor: "var(--surface)" }}>
           <button
-            onClick={() => setShowGroupPanel(true)}
+            onClick={() => setShowPanel(true)}
             className="text-[10px] text-primary font-bold uppercase tracking-wider"
           >
-            Cambiar grupo/actividad
+            Cambiar curso/actividad
           </button>
           {selectedActivity && (
             <span className="text-[10px] text-text-muted">
@@ -218,9 +192,7 @@ const SimuladorInner = () => {
             {selectedActivity && isFreeMode && (
               <div className="shrink-0">
                 <ScenarioMap
-                  environment={selectedActivity.environment || environment}
-                  startingPosition={selectedActivity.startingPosition}
-                  targetPosition={selectedActivity.targetPosition}
+                  environment={environment}
                 />
               </div>
             )}

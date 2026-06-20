@@ -14,7 +14,7 @@ export const ActivityList = ({
   if (activities.length === 0) {
     return (
       <div className="p-6 text-center text-text-muted text-sm border border-dashed border-border">
-        No hay actividades disponibles para este grupo.
+        No hay actividades disponibles.
       </div>
     );
   }
@@ -25,10 +25,10 @@ export const ActivityList = ({
         Actividades
       </h3>
       {activities.map((a) => {
-        const isSelected = a.id === selectedId;
+        const isSelected = a.idActivity === selectedId;
         return (
           <button
-            key={a.id}
+            key={a.idActivity}
             onClick={() => onSelect(a)}
             className={`w-full text-left p-3 border text-sm transition-all duration-200 ${
               isSelected
@@ -38,10 +38,6 @@ export const ActivityList = ({
             style={{ borderRadius: "var(--theme-radius)" }}
           >
             <div className="font-semibold">{a.name}</div>
-            <div className="text-[10px] text-text-muted mt-1 uppercase tracking-wider">
-              {a.difficulty}
-              {a.type && ` · ${a.type}`}
-            </div>
           </button>
         );
       })}
