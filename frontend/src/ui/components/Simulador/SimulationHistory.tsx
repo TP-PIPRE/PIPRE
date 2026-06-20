@@ -25,7 +25,7 @@ export const SimulationHistory = ({
       </h3>
       {simulations.map((sim) => (
         <button
-          key={sim.idSimulation}
+          key={sim.id_simulation}
           onClick={() => onSelect?.(sim)}
           className="w-full text-left hover:opacity-80 transition-opacity"
         >

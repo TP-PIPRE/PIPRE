@@ -10,8 +10,9 @@ export const AI_ENDPOINTS = {
   RIA08_INFO: "/ria08/info",
   RIA11_INFO: "/ria11/info",
   HEALTH: "/health",
-  CODE_FEEDBACK_ANALYZE: "/code-feedback/analyze",
-  RIA12_PSEINT: "/ria12/pseint",
-  FEATURES_AGGREGATE_STUDENT: (id: string) => `/features/aggregate/student/${id}`,
-  FEATURES_AGGREGATE_GROUP: (id: string) => `/features/aggregate/group/${id}`,
+  // ENDPOINTS PENDIENTES — La IA desplegada aun no los implementa
+  // CODE_FEEDBACK_ANALYZE: "/code-feedback/analyze",
+  // RIA12_PSEINT: "/ria12/pseint",
+  // FEATURES_AGGREGATE_STUDENT: (id: string) => `/features/aggregate/student/${id}`,
+  // FEATURES_AGGREGATE_GROUP: (id: string) => `/features/aggregate/group/${id}`,
 };

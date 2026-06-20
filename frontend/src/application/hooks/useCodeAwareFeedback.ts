@@ -24,11 +24,11 @@ export function useCodeAwareFeedback(): UseCodeAwareFeedbackReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const analyze = useCallback(async (data: CodeFeedbackRequest) => {
+  const analyze = useCallback(async (_data: CodeFeedbackRequest) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await aiService.analyzeCode(data);
+      const result = await aiService.analyzeCode(_data);
       setFeedback(result);
       return result;
     } catch (err) {
@@ -41,11 +41,11 @@ export function useCodeAwareFeedback(): UseCodeAwareFeedbackReturn {
     }
   }, []);
 
-  const generatePSeInt = useCallback(async (data: PSeIntGenerateRequest) => {
+  const generatePSeInt = useCallback(async (_data: PSeIntGenerateRequest) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await aiService.generatePSeInt(data);
+      const result = await aiService.generatePSeInt(_data);
       setPseint(result);
       return result;
     } catch (err) {

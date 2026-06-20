@@ -22,8 +22,11 @@ export function useRobotSimulations(): UseRobotSimulationsReturn {
       setError(null);
       try {
         const result = await specService.roboticsSimulations.create(data);
-        setSimulations((prev) => [result, ...prev]);
-        return result;
+        if (result) {
+          setSimulations((prev) => [result, ...prev]);
+          return result;
+        }
+        return null;
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : "Error al registrar simulación";

@@ -39,8 +39,6 @@ interface SimuladorContextType {
   selectChallenge: (challenge: ChallengeData) => void;
   setFreeMode: () => void;
 
-  selectedGroupId: string | null;
-  setSelectedGroupId: (id: string) => void;
   selectedActivity: ActivityResponse | null;
   setSelectedActivity: (a: ActivityResponse | null) => void;
 
@@ -127,7 +125,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const blockIdCounter = useRef(0);
   const stopRequested = useRef(false);
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<ActivityResponse | null>(null);
   const [lastSimulationResult, setLastSimulationResult] = useState<SimulationResultType | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -345,19 +342,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     if (!selectedActivity) return;
     setIsFreeMode(true);
-    if (selectedActivity.environment) {
-      setEnvironmentState(selectedActivity.environment);
-    }
-    const activityMissions: Mission[] = (selectedActivity.missions || []).map((m) => ({
-      id: m.id,
-      title: m.title,
-      objective: m.objective,
-      isCompleted: false,
-      maxBlocks: m.maxBlocks,
-    }));
-    setMissions(activityMissions);
     setCurrentMissionIndex(0);
-    setPortAssignments(autoAssignDefaults(selectedActivity.environment));
     setBlocks([]);
     setEnergy(100);
     setScore(0);
@@ -376,40 +361,17 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       return;
     }
 
-    const blocklyCode = blocks.map((b) => `${b.type}(${JSON.stringify(b.params)})`).join("\n");
     const result: SimulationResultType = score >= missions.filter((m) => m.isCompleted).length * 1000 ? "SUCCESS" : score > 0 ? "PARTIAL" : "FAILURE";
 
-    const startPos = selectedActivity?.startingPosition ?? { x: 0, z: 0 };
-    const targetPos = selectedActivity?.targetPosition ?? { x: 30, z: 0 };
-
-    const sim = await submitSimulation({
-      idStudent: userId,
-      idActivity: selectedActivity?.id ?? challengeId ?? "",
-      blocklyCode,
-      pseudocode: "",
-      pseintDiagram: "",
-      blocksUsage: blocks.length,
-      codeUsage: blocks.filter((b) => (b.category as string) === "logic" || (b.category as string) === "control").length,
-      sensorError: Math.random() * 0.3,
-      resolutionTime: Date.now() - (startTimeRef.current || Date.now()),
-      environment,
-      missions: missions.map((m) => ({
-        id: m.id,
-        title: m.title,
-        objective: m.objective,
-        isCompleted: m.isCompleted,
-        maxBlocks: m.maxBlocks,
-      })),
-      startingPosition: startPos,
-      targetPosition: targetPos,
+    await submitSimulation({
+      id_student: userId,
+      id_activity: selectedActivity?.idActivity ?? challengeId ?? "",
       result,
     });
 
-    if (sim) {
-      setLastSimulationResult(result);
-      addLog(`Simulación registrada: ${result}`, "success");
-    }
-  }, [submitSimulation, selectedActivity, challengeId, blocks, missions, environment, score, addLog, setLastSimulationResult]);
+    setLastSimulationResult(result);
+    addLog(`Simulación registrada: ${result}`, "success");
+  }, [submitSimulation, selectedActivity, challengeId, missions, score, addLog]);
 
   const dismissChallengeCompletion = () => {
     setChallengeCompleted(false);
@@ -828,8 +790,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         clearWorkspace,
         updateBlockParam,
 
-        selectedGroupId,
-        setSelectedGroupId,
         selectedActivity,
         setSelectedActivity,
 
