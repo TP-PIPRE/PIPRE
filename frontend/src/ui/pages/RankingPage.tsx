@@ -1,14 +1,24 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 import type { StudentResult } from "../../shared/types/Simulador";
 
-const MOCK_RANKING_SEED: { id: string; name: string; group: string; xp: number }[] = [
+const MOCK_RANKING_SEED: {
+  id: string;
+  name: string;
+  group: string;
+  xp: number;
+}[] = [
   { id: "student-2", name: "Ana Sofía Lopez", group: "Robótica A", xp: 12500 },
   { id: "student-3", name: "Carlos Ruiz", group: "Mecatrónica B", xp: 11800 },
   { id: "student-4", name: "Elena García", group: "Robótica A", xp: 11250 },
   { id: "student-5", name: "Marcos Soto", group: "Sistemas I", xp: 10900 },
   { id: "student-6", name: "Lucía Méndez", group: "Robótica A", xp: 10450 },
+];
+
+const fallbackCourses = [
+  { id: "1", name: "Robótica Nivel 1" },
+  { id: "2", name: "Programación de Microcontroladores" },
 ];
 
 interface RankingEntry {
@@ -29,34 +39,36 @@ export const RankingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const mapFromDto = (data: RankingDTO[]): RankingEntry[] =>
-    data.map((dto) => {
-      const seed = MOCK_RANKING_SEED.find(s => s.id === dto.idStudent);
-      return {
-        position: dto.position,
-        studentId: dto.idStudent,
-        studentName: seed?.name ?? `Estudiante ${dto.idStudent}`,
-        totalScore: dto.totalPoints,
-        challengesCompleted: 0,
-        lastUpdated: new Date().toISOString(),
-        group: seed?.group,
-      };
-    });
+    data.map((dto) => ({
+      position: dto.position,
+      studentId: dto.idStudent,
+      studentName: `Estudiante #${dto.position}`,
+      totalScore: dto.totalPoints,
+      challengesCompleted: 0,
+      lastUpdated: new Date().toISOString(),
+    }));
 
   const getLocalResults = (courseId?: string): RankingEntry[] => {
     try {
       const stored = localStorage.getItem("pipre_results");
       if (!stored) return [];
       const results: StudentResult[] = JSON.parse(stored);
-      const filtered = courseId ? results.filter((r) => r.courseId === courseId) : results;
+      const filtered = courseId
+        ? results.filter((r) => r.courseId === courseId)
+        : results;
       if (filtered.length === 0) return [];
 
-      const map = new Map<string, { totalScore: number; challenges: Set<string>; lastUpdated: string }>();
+      const map = new Map<
+        string,
+        { totalScore: number; challenges: Set<string>; lastUpdated: string }
+      >();
       for (const r of filtered) {
         const existing = map.get(r.studentId);
         if (existing) {
           existing.totalScore = Math.max(existing.totalScore, r.score);
           existing.challenges.add(r.challengeId);
-          if (r.completedAt > existing.lastUpdated) existing.lastUpdated = r.completedAt;
+          if (r.completedAt > existing.lastUpdated)
+            existing.lastUpdated = r.completedAt;
         } else {
           map.set(r.studentId, {
             totalScore: r.score,
@@ -103,9 +115,10 @@ export const RankingPage: React.FC = () => {
   const getFallbackCourse = (courseId: string): RankingEntry[] => {
     const local = getLocalResults(courseId);
     if (local.length > 0) return local;
-    const courseFiltered = courseId === "1"
-      ? MOCK_RANKING_SEED.filter((_, i) => i % 2 === 0)
-      : MOCK_RANKING_SEED.filter((_, i) => i % 2 === 1);
+    const courseFiltered =
+      courseId === "1"
+        ? MOCK_RANKING_SEED.filter((_, i) => i % 2 === 0)
+        : MOCK_RANKING_SEED.filter((_, i) => i % 2 === 1);
     return courseFiltered.map((s, i) => ({
       position: i + 1,
       studentId: s.id,
@@ -117,52 +130,47 @@ export const RankingPage: React.FC = () => {
     }));
   };
 
-  const fetchRanking = async () => {
+  const fetchRankingAndCourses = useCallback(async () => {
     setIsLoading(true);
+
+    // Attempt to load courses (always)
     try {
-      const groupId = "group-1";
-      const data = await apiService.ranking.getGroupRanking(groupId);
-      if (data && data.length > 0) {
-        setRankingData(mapFromDto(data));
+      const courseData = await apiService.courses.getAll();
+      if (courseData && courseData.length > 0) {
+        setCourses(courseData.map((c) => ({ id: c.idCourse, name: c.name })));
       } else {
-        setRankingData(
-          activeTab === "global" ? getFallbackGlobal() : getFallbackCourse(selectedCourse),
-        );
+        setCourses(fallbackCourses);
       }
     } catch {
-      setRankingData(
-        activeTab === "global" ? getFallbackGlobal() : getFallbackCourse(selectedCourse),
-      );
-    } finally {
-      setIsLoading(false);
+      setCourses(fallbackCourses);
     }
-  };
 
-  useEffect(() => {
-    fetchRanking();
+    // Attempt to load real ranking data
+    try {
+      const groups = await apiService.groups.getAll();
+      if (groups && groups.length > 0) {
+        const realGroupId = groups[0].idGroup;
+        const data = await apiService.ranking.getGroupRanking(realGroupId);
+        if (data && data.length > 0) {
+          setRankingData(mapFromDto(data));
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch {}
+
+    // Fallback: localStorage then mock
+    setRankingData(
+      activeTab === "global"
+        ? getFallbackGlobal()
+        : getFallbackCourse(selectedCourse),
+    );
+    setIsLoading(false);
   }, [activeTab, selectedCourse]);
 
   useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        const data = await apiService.courses.getAll();
-        if (data && data.length > 0) {
-          setCourses(data.map((c) => ({ id: c.idCourse, name: c.name })));
-        } else {
-          setCourses([
-            { id: "1", name: "Robótica Nivel 1" },
-            { id: "2", name: "Programación de Microcontroladores" },
-          ]);
-        }
-      } catch {
-        setCourses([
-          { id: "1", name: "Robótica Nivel 1" },
-          { id: "2", name: "Programación de Microcontroladores" },
-        ]);
-      }
-    };
-    loadCourses();
-  }, []);
+    fetchRankingAndCourses();
+  }, [fetchRankingAndCourses]);
 
   const top3 = rankingData.slice(0, 3);
 
@@ -240,19 +248,37 @@ export const RankingPage: React.FC = () => {
               <div className="order-2 md:order-1 pt-8">
                 <div
                   className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
-                  style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    borderRadius: "var(--theme-radius)",
+                  }}
                 >
                   <div
                     className="w-12 h-12 flex items-center justify-center border border-border font-bold mb-4"
-                    style={{ backgroundColor: "var(--surface-brighter)", color: "var(--text)", borderRadius: "var(--theme-radius)" }}
+                    style={{
+                      backgroundColor: "var(--surface-brighter)",
+                      color: "var(--text)",
+                      borderRadius: "var(--theme-radius)",
+                    }}
                   >
                     2
                   </div>
-                  <p className="font-bold text-sm mb-1" style={{ color: "var(--text)" }}>{top3[1].studentName}</p>
-                  <p className="text-[10px] font-mono mb-4 uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                  <p
+                    className="font-bold text-sm mb-1"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {top3[1].studentName}
+                  </p>
+                  <p
+                    className="text-[10px] font-mono mb-4 uppercase tracking-widest"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     {top3[1].group || "Estudiante"}
                   </p>
-                  <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>
+                  <span
+                    className="text-xs font-mono font-bold"
+                    style={{ color: "var(--primary)" }}
+                  >
                     {top3[1].totalScore.toLocaleString()} XP
                   </span>
                 </div>
@@ -272,21 +298,41 @@ export const RankingPage: React.FC = () => {
                 >
                   <div
                     className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-[10px] tracking-widest uppercase"
-                    style={{ backgroundColor: "var(--primary)", color: "var(--bg)", borderRadius: "var(--theme-radius)" }}
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      color: "var(--bg)",
+                      borderRadius: "var(--theme-radius)",
+                    }}
                   >
                     Líder
                   </div>
                   <div
                     className="w-16 h-16 flex items-center justify-center border font-black text-xl mb-4"
-                    style={{ backgroundColor: "var(--primary)", borderColor: "var(--primary)", color: "var(--bg)", borderRadius: "var(--theme-radius)" }}
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      borderColor: "var(--primary)",
+                      color: "var(--bg)",
+                      borderRadius: "var(--theme-radius)",
+                    }}
                   >
                     1
                   </div>
-                  <p className="font-bold text-lg mb-1" style={{ color: "var(--text)" }}>{top3[0].studentName}</p>
-                  <p className="text-[10px] font-mono mb-4 uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                  <p
+                    className="font-bold text-lg mb-1"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {top3[0].studentName}
+                  </p>
+                  <p
+                    className="text-[10px] font-mono mb-4 uppercase tracking-widest"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     {top3[0].group || "Estudiante"}
                   </p>
-                  <span className="text-sm font-mono font-bold" style={{ color: "var(--primary)" }}>
+                  <span
+                    className="text-sm font-mono font-bold"
+                    style={{ color: "var(--primary)" }}
+                  >
                     {top3[0].totalScore.toLocaleString()} XP
                   </span>
                 </div>
@@ -297,19 +343,37 @@ export const RankingPage: React.FC = () => {
               <div className="order-3 pt-12">
                 <div
                   className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
-                  style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    borderRadius: "var(--theme-radius)",
+                  }}
                 >
                   <div
                     className="w-10 h-10 flex items-center justify-center border border-border font-bold mb-4"
-                    style={{ backgroundColor: "var(--surface-brighter)", color: "var(--text)", borderRadius: "var(--theme-radius)" }}
+                    style={{
+                      backgroundColor: "var(--surface-brighter)",
+                      color: "var(--text)",
+                      borderRadius: "var(--theme-radius)",
+                    }}
                   >
                     3
                   </div>
-                  <p className="font-bold text-sm mb-1" style={{ color: "var(--text)" }}>{top3[2].studentName}</p>
-                  <p className="text-[10px] font-mono mb-4 uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
+                  <p
+                    className="font-bold text-sm mb-1"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {top3[2].studentName}
+                  </p>
+                  <p
+                    className="text-[10px] font-mono mb-4 uppercase tracking-widest"
+                    style={{ color: "var(--text-muted)" }}
+                  >
                     {top3[2].group || "Estudiante"}
                   </p>
-                  <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>
+                  <span
+                    className="text-xs font-mono font-bold"
+                    style={{ color: "var(--primary)" }}
+                  >
                     {top3[2].totalScore.toLocaleString()} XP
                   </span>
                 </div>
@@ -320,24 +384,36 @@ export const RankingPage: React.FC = () => {
           {/* Tabla */}
           <div
             className="border border-border overflow-hidden"
-            style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
+            style={{
+              backgroundColor: "var(--surface)",
+              borderRadius: "var(--theme-radius)",
+            }}
           >
             <div
               className="p-4 border-b border-border flex justify-between items-center"
               style={{ backgroundColor: "var(--surface-brighter)" }}
             >
-              <h2 className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "var(--text)" }}>
-                {activeTab === "global" ? "Ranking Global" : `Ranking del Curso`}
+              <h2
+                className="text-[10px] font-mono font-bold uppercase tracking-widest"
+                style={{ color: "var(--text)" }}
+              >
+                {activeTab === "global"
+                  ? "Ranking Global"
+                  : `Ranking del Curso`}
               </h2>
               <span className="text-[9px] font-mono text-text-muted">
                 {rankingData.length} estudiantes
               </span>
             </div>
 
-            <div className="divide-y" style={{ backgroundColor: "var(--surface)" }}>
+            <div
+              className="divide-y"
+              style={{ backgroundColor: "var(--surface)" }}
+            >
               {rankingData.length === 0 ? (
                 <div className="p-8 text-center text-text-muted text-xs">
-                  No hay datos de ranking disponibles. Completa un reto para aparecer aquí.
+                  No hay datos de ranking disponibles. Completa un reto para
+                  aparecer aquí.
                 </div>
               ) : (
                 rankingData.map((entry) => (
@@ -347,24 +423,46 @@ export const RankingPage: React.FC = () => {
                   >
                     <div
                       className="w-10 font-mono font-bold text-center text-xs"
-                      style={{ color: entry.position <= 3 ? "var(--primary)" : "var(--text-muted)" }}
+                      style={{
+                        color:
+                          entry.position <= 3
+                            ? "var(--primary)"
+                            : "var(--text-muted)",
+                      }}
                     >
                       {entry.position}
                     </div>
                     <div
                       className="w-10 h-10 border flex items-center justify-center font-bold text-xs mr-4"
-                      style={{ backgroundColor: "var(--surface-brighter)", borderColor: "var(--border)", color: "var(--text)", borderRadius: "var(--theme-radius)" }}
+                      style={{
+                        backgroundColor: "var(--surface-brighter)",
+                        borderColor: "var(--border)",
+                        color: "var(--text)",
+                        borderRadius: "var(--theme-radius)",
+                      }}
                     >
                       {entry.studentName.charAt(0)}
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-bold" style={{ color: "var(--text)" }}>{entry.studentName}</p>
-                      <p className="text-[10px] uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
-                        {entry.group || `Retos completados: ${entry.challengesCompleted}`}
+                      <p
+                        className="text-xs font-bold"
+                        style={{ color: "var(--text)" }}
+                      >
+                        {entry.studentName}
+                      </p>
+                      <p
+                        className="text-[10px] uppercase tracking-widest"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {entry.group ||
+                          `Retos completados: ${entry.challengesCompleted}`}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>
+                      <p
+                        className="text-xs font-mono font-bold"
+                        style={{ color: "var(--primary)" }}
+                      >
                         {entry.totalScore.toLocaleString()} XP
                       </p>
                     </div>
