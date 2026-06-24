@@ -2,6 +2,7 @@ package com.pipre.backend.domain.entities.result;
 
 import com.pipre.backend.domain.exceptions.BusinessException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class Result {
 
@@ -12,8 +13,9 @@ public class Result {
     private final String resultSimulation;
     private final String idStudent;
     private final String idActivity;
+    private final LocalDateTime dateAttempted;
 
-    Result(String idResult, Integer attempts, Integer errors, BigDecimal score, String resultSimulation, String idStudent, String idActivity) {
+    Result(String idResult, Integer attempts, Integer errors, BigDecimal score, String resultSimulation, String idStudent, String idActivity, LocalDateTime dateAttempted) {
         if (idResult == null || idResult.isBlank()) {
             throw new BusinessException("El ID del resultado es obligatorio.");
         }
@@ -40,6 +42,7 @@ public class Result {
         this.resultSimulation = resultSimulation;
         this.idStudent = idStudent;
         this.idActivity = idActivity;
+        this.dateAttempted = dateAttempted != null ? dateAttempted : LocalDateTime.now();
     }
 
     public static ResultBuilder builder() {
@@ -74,6 +77,10 @@ public class Result {
         return this.idActivity;
     }
 
+    public LocalDateTime getDateAttempted() {
+        return this.dateAttempted;
+    }
+
     public static class ResultBuilder {
         private String idResult;
         private Integer attempts;
@@ -82,6 +89,7 @@ public class Result {
         private String resultSimulation;
         private String idStudent;
         private String idActivity;
+        private LocalDateTime dateAttempted;
 
         ResultBuilder() {
         }
@@ -121,12 +129,17 @@ public class Result {
             return this;
         }
 
+        public ResultBuilder dateAttempted(LocalDateTime dateAttempted) {
+            this.dateAttempted = dateAttempted;
+            return this;
+        }
+
         public Result build() {
-            return new Result(this.idResult, this.attempts, this.errors, this.score, this.resultSimulation, this.idStudent, this.idActivity);
+            return new Result(this.idResult, this.attempts, this.errors, this.score, this.resultSimulation, this.idStudent, this.idActivity, this.dateAttempted);
         }
 
         public String toString() {
-            return "Result.ResultBuilder(idResult=" + this.idResult + ", attempts=" + this.attempts + ", errors=" + this.errors + ", score=" + this.score + ", resultSimulation=" + this.resultSimulation + ", idStudent=" + this.idStudent + ", idActivity=" + this.idActivity + ")";
+            return "Result.ResultBuilder(idResult=" + this.idResult + ", attempts=" + this.attempts + ", errors=" + this.errors + ", score=" + this.score + ", resultSimulation=" + this.resultSimulation + ", idStudent=" + this.idStudent + ", idActivity=" + this.idActivity + ", dateAttempted=" + this.dateAttempted + ")";
         }
     }
 }
