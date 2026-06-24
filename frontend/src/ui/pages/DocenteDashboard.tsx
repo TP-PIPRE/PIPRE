@@ -5,6 +5,14 @@ import { getAuthState } from "../../infrastructure/store/authStore";
 import { Modal } from "../components/common/Modal";
 import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
 import type { RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
+import {
+  BsPlusCircleFill,
+  BsMortarboardFill,
+  BsPeopleFill,
+  BsGraphUpArrow,
+  BsPencilSquare,
+  BsTrashFill
+} from "react-icons/bs";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 
 const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): RiaStudentData => {
@@ -147,6 +155,19 @@ const loadDashboardMetrics = async () => {
   }
 };
 
+const renderMetricaIcon = (iconoName: string) => {
+  switch (iconoName) {
+    case "school":
+      return <BsMortarboardFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    case "group":
+      return <BsPeopleFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    case "trending_up":
+      return <BsGraphUpArrow className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    default:
+      return <BsPlusCircleFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+  }
+};
+
 export const DocenteDashboard = () => {
   const [dashboardMetrics, setDashboardMetrics] = useState<{
     metricas: { id: string; titulo: string; valor: string | number; variacion: string; icono: string }[];
@@ -279,7 +300,7 @@ export const DocenteDashboard = () => {
           </p>
         </div>
         <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
-          <span className="material-symbols-outlined text-sm">add_circle</span>
+          <BsPlusCircleFill className="text-sm" />
           Nuevo Reto
         </button>
       </div>
@@ -292,12 +313,7 @@ export const DocenteDashboard = () => {
             className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg hover:scale-102 rounded-lg"
           >
             <div className="flex justify-between items-start mb-4">
-              <span
-                className="material-symbols-outlined text-2xl transition-colors duration-300"
-                style={{ color: "var(--primary)" }}
-              >
-                {m.icono}
-              </span>
+              {renderMetricaIcon(m.icono)}
               <span
                 className="font-mono text-xs transition-colors duration-300"
                 style={{ color: "var(--primary)" }}

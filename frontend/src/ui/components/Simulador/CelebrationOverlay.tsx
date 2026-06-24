@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import confetti from "canvas-confetti";
+import { BsTrophyFill } from "react-icons/bs";
 
 interface CelebrationOverlayProps {
   score: number;
@@ -49,32 +50,32 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
       <div
-        className="relative w-full max-w-lg mx-4 p-10 border border-primary/30 text-center animate-scale-up"
+        className="relative w-full max-w-sm mx-4 p-6 border border-primary/30 text-center animate-scale-up"
         style={{
           backgroundColor: "var(--surface)",
           borderRadius: "var(--theme-radius)",
           boxShadow: "0 0 60px rgba(var(--primary-rgb), 0.15)",
         }}
       >
-        <div className="text-6xl mb-6">🏆</div>
+        <BsTrophyFill className="text-4xl mb-4 mx-auto" style={{ color: "var(--primary)" }} />
 
         <h2
-          className="text-2xl font-bold mb-2"
+          className="text-xl font-bold mb-1"
           style={{ color: "var(--text)" }}
         >
           Reto Completado
         </h2>
 
         <p
-          className="text-xs text-text-muted/70 mb-8 font-medium"
+          className="text-xs text-text-muted/70 mb-6 font-medium"
           style={{ color: "var(--text-muted)" }}
         >
           {challengeTitle}
         </p>
 
-        <div className="grid grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <div
-            className="p-4 border border-border/20"
+            className="p-3 border border-border/20"
             style={{
               borderRadius: "var(--theme-radius)",
               backgroundColor: "var(--bg)",
@@ -87,7 +88,7 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
               Puntaje
             </div>
             <div
-              className="text-xl font-black"
+              className="text-lg font-black"
               style={{ color: "var(--primary)" }}
             >
               {score.toLocaleString()}
@@ -95,7 +96,7 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
           </div>
 
           <div
-            className="p-4 border border-border/20"
+            className="p-3 border border-border/20"
             style={{
               borderRadius: "var(--theme-radius)",
               backgroundColor: "var(--bg)",
@@ -108,7 +109,7 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
               Bloques
             </div>
             <div
-              className="text-xl font-black"
+              className="text-lg font-black"
               style={{ color: "var(--accent)" }}
             >
               {blocks}
@@ -116,7 +117,7 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
           </div>
 
           <div
-            className="p-4 border border-border/20"
+            className="p-3 border border-border/20"
             style={{
               borderRadius: "var(--theme-radius)",
               backgroundColor: "var(--bg)",
@@ -129,7 +130,7 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
               Energía
             </div>
             <div
-              className="text-xl font-black"
+              className="text-lg font-black"
               style={{ color: energy > 50 ? "var(--success)" : "var(--danger)" }}
             >
               {energy}%
@@ -140,14 +141,14 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
         <div className="flex gap-4">
           <button
             onClick={onExit}
-            className="flex-1 btn-secondary py-4 text-[10px] font-black uppercase tracking-widest"
+            className="flex-1 btn-secondary py-3 text-[10px] font-black uppercase tracking-widest"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
             Volver a Cursos
           </button>
           <button
             onClick={onNext}
-            className="flex-[2] btn-premium py-4 text-[10px] font-black uppercase tracking-widest"
+            className="flex-[2] btn-premium py-3 text-[10px] font-black uppercase tracking-widest"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
             Siguiente Reto

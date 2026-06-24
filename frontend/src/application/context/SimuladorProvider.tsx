@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
@@ -8,6 +7,7 @@ import { useThemeStore } from "../../infrastructure/store/themeStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import { getAuthState } from "../../infrastructure/store/authStore";
+import { simuladorRepository } from "../../infrastructure/adapters/storage/SimuladorRepository";
 import type { SimulationResultType } from "../../shared/types/SpecContracts";
 import { useRobotSimulations } from "../hooks/useRobotSimulations";
 import type { ActivityResponse } from "../../shared/types/SpecContracts";
@@ -56,6 +56,8 @@ interface SimuladorContextType {
     category: BlockCategory,
     params?: Record<string, string>,
   ) => void;
+  addChildBlock: (parentId: string, childBlock: Omit<Block, "id">) => void;
+  removeChildBlock: (parentId: string, childId: string) => void;
   removeBlock: (id: string) => void;
   clearWorkspace: () => void;
   updateBlockParam: (id: string, paramName: string, value: string) => void;
@@ -79,7 +81,10 @@ interface SimuladorContextType {
 
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
-  currentTheme: Record<string, any>;
+  currentTheme: Record<string, string>;
+
+  currentBlockId: string | null;
+  setCurrentBlockId: (id: string | null) => void;
 
   submitRobotSimulation: () => Promise<void>;
   simulationLoading: boolean;
@@ -102,12 +107,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [challenges, setChallenges] = useState<ChallengeData[]>([]);
 
   const [portAssignments, setPortAssignments] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem("pipre_port_assignments");
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
+    return simuladorRepository.getPortAssignments();
   });
   const [blocks, setBlocks] = useState<Block[]>([]);
   const { currentTheme } = useThemeStore();
@@ -125,6 +125,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const blockIdCounter = useRef(0);
   const stopRequested = useRef(false);
 
+  const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<ActivityResponse | null>(null);
   const [lastSimulationResult, setLastSimulationResult] = useState<SimulationResultType | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -138,7 +139,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const simuladorUseCase = useRef(new SimuladorUseCase());
 
   useEffect(() => {
-    localStorage.setItem("pipre_port_assignments", JSON.stringify(portAssignments));
+    simuladorRepository.savePortAssignments(portAssignments);
   }, [portAssignments]);
 
   const getDefaultMissions = (env: EnvironmentType): Mission[] => {
@@ -338,7 +339,6 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     setLogs((prev) => [...prev, { time: `[${time}]`, msg, type }]);
   };
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!selectedActivity) return;
     setIsFreeMode(true);
@@ -412,9 +412,46 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       type,
       category,
       params,
+      children: [],
     };
     setBlocks((prev) => [...prev, newBlock]);
     addLog(`Bloque añadido: ${type}`, "info");
+  };
+
+  const addChildBlock = (parentId: string, childBlock: Omit<Block, "id">) => {
+    const newChild: Block = {
+      ...childBlock,
+      id: `block_${blockIdCounter.current++}`,
+      parentId,
+    };
+
+    setBlocks((prev) =>
+      prev.map((block) => {
+        if (block.id === parentId) {
+          return {
+            ...block,
+            children: [...(block.children || []), newChild],
+          };
+        }
+        return block;
+      })
+    );
+    addLog(`Bloque interno añadido: ${childBlock.type}`, "info");
+  };
+
+  const removeChildBlock = (parentId: string, childId: string) => {
+    setBlocks((prev) =>
+      prev.map((block) => {
+        if (block.id === parentId) {
+          return {
+            ...block,
+            children: (block.children || []).filter((c) => c.id !== childId),
+          };
+        }
+        return block;
+      })
+    );
+    addLog(`Bloque interno removido`, "warn");
   };
 
   const removeBlock = (id: string) => {
@@ -443,10 +480,367 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       engineRef.current.stop();
     }
     setIsRunning(false);
+    setCurrentBlockId(null);
     addLog("Ejecución detenida por el usuario", "error");
   };
 
   const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+  const executeBlock = async (block: Block) => {
+    if (stopRequested.current || energy <= 0) return;
+    setCurrentBlockId(block.id);
+    await delay(100);
+
+    switch (block.type) {
+      case "al_iniciar_sistema":
+        addLog("Sistema inicializado correctamente", "success");
+        consumeEnergy(1);
+        await delay(500);
+        break;
+
+      case "al_detectar_obstaculo":
+        addLog("Sensor reactivo armado.", "info");
+        consumeEnergy(1);
+        await delay(500);
+        break;
+
+      case "mover_ruedas":
+      case "avanzar":
+      case "desplazarse": {
+        const dist = parseFloat(block.params.distancia || "30");
+        addLog(`Avanzando ${dist} unidades...`);
+        consumeEnergy(dist * 0.2);
+        if (engineRef.current) {
+          await engineRef.current.moveForward(dist, 1000);
+        }
+        break;
+      }
+
+      case "rotar_nucleo":
+      case "girar": {
+        const angle = parseFloat(block.params.grados || "90");
+        addLog(`Rotando ${angle} grados...`);
+        consumeEnergy(Math.abs(angle) * 0.1);
+        if (engineRef.current) {
+          await engineRef.current.rotateCore(angle, 1000);
+        }
+        break;
+      }
+
+      case "retroceder": {
+        const backDist = parseFloat(block.params.distancia || "30");
+        addLog(`Retrocediendo ${backDist} unidades...`);
+        consumeEnergy(backDist * 0.2);
+        if (engineRef.current) {
+          await engineRef.current.rotateCore(180, 500);
+          await engineRef.current.moveForward(backDist, 1000);
+          await engineRef.current.rotateCore(-180, 500);
+        }
+        break;
+      }
+
+      case "atacar":
+        addLog("¡ATACANDO!");
+        consumeEnergy(10);
+        if (engineRef.current?.attack) {
+          await engineRef.current.attack(parseFloat(block.params.potencia || "50"), 800);
+        } else {
+          await delay(800);
+        }
+        break;
+
+      case "defender":
+        addLog("Escudo activado.");
+        consumeEnergy(5);
+        if (engineRef.current?.activateShield) {
+          await engineRef.current.activateShield(1000);
+        } else {
+          await delay(500);
+        }
+        break;
+
+      case "escanear_enemigo":
+        addLog("Escaneando enemigos cercanos...");
+        consumeEnergy(3);
+        if (engineRef.current?.scan) {
+          const result = await engineRef.current.scan(1500);
+          addLog(`Enemigos detectados: ${result}`, "info");
+        } else {
+          await delay(1000);
+        }
+        break;
+
+      case "golpear":
+        addLog("¡GOLPEANDO con el hacha!");
+        consumeEnergy(8);
+        if (engineRef.current?.strike) {
+          await engineRef.current.strike(800);
+        } else {
+          await delay(600);
+        }
+        break;
+
+      case "despegar":
+      case "elevarse": {
+        const altura = parseFloat(block.params.altura || "50");
+        addLog(`Despegando a altura ${altura}...`);
+        consumeEnergy(15);
+        if (engineRef.current?.takeOff) {
+          await engineRef.current.takeOff(altura, 1200);
+        } else {
+          await delay(800);
+        }
+        break;
+      }
+
+      case "aterrizar":
+        addLog("Aterrizando...");
+        consumeEnergy(10);
+        if (engineRef.current?.land) {
+          await engineRef.current.land(1000);
+        } else {
+          await delay(800);
+        }
+        break;
+
+      case "recolectar":
+        addLog("Recolectando muestra...");
+        consumeEnergy(5);
+        if (engineRef.current?.collect) {
+          await engineRef.current.collect(1000);
+        } else {
+          await delay(800);
+        }
+        break;
+
+      case "analizar":
+        addLog("Analizando terreno...");
+        consumeEnergy(3);
+        if (engineRef.current?.analyze) {
+          const data = await engineRef.current.analyze(1500);
+          addLog(`Composición del suelo: ${data}`, "info");
+        } else {
+          await delay(1000);
+        }
+        break;
+
+      case "perforar":
+        addLog("Perforando roca...");
+        consumeEnergy(10);
+        if (engineRef.current?.drill) {
+          await engineRef.current.drill(1000);
+        } else {
+          await delay(800);
+        }
+        break;
+
+      case "iluminar":
+        addLog("¡Faro encendido!");
+        consumeEnergy(3);
+        if (engineRef.current?.lightUp) {
+          await engineRef.current.lightUp(1200);
+        } else {
+          await delay(600);
+        }
+        break;
+
+      case "abrir_puerta":
+        addLog("Intentando abrir puerta...");
+        consumeEnergy(4);
+        if (engineRef.current?.openDoor) {
+          const opened = await engineRef.current.openDoor(1000);
+          addLog(opened ? "Puerta abierta." : "No hay puerta cerca.", opened ? "success" : "warn");
+        } else {
+          await delay(600);
+        }
+        break;
+
+      case "detectar_magia":
+        addLog("Escaneando rastros mágicos...");
+        consumeEnergy(3);
+        if (engineRef.current?.detectMagic) {
+          const magic = await engineRef.current.detectMagic(1200);
+          addLog(`Rastros de magia: ${magic}`, "info");
+        } else {
+          await delay(800);
+        }
+        break;
+
+      case "teletransportar":
+        addLog("¡Teletransportándose!");
+        consumeEnergy(20);
+        if (engineRef.current?.teleport) {
+          await engineRef.current.teleport(1500);
+        } else {
+          await delay(1000);
+        }
+        break;
+
+      case "congelar":
+        addLog("¡CONGELANDO el entorno!");
+        consumeEnergy(7);
+        if (engineRef.current?.freeze) {
+          await engineRef.current.freeze(1200);
+        } else {
+          await delay(800);
+        }
+        break;
+
+      case "acelerar": {
+        const speed = parseFloat(block.params.velocidad || "50");
+        addLog(`Acelerando a velocidad ${speed}...`);
+        consumeEnergy(8);
+        if (engineRef.current?.boost) {
+          await engineRef.current.boost(speed, 800);
+        } else {
+          await delay(500);
+        }
+        break;
+      }
+
+      case "frenar":
+        addLog("Frenando...");
+        consumeEnergy(2);
+        if (engineRef.current?.brake) {
+          await engineRef.current.brake(500);
+        } else {
+          await delay(400);
+        }
+        break;
+
+      case "saltar":
+        addLog("¡Saltando!");
+        consumeEnergy(6);
+        if (engineRef.current?.jump) {
+          await engineRef.current.jump(800);
+        } else {
+          await delay(600);
+        }
+        break;
+
+      case "esquivar":
+        addLog("Esquivando obstáculo...");
+        consumeEnergy(5);
+        if (engineRef.current?.dodge) {
+          await engineRef.current.dodge(600);
+        } else {
+          if (engineRef.current) {
+            await engineRef.current.rotateCore(45, 300);
+            await engineRef.current.moveForward(15, 400);
+            await engineRef.current.rotateCore(-45, 300);
+          }
+        }
+        break;
+
+      case "frenado_emergencia":
+        addLog("¡FRENADO DE EMERGENCIA!");
+        consumeEnergy(12);
+        if (engineRef.current?.emergencyBrake) {
+          await engineRef.current.emergencyBrake(600);
+        } else {
+          await delay(400);
+        }
+        break;
+
+      case "si_distancia":
+        addLog("Escaneando entorno...");
+        consumeEnergy(2);
+        if (engineRef.current) {
+          const dist = await engineRef.current.triggerUltrasonicSensor(1500);
+          addLog(`Distancia detectada: ${dist}cm`, "info");
+          if (dist < 10) {
+            addLog("¡Obstáculo detectado! Evadiendo...", "warn");
+            await engineRef.current.rotateCore(90, 800);
+          } else {
+            addLog("Camino despejado.", "success");
+          }
+        }
+        break;
+
+      case "repetir": {
+        const repIterations = parseInt(block.params.iteraciones || "3", 10);
+        const repChildren = block.children || [];
+        addLog(`Iniciando bucle REPETIR: ${repIterations} iteraciones`);
+        consumeEnergy(2);
+
+        for (let i = 0; i < repIterations; i++) {
+          if (stopRequested.current) break;
+          if (energy <= 0) {
+            addLog("Batería agotada. Abortando bucle.", "error");
+            break;
+          }
+
+          for (const child of repChildren) {
+            if (stopRequested.current) break;
+            if (energy <= 0) break;
+            await executeBlock(child);
+            await delay(200);
+          }
+        }
+
+        addLog(`Bucle REPETIR completado: ${repIterations} iteraciones`);
+        break;
+      }
+
+      case "mientras": {
+        const maxIter = parseInt(block.params.max_repeticiones || "10", 10);
+        const whileChildren = block.children || [];
+        addLog(`Iniciando bucle MIENTRAS (máx: ${maxIter})`);
+        consumeEnergy(2);
+
+        let iterCount = 0;
+        while (iterCount < maxIter) {
+          if (stopRequested.current) break;
+          if (energy <= 0) {
+            addLog("Batería agotada. Abortando bucle.", "error");
+            break;
+          }
+
+          for (const child of whileChildren) {
+            if (stopRequested.current) break;
+            if (energy <= 0) break;
+            await executeBlock(child);
+            await delay(200);
+          }
+
+          iterCount++;
+        }
+
+        addLog(`Bucle MIENTRAS completado: ${iterCount} iteraciones`);
+        break;
+      }
+
+      case "por_cada": {
+        const forEachChildren = block.children || [];
+        const itemCount = 3;
+        addLog(`Iniciando bucle POR_CADA (items: ${itemCount})`);
+        consumeEnergy(2);
+
+        for (let i = 0; i < itemCount; i++) {
+          if (stopRequested.current) break;
+          if (energy <= 0) {
+            addLog("Batería agotada. Abortando bucle.", "error");
+            break;
+          }
+
+          for (const child of forEachChildren) {
+            if (stopRequested.current) break;
+            if (energy <= 0) break;
+            await executeBlock(child);
+            await delay(200);
+          }
+        }
+
+        addLog("Bucle POR_CADA completado");
+        break;
+      }
+
+      default:
+        addLog(`Bloque desconocido: ${block.type}`, "warn");
+        await delay(300);
+    }
+    setCurrentBlockId(null);
+  };
 
   const executeProgram = async () => {
     if (blocks.length === 0) {
@@ -471,276 +865,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
           break;
         }
 
-        switch (block.type) {
-          case "al_iniciar_sistema":
-            addLog("Sistema inicializado correctamente", "success");
-            consumeEnergy(1);
-            await delay(500);
-            break;
-
-          case "al_detectar_obstaculo":
-            addLog("Sensor reactivo armado.", "info");
-            consumeEnergy(1);
-            await delay(500);
-            break;
-
-          case "mover_ruedas":
-          case "avanzar":
-          case "desplazarse": {
-            const dist = parseFloat(block.params.distancia || "30");
-            addLog(`Avanzando ${dist} unidades...`);
-            consumeEnergy(dist * 0.2);
-            if (engineRef.current) {
-              await engineRef.current.moveForward(dist, 1000);
-            }
-            break;
-          }
-
-          case "rotar_nucleo":
-          case "girar": {
-            const angle = parseFloat(block.params.grados || "90");
-            addLog(`Rotando ${angle} grados...`);
-            consumeEnergy(Math.abs(angle) * 0.1);
-            if (engineRef.current) {
-              await engineRef.current.rotateCore(angle, 1000);
-            }
-            break;
-          }
-
-          case "retroceder": {
-            const backDist = parseFloat(block.params.distancia || "30");
-            addLog(`Retrocediendo ${backDist} unidades...`);
-            consumeEnergy(backDist * 0.2);
-            if (engineRef.current) {
-              await engineRef.current.rotateCore(180, 500);
-              await engineRef.current.moveForward(backDist, 1000);
-              await engineRef.current.rotateCore(-180, 500);
-            }
-            break;
-          }
-
-          case "atacar":
-            addLog("¡ATACANDO!");
-            consumeEnergy(10);
-            if (engineRef.current && "attack" in engineRef.current) {
-              await (engineRef.current as any).attack(parseFloat(block.params.potencia || "50"), 800);
-            } else {
-              await delay(800);
-            }
-            break;
-
-          case "defender":
-            addLog("Escudo activado.");
-            consumeEnergy(5);
-            if (engineRef.current && "activateShield" in engineRef.current) {
-              await (engineRef.current as any).activateShield(1000);
-            } else {
-              await delay(500);
-            }
-            break;
-
-          case "escanear_enemigo":
-            addLog("Escaneando enemigos cercanos...");
-            consumeEnergy(3);
-            if (engineRef.current && "scan" in engineRef.current) {
-              const result = await (engineRef.current as any).scan(1500);
-              addLog(`Enemigos detectados: ${result}`, "info");
-            } else {
-              await delay(1000);
-            }
-            break;
-
-          case "golpear":
-            addLog("¡GOLPEANDO con el hacha!");
-            consumeEnergy(8);
-            if (engineRef.current && "strike" in engineRef.current) {
-              await (engineRef.current as any).strike(800);
-            } else {
-              await delay(600);
-            }
-            break;
-
-          case "despegar":
-          case "elevarse": {
-            const altura = parseFloat(block.params.altura || "50");
-            addLog(`Despegando a altura ${altura}...`);
-            consumeEnergy(15);
-            if (engineRef.current && "takeOff" in engineRef.current) {
-              await (engineRef.current as any).takeOff(altura, 1200);
-            } else {
-              await delay(800);
-            }
-            break;
-          }
-
-          case "aterrizar":
-            addLog("Aterrizando...");
-            consumeEnergy(10);
-            if (engineRef.current && "land" in engineRef.current) {
-              await (engineRef.current as any).land(1000);
-            } else {
-              await delay(800);
-            }
-            break;
-
-          case "recolectar":
-            addLog("Recolectando muestra...");
-            consumeEnergy(5);
-            if (engineRef.current && "collect" in engineRef.current) {
-              await (engineRef.current as any).collect(1000);
-            } else {
-              await delay(800);
-            }
-            break;
-
-          case "analizar":
-            addLog("Analizando terreno...");
-            consumeEnergy(3);
-            if (engineRef.current && "analyze" in engineRef.current) {
-              const data = await (engineRef.current as any).analyze(1500);
-              addLog(`Composición del suelo: ${data}`, "info");
-            } else {
-              await delay(1000);
-            }
-            break;
-
-          case "perforar":
-            addLog("Perforando roca...");
-            consumeEnergy(10);
-            if (engineRef.current && "drill" in engineRef.current) {
-              await (engineRef.current as any).drill(1000);
-            } else {
-              await delay(800);
-            }
-            break;
-
-          case "iluminar":
-            addLog("¡Faro encendido!");
-            consumeEnergy(3);
-            if (engineRef.current && "lightUp" in engineRef.current) {
-              await (engineRef.current as any).lightUp(1200);
-            } else {
-              await delay(600);
-            }
-            break;
-
-          case "abrir_puerta":
-            addLog("Intentando abrir puerta...");
-            consumeEnergy(4);
-            if (engineRef.current && "openDoor" in engineRef.current) {
-              const opened = await (engineRef.current as any).openDoor(1000);
-              addLog(opened ? "Puerta abierta." : "No hay puerta cerca.", opened ? "success" : "warn");
-            } else {
-              await delay(600);
-            }
-            break;
-
-          case "detectar_magia":
-            addLog("Escaneando rastros mágicos...");
-            consumeEnergy(3);
-            if (engineRef.current && "detectMagic" in engineRef.current) {
-              const magic = await (engineRef.current as any).detectMagic(1200);
-              addLog(`Rastros de magia: ${magic}`, "info");
-            } else {
-              await delay(800);
-            }
-            break;
-
-          case "teletransportar":
-            addLog("¡Teletransportándose!");
-            consumeEnergy(20);
-            if (engineRef.current && "teleport" in engineRef.current) {
-              await (engineRef.current as any).teleport(1500);
-            } else {
-              await delay(1000);
-            }
-            break;
-
-          case "congelar":
-            addLog("¡CONGELANDO el entorno!");
-            consumeEnergy(7);
-            if (engineRef.current && "freeze" in engineRef.current) {
-              await (engineRef.current as any).freeze(1200);
-            } else {
-              await delay(800);
-            }
-            break;
-
-          case "acelerar": {
-            const speed = parseFloat(block.params.velocidad || "50");
-            addLog(`Acelerando a velocidad ${speed}...`);
-            consumeEnergy(8);
-            if (engineRef.current && "boost" in engineRef.current) {
-              await (engineRef.current as any).boost(speed, 800);
-            } else {
-              await delay(500);
-            }
-            break;
-          }
-
-          case "frenar":
-            addLog("Frenando...");
-            consumeEnergy(2);
-            if (engineRef.current && "brake" in engineRef.current) {
-              await (engineRef.current as any).brake(500);
-            } else {
-              await delay(400);
-            }
-            break;
-
-          case "saltar":
-            addLog("¡Saltando!");
-            consumeEnergy(6);
-            if (engineRef.current && "jump" in engineRef.current) {
-              await (engineRef.current as any).jump(800);
-            } else {
-              await delay(600);
-            }
-            break;
-
-          case "esquivar":
-            addLog("Esquivando obstáculo...");
-            consumeEnergy(5);
-            if (engineRef.current && "dodge" in engineRef.current) {
-              await (engineRef.current as any).dodge(600);
-            } else {
-              if (engineRef.current) {
-                await engineRef.current.rotateCore(45, 300);
-                await engineRef.current.moveForward(15, 400);
-                await engineRef.current.rotateCore(-45, 300);
-              }
-            }
-            break;
-
-          case "frenado_emergencia":
-            addLog("¡FRENADO DE EMERGENCIA!");
-            consumeEnergy(12);
-            if (engineRef.current && "emergencyBrake" in engineRef.current) {
-              await (engineRef.current as any).emergencyBrake(600);
-            } else {
-              await delay(400);
-            }
-            break;
-
-          case "si_distancia":
-            addLog("Escaneando entorno...");
-            consumeEnergy(2);
-            if (engineRef.current) {
-              const dist = await engineRef.current.triggerUltrasonicSensor(1500);
-              addLog(`Distancia detectada: ${dist}cm`, "info");
-              if (dist < 10) {
-                addLog("¡Obstáculo detectado! Evadiendo...", "warn");
-                await engineRef.current.rotateCore(90, 800);
-              } else {
-                addLog("Camino despejado.", "success");
-              }
-            }
-            break;
-
-          default:
-            addLog(`Bloque desconocido: ${block.type}`, "warn");
-            await delay(300);
-        }
+        // Execute block using the helper function
+        await executeBlock(block);
 
         await delay(300);
       }
@@ -753,10 +879,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
           completeMission();
         }
       }
-    } catch (e: any) {
-      addLog(`Error en ejecución: ${e.message}`, "error");
+    } catch (e) {
+      addLog(`Error en ejecución: ${e instanceof Error ? e.message : String(e)}`, "error");
     } finally {
       setIsRunning(false);
+      setCurrentBlockId(null);
       stopRequested.current = false;
     }
   };
@@ -786,6 +913,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
         blocks,
         addBlock,
+        addChildBlock,
+        removeChildBlock,
         removeBlock,
         clearWorkspace,
         updateBlockParam,
@@ -811,6 +940,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         completeChallenge,
         dismissChallengeCompletion,
         currentTheme,
+        currentBlockId,
+        setCurrentBlockId,
 
         submitRobotSimulation,
         simulationLoading,

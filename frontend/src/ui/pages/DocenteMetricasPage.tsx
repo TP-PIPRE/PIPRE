@@ -1,4 +1,5 @@
 import React from "react";
+import { BsExclamationTriangleFill, BsEnvelope, BsGraphUp } from "react-icons/bs";
 
 const MOCK_METRICS = {
   dropoutRisk: [
@@ -62,12 +63,10 @@ export const DocenteMetricasPage: React.FC = () => {
             className="text-xs font-mono font-bold uppercase tracking-widest mb-6 flex items-center gap-2 transition-all duration-300"
             style={{ color: "var(--text)" }}
           >
-            <span
-              className="material-symbols-outlined text-sm transition-all duration-300"
+            <BsExclamationTriangleFill
+              className="text-sm transition-all duration-300"
               style={{ color: "var(--danger)" }}
-            >
-              warning
-            </span>
+            />
             Alerta de Deserción (Dropout Risk)
           </h2>
           <div className="space-y-4">
@@ -116,7 +115,7 @@ export const DocenteMetricasPage: React.FC = () => {
                     </span>
                   </div>
                   <button className="text-text-muted hover:text-primary transition-all duration-300 transform hover:scale-110 rounded-full p-1">
-                    <span className="material-symbols-outlined">mail</span>
+                    <BsEnvelope className="text-base" />
                   </button>
                 </div>
               </div>
@@ -133,12 +132,10 @@ export const DocenteMetricasPage: React.FC = () => {
             className="text-xs font-mono font-bold uppercase tracking-widest mb-6 flex items-center gap-2 transition-all duration-300"
             style={{ color: "var(--text)" }}
           >
-            <span
-              className="material-symbols-outlined text-sm transition-all duration-300"
+            <BsGraphUp
+              className="text-sm transition-all duration-300"
               style={{ color: "var(--primary)" }}
-            >
-              analytics
-            </span>
+            />
             Eficiencia por Módulo
           </h2>
           <div className="space-y-6">

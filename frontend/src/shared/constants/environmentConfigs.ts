@@ -20,6 +20,38 @@ const RACE_COLORS = {
   secondary: "var(--primary)",
 };
 
+const BATTLE_THEME = {
+  primary: "#ef4444",
+  secondary: "#f97316",
+  accent: "#fbbf24",
+  background: "#1a1a2e",
+  particles: "#ef4444",
+};
+
+const SPACE_THEME = {
+  primary: "#3b82f6",
+  secondary: "#8b5cf6",
+  accent: "#06b6d4",
+  background: "#0f172a",
+  particles: "#3b82f6",
+};
+
+const MAZE_THEME = {
+  primary: "#8b5cf6",
+  secondary: "#a855f7",
+  accent: "#d946ef",
+  background: "#1e1b4b",
+  particles: "#8b5cf6",
+};
+
+const RACE_THEME = {
+  primary: "#f97316",
+  secondary: "#eab308",
+  accent: "#22c55e",
+  background: "#1c1917",
+  particles: "#f97316",
+};
+
 export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
   battle: {
     id: "battle",
@@ -111,6 +143,67 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         hardwareRequired: "Sensor Ultrasónico",
         params: {},
       },
+      {
+        type: "repetir",
+        label: "REPETIR(3)",
+        category: "loop",
+        params: { iteraciones: "3" },
+        paramOptions: {
+          iteraciones: [
+            { label: "2 veces", value: "2" },
+            { label: "3 veces", value: "3" },
+            { label: "5 veces", value: "5" },
+            { label: "10 veces", value: "10" },
+          ],
+        },
+        loopConfig: {
+          type: "count",
+          defaultIterations: 3,
+          maxIterations: 10,
+        },
+        color: "#f97316",
+        icon: "repeat",
+        description: "Repite un bloque de código N veces",
+      },
+      {
+        type: "mientras",
+        label: "MIENTRAS(true)",
+        category: "loop",
+        params: { condicion: "true" },
+        paramOptions: {
+          condicion: [
+            { label: "Siempre", value: "true" },
+            { label: "Sin enemigos", value: "no_enemies" },
+            { label: "Energía baja", value: "low_energy" },
+          ],
+        },
+        loopConfig: {
+          type: "while",
+          condition: "true",
+        },
+        color: "#8b5cf6",
+        icon: "loop",
+        description: "Ejecuta mientras la condición sea verdadera",
+      },
+      {
+        type: "por_cada",
+        label: "POR_CADA(enemigo)",
+        category: "loop",
+        params: { coleccion: "enemigos" },
+        paramOptions: {
+          coleccion: [
+            { label: "Enemigos", value: "enemigos" },
+            { label: "Obstáculos", value: "obstaculos" },
+            { label: "Aliados", value: "aliados" },
+          ],
+        },
+        loopConfig: {
+          type: "forEach",
+        },
+        color: "#06b6d4",
+        icon: "dynamic_feed",
+        description: "Itera sobre una colección de elementos",
+      },
     ],
     hardware: [
       {
@@ -194,6 +287,7 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       { id: "b5", title: "Asalto Final", objective: "Combina movimiento, ataque y defensa para derrotar al jefe.", maxBlocks: 6 },
     ],
     defaultHardware: ["Tracción Oruga"],
+    theme: BATTLE_THEME,
   },
 
   space: {
@@ -279,6 +373,67 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         hardwareRequired: "Sensor Ultrasónico",
         params: {},
       },
+      {
+        type: "repetir",
+        label: "REPETIR(3)",
+        category: "loop",
+        params: { iteraciones: "3" },
+        paramOptions: {
+          iteraciones: [
+            { label: "2 veces", value: "2" },
+            { label: "3 veces", value: "3" },
+            { label: "5 veces", value: "5" },
+            { label: "10 veces", value: "10" },
+          ],
+        },
+        loopConfig: {
+          type: "count",
+          defaultIterations: 3,
+          maxIterations: 10,
+        },
+        color: "#3b82f6",
+        icon: "repeat",
+        description: "Repite un bloque de código N veces",
+      },
+      {
+        type: "mientras",
+        label: "MIENTRAS(true)",
+        category: "loop",
+        params: { condicion: "true" },
+        paramOptions: {
+          condicion: [
+            { label: "Siempre", value: "true" },
+            { label: "Sin muestras", value: "no_samples" },
+            { label: "Energía baja", value: "low_energy" },
+          ],
+        },
+        loopConfig: {
+          type: "while",
+          condition: "true",
+        },
+        color: "#8b5cf6",
+        icon: "loop",
+        description: "Ejecuta mientras la condición sea verdadera",
+      },
+      {
+        type: "por_cada",
+        label: "POR_CADA(muestra)",
+        category: "loop",
+        params: { coleccion: "muestras" },
+        paramOptions: {
+          coleccion: [
+            { label: "Muestras", value: "muestras" },
+            { label: "Rocas", value: "rocas" },
+            { label: "Cristales", value: "cristales" },
+          ],
+        },
+        loopConfig: {
+          type: "forEach",
+        },
+        color: "#06b6d4",
+        icon: "dynamic_feed",
+        description: "Itera sobre una colección de elementos",
+      },
     ],
     hardware: [
       {
@@ -362,6 +517,7 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       { id: "s5", title: "Regreso a Base", objective: "Navega el terreno, recolecta 2 muestras y regresa a la base.", maxBlocks: 6 },
     ],
     defaultHardware: ["Ruedas Lunares"],
+    theme: SPACE_THEME,
   },
 
   maze: {
@@ -448,6 +604,67 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         category: "condition",
         hardwareRequired: "Sensor Ultrasónico",
         params: {},
+      },
+      {
+        type: "repetir",
+        label: "REPETIR(3)",
+        category: "loop",
+        params: { iteraciones: "3" },
+        paramOptions: {
+          iteraciones: [
+            { label: "2 veces", value: "2" },
+            { label: "3 veces", value: "3" },
+            { label: "5 veces", value: "5" },
+            { label: "10 veces", value: "10" },
+          ],
+        },
+        loopConfig: {
+          type: "count",
+          defaultIterations: 3,
+          maxIterations: 10,
+        },
+        color: "#8b5cf6",
+        icon: "repeat",
+        description: "Repite un bloque de código N veces",
+      },
+      {
+        type: "mientras",
+        label: "MIENTRAS(true)",
+        category: "loop",
+        params: { condicion: "true" },
+        paramOptions: {
+          condicion: [
+            { label: "Siempre", value: "true" },
+            { label: "Sin puertas", value: "no_doors" },
+            { label: "Oscuridad", value: "darkness" },
+          ],
+        },
+        loopConfig: {
+          type: "while",
+          condition: "true",
+        },
+        color: "#a855f7",
+        icon: "loop",
+        description: "Ejecuta mientras la condición sea verdadera",
+      },
+      {
+        type: "por_cada",
+        label: "POR_CADA(puerta)",
+        category: "loop",
+        params: { coleccion: "puertas" },
+        paramOptions: {
+          coleccion: [
+            { label: "Puertas", value: "puertas" },
+            { label: "Cofres", value: "cofres" },
+            { label: "Enemigos", value: "enemigos" },
+          ],
+        },
+        loopConfig: {
+          type: "forEach",
+        },
+        color: "#d946ef",
+        icon: "dynamic_feed",
+        description: "Itera sobre una colección de elementos",
       },
     ],
     hardware: [
@@ -544,6 +761,7 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       { id: "m5", title: "Escape del Laberinto", objective: "Combina iluminación, detección y puertas para escapar.", maxBlocks: 7 },
     ],
     defaultHardware: ["Botas de Velocidad"],
+    theme: MAZE_THEME,
   },
 
   obstacle: {
@@ -630,6 +848,67 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         hardwareRequired: "Sensor de Velocidad",
         params: {},
       },
+      {
+        type: "repetir",
+        label: "REPETIR(3)",
+        category: "loop",
+        params: { iteraciones: "3" },
+        paramOptions: {
+          iteraciones: [
+            { label: "2 veces", value: "2" },
+            { label: "3 veces", value: "3" },
+            { label: "5 veces", value: "5" },
+            { label: "10 veces", value: "10" },
+          ],
+        },
+        loopConfig: {
+          type: "count",
+          defaultIterations: 3,
+          maxIterations: 10,
+        },
+        color: "#f97316",
+        icon: "repeat",
+        description: "Repite un bloque de código N veces",
+      },
+      {
+        type: "mientras",
+        label: "MIENTRAS(true)",
+        category: "loop",
+        params: { condicion: "true" },
+        paramOptions: {
+          condicion: [
+            { label: "Siempre", value: "true" },
+            { label: "Sin obstáculos", value: "no_obstacles" },
+            { label: "Velocidad baja", value: "low_speed" },
+          ],
+        },
+        loopConfig: {
+          type: "while",
+          condition: "true",
+        },
+        color: "#eab308",
+        icon: "loop",
+        description: "Ejecuta mientras la condición sea verdadera",
+      },
+      {
+        type: "por_cada",
+        label: "POR_CADA(curva)",
+        category: "loop",
+        params: { coleccion: "curvas" },
+        paramOptions: {
+          coleccion: [
+            { label: "Curvas", value: "curvas" },
+            { label: "Conos", value: "conos" },
+            { label: "Rampas", value: "rampas" },
+          ],
+        },
+        loopConfig: {
+          type: "forEach",
+        },
+        color: "#22c55e",
+        icon: "dynamic_feed",
+        description: "Itera sobre una colección de elementos",
+      },
     ],
     hardware: [
       {
@@ -713,5 +992,6 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
       { id: "o5", title: "Gran Premio", objective: "Llega a la meta usando aceleración, saltos y esquivas.", maxBlocks: 7 },
     ],
     defaultHardware: ["Ruedas de Carrera"],
+    theme: RACE_THEME,
   },
 };
