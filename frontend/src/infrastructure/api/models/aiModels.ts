@@ -81,6 +81,21 @@ export interface Ria11TimeResponse {
   [key: string]: unknown;
 }
 
+export interface Ria10PedagogicalRequest {
+  attempts: number;
+  errors: number;
+  ai_interactions: number;
+  inactive_days: number;
+  help_requested: number;
+  completed_activities: number;
+  grade: number;
+  logical_level: string;
+}
+
+export interface Ria10PedagogicalResponse {
+  [key: string]: unknown;
+}
+
 export interface RiaInfoResponse {
   modelo?: string;
   version?: string;

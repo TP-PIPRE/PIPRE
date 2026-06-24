@@ -9,6 +9,8 @@ import type {
   Ria04DifficultyResponse,
   Ria08AnomalyRequest,
   Ria08AnomalyResponse,
+  Ria10PedagogicalRequest,
+  Ria10PedagogicalResponse,
   Ria11TimeRequest,
   Ria11TimeResponse,
   RiaInfoResponse,
@@ -61,6 +63,14 @@ export const aiService = {
     return response.data;
   },
 
+  pedagogical: async (data: Ria10PedagogicalRequest) => {
+    const response = await aiAxiosInstance.post<Ria10PedagogicalResponse>(
+      AI_ENDPOINTS.RIA10_PEDAGOGICAL,
+      data,
+    );
+    return response.data;
+  },
+
   getInfo: async (endpoint: string) => {
     const response = await aiAxiosInstance.get<RiaInfoResponse>(endpoint);
     return response.data;
@@ -107,11 +117,13 @@ export const aiService = {
   recommendRia03: async (data: Ria03RecommendRequest) => aiService.recommend(data),
   adjustDifficultyRia04: async (data: Ria04DifficultyRequest) => aiService.difficulty(data),
   detectAnomalyRia08: async (data: Ria08AnomalyRequest) => aiService.anomaly(data),
+  recommendPedagogicalRia10: async (data: Ria10PedagogicalRequest) => aiService.pedagogical(data),
   classifyTimeRia11: async (data: Ria11TimeRequest) => aiService.timePrediction(data),
 
   getRia01Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA01_INFO),
   getRia03Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA03_INFO),
   getRia04Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA04_INFO),
   getRia08Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA08_INFO),
+  getRia10Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA10_INFO),
   getRia11Info: async () => aiService.getInfo(AI_ENDPOINTS.RIA11_INFO),
 };
