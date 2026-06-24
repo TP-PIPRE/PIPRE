@@ -5,6 +5,14 @@ export type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
 export type ComplexityLevel = "LOW" | "MEDIUM" | "HIGH";
 export type ActivityType = "robotics" | "theoretical" | "quiz";
 
+export interface ChallengeSimulatorConfig {
+  environment: EnvironmentType;
+  missions: MissionTemplate[];
+  maxBlocks: number;
+  initialPosition?: { x: number; z: number };
+  targetPosition?: { x: number; z: number };
+}
+
 export interface Challenge {
   id: string;
   idCourse: string;
@@ -17,7 +25,7 @@ export interface Challenge {
   difficulty: DifficultyLevel;
   points: number;
   isUnlocked: boolean;
-  simulatorConfig: any;
+  simulatorConfig: ChallengeSimulatorConfig;
   expectedOutput: string;
   reward: {
     type: "BADGE" | "POINTS" | "UNLOCK_NEXT";

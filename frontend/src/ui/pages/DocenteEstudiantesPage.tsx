@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Modal } from "../components/common/Modal";
+import { BsChatDotsFill } from "react-icons/bs";
 
 const MOCK_GROUPS = [
   { id: "g1", name: "Robótica A", students: 24, requests: 2, avgProgress: 78 },
@@ -65,7 +66,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
               </div>
               <div className="relative flex items-center gap-6">
                 <div className="w-14 h-14 rounded-2xl bg-surface shadow-lg flex items-center justify-center border border-border/20 rotate-3 group-hover:rotate-0 transition-all duration-500">
-                  <span className="material-symbols-outlined text-primary text-2xl">forum</span>
+                  <BsChatDotsFill className="text-primary text-2xl" />
                 </div>
                 <div>
                   <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-1 block">Canal de Soporte Técnico</span>
@@ -187,7 +188,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                     className="w-10 h-10 flex items-center justify-center bg-primary text-bg shadow-lg shadow-primary/20 hover:scale-110 active:scale-95 transition-all"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
-                    <span className="material-symbols-outlined text-lg">forum</span>
+                    <BsChatDotsFill className="text-lg" />
                   </button>
                 </div>
                 <p className="text-xs font-bold mb-1">{req.student}</p>

@@ -62,7 +62,7 @@ const App = () => {
     );
     document.documentElement.style.setProperty(
       "--theme-radius",
-      (currentTheme as any).borderRadius || "8px",
+      currentTheme.borderRadius || "8px",
     );
   }, [currentTheme]);
 

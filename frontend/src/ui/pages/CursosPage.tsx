@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
 import { getAuthState } from "../../infrastructure/store/authStore";
+import { BsExclamationOctagonFill, BsChevronRight } from "react-icons/bs";
 import type {
   CourseResponseDTO,
 } from "../../infrastructure/api/models/apiModels";
@@ -119,12 +120,10 @@ export const CursosPage: React.FC = () => {
   if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <span
-          className="material-symbols-outlined text-4xl mb-4"
+        <BsExclamationOctagonFill
+          className="text-4xl mb-4"
           style={{ color: "var(--accent)" }}
-        >
-          error
-        </span>
+        />
         <p className="font-mono text-sm mb-4" style={{ color: "var(--text)" }}>
           {error}
         </p>
@@ -263,16 +262,14 @@ export const CursosPage: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <span
-                    className={`material-symbols-outlined text-lg transition-transform ${
+                  <BsChevronRight
+                    className={`text-lg transition-transform ${
                       isChallengesVisible === course.idCourse
                         ? "rotate-90"
                         : ""
                     }`}
                     style={{ color: "var(--text-muted)" }}
-                  >
-                    chevron_right
-                  </span>
+                  />
                 </div>
 
                 {/* Lista de retos (si está visible) */}

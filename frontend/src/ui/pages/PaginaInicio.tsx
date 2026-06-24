@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FaCode,
-  FaGamepad,
-  FaMicrochip,
-  FaCheckCircle,
-} from "react-icons/fa";
+  BsCodeSlash,
+  BsController,
+  BsCpu,
+  BsCheckCircleFill,
+} from "react-icons/bs";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { Course } from "../../shared/types/Course";
 import { Modal } from "../components/common/Modal";
@@ -18,7 +18,7 @@ const RobotIconCat = ({ className }: { className?: string }) => (
 const CATEGORIES = [
   { key: "all", label: "Todos", icon: null },
   { key: "curso", label: "Cursos", icon: RobotIconCat },
-  { key: "simulador", label: "Simuladores", icon: FaGamepad },
+  { key: "simulador", label: "Simuladores", icon: BsController },
 ];
 
 const DEMO_RETOS: Course[] = [
@@ -146,7 +146,7 @@ export const PaginaInicio = () => {
                 <div className="p-6 bg-surface/30 rounded-2xl border border-border/10 space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted/60 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FaMicrochip className="text-primary text-sm" />
+                      <BsCpu className="text-primary text-sm" />
                     </div>
                     Configuración de Hardware
                   </h3>
@@ -160,7 +160,7 @@ export const PaginaInicio = () => {
                         key={i}
                         className="flex items-center gap-3 text-sm font-semibold text-text/80"
                       >
-                        <FaCheckCircle className="text-success text-[12px] shrink-0" />{" "}
+                        <BsCheckCircleFill className="text-success text-[12px] shrink-0" />{" "}
                         {item}
                       </li>
                     ))}
@@ -171,7 +171,7 @@ export const PaginaInicio = () => {
                 <div className="p-6 bg-surface/30 rounded-2xl border border-border/10 space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted/60 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FaCode className="text-primary text-sm" />
+                      <BsCodeSlash className="text-primary text-sm" />
                     </div>
                     Arquitectura de Software
                   </h3>
@@ -185,7 +185,7 @@ export const PaginaInicio = () => {
                         key={i}
                         className="flex items-center gap-3 text-sm font-semibold text-text/80"
                       >
-                        <FaCheckCircle className="text-success text-[12px] shrink-0" />{" "}
+                        <BsCheckCircleFill className="text-success text-[12px] shrink-0" />{" "}
                         {item}
                       </li>
                     ))}

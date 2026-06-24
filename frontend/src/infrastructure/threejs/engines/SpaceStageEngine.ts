@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
 import { SpaceBotBuilder } from "../shared/SpaceBotBuilder";
@@ -162,7 +161,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     });
   }
 
-  updateTheme(colors: any) {
+  updateTheme(colors: Record<string, string>) {
     const grid = this.scene.getObjectByName("environment_grid") as THREE.GridHelper;
     if (grid) {
       grid.material.color.set(colors.border);

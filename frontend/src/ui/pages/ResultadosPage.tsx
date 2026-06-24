@@ -25,10 +25,7 @@ const deriveStatus = (score: number): string => {
   return "Requiere refuerzo";
 };
 
-const statusOptions = ["Excelente", "Aprobado", "En progreso", "Requiere refuerzo"] as const;
-type Status = (typeof statusOptions)[number];
-
-const statusColor = (status: Status): string => {
+const statusColor = (status: string): string => {
   switch (status) {
     case "Excelente": return "border-primary/50 bg-primary/10 text-primary";
     case "Aprobado": return "border-green-500/50 bg-green-500/10 text-green-400";
@@ -238,7 +235,7 @@ export const ResultadosPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span
-                        className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider rounded-full ${statusColor(res.status as Status)}`}
+                        className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider rounded-full ${statusColor(res.status)}`}
                       >
                         {res.status}
                       </span>

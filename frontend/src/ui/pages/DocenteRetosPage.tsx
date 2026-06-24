@@ -8,6 +8,7 @@ import type {
   LessonResponseDTO,
 } from "../../infrastructure/api/models/apiModels";
 import { Modal } from "../components/common/Modal";
+import { BsTrashFill, BsTrash, BsChevronDown, BsTerminal, BsPencil, BsPlusLg } from "react-icons/bs";
 
 const MOCK_COURSES = [
   {
@@ -474,9 +475,7 @@ export const DocenteRetosPage: React.FC = () => {
             {modalType === "delete" ? (
               <div className="text-center py-6">
                 <div className="w-20 h-20 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mx-auto mb-8 rotate-3 hover:rotate-0 transition-transform duration-500">
-                  <span className="material-symbols-outlined text-4xl">
-                    delete_forever
-                  </span>
+                  <BsTrashFill className="text-4xl" />
                 </div>
                 <h2 className="text-2xl font-bold mb-3">
                   ¿Confirmar Eliminación?
@@ -546,9 +545,7 @@ export const DocenteRetosPage: React.FC = () => {
                           Protocolo Avanzado (Sistemas)
                         </option>
                       </select>
-                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40">
-                        expand_more
-                      </span>
+                      <BsChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40" />
                     </div>
                   </div>
 
@@ -1108,9 +1105,7 @@ export const DocenteRetosPage: React.FC = () => {
                   className="w-14 h-14 flex items-center justify-center bg-bg/60 border border-border/10 group-hover:border-primary/30 transition-all duration-500"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
-                  <span className="material-symbols-outlined text-primary/60 group-hover:text-primary group-hover:scale-110 transition-all">
-                    terminal
-                  </span>
+                  <BsTerminal className="text-primary/60 group-hover:text-primary group-hover:scale-110 transition-all" />
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -1126,9 +1121,7 @@ export const DocenteRetosPage: React.FC = () => {
                     className="w-9 h-9 flex items-center justify-center bg-bg/40 border border-border/10 hover:border-primary/40 hover:text-primary transition-all active:scale-90"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
-                    <span className="material-symbols-outlined text-base">
-                      edit
-                    </span>
+                    <BsPencil className="text-base" />
                   </button>
                   <button
                     onClick={() => {
@@ -1138,9 +1131,7 @@ export const DocenteRetosPage: React.FC = () => {
                     className="w-9 h-9 flex items-center justify-center bg-bg/40 border border-border/10 hover:border-danger/40 hover:text-danger transition-all active:scale-90"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
-                    <span className="material-symbols-outlined text-base">
-                      delete
-                    </span>
+                    <BsTrash className="text-base" />
                   </button>
                 </div>
               </div>
@@ -1190,7 +1181,7 @@ export const DocenteRetosPage: React.FC = () => {
           style={{ borderRadius: "var(--theme-radius)" }}
         >
           <div className="w-16 h-16 rounded-full border border-dashed border-border/20 flex items-center justify-center group-hover:scale-110 group-hover:border-primary/30 transition-all duration-500">
-            <span className="material-symbols-outlined text-4xl">add</span>
+            <BsPlusLg className="text-4xl" />
           </div>
           <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-60 group-hover:opacity-100 transition-opacity">
             Añadir Nuevo Nodo

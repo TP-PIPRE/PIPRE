@@ -155,15 +155,7 @@ h4 { font-size: 1.125rem; }
 .danger-text { color: var(--danger); }
 .mono { font-family: var(--font-mono); }
 
-/* Material Symbols config */
-.material-symbols-outlined {
-  font-variation-settings:
-    "FILL" 0,
-    "wght" 400,
-    "GRAD" 0,
-    "opsz" 24;
-  vertical-align: middle;
-}
+
 
 /* Animations — subtle, exponential easing (ease-out-quart) */
 @keyframes fade-in-soft {
