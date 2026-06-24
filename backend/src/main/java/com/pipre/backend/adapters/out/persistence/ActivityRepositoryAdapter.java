@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Component
 @RequiredArgsConstructor
@@ -38,6 +40,12 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
     }
 
     @Override
+    public Page<Activity> findByLessonId(String idLesson, Pageable pageable) {
+        return activityJpaRepository.findByLessonJpaEntity_IdLesson(idLesson, pageable)
+                .map(activityMapper::toDomain);
+    }
+
+    @Override
     public void save(Activity activity) {
         ActivityJpaEntity entity = activityMapper.toJpaEntity(activity);
         if (activity.getIdLesson() != null) {
@@ -51,5 +59,10 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
     public Optional<Activity> findById(String idActivity) {
         return activityJpaRepository.findById(idActivity)
                 .map(activityMapper::toDomain);
+    }
+
+    @Override
+    public void deleteById(String idActivity) {
+        activityJpaRepository.deleteById(idActivity);
     }
 }

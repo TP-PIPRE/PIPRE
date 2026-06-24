@@ -11,6 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,7 +31,7 @@ class GetCoursesServiceTest {
     private GetCoursesService getCoursesService;
 
     @Test
-    @DisplayName("Debería retornar la lista de todos los cursos")
+    @DisplayName("Debería retornar la lista de todos los cursos paginada")
     void shouldReturnAllCourses() {
         // Arrange
         Course course = Course.builder()
@@ -36,14 +40,16 @@ class GetCoursesServiceTest {
                 .level(CourseLevel.LOW)
                 .createdAt(LocalDateTime.now())
                 .build();
-        when(repositoryPort.findAll()).thenReturn(List.of(course));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Course> page = new PageImpl<>(List.of(course));
+        when(repositoryPort.findAll(any(Pageable.class))).thenReturn(page);
 
         // Act
-        List<CourseDTO> result = getCoursesService.execute();
+        Page<CourseDTO> result = getCoursesService.execute(pageable);
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals("Curso Robótica", result.get(0).name());
-        verify(repositoryPort, times(1)).findAll();
+        assertEquals(1, result.getContent().size());
+        assertEquals("Curso Robótica", result.getContent().get(0).name());
+        verify(repositoryPort, times(1)).findAll(pageable);
     }
 }

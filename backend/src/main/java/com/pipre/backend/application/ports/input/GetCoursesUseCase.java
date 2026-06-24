@@ -1,9 +1,9 @@
 package com.pipre.backend.application.ports.input;
 
 import com.pipre.backend.application.dto.CourseDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface GetCoursesUseCase {
-    List<CourseDTO> execute();
+    Page<CourseDTO> execute(Pageable pageable);
 }

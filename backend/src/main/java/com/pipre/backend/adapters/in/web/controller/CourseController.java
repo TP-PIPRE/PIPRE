@@ -5,15 +5,16 @@ import com.pipre.backend.application.dto.CourseDTO;
 import com.pipre.backend.application.ports.input.CreateCourseUseCase;
 import com.pipre.backend.application.ports.input.GetCoursesUseCase;
 import com.pipre.backend.application.ports.input.UpdateCoursesUseCase;
+import com.pipre.backend.application.ports.input.DeleteCourseUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -25,13 +26,14 @@ public class CourseController {
     private final GetCoursesUseCase getCoursesUseCase;
     private final CreateCourseUseCase createCourseUseCase;
     private final UpdateCoursesUseCase updateCoursesUseCase;
+    private final DeleteCourseUseCase deleteCourseUseCase;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
-    @Operation(summary = "Obtener lista de cursos")
-    @ApiResponse(responseCode = "200", description = "Lista obtenida exitosamente")
-    public ResponseEntity<List<CourseDTO>> getCourses() {
-        return ResponseEntity.status(HttpStatus.OK).body(getCoursesUseCase.execute());
+    @Operation(summary = "Obtener lista de cursos paginada")
+    @ApiResponse(responseCode = "200", description = "Lista paginada obtenida exitosamente")
+    public ResponseEntity<Page<CourseDTO>> getCourses(Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(getCoursesUseCase.execute(pageable));
     }
 
     @PostMapping
@@ -50,6 +52,15 @@ public class CourseController {
     public ResponseEntity<Void> putCourse(@PathVariable String idCourse,
             @RequestBody RegisterCourseCommand requestDTO) {
         updateCoursesUseCase.execute(idCourse, requestDTO);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @DeleteMapping("/{idCourse}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @Operation(summary = "Eliminar un curso existente")
+    @ApiResponse(responseCode = "204", description = "Curso eliminado exitosamente")
+    public ResponseEntity<Void> deleteCourse(@PathVariable String idCourse) {
+        deleteCourseUseCase.execute(idCourse);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

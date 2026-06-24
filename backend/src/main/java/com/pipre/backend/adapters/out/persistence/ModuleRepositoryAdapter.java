@@ -10,6 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Component
 @RequiredArgsConstructor
@@ -25,6 +28,23 @@ public class ModuleRepositoryAdapter implements ModuleRepositoryPort {
                 .stream()
                 .map(moduleMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    public Page<Module> findAllByIdCourse(String idCourse, Pageable pageable) {
+        return moduleJpaRepository.findAllByCourseJpaEntity_IdCourse(idCourse, pageable)
+                .map(moduleMapper::toDomain);
+    }
+
+    @Override
+    public Optional<Module> findById(String idModule) {
+        return moduleJpaRepository.findById(idModule)
+                .map(moduleMapper::toDomain);
+    }
+
+    @Override
+    public void deleteById(String idModule) {
+        moduleJpaRepository.deleteById(idModule);
     }
 
     @Override
