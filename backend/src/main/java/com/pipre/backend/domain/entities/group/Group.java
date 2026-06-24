@@ -7,9 +7,10 @@ public class Group {
 
     private final String idGroup;
     private final String groupName;
+    private final String description;
     private final List<String> idGroupStudentList;
 
-    Group(String idGroup, String groupName, List<String> idGroupStudentList) {
+    Group(String idGroup, String groupName, String description, List<String> idGroupStudentList) {
         if (idGroup == null || idGroup.isBlank()) {
             throw new BusinessException("El ID del grupo es obligatorio.");
         }
@@ -18,6 +19,7 @@ public class Group {
         }
         this.idGroup = idGroup;
         this.groupName = groupName;
+        this.description = description;
         this.idGroupStudentList = idGroupStudentList != null ? List.copyOf(idGroupStudentList) : List.of();
     }
 
@@ -33,6 +35,10 @@ public class Group {
         return this.groupName;
     }
 
+    public String getDescription() {
+        return this.description;
+    }
+
     public List<String> getIdGroupStudentList() {
         return this.idGroupStudentList;
     }
@@ -40,6 +46,7 @@ public class Group {
     public static class GroupBuilder {
         private String idGroup;
         private String groupName;
+        private String description;
         private List<String> idGroupStudentList;
 
         GroupBuilder() {
@@ -55,17 +62,22 @@ public class Group {
             return this;
         }
 
+        public GroupBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
         public GroupBuilder idGroupStudentList(List<String> idGroupStudentList) {
             this.idGroupStudentList = idGroupStudentList;
             return this;
         }
 
         public Group build() {
-            return new Group(this.idGroup, this.groupName, this.idGroupStudentList);
+            return new Group(this.idGroup, this.groupName, this.description, this.idGroupStudentList);
         }
 
         public String toString() {
-            return "Group.GroupBuilder(idGroup=" + this.idGroup + ", groupName=" + this.groupName + ", idGroupStudentList=" + this.idGroupStudentList + ")";
+            return "Group.GroupBuilder(idGroup=" + this.idGroup + ", groupName=" + this.groupName + ", description=" + this.description + ", idGroupStudentList=" + this.idGroupStudentList + ")";
         }
     }
 }

@@ -20,6 +20,8 @@ public class GroupJpaEntity {
     @Column(nullable = false)
     private String groupName;
 
+    private String description;
+
     @OneToMany(mappedBy = "groupJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RankingJpaEntity> rankingJpaEntityList;
 }
