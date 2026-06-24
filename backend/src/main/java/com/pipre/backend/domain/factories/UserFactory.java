@@ -1,6 +1,6 @@
 package com.pipre.backend.domain.factories;
 
-import com.pipre.backend.domain.entities.User;
+import com.pipre.backend.domain.entities.user.User;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -22,12 +22,16 @@ spring:
 
   flyway:
     enabled: true
-
+  threads:
+    virtual:
+      enabled: true
 springdoc:
-  swagger-ui:
-    enabled: true
   api-docs:
     enabled: true
-external:
-  fast-api:
-    url: ${FAST_API_URL:http://dev-ml-ia:8000}
+
+scalar:
+  enabled: true
+  path: /scalar
+
+jwt:
+  secret: ${JWT_SECRET:clave_secreta_segura_desarrollo_muy_larga_para_pipre}

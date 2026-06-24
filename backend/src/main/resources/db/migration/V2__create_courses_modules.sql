@@ -30,7 +30,7 @@ CREATE TABLE activities (
     id_activity VARCHAR(36) PRIMARY KEY,
     id_lesson VARCHAR(36),
     name VARCHAR(255) NOT NULL,
-    logic_level VARCHAR(50) NOT NULL,
+    logic_level VARCHAR(50),
 
     CONSTRAINT fk_activities_lesson FOREIGN KEY (id_lesson)
         REFERENCES lessons(id_lesson)

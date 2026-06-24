@@ -2,36 +2,30 @@ package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.ActivityJpaEntity;
 import com.pipre.backend.adapters.out.persistence.jpaEntities.LessonJpaEntity;
-import com.pipre.backend.domain.entities.Lesson;
+import com.pipre.backend.domain.entities.lesson.Lesson;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LessonMapper {
-    public static LessonJpaEntity toJpaEntity(Lesson domain) {
-        if(domain == null) return null;
-        LessonJpaEntity entity = new LessonJpaEntity();
-        entity.setIdLesson(domain.getIdLesson());
-        entity.setTitle(domain.getTitle());
-        return entity;
-    }
+@Mapper(componentModel = "spring")
+public interface LessonMapper {
 
-    public static Lesson toDomain(LessonJpaEntity entity) {
-        if (entity == null) return null;
-        String idModule = (entity.getModuleJpaEntity() == null)
-                ? null
-                : entity.getModuleJpaEntity().getIdModule();
-        List<String> idActivityList = (entity.getActivityJpaEntityList() == null)
-                ? new ArrayList<>()
-                : entity.getActivityJpaEntityList()
-                        .stream()
-                        .map(ActivityJpaEntity::getIdActivity)
-                        .toList();
-        return Lesson.builder()
-                .idLesson(entity.getIdLesson())
-                .title(entity.getTitle())
-                .idModule(idModule)
-                .idActivityList(idActivityList)
-                .build();
+    @Mapping(target = "moduleJpaEntity", ignore = true)
+    @Mapping(target = "activityJpaEntityList", ignore = true)
+    LessonJpaEntity toJpaEntity(Lesson domain);
+
+    @Mapping(target = "idModule", source = "moduleJpaEntity.idModule")
+    @Mapping(target = "idActivityList", source = "activityJpaEntityList")
+    Lesson toDomain(LessonJpaEntity entity);
+
+    default List<String> mapActivities(List<ActivityJpaEntity> activities) {
+        if (activities == null) {
+            return new ArrayList<>();
+        }
+        return activities.stream()
+                .map(ActivityJpaEntity::getIdActivity)
+                .toList();
     }
 }

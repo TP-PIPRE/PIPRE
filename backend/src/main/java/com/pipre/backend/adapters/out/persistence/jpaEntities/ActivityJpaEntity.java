@@ -25,10 +25,31 @@ public class ActivityJpaEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
     private String logicLevel;
+
+    private String complexity;
+
+    private String difficulty;
+
+    private String type;
+
+    private String environment;
+
+    @Column(name = "start_x")
+    private Double startX;
+
+    @Column(name = "start_z")
+    private Double startZ;
+
+    @Column(name = "target_x")
+    private Double targetX;
+
+    @Column(name = "target_z")
+    private Double targetZ;
 
     @OneToMany(mappedBy = "activityJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SimulationJpaEntity> simulationJpaEntityList = new ArrayList<>();
 
+    @OneToMany(mappedBy = "activityJpaEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ActivityMissionJpaEntity> missions = new ArrayList<>();
 }

@@ -1,29 +1,31 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.ActivityResponseDTO;
+import com.pipre.backend.application.dto.ActivityDTO;
+import com.pipre.backend.application.dto.ActivityDtoMapper;
 import com.pipre.backend.application.ports.input.GetActivitiesUseCase;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
+import com.pipre.backend.application.ports.output.LessonRepositoryPort;
+import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GetActivitiesService implements GetActivitiesUseCase {
 
-    public final ActivityRepositoryPort repositoryPort;
+    private final ActivityRepositoryPort repositoryPort;
+    private final LessonRepositoryPort lessonRepositoryPort;
 
     @Override
     @Transactional(readOnly = true)
-    public List<ActivityResponseDTO> execute(String id) {
-        return repositoryPort.findAll()
-                .stream()
-                .map( activity -> new ActivityResponseDTO(
-                        activity.getIdActivity(),
-                        activity.getName()
-                ))
-                .toList();
+    public Page<ActivityDTO> execute(String id, Pageable pageable) {
+        if (!lessonRepositoryPort.existsById(id)) {
+            throw new ResourceNotFoundException("La lección no existe");
+        }
+        return repositoryPort.findByLessonId(id, pageable)
+                .map(ActivityDtoMapper::toDTO);
     }
 }

@@ -1,6 +1,6 @@
 package com.pipre.backend.application.useCases;
 
-import com.pipre.backend.adapters.in.web.dto.StudentResultResponseDTO;
+import com.pipre.backend.application.dto.ResultDTO;
 import com.pipre.backend.application.ports.input.GetStudentResultUseCase;
 import com.pipre.backend.application.ports.output.ResultRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +14,16 @@ public class GetStudentResultService implements GetStudentResultUseCase {
     private final ResultRepositoryPort resultRepositoryPort;
 
     @Override
-    public List<StudentResultResponseDTO> execute(String idStudent) {
+    public List<ResultDTO> execute(String idStudent) {
         return resultRepositoryPort.findByIdStudent(idStudent)
                 .stream()
-                .map(r -> new StudentResultResponseDTO(
+                .map(r -> new ResultDTO(
+                        r.getIdResult(),
+                        r.getIdStudent(),
                         r.getIdActivity(),
-                        r.getScore()
+                        r.getScore(),
+                        r.getAttempts(),
+                        r.getDateAttempted()
                 ))
                 .toList();
     }

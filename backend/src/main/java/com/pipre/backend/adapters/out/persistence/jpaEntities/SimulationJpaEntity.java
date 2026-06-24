@@ -24,4 +24,19 @@ public class SimulationJpaEntity {
     private ActivityJpaEntity activityJpaEntity;
 
     private String result;
+
+    @Column(columnDefinition = "TEXT")
+    private String blocklyCode;
+
+    @Column(columnDefinition = "TEXT")
+    private String pseudocode;
+
+    @Column(columnDefinition = "TEXT")
+    private String pseintDiagram;
+
+    private Integer blocksUsage;
+    private Integer codeUsage;
+    private Double sensorError;
+    private Integer resolutionTime;
+    private Integer predictedScore;
 }
