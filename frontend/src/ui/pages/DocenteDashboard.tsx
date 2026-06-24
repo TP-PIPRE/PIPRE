@@ -1,149 +1,82 @@
 import { useState, useEffect } from "react";
-import { useDashboardDocente } from "../../application/hooks/useDashboardDocente";
 import { aiService } from "../../infrastructure/api/aiService";
 import { apiService } from "../../infrastructure/api/apiService";
-import type {
-  Ria01PredictRequest,
-  Ria03RecommendRequest,
-  Ria04DifficultyRequest,
-  Ria08AnomalyRequest,
-  Ria11TimeRequest,
-  RiaInfoResponse,
-} from "../../infrastructure/api/models/aiModels";
-import { RobotIcon } from "../components/common/RobotIcon";
+import type { Ria01PredictRequest, RiaInfoResponse } from "../../infrastructure/api/models/aiModels";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 
-// Mock original (retos, estudiantes, métricas)
-const mockDashboardData = {
-  metricas: [
-    {
-      id: "1",
-      titulo: "Retos Activos",
-      valor: 12,
-      variacion: "+2",
-      icono: "school",
-    },
-    {
-      id: "2",
-      titulo: "Estudiantes",
-      valor: 120,
-      variacion: "+15",
-      icono: "group",
-    },
-    {
-      id: "3",
-      titulo: "Progreso Global",
-      valor: "78%",
-      variacion: "↑",
-      icono: "trending_up",
-    },
-  ],
-  retos: [
-    {
-      id: "1",
-      nombre: "Chatbot Educativo",
-      categoria: "ML",
-      dificultad: 2,
-      estado: true,
-    },
-    {
-      id: "2",
-      nombre: "Brazo Robótico v2",
-      categoria: "Robótica",
-      dificultad: 3,
-      estado: true,
-    },
-    {
-      id: "3",
-      nombre: "Debate: Ética IA",
-      categoria: "Ética",
-      dificultad: 1,
-      estado: false,
-    },
-  ],
-  estudiantesDestacados: [
-    {
-      id: "1",
-      nombre: "Lucía Mendez",
-      xp: 4850,
-      variacionXP: 120,
-      posicion: 1,
-      avatar: "https://ui-avatars.com/api/?name=Lucia+Mendez&background=random",
-    },
-    {
-      id: "2",
-      nombre: "Mateo Rivera",
-      xp: 4120,
-      variacionXP: 85,
-      posicion: 2,
-      avatar: "https://ui-avatars.com/api/?name=Mateo+Rivera&background=random",
-    },
-    {
-      id: "3",
-      nombre: "Sofía Chen",
-      xp: 3980,
-      variacionXP: 40,
-      posicion: 3,
-      avatar: "https://ui-avatars.com/api/?name=Sofia+Chen&background=random",
-    },
-  ],
+interface StudentFeatures {
+  id: string;
+  name: string;
+  attempts: number;
+  errors: number;
+  logical_level: string;
+  ai_interactions: number;
+  inactive_days: number;
+  score: number;
+  success_rate: number;
+  help_requested: number;
+  completed_activities: number;
+  age: number;
+  grade: number;
+  rankingPosition: number;
+}
+
+const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): StudentFeatures => {
+  const score = totalPoints ?? 75;
+  const attempts = Math.round(score / 20) + 2;
+  const logical_level = score > 75 ? "alto" : score > 45 ? "medio" : "bajo";
+  return {
+    id,
+    name: `Estudiante #${position}`,
+    attempts,
+    errors: Math.max(0, Math.round(attempts * (1 - score / 100))),
+    logical_level,
+    ai_interactions: Math.round(score / 15),
+    inactive_days: Math.max(0, 7 - Math.round(score / 15)),
+    score,
+    success_rate: score / 100,
+    help_requested: Math.max(0, 5 - Math.round(score / 20)),
+    completed_activities: Math.round(score / 12) + 1,
+    age: 13,
+    grade: 7,
+    rankingPosition: position,
+  };
 };
 
-
-
-// --- Constantes y datos de ejemplo para IA (fallback) ---
-const FALLBACK_STUDENTS = [
-  {
-    id: "1",
-    name: "Lucía Méndez",
-    data: {
-      attempts: 4, errors: 2, logical_level: "medio", ai_interactions: 7,
-      inactive_days: 4, score: 78.5, success_rate: 0.82, help_requested: 2,
-      completed_activities: 6, age: 12, grade: 6,
-    },
-  },
-  {
-    id: "2",
-    name: "Mateo Rivera",
-    data: {
-      attempts: 6, errors: 4, logical_level: "alto", ai_interactions: 12,
-      inactive_days: 2, score: 92.0, success_rate: 0.95, help_requested: 0,
-      completed_activities: 9, age: 14, grade: 8,
-    },
-  },
-  {
-    id: "3",
-    name: "Sofía Chen",
-    data: {
-      attempts: 3, errors: 5, logical_level: "bajo", ai_interactions: 3,
-      inactive_days: 8, score: 45.0, success_rate: 0.55, help_requested: 5,
-      completed_activities: 3, age: 10, grade: 4,
-    },
-  },
-  {
-    id: "4",
-    name: "Marcos Soto",
-    data: {
-      attempts: 5, errors: 1, logical_level: "medio", ai_interactions: 9,
-      inactive_days: 1, score: 88.0, success_rate: 0.90, help_requested: 1,
-      completed_activities: 7, age: 13, grade: 7,
-    },
-  },
-  {
-    id: "5",
-    name: "Elena García",
-    data: {
-      attempts: 2, errors: 3, logical_level: "bajo", ai_interactions: 5,
-      inactive_days: 6, score: 60.0, success_rate: 0.65, help_requested: 3,
-      completed_activities: 4, age: 11, grade: 5,
-    },
-  },
-];
-
-const DEFAULT_FORM = {
-  attempts: 4, errors: 2, logical_level: "medio", ai_interactions: 7,
-  inactive_days: 3, score: 75.0, success_rate: 0.82, help_requested: 2,
-  completed_activities: 5, age: 12, grade: 6,
+const loadDashboardMetrics = async () => {
+  try {
+    const groups = await apiService.groups.getAll();
+    const groupCount = groups?.length ?? 0;
+    let studentCount = 0;
+    let courseCount = 0;
+    if (groups && groups.length > 0) {
+      const ranking = await apiService.ranking.getGroupRanking(groups[0].idGroup);
+      studentCount = ranking?.length ?? 0;
+    }
+    try {
+      const courses = await apiService.courses.getAll();
+      courseCount = courses?.length ?? 0;
+    } catch {}
+    return {
+      metricas: [
+        { id: "1", titulo: "Grupos Activos", valor: groupCount, variacion: "", icono: "school" },
+        { id: "2", titulo: "Estudiantes", valor: studentCount, variacion: "", icono: "group" },
+        { id: "3", titulo: "Cursos", valor: courseCount, variacion: "", icono: "trending_up" },
+      ],
+      retos: [] as { id: string; nombre: string; categoria: string; dificultad: number; estado: boolean }[],
+      estudiantesDestacados: [] as { id: string; nombre: string; xp: number; variacionXP: number; posicion: number; avatar: string }[],
+    };
+  } catch {
+    return {
+      metricas: [
+        { id: "1", titulo: "Grupos Activos", valor: 0, variacion: "", icono: "school" },
+        { id: "2", titulo: "Estudiantes", valor: 0, variacion: "", icono: "group" },
+        { id: "3", titulo: "Cursos", valor: 0, variacion: "", icono: "trending_up" },
+      ],
+      retos: [],
+      estudiantesDestacados: [],
+    };
+  }
 };
 
 const StatusBadge = ({ label, level }: { label: string; level: "alto" | "medio" | "bajo" | "positivo" | "negativo" | "normal" }) => {
@@ -393,251 +326,39 @@ const DonutChart = ({
   );
 };
 
-type TabId = "ria01" | "ria03" | "ria04" | "ria08" | "ria11";
 
-interface TabDef {
-  id: TabId;
-  label: string;
-  icon: React.ReactNode;
-  fields: { key: string; label: string; type: "number" | "select"; step?: number }[];
-}
 
-const TABS: TabDef[] = [
-  {
-    id: "ria01", label: "RIA01 - Desempeño", icon: <RobotIcon size={16} />,
-    fields: [
-      { key: "attempts", label: "Intentos", type: "number" },
-      { key: "errors", label: "Errores", type: "number" },
-      { key: "logical_level", label: "Nivel Lógico", type: "select" },
-      { key: "ai_interactions", label: "Interacciones IA", type: "number" },
-    ],
-  },
-  {
-    id: "ria03", label: "RIA03 - Recomendaciones", icon: <RobotIcon size={16} />,
-    fields: [
-      { key: "logical_level", label: "Nivel Lógico", type: "select" },
-      { key: "inactive_days", label: "Días Inactivo", type: "number" },
-      { key: "ai_interactions", label: "Interacciones IA", type: "number" },
-      { key: "attempts", label: "Intentos", type: "number" },
-    ],
-  },
-  {
-    id: "ria04", label: "RIA04 - Dificultad", icon: <RobotIcon size={16} />,
-    fields: [
-      { key: "score", label: "Puntaje", type: "number", step: 0.1 },
-      { key: "success_rate", label: "Tasa de Éxito", type: "number", step: 0.01 },
-      { key: "errors", label: "Errores", type: "number" },
-      { key: "attempts", label: "Intentos", type: "number" },
-      { key: "help_requested", label: "Ayudas Solicitadas", type: "number" },
-      { key: "completed_activities", label: "Actividades Completadas", type: "number" },
-      { key: "inactive_days", label: "Días Inactivo", type: "number" },
-      { key: "logical_level", label: "Nivel Lógico", type: "select" },
-    ],
-  },
-  {
-    id: "ria08", label: "RIA08 - Anomalías", icon: <RobotIcon size={16} />,
-    fields: [
-      { key: "attempts", label: "Intentos", type: "number" },
-      { key: "errors", label: "Errores", type: "number" },
-      { key: "score", label: "Puntaje", type: "number", step: 0.1 },
-      { key: "inactive_days", label: "Días Inactivo", type: "number" },
-    ],
-  },
-  {
-    id: "ria11", label: "RIA11 - Tiempo", icon: <RobotIcon size={16} />,
-    fields: [
-      { key: "attempts", label: "Intentos", type: "number" },
-      { key: "errors", label: "Errores", type: "number" },
-      { key: "ai_interactions", label: "Interacciones IA", type: "number" },
-      { key: "inactive_days", label: "Días Inactivo", type: "number" },
-      { key: "help_requested", label: "Ayudas Solicitadas", type: "number" },
-      { key: "completed_activities", label: "Actividades Completadas", type: "number" },
-      { key: "age", label: "Edad", type: "number" },
-      { key: "grade", label: "Grado", type: "number" },
-      { key: "logical_level", label: "Nivel Lógico", type: "select" },
-    ],
-  },
-];
-
-const ResultDisplay = ({ result, activeTab }: { result: unknown; activeTab: TabId }) => {
+const ResultDisplay = ({ result }: { result: unknown }) => {
   const r = result as Record<string, unknown>;
-  const firstVal = Object.values(r)[0];
-
-  if (activeTab === "ria01") {
-    const score = typeof r.score === "number" ? r.score : typeof r.prediccion === "string" ? { bajo: 30, medio: 60, alto: 90 }[r.prediccion.toLowerCase()] ?? 50 : 50;
-    const radarData = [
-      { label: "Score", value: score as number, max: 100 },
-      { label: "Éxito", value: (typeof r.success_rate === "number" ? r.success_rate : 0.5) * 100, max: 100 },
-      { label: "Intentos", value: Math.min((typeof r.attempts === "number" ? r.attempts : 5) * 15, 100), max: 100 },
-      { label: "Interac.", value: Math.min((typeof r.ai_interactions === "number" ? r.ai_interactions : 5) * 12, 100), max: 100 },
-      { label: "Complet.", value: Math.min((typeof r.completed_activities === "number" ? r.completed_activities : 5) * 18, 100), max: 100 },
-    ];
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          <div className="flex flex-col items-center gap-4 p-6 bg-bg/40 border border-border/20 rounded-xl">
-            <p className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Desempeño General</p>
-            <span className="text-2xl font-mono font-bold" style={{ color: score > 75 ? "var(--primary)" : score > 40 ? "#f59e0b" : "#ef4444" }}>{score}%</span>
-            <StatusBadge label={score > 75 ? "Alto" : score > 40 ? "Medio" : "Bajo"} level={score > 75 ? "positivo" : score > 40 ? "medio" : "alto"} />
-          </div>
-          <div className="flex flex-col items-center p-6 bg-bg/40 border border-border/20 rounded-xl">
-            <p className="text-[10px] font-mono font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Dimensiones</p>
-            <RadarChart data={radarData} size={240} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          {Object.entries(r).map(([key, val]) => (
-            <div key={key} className="bg-bg/40 border border-border/20 p-3 rounded-lg text-center">
-              <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
-              <span className="text-sm font-mono font-bold" style={{ color: "var(--text)" }}>{String(val ?? "-")}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (activeTab === "ria03") {
-    const recs = (Array.isArray(r.recomendaciones) ? r.recomendaciones : Array.isArray(r.actividades) ? r.actividades : Object.values(r).find(Array.isArray) ?? []) as string[];
-    return (
-      <div className="space-y-6">
-        {recs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recs.map((rec, i) => (
-              <div
-                key={i}
-                className="relative flex flex-col p-5 bg-bg/40 border border-border/20 rounded-xl group hover:bg-bg/60 hover:border-primary/30 transition-all duration-200 cursor-pointer"
-                onClick={() => navigator.clipboard?.writeText?.(rec)}
-              >
-                <span className="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-primary text-bg flex items-center justify-center text-[11px] font-mono font-bold shadow-md">{i + 1}</span>
-                <span className="text-xs font-mono mt-3 leading-relaxed" style={{ color: "var(--text)" }}>{rec}</span>
-                <span className="text-[8px] font-mono mt-auto pt-3 opacity-0 group-hover:opacity-40 transition-opacity self-end">copiar</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {Object.entries(r).filter(([, v]) => typeof v === "string" || typeof v === "number").map(([key, val]) => (
-              <div key={key} className="bg-bg/40 border border-border/20 p-3 rounded-lg text-center">
-                <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
-                <span className="text-sm font-mono font-bold" style={{ color: "var(--text)" }}>{String(val)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (activeTab === "ria04") {
-    const level = (r.dificultad as string) ?? (r.nivel as string) ?? String(firstVal ?? "medio");
-    const lvl = level.toLowerCase();
-    const score = typeof r.score === "number" ? r.score : typeof r.puntaje === "number" ? r.puntaje : 60;
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="flex flex-col items-center justify-center gap-6 p-8 bg-bg/40 border border-border/20 rounded-xl">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Nivel de Dificultad</p>
-          <div className="relative">
-            <svg width="160" height="100" viewBox="0 0 160 100" className="shrink-0">
-              <path d="M 15 85 A 65 65 0 0 1 145 85" fill="none" stroke="var(--border)" strokeWidth="12" strokeLinecap="round" />
-              <path d="M 15 85 A 65 65 0 0 1 145 85" fill="none" stroke={lvl === "alto" || lvl === "hard" ? "#ef4444" : lvl === "bajo" || lvl === "easy" ? "var(--primary)" : "#f59e0b"} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${(score / 100) * 204} 204`} />
-              <text x={80} y={75} textAnchor="middle" className="text-2xl font-mono font-bold" fill="var(--text)">{score.toFixed(0)}</text>
-              <text x={80} y={90} textAnchor="middle" className="text-[8px] font-mono" fill="var(--text-muted)">puntaje</text>
-            </svg>
-          </div>
-          <StatusBadge label={`Dificultad: ${level}`} level={lvl === "alto" || lvl === "hard" ? "alto" : lvl === "bajo" || lvl === "easy" ? "bajo" : "medio"} />
-        </div>
-        <div className="grid grid-cols-2 gap-3 content-start">
-          {Object.entries(r).map(([key, val]) => (
-            <div key={key} className="bg-bg/40 border border-border/20 p-4 rounded-lg">
-              <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
-              <span className="text-base font-mono font-bold" style={{ color: "var(--text)" }}>{String(val ?? "-")}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (activeTab === "ria08") {
-    const isAnomaly = r.anomalia === true || r.es_anomalia === true;
-    const anomalyScore = typeof r.score === "number" ? r.score : 50;
-    const anomalyErrors = typeof r.errors === "number" ? r.errors : typeof r.attempts === "number" ? Math.round(r.attempts * 0.3) : 2;
-    const scatterData = [
-      { label: "Estudiante actual", x: anomalyErrors, y: anomalyScore, group: isAnomaly ? "anomaly" as const : "normal" as const, detail: isAnomaly ? "Anomalía detectada" : "Comportamiento normal" },
-      { label: "Promedio clase", x: 3, y: 72, group: "normal" as const },
-      { label: "Límite inferior", x: 6, y: 40, group: "anomaly" as const },
-      { label: "Referencia", x: 1, y: 95, group: "normal" as const },
-    ];
-    return (
-      <div className="space-y-6">
-        <div className={`flex items-center gap-5 p-6 border rounded-xl ${isAnomaly ? "border-red-500/30 bg-red-500/5" : "border-green-500/30 bg-green-500/5"}`}>
-          <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${isAnomaly ? "bg-red-500/10" : "bg-green-500/10"}`}>
-            {isAnomaly ? (
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3L2 21h20L12 3z" /><line x1="12" y1="10" x2="12" y2="15" /><circle cx="12" cy="18" r="0.5" fill="#ef4444" /></svg>
-            ) : (
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-            )}
-          </div>
-          <div className="flex-1">
-            <p className="text-base font-mono font-bold" style={{ color: isAnomaly ? "#ef4444" : "#22c55e" }}>{isAnomaly ? "Anomalía Detectada" : "Comportamiento Normal"}</p>
-            {!!r.detalles && <p className="text-[11px] font-mono mt-1.5" style={{ color: "var(--text-muted)" }}>{String(r.detalles)}</p>}
-          </div>
-          <StatusBadge label={isAnomaly ? "Requiere atención" : "Todo en orden"} level={isAnomaly ? "negativo" : "positivo"} />
-        </div>
-        <div className="bg-bg/40 border border-border/20 rounded-xl p-5">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>Detección Visual · Score vs Errores</p>
-          <ScatterChart data={scatterData} width={600} height={280} />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {Object.entries(r).map(([key, val]) => (
-            <div key={key} className="bg-bg/40 border border-border/20 p-3 rounded-lg text-center">
-              <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
-              <span className={`text-sm font-mono font-bold ${typeof val === "boolean" ? (val ? "text-red-500" : "text-green-500") : ""}`} style={{ color: typeof val === "boolean" ? undefined : "var(--text)" }}>{typeof val === "boolean" ? (val ? "Sí" : "No") : String(val ?? "-")}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (activeTab === "ria11") {
-    const cls = (r.clasificacion as string) ?? (r.tiempo_estimado as string) ?? String(firstVal ?? "normal");
-    const c = cls.toLowerCase();
-    const cLevel = c.includes("rápido") || c.includes("rapido") ? "bajo" as const : c.includes("lento") ? "alto" as const : "medio" as const;
-    const donutSegments = [
-      { label: "Rápido", value: c.includes("rápido") || c.includes("rapido") ? 1 : 0.2, color: "var(--primary)" },
-      { label: "Normal", value: cLevel === "medio" ? 1 : 0.4, color: "#f59e0b" },
-      { label: "Lento", value: c.includes("lento") ? 1 : 0.15, color: "#ef4444" },
-      { label: "Inactivo", value: Math.max(0.05, (typeof r.inactive_days === "number" ? r.inactive_days : 0) * 0.1), color: "var(--border)" },
-    ];
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="flex flex-col items-center justify-center gap-6 p-8 bg-bg/40 border border-border/20 rounded-xl">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Distribución de Tiempo</p>
-          <DonutChart segments={donutSegments} size={200} />
-          <StatusBadge label={`Clasificación: ${cls}`} level={cLevel} />
-        </div>
-        <div className="grid grid-cols-2 gap-3 content-start">
-          {Object.entries(r).map(([key, val]) => (
-            <div key={key} className="bg-bg/40 border border-border/20 p-4 rounded-lg">
-              <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
-              <span className="text-base font-mono font-bold" style={{ color: "var(--text)" }}>{String(val ?? "-")}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
+  const score = typeof r.score === "number" ? r.score : typeof r.prediccion === "string" ? { bajo: 30, medio: 60, alto: 90 }[r.prediccion.toLowerCase()] ?? 50 : 50;
+  const radarData = [
+    { label: "Score", value: score as number, max: 100 },
+    { label: "Éxito", value: (typeof r.success_rate === "number" ? r.success_rate : 0.5) * 100, max: 100 },
+    { label: "Intentos", value: Math.min((typeof r.attempts === "number" ? r.attempts : 5) * 15, 100), max: 100 },
+    { label: "Interac.", value: Math.min((typeof r.ai_interactions === "number" ? r.ai_interactions : 5) * 12, 100), max: 100 },
+    { label: "Complet.", value: Math.min((typeof r.completed_activities === "number" ? r.completed_activities : 5) * 18, 100), max: 100 },
+  ];
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-      {Object.entries(r).map(([key, val]) => (
-        <div key={key} className="bg-bg/40 border border-border/20 p-3 rounded-lg text-center">
-          <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
-          <span className="text-sm font-mono font-bold" style={{ color: "var(--text)" }}>{typeof val === "boolean" ? (val ? "Sí" : "No") : String(val ?? "-")}</span>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="flex flex-col items-center gap-4 p-6 bg-bg/40 border border-border/20 rounded-xl">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Desempeño General</p>
+          <span className="text-2xl font-mono font-bold" style={{ color: score > 75 ? "var(--primary)" : score > 40 ? "#f59e0b" : "#ef4444" }}>{score}%</span>
+          <StatusBadge label={score > 75 ? "Alto" : score > 40 ? "Medio" : "Bajo"} level={score > 75 ? "positivo" : score > 40 ? "medio" : "alto"} />
         </div>
-      ))}
+        <div className="flex flex-col items-center p-6 bg-bg/40 border border-border/20 rounded-xl">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider mb-2" style={{ color: "var(--text-muted)" }}>Dimensiones</p>
+          <RadarChart data={radarData} size={240} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {Object.entries(r).map(([key, val]) => (
+          <div key={key} className="bg-bg/40 border border-border/20 p-3 rounded-lg text-center">
+            <span className="block text-[8px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{key}</span>
+            <span className="text-sm font-mono font-bold" style={{ color: "var(--text)" }}>{String(val ?? "-")}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -710,16 +431,16 @@ const ModelInfoDisplay = ({ info }: { info: RiaInfoResponse }) => {
 };
 
 export const DocenteDashboard = () => {
-  const { dashboardData, loading, error } = useDashboardDocente();
-  const dataToShow = error
-    ? mockDashboardData
-    : dashboardData || mockDashboardData;
+  const [dashboardMetrics, setDashboardMetrics] = useState<{
+    metricas: { id: string; titulo: string; valor: string | number; variacion: string; icono: string }[];
+    retos: { id: string; nombre: string; categoria: string; dificultad: number; estado: boolean }[];
+    estudiantesDestacados: { id: string; nombre: string; xp: number; variacionXP: number; posicion: number; avatar: string }[];
+  }>({ metricas: [], retos: [], estudiantesDestacados: [] });
+  const [metricsReady, setMetricsReady] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<TabId>("ria01");
   const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [students, setStudents] = useState(FALLBACK_STUDENTS);
+  const [students, setStudents] = useState<StudentFeatures[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
-  const [formData, setFormData] = useState(DEFAULT_FORM);
   const [result, setResult] = useState<unknown>(null);
   const [consultLoading, setConsultLoading] = useState(false);
   const [consultError, setConsultError] = useState<string | null>(null);
@@ -728,75 +449,51 @@ export const DocenteDashboard = () => {
   const [modelInfoLoading, setModelInfoLoading] = useState(false);
 
   useEffect(() => {
-    apiService.groups.getAll()
-      .then((groups) => {
-        if (groups && groups.length > 0) {
-          return apiService.ranking.getGroupRanking(groups[0].idGroup);
-        }
-        throw new Error("No hay grupos disponibles");
-      })
-      .then((ranking) => {
-        if (ranking && ranking.length > 0) {
-          setStudents(ranking.map((s: RankingDTO) => ({
-            id: s.idStudent,
-            name: `Estudiante ${s.position}`,
-            data: {
-              attempts: Math.round((s.totalPoints ?? 50) / 20) + 2,
-              errors: Math.round(3 - (s.totalPoints ?? 50) / 100 * 2),
-              logical_level: s.totalPoints > 75 ? "alto" : s.totalPoints > 45 ? "medio" : "bajo",
-              ai_interactions: Math.round(Math.max(1, (s.totalPoints ?? 50) / 15)),
-              inactive_days: Math.max(0, 7 - Math.round((s.totalPoints ?? 50) / 15)),
-              score: s.totalPoints ?? 75,
-              success_rate: (s.totalPoints ?? 75) / 100,
-              help_requested: Math.max(0, 5 - Math.round((s.totalPoints ?? 50) / 20)),
-              completed_activities: Math.round((s.totalPoints ?? 50) / 12) + 1,
-              age: 13, grade: 7,
-            },
-          })));
-        }
-      })
-      .catch(() => {})
-      .finally(() => setStudentsLoading(false));
+    loadDashboardMetrics().then((data) => {
+      setDashboardMetrics(data);
+      setMetricsReady(true);
+    });
   }, []);
 
-  const activeTabData = TABS.find((t) => t.id === activeTab)!;
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const groups = await apiService.groups.getAll();
+        if (!groups || groups.length === 0) throw new Error("No hay grupos");
+        const ranking = await apiService.ranking.getGroupRanking(groups[0].idGroup);
+        if (ranking && ranking.length > 0) {
+          const derived = ranking.map((s: RankingDTO, i: number) =>
+            deriveFeaturesFromRanking(s.idStudent, s.position || i + 1, s.totalPoints ?? 50)
+          );
+          setStudents(derived);
+          if (!selectedStudentId) {
+            setSelectedStudentId(derived[0].id);
+          }
+        }
+      } catch {
+        setStudents([]);
+      } finally {
+        setStudentsLoading(false);
+      }
+    };
+    loadStudents();
+  }, []);
 
   const handleStudentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const id = e.target.value;
-    setSelectedStudentId(id);
+    setSelectedStudentId(e.target.value);
     setResult(null);
     setConsultError(null);
     setModelInfo(null);
     setShowInfo(false);
-    if (id) {
-      const student = students.find((s) => s.id === id);
-      if (student) {
-        setFormData((prev) => ({ ...prev, ...student.data }));
-      }
-    }
-  };
-
-  const getInfoEndpoint = (): Promise<RiaInfoResponse> => {
-    const endpoints = {
-      ria01: aiService.getRia01Info(),
-      ria03: aiService.getRia03Info(),
-      ria04: aiService.getRia04Info(),
-      ria08: aiService.getRia08Info(),
-      ria11: aiService.getRia11Info(),
-    } as const;
-    return endpoints[activeTab];
   };
 
   const handleToggleInfo = async () => {
-    if (showInfo) {
-      setShowInfo(false);
-      return;
-    }
+    if (showInfo) { setShowInfo(false); return; }
     setShowInfo(true);
     if (!modelInfo) {
       setModelInfoLoading(true);
       try {
-        const info = await getInfoEndpoint();
+        const info = await aiService.getRia01Info();
         setModelInfo(info);
       } catch {
         setModelInfo(null);
@@ -806,42 +503,26 @@ export const DocenteDashboard = () => {
     }
   };
 
-  const handleConsult = async () => {
+  useEffect(() => {
+    if (!selectedStudentId || students.length === 0) return;
     setConsultLoading(true);
     setConsultError(null);
     setResult(null);
-    setModelInfo(null);
-    setShowInfo(false);
+    const student = students.find((s) => s.id === selectedStudentId);
+    if (!student) return;
+    const form: Ria01PredictRequest = {
+      attempts: student.attempts,
+      errors: student.errors,
+      logical_level: student.logical_level,
+      ai_interactions: student.ai_interactions,
+    };
+    aiService.predictRia01(form)
+      .then(setResult)
+      .catch((err) => setConsultError(err instanceof Error ? err.message : "Error"))
+      .finally(() => setConsultLoading(false));
+  }, [selectedStudentId, students]);
 
-    try {
-      let res: unknown;
-      switch (activeTab) {
-        case "ria01":
-          res = await aiService.predictRia01(formData as Ria01PredictRequest);
-          break;
-        case "ria03":
-          res = await aiService.recommendRia03(formData as Ria03RecommendRequest);
-          break;
-        case "ria04":
-          res = await aiService.adjustDifficultyRia04(formData as Ria04DifficultyRequest);
-          break;
-        case "ria08":
-          res = await aiService.detectAnomalyRia08(formData as Ria08AnomalyRequest);
-          break;
-        case "ria11":
-          res = await aiService.classifyTimeRia11(formData as Ria11TimeRequest);
-          break;
-      }
-      setResult(res);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al consultar el modelo";
-      setConsultError(msg);
-    } finally {
-      setConsultLoading(false);
-    }
-  };
-
-  if (loading && !dataToShow)
+  if (!metricsReady && studentsLoading)
     return (
       <div
         className="flex-1 flex items-center justify-center font-mono text-xs"
@@ -880,7 +561,7 @@ export const DocenteDashboard = () => {
 
       {/* Métricas originales (Retos Activos, Estudiantes, Progreso Global) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {dataToShow.metricas.map((m) => (
+        {dashboardMetrics.metricas.map((m) => (
           <div
             key={m.id}
             className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg hover:scale-102 rounded-lg"
@@ -949,7 +630,7 @@ export const DocenteDashboard = () => {
                 className="divide-y"
                 style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
               >
-                {dataToShow.retos.map((r) => (
+                {dashboardMetrics.retos.map((r) => (
                   <tr
                     key={r.id}
                     className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
@@ -1030,7 +711,7 @@ export const DocenteDashboard = () => {
             Mejores Estudiantes
           </h2>
           <div className="space-y-4">
-            {dataToShow.estudiantesDestacados.map((e) => (
+            {dashboardMetrics.estudiantesDestacados.map((e) => (
               <div
                 key={e.id}
                 className="flex items-center gap-4 p-3 border border-border/50 transition-all duration-300 hover:shadow-sm rounded-lg"
@@ -1143,7 +824,7 @@ export const DocenteDashboard = () => {
             )}
           </div>
           <span className="text-[9px] font-mono italic shrink-0" style={{ color: "var(--text-muted)" }}>
-            {students === FALLBACK_STUDENTS ? "Datos de ejemplo" : "Sincronizado"}
+            {students.length > 0 ? "Sincronizado" : "Sin datos"}
           </span>
         </div>
         {selectedStudentId && (() => {
@@ -1161,126 +842,32 @@ export const DocenteDashboard = () => {
                 </div>
               </div>
               <div className="flex gap-4 sm:gap-6 flex-wrap text-[10px] font-mono">
-                <div><span style={{ color: "var(--text-muted)" }}>Score </span><span className="font-bold" style={{ color: "var(--primary)" }}>{s.data.score}</span></div>
-                <div><span style={{ color: "var(--text-muted)" }}>Intentos </span><span className="font-bold" style={{ color: "var(--text)" }}>{s.data.attempts}</span></div>
-                <div><span style={{ color: "var(--text-muted)" }}>Éxito </span><span className="font-bold" style={{ color: s.data.success_rate > 0.75 ? "#22c55e" : "#f59e0b" }}>{(s.data.success_rate * 100).toFixed(0)}%</span></div>
-                <div><span style={{ color: "var(--text-muted)" }}>Nivel </span><span className="font-bold capitalize" style={{ color: "var(--text)" }}>{s.data.logical_level}</span></div>
+                <div><span style={{ color: "var(--text-muted)" }}>Score </span><span className="font-bold" style={{ color: "var(--primary)" }}>{s.score}</span></div>
+                <div><span style={{ color: "var(--text-muted)" }}>Intentos </span><span className="font-bold" style={{ color: "var(--text)" }}>{s.attempts}</span></div>
+                <div><span style={{ color: "var(--text-muted)" }}>Éxito </span><span className="font-bold" style={{ color: s.success_rate > 0.75 ? "#22c55e" : "#f59e0b" }}>{(s.success_rate * 100).toFixed(0)}%</span></div>
+                <div><span style={{ color: "var(--text-muted)" }}>Nivel </span><span className="font-bold capitalize" style={{ color: "var(--text)" }}>{s.logical_level}</span></div>
               </div>
             </div>
           );
         })()}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-0 overflow-x-auto pb-px">
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative group flex items-center gap-2 px-4 py-3 text-[10px] font-mono font-bold uppercase tracking-wider transition-all duration-200 shrink-0 ${
-                isActive
-                  ? "bg-surface text-primary border-t border-l border-r border-border rounded-t-lg shadow-[0_-2px_8px_rgba(0,0,0,0.04)] z-10"
-                  : "bg-bg/50 text-text-muted border-b border-border hover:text-text hover:bg-surface/60"
-              }`}
-              style={{
-                marginBottom: isActive ? "0px" : undefined,
-                borderBottomColor: isActive ? "var(--bg)" : undefined,
-              }}
-            >
-              <span className={isActive ? "opacity-100" : "opacity-50 group-hover:opacity-80 transition-opacity"}>
-                {tab.icon}
-              </span>
-              {tab.label}
-              {isActive && (
-                <span
-                  className="absolute left-0 right-0 bottom-0 h-0.5 rounded-full mx-3"
-                  style={{ backgroundColor: "var(--primary)" }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Contenido del tab activo */}
-      <div className="border border-border bg-surface transition-all duration-300 rounded-xl -mt-px overflow-hidden">
-        <div className="p-5 sm:p-6">
-          <h3 className="text-sm font-mono font-bold uppercase tracking-wider mb-6" style={{ color: "var(--text)" }}>
-            {activeTabData.label}
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
-            {activeTabData.fields.map((field) => (
-              <div key={field.key} className="group">
-                <label
-                  className="block text-[9px] font-mono font-bold uppercase tracking-wider mb-1.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {field.label}
-                </label>
-                {field.type === "select" ? (
-                  <select
-                    value={String(formData[field.key as keyof typeof formData] ?? "")}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    className="w-full bg-bg border border-border/60 hover:border-border focus:border-primary px-2.5 py-2 text-[11px] font-mono outline-none transition-all rounded-lg"
-                    style={{ color: "var(--text)" }}
-                  >
-                    <option value="bajo">Bajo</option>
-                    <option value="medio">Medio</option>
-                    <option value="alto">Alto</option>
-                  </select>
-                ) : (
-                  <input
-                    type="number"
-                    step={field.step ?? 1}
-                    value={String(formData[field.key as keyof typeof formData] ?? "")}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, [field.key]: field.step ? parseFloat(e.target.value) : parseInt(e.target.value) }))}
-                    className="w-full bg-bg border border-border/60 hover:border-border focus:border-primary px-2.5 py-2 text-[11px] font-mono outline-none transition-all rounded-lg"
-                    style={{ color: "var(--text)" }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <button
-              onClick={handleConsult}
-              disabled={consultLoading}
-              className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2 shrink-0 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-primary/20"
-            >
-              {consultLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-bg border-t-transparent rounded-full animate-spin" />
-                  Consultando...
-                </>
-              ) : (
-                <>
-                  <RobotIcon size={16} />
-                  Consultar
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={handleToggleInfo}
-              className="px-5 py-3 text-[10px] font-mono font-bold uppercase tracking-wider border border-border/60 hover:border-primary/30 text-text-muted hover:text-text transition-all duration-300 rounded-lg"
-            >
-              <span className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                {showInfo ? "Ocultar info" : "Info del modelo"}
-              </span>
-            </button>
-
-            {consultError && (
-              <span className="text-xs font-mono text-red-500 sm:ml-auto flex items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                {consultError}
-              </span>
-            )}
-          </div>
-        </div>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+        <button
+          onClick={handleToggleInfo}
+          className="px-5 py-3 text-[10px] font-mono font-bold uppercase tracking-wider border border-border/60 hover:border-primary/30 text-text-muted hover:text-text transition-all duration-300 rounded-lg self-start"
+        >
+          <span className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            {showInfo ? "Ocultar info" : "Info del modelo"}
+          </span>
+        </button>
+        {consultError && (
+          <span className="text-xs font-mono text-red-500 flex items-center gap-1.5">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            {consultError}
+          </span>
+        )}
       </div>
 
       <div className="space-y-6 mt-8">
@@ -1299,7 +886,7 @@ export const DocenteDashboard = () => {
             </span>
           </div>
           <div className="p-5 sm:p-6">
-            <ResultDisplay result={result} activeTab={activeTab} />
+            <ResultDisplay result={result} />
           </div>
         </div>
       )}
@@ -1328,7 +915,7 @@ export const DocenteDashboard = () => {
               <ModelInfoDisplay info={modelInfo} />
             ) : (
               <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-                Haz clic en "Consultar" primero para ver la información del modelo.
+                Auto-consulta al seleccionar estudiante.
               </p>
             )}
           </div>
