@@ -31,6 +31,7 @@ class GetGroupsServiceTest {
         Group group = Group.builder()
                 .idGroup("g1")
                 .groupName("Grupo Alfa")
+                .description("Descripción Alfa")
                 .idGroupStudentList(List.of("s1"))
                 .build();
         when(groupRepositoryPort.findAll()).thenReturn(List.of(group));
@@ -40,5 +41,6 @@ class GetGroupsServiceTest {
         assertFalse(result.isEmpty());
         assertEquals("Grupo Alfa", result.getFirst().groupName());
         assertEquals("g1", result.getFirst().idGroup());
+        assertEquals("Descripción Alfa", result.getFirst().description());
     }
 }
