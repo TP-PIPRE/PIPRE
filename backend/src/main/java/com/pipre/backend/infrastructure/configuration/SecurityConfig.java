@@ -40,12 +40,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
 
-                        // 3. Rutas de Swagger UI y OpenAPI v3
+                        // 3. Rutas de Scalar UI y OpenAPI v3
                         .requestMatchers("/v3/api-docs/**").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/swagger-ui.html").permitAll()
-                        .requestMatchers("/swagger-resources/**").permitAll()
-                        .requestMatchers("/webjars/**").permitAll()
+                        .requestMatchers("/scalar/**").permitAll()
 
                         // 4. El resto requiere autenticación
                         .anyRequest().authenticated()
