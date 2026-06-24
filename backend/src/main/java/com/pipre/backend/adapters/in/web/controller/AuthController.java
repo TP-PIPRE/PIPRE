@@ -1,5 +1,7 @@
 package com.pipre.backend.adapters.in.web.controller;
 
+import com.pipre.backend.adapters.in.web.dto.LoginResponseDTO;
+import com.pipre.backend.adapters.in.web.dto.MessageResponseDTO;
 import com.pipre.backend.adapters.in.web.dto.LoginRequestDTO;
 import com.pipre.backend.infrastructure.security.JwtUtils;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
@@ -44,7 +46,7 @@ public class AuthController {
                         @ApiResponse(responseCode = "200", description = "Sesión iniciada correctamente"),
                         @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
         })
-        public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
+        public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
 
                 Authentication authentication = authenticationManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(loginRequestDTO.email(),
@@ -70,14 +72,6 @@ public class AuthController {
                 Map<String, String> roleMap = roleRepositoryPort.findAll().stream()
                                 .collect(Collectors.toMap(Role::getIdRole, Role::getName));
 
-                Map<String, Object> responseBody = new HashMap<>();
-                responseBody.put("message", "Sesión iniciada correctamente");
-
-                Map<String, Object> userMap = new HashMap<>();
-                userMap.put("email", user.getEmail());
-                userMap.put("firstName", user.getFirstName());
-                userMap.put("lastName", user.getLastName());
-
                 List<String> roleNames = user.getIdRoleList().stream()
                                 .map(roleId -> {
                                         String rName = roleMap.getOrDefault(roleId, "STUDENT").toLowerCase();
@@ -87,9 +81,15 @@ public class AuthController {
                                         return rName;
                                 })
                                 .toList();
-                userMap.put("role", roleNames.isEmpty() ? "student" : roleNames.get(0));
 
-                responseBody.put("user", userMap);
+                LoginResponseDTO.UserResponseDTO userResponse = new LoginResponseDTO.UserResponseDTO(
+                                user.getEmail(),
+                                user.getFirstName(),
+                                user.getLastName(),
+                                roleNames.isEmpty() ? "student" : roleNames.get(0)
+                );
+
+                LoginResponseDTO responseBody = new LoginResponseDTO("Sesión iniciada correctamente", userResponse);
 
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
@@ -99,7 +99,7 @@ public class AuthController {
         @PostMapping("/logout")
         @Operation(summary = "Cierre de sesión")
         @ApiResponse(responseCode = "200", description = "Sesión cerrada correctamente")
-        public ResponseEntity<Map<String, String>> logout() {
+        public ResponseEntity<MessageResponseDTO> logout() {
                 ResponseCookie cookie = ResponseCookie.from("jwt", "")
                                 .httpOnly(true)
                                 .secure(true)
@@ -108,8 +108,7 @@ public class AuthController {
                                 .sameSite("Strict")
                                 .build();
 
-                Map<String, String> response = new HashMap<>();
-                response.put("message", "Sesión cerrada correctamente");
+                MessageResponseDTO response = new MessageResponseDTO("Sesión cerrada correctamente");
 
                 return ResponseEntity.ok()
                                 .header(HttpHeaders.SET_COOKIE, cookie.toString())

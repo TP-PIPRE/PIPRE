@@ -15,6 +15,6 @@ public record ApiErrorResponse(
     @Schema(description = "Mensaje de descripción detallada del error", example = "El correo o la contraseña ingresados son incorrectos.")
     String message,
     
-    @Schema(description = "Detalle de errores de validación por campo (opcional)")
-    Map<String, String> errors
+    @Schema(description = "Detalle de errores de validación por campo (opcional)", type = "object", example = "{\"campo\": \"mensaje de error\"}")
+    Object errors
 ) {}
