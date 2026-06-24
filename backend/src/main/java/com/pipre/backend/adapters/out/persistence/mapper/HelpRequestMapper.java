@@ -1,21 +1,17 @@
 package com.pipre.backend.adapters.out.persistence.mapper;
 
 import com.pipre.backend.adapters.out.persistence.jpaEntities.HelpRequestJpaEntity;
-import com.pipre.backend.domain.entities.HelpRequest;
+import com.pipre.backend.domain.entities.helprequest.HelpRequest;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-public class HelpRequestMapper {
-        public static HelpRequest toDomain(HelpRequestJpaEntity entity) {
-        if (entity == null) return null;
+@Mapper(componentModel = "spring")
+public interface HelpRequestMapper {
 
-        String idStudent = (entity.getStudentJpaEntity() == null)
-                ? null
-                : entity.getStudentJpaEntity().getIdUser();
+    @Mapping(target = "studentJpaEntity", ignore = true)
+    @Mapping(target = "timesRequested", ignore = true)
+    HelpRequestJpaEntity toJpaEntity(HelpRequest domain);
 
-        return HelpRequest.builder()
-                .idHelpRequest(entity.getIdHelpRequest())
-                .aiInteractions(entity.getAiInteractions())
-                .requestedAt(entity.getRequestedAt())
-                .idStudent(idStudent)
-                .build();
-    }
+    @Mapping(target = "idStudent", source = "studentJpaEntity.idUser")
+    HelpRequest toDomain(HelpRequestJpaEntity entity);
 }
