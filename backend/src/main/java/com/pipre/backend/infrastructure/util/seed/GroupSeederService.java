@@ -33,7 +33,7 @@ public class GroupSeederService {
     @Transactional
     public void seedCourses() {
 
-        int NUMBER_OF_GROUPS = 1;
+        int NUMBER_OF_GROUPS = 3;
         String studentRoleId = getRoleIdByName("STUDENT");
 
         List<String> studentsIdList = userRepositoryPort.findAll().stream()
