@@ -35,7 +35,8 @@ class CreateActivityServiceTest {
         // Arrange
         CreateActivityCommand cmd = new CreateActivityCommand(
                 "lesson-uuid-123",
-                "Programación"
+                "Programación",
+                null, null, null, null, null, null, null, null
         );
 
         when(lessonRepositoryPort.existsById("lesson-uuid-123")).thenReturn(true);
@@ -64,7 +65,8 @@ class CreateActivityServiceTest {
         // Arrange
         CreateActivityCommand cmd = new CreateActivityCommand(
                 "non-existent-lesson",
-                "Programación"
+                "Programación",
+                null, null, null, null, null, null, null, null
         );
 
         when(lessonRepositoryPort.existsById("non-existent-lesson")).thenReturn(false);

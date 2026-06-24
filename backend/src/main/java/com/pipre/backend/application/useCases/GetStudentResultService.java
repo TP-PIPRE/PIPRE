@@ -18,8 +18,12 @@ public class GetStudentResultService implements GetStudentResultUseCase {
         return resultRepositoryPort.findByIdStudent(idStudent)
                 .stream()
                 .map(r -> new ResultDTO(
+                        r.getIdResult(),
+                        r.getIdStudent(),
                         r.getIdActivity(),
-                        r.getScore()
+                        r.getScore(),
+                        r.getAttempts(),
+                        r.getDateAttempted()
                 ))
                 .toList();
     }

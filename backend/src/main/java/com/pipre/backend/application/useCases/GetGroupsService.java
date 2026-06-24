@@ -23,7 +23,8 @@ public class GetGroupsService implements GetGroupsUseCase {
                 .stream()
                 .map(group -> new GroupDTO(
                         group.getIdGroup(),
-                        group.getGroupName()
+                        group.getGroupName(),
+                        group.getDescription()
                 ))
                 .toList();
     }

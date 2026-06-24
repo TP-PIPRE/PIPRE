@@ -8,9 +8,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -21,6 +24,7 @@ public class UserController {
     private final GetUserByIdUseCase getUserByIdUseCase;
 
     @GetMapping("/{userId}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#userId)")
     @Operation(summary = "Obtener usuario por ID")
     @ApiResponse(responseCode = "200", description = "Usuario obtenido exitosamente")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String userId) {
@@ -31,7 +35,7 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Registrar nuevo usuario")
     @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente")
-    public ResponseEntity<String> registerUser(@RequestBody RegisterUserCommand command) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterUserCommand command) {
         String newUserId = registerUserUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(newUserId);
     }

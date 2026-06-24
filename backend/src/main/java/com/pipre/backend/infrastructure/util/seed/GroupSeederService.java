@@ -58,6 +58,7 @@ public class GroupSeederService {
             Group group = Group.builder()
                     .idGroup(UUID.randomUUID().toString())
                     .groupName("Grupo " + faker.funnyName().name())
+                    .description(faker.lorem().sentence(5))
                     .idGroupStudentList(assignedStudents)
                     .build();
             groupRepositoryPort.save(group);
@@ -71,7 +72,7 @@ public class GroupSeederService {
                 Ranking ranking = Ranking.builder()
                         .idRanking(UUID.randomUUID().toString())
                         .totalPoints(randomPoints)
-                        .position(0)
+                        .position(1)
                         .idGroup(groupId)
                         .idStudent(studentId)
                         .build();
