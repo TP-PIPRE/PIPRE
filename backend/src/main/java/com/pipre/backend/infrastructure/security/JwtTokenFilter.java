@@ -34,13 +34,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             }
         }
 
-        // Fallback to Authorization Bearer header
-        if (token == null) {
-            String header = request.getHeader("Authorization");
-            if (header != null && header.startsWith("Bearer ")) {
-                token = header.substring(7);
-            }
-        }
+
 
         if (token != null) {
             try {

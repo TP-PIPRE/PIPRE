@@ -14,6 +14,6 @@ public class HomeController {
     @Operation(hidden = true)
     @GetMapping
     public RedirectView redirectToSwagger() {
-        return new RedirectView("/swagger-ui/index.html");
+        return new RedirectView("/scalar");
     }
 }
