@@ -29,7 +29,7 @@ export class MathAnimationEngine {
   }
 
   animate(
-    target: THREE.Object3D,
+    target: THREE.Object3D | THREE.Material | THREE.Euler,
     property: string,
     from: number,
     to: number,
@@ -237,7 +237,7 @@ export class MathAnimationEngine {
 
 interface AnimationState {
   id: string;
-  target: THREE.Object3D;
+  target: THREE.Object3D | THREE.Material | THREE.Euler;
   property: string;
   from?: number;
   to?: number;

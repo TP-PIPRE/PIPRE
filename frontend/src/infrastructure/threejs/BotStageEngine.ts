@@ -465,7 +465,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.animationEngine.cancelAll();
   }
 
-  public async attack(power: number, duration: number): Promise<void> {
+  public async attack(_power: number, duration: number): Promise<void> {
     return new Promise((resolve) => {
       const core = this.botGroup.getObjectByName("bot_core") as THREE.Mesh;
       if (core) {

@@ -6,6 +6,8 @@ export interface UserRequestDTO {
   grade: string;
   age: number;
   roleIdList: string[];
+  institution?: string;
+  zone?: string;
 }
 
 export interface UserResponseDTO {
@@ -34,6 +36,8 @@ export interface CourseRequestDTO {
 export interface CourseResponseDTO {
   idCourse: string;
   name: string;
+  description?: string;
+  level?: string;
 }
 
 export interface ModuleRequestDTO {

@@ -1,4 +1,3 @@
-import React from "react";
 import { useSimulador } from "../../../application/context/SimuladorProvider";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
 import { BsRobot } from "react-icons/bs";

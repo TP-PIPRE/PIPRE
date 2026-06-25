@@ -1,16 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
-import type {
-  Ria01PredictRequest,
-  Ria03RecommendRequest,
-  Ria04DifficultyRequest,
-  Ria08AnomalyRequest,
-  Ria11TimeRequest,
-  RiaInfoResponse,
-} from "../../infrastructure/api/models/aiModels";
-import { RobotIcon } from "../components/common/RobotIcon";
-import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
+import { RiaBentoGrid, type RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import {
   BsPlusCircleFill,
   BsMortarboardFill,

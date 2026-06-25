@@ -3,7 +3,7 @@ import * as THREE from "three";
 export interface RobotComponent {
   id: string;
   name: string;
-  type: "sensor" | "actuator" | "body" | "power" | "weapon";
+  type: "sensor" | "actuator" | "body" | "power" | "weapon" | "special";
   mesh: THREE.Object3D;
   slots: string[];
   dependencies?: string[];

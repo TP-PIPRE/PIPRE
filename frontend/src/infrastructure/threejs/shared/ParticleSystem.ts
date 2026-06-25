@@ -242,8 +242,6 @@ export class ParticleSystem {
       }
 
       alive = true;
-      const lifeRatio = this.lifetimes[i] / this.maxLifetime;
-
       pos[i * 3] += this.velocities[i * 3] * 0.05;
       pos[i * 3 + 1] += this.velocities[i * 3 + 1] * 0.05;
       pos[i * 3 + 2] += this.velocities[i * 3 + 2] * 0.05;

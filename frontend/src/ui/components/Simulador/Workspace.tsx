@@ -20,10 +20,6 @@ export const Workspace = () => {
     addBlock,
     removeBlock,
     updateBlockParam,
-    clearWorkspace,
-    isRunning,
-    executeProgram,
-    stopExecution,
     environment,
     addChildBlock,
     removeChildBlock,
@@ -46,14 +42,6 @@ export const Workspace = () => {
     } catch (err) {
       console.error(err);
     }
-  };
-
-  const getBorderColor = (category: BlockCategory) => {
-    if (category === "event") return "border-[#00f5d4]";
-    if (category === "action") return "border-[#94a3b8]";
-    if (category === "condition") return "border-[#9b5de5]";
-    if (category === "loop") return "border-[#f97316]";
-    return "border-[#475569]";
   };
 
   const renderCategoryIcon = (category: BlockCategory, className?: string, style?: React.CSSProperties) => {

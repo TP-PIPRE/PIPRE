@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BsCodeSlash,
-  BsController,
   BsCpu,
   BsCheckCircleFill,
 } from "react-icons/bs";

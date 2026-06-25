@@ -6,6 +6,7 @@ import type { ISimulatorEngine } from "../../infrastructure/ports/ISimulatorEngi
 import { useThemeStore } from "../../infrastructure/store/themeStore";
 import { SimuladorUseCase, type ChallengeData } from "../usecases/SimuladorUseCase";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
+import { themes } from "../../shared/constants/themes";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { simuladorRepository } from "../../infrastructure/adapters/storage/SimuladorRepository";
 import type { SimulationResultType } from "../../shared/types/SpecContracts";
@@ -81,7 +82,7 @@ interface SimuladorContextType {
 
   logs: LogEntry[];
   addLog: (msg: string, type?: "info" | "warn" | "error" | "success") => void;
-  currentTheme: Record<string, string>;
+  currentTheme: (typeof themes)[keyof typeof themes];
 
   currentBlockId: string | null;
   setCurrentBlockId: (id: string | null) => void;
