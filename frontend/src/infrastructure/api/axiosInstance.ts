@@ -5,7 +5,7 @@ const isDev = import.meta.env.DEV;
 const axiosInstance = axios.create({
   baseURL: isDev
     ? "/api/v1/"
-    : "https://pipre-backend.yoshua-cloud.dedyn.io/",
+    : "https://pipre-backend.yoshua-cloud.dedyn.io/api/v1/",
   headers: {
     "Content-Type": "application/json",
     "Accept": "*/*",
