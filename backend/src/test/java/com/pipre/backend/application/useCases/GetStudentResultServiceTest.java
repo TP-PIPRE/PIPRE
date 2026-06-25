@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +45,11 @@ class GetStudentResultServiceTest {
 
         // Assert
         assertEquals(1, list.size());
+        assertEquals("res-1", list.getFirst().idResult());
+        assertEquals(studentId, list.getFirst().idStudent());
         assertEquals("act-1", list.getFirst().idActivity());
         assertEquals(BigDecimal.valueOf(8.5), list.getFirst().score());
+        assertEquals(2, list.getFirst().attempts());
+        assertNotNull(list.getFirst().date());
     }
 }

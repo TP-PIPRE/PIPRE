@@ -1,9 +1,9 @@
 package com.pipre.backend.application.ports.input;
 
 import com.pipre.backend.application.dto.ActivityDTO;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface GetActivitiesUseCase {
-    List<ActivityDTO> execute(String id);
+    Page<ActivityDTO> execute(String id, Pageable pageable);
 }

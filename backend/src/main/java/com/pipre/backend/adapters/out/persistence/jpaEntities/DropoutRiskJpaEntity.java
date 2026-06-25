@@ -2,12 +2,16 @@ package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "dropout_risks")
 @NoArgsConstructor
+@Getter
+@Setter
 public class DropoutRiskJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)

@@ -2,6 +2,8 @@ package com.pipre.backend.adapters.out.persistence.jpaEntities;
 
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,6 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "module_progress")
 @NoArgsConstructor
+@Getter
+@Setter
 public class ModuleProgressJpaEntity {
     @Id
     @Column(updatable = false, nullable = false)

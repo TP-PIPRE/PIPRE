@@ -9,6 +9,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -22,20 +26,22 @@ class GetModulesServiceTest {
     @InjectMocks private GetModulesService getModulesService;
 
     @Test
-    @DisplayName("Debería retornar módulos filtrados por ID de curso")
+    @DisplayName("Debería retornar módulos filtrados por ID de curso paginados")
     void shouldReturnModulesByCourseId() {
         // Arrange
         String courseId = "course-123";
         Module module = Module.builder().idModule("mod-1").title("Módulo Test").idCourse(courseId).build();
-        when(moduleRepositoryPort.findAllByIdCourse(courseId)).thenReturn(List.of(module));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Module> page = new PageImpl<>(List.of(module));
+        when(moduleRepositoryPort.findAllByIdCourse(eq(courseId), any(Pageable.class))).thenReturn(page);
 
         // Act
-        List<ModuleDTO> result = getModulesService.execute(courseId);
+        Page<ModuleDTO> result = getModulesService.execute(courseId, pageable);
 
         // Assert
-        assertEquals(1, result.size());
-        assertEquals("mod-1", result.getFirst().idModule());
-        assertEquals("Módulo Test", result.getFirst().title());
-        verify(moduleRepositoryPort, times(1)).findAllByIdCourse(courseId);
+        assertEquals(1, result.getContent().size());
+        assertEquals("mod-1", result.getContent().get(0).idModule());
+        assertEquals("Módulo Test", result.getContent().get(0).title());
+        verify(moduleRepositoryPort, times(1)).findAllByIdCourse(courseId, pageable);
     }
 }

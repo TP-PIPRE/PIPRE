@@ -10,7 +10,6 @@ public interface ResultMapper {
 
     @Mapping(target = "studentJpaEntity", ignore = true)
     @Mapping(target = "activityJpaEntity", ignore = true)
-    @Mapping(target = "dateAttempted", ignore = true)
     ResultJpaEntity toJpaEntity(Result domain);
 
     @Mapping(target = "idStudent", source = "studentJpaEntity.idUser")

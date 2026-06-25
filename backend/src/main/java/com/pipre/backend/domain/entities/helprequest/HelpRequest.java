@@ -1,5 +1,6 @@
-package com.pipre.backend.domain.entities;
+package com.pipre.backend.domain.entities.helprequest;
 
+import com.pipre.backend.domain.exceptions.BusinessException;
 import java.time.LocalDateTime;
 
 public class HelpRequest {
@@ -10,8 +11,20 @@ public class HelpRequest {
     private final String idStudent;
 
     HelpRequest(String idHelpRequest, Integer aiInteractions, LocalDateTime requestedAt, String idStudent) {
+        if (idHelpRequest == null || idHelpRequest.isBlank()) {
+            throw new BusinessException("El ID de la solicitud de ayuda es obligatorio.");
+        }
+        if (idStudent == null || idStudent.isBlank()) {
+            throw new BusinessException("El ID del estudiante es obligatorio.");
+        }
+        if (requestedAt == null) {
+            throw new BusinessException("La fecha de solicitud es obligatoria.");
+        }
+        if (aiInteractions != null && aiInteractions < 0) {
+            throw new BusinessException("Las interacciones de IA no pueden ser negativas.");
+        }
         this.idHelpRequest = idHelpRequest;
-        this.aiInteractions = aiInteractions;
+        this.aiInteractions = aiInteractions != null ? aiInteractions : 0;
         this.requestedAt = requestedAt;
         this.idStudent = idStudent;
     }
