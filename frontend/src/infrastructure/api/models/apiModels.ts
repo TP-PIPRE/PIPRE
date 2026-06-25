@@ -56,14 +56,43 @@ export interface LessonResponseDTO {
   title: string;
 }
 
+export interface PositionDTO {
+  x: number;
+  z: number;
+}
+
+export interface MissionDTO {
+  id: string;
+  title: string;
+  objective: string;
+  maxBlocks: number;
+}
+
 export interface CreateActivityCommand {
   idLesson: string;
   name: string;
+  complexity?: string;
+  difficulty?: string;
+  logicLevel?: number;
+  type?: string;
+  environment?: string;
+  missions?: MissionDTO[];
+  startingPosition?: PositionDTO;
+  targetPosition?: PositionDTO;
 }
 
 export interface ActivityResponseDTO {
   idActivity: string;
   name: string;
+  idLesson?: string;
+  complexity?: string;
+  difficulty?: string;
+  logicLevel?: number;
+  type?: string;
+  environment?: string;
+  startingPosition?: PositionDTO;
+  targetPosition?: PositionDTO;
+  missions?: MissionDTO[];
 }
 
 export interface ActivityResultRequest {
@@ -85,8 +114,8 @@ export interface RankingDTO {
 }
 
 export interface SimulationRequest {
-  id_student: string;
-  id_activity: string;
+  idStudent: string;
+  idActivity: string;
   result: string;
 }
 

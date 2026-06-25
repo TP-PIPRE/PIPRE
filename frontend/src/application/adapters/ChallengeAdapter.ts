@@ -42,8 +42,8 @@ export class ChallengeAdapter {
       maxBlocks: challenge.maxBlocks || 10,
       requiredHardware: this.getRequiredHardware(challenge.environment),
       allowedBlockTypes: this.getAllowedBlockTypes(challenge.environment),
-      startingPosition: { x: 0, z: 0 },
-      targetPosition: { x: 30, z: 0 },
+      startingPosition: challenge.startingPosition || { x: 0, z: 0 },
+      targetPosition: challenge.targetPosition || { x: 30, z: 0 },
     };
   }
 

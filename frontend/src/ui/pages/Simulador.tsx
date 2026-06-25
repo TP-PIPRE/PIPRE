@@ -248,11 +248,11 @@ const SimuladorInner = () => {
       icon: <BsMapFill className="text-[10px]" />,
       badge: missions.filter((m) => !m.isCompleted).length,
     },
-    {
+    ...(visiblePanels.showCanvas ? [{
       id: "canvas",
       label: "Mapa",
       icon: <BsRocketFill className="text-[10px]" />,
-    },
+    }] : []),
   ];
 
   const leftPanelContent = () => {

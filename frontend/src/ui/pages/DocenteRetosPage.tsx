@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
-import { getAuthState } from "../../infrastructure/store/authStore";
 import type {
   CourseResponseDTO,
   CourseRequestDTO,
   ModuleResponseDTO,
   LessonResponseDTO,
+  MissionDTO,
+  PositionDTO,
 } from "../../infrastructure/api/models/apiModels";
 import { Modal } from "../components/common/Modal";
 import { BsTrashFill, BsTrash, BsChevronDown, BsTerminal, BsPencil, BsPlusLg } from "react-icons/bs";
@@ -132,7 +133,16 @@ export const DocenteRetosPage: React.FC = () => {
 
   // Paginación de retos
   const [challengePage, setChallengePage] = useState(0);
-  const CHALLENGES_PER_PAGE = 10;
+  const [pageSize, setPageSize] = useState(5);
+  const [customPageSize, setCustomPageSize] = useState("");
+
+  const PAGE_SIZE_OPTIONS = [5, 10, 15];
+
+  const applyPageSize = (size: number) => {
+    setPageSize(size);
+    setChallengePage(0);
+    setCustomPageSize("");
+  };
 
   // Cargar cursos
   const fetchCourses = async () => {
@@ -158,98 +168,36 @@ export const DocenteRetosPage: React.FC = () => {
     try {
       const modules = await apiService.modules.getByCourse(courseId);
       if (modules.length === 0) {
-        console.warn(`[RetosPage] Sin módulos para courseId=${courseId}, usando fallback simulations`);
-        return await fetchChallengesFromSimulations(courseId);
+        console.warn(`[RetosPage] Sin módulos para courseId=${courseId}`);
+        return [];
       }
-      const challenges: ChallengeView[] = [];
-      let order = 0;
-      for (const mod of modules) {
-        const lessons = await apiService.lessons.getByModule(mod.idModule);
-        for (const lesson of lessons) {
-          const activities = await apiService.activities.getByLesson(lesson.idLesson);
-          for (const act of activities) {
-            challenges.push({
-              idActivity: act.idActivity,
-              courseId,
-              title: act.name,
-              description: "",
-              order: order++,
-              difficulty: "MEDIUM",
-              points: 0,
-            });
-          }
-        }
-      }
-      if (challenges.length === 0) {
-        console.warn(`[RetosPage] Actividades vacías para courseId=${courseId}, usando fallback simulations`);
-        return await fetchChallengesFromSimulations(courseId);
-      }
-      return challenges;
+      const lessons = (await Promise.all(
+        modules.map((mod) => apiService.lessons.getByModule(mod.idModule)),
+      )).flat();
+      if (lessons.length === 0) return [];
+      const activities = (await Promise.all(
+        lessons.map((lesson) => apiService.activities.getByLesson(lesson.idLesson)),
+      )).flat();
+      return activities.map((act, i) => ({
+        idActivity: act.idActivity,
+        courseId,
+        title: act.name,
+        description: "",
+        order: i,
+        difficulty: "MEDIUM",
+        points: 0,
+      }));
     } catch (err) {
       console.warn(`[RetosPage] Error en fetchChallengesFromActivities para courseId=${courseId}:`, err);
-      return await fetchChallengesFromSimulations(courseId);
-    }
-  };
-
-  // Fallback desde simulations (misma lógica que fetchChallengesByCourse pero sin courseId estricto)
-  const fetchChallengesFromSimulations = async (courseId: string): Promise<ChallengeView[]> => {
-    try {
-      const authUser = getAuthState().user;
-      const userId = authUser?.id || "config-store";
-      const sims = await apiService.simulations.getByUser(userId);
-      const challenges: ChallengeView[] = [];
-      for (const s of sims) {
-        try {
-          const data = JSON.parse(s.result);
-          if (data.type === "challenge" && !data.deleted) {
-            // Si el courseId del challenge coincide o no hay courseId, lo incluimos
-            if (!data.courseId || data.courseId === courseId) {
-              challenges.push({ ...data, id_simulation: s.id_simulation } as ChallengeView);
-            }
-          }
-        } catch {}
-      }
-      console.warn(`[RetosPage] fetchChallengesFromSimulations: ${challenges.length} retos para courseId=${courseId}`);
-      return challenges.sort((a, b) => (a.order || 0) - (b.order || 0));
-    } catch (err) {
-      console.warn(`[RetosPage] Error en fetchChallengesFromSimulations:`, err);
       return [];
     }
   };
 
-  // Cargar retos de un curso desde simulations API
+  // Cargar retos de un curso desde actividades
   const fetchChallengesByCourse = async (courseId: string) => {
-    try {
-      const authUser = getAuthState().user;
-      const userId = authUser?.id || "config-store";
-      const sims = await apiService.simulations.getByUser(userId);
-      console.warn(`[RetosPage] fetchChallengesByCourse: sims=${sims.length}, courseId=${courseId}`);
-      const parsed = sims
-        .map((s) => {
-          try {
-            const data = JSON.parse(s.result);
-            return { ...data, id_simulation: s.id_simulation } as ChallengeView;
-          } catch {
-            return null;
-          }
-        })
-        .filter((c): c is ChallengeView =>
-          c !== null && c.type === "challenge" && c.courseId === courseId && !c.deleted
-        )
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
-      console.warn(`[RetosPage] fetchChallengesByCourse: parsed=${parsed.length} filtrados para courseId=${courseId}`);
-      if (parsed.length === 0) {
-        const fallback = await fetchChallengesFromActivities(courseId);
-        setSelectedCourseChallenges(fallback);
-      } else {
-        setSelectedCourseChallenges(parsed);
-      }
-      setChallengePage(0);
-    } catch (err) {
-      console.error("Error fetching challenges:", err);
-      const fallback = await fetchChallengesFromActivities(courseId);
-      setSelectedCourseChallenges(fallback);
-    }
+    const challenges = await fetchChallengesFromActivities(courseId);
+    setSelectedCourseChallenges(challenges);
+    setChallengePage(0);
   };
 
   useEffect(() => {
@@ -362,27 +310,6 @@ export const DocenteRetosPage: React.FC = () => {
       } else {
         return;
       }
-      // Persistir reorden: actualizar ambos retos afectados
-      const toUpdate = [sorted[currentIdx], direction === "up" ? sorted[currentIdx - 1] : sorted[currentIdx + 1]];
-      const authUser = getAuthState().user;
-      const userId = authUser?.id || "config-store";
-      const sims = await apiService.simulations.getByUser(userId);
-      for (const ch of toUpdate) {
-        const existing = sims.find((s) => {
-          try { const r = JSON.parse(s.result); return r.idActivity === ch.idActivity; }
-          catch { return false; }
-        });
-        if (existing) {
-          const data = JSON.parse(existing.result);
-          data.order = ch.order;
-          data.updatedAt = new Date().toISOString();
-          await apiService.simulations.postResult({
-            id_student: userId,
-            id_activity: ch.idActivity,
-            result: JSON.stringify(data),
-          });
-        }
-      }
       setSelectedCourseChallenges([...sorted]);
     } catch (err) {
       console.error("Error reordering challenges:", err);
@@ -412,9 +339,6 @@ export const DocenteRetosPage: React.FC = () => {
     try {
       if (!selectedCourse) return;
 
-      const authUser = getAuthState().user;
-      const idStudent = authUser?.id || "config-store";
-
       let idActivity = selectedChallenge?.idActivity || "";
 
       if (!selectedLessonId) {
@@ -429,39 +353,17 @@ export const DocenteRetosPage: React.FC = () => {
         const created = await apiService.activities.create({
           idLesson: selectedLessonId,
           name: challengeFormData.title,
+          complexity: challengeFormData.complexity,
+          difficulty: challengeFormData.difficulty,
+          logicLevel: challengeFormData.logicLevel,
+          type: challengeFormData.type,
+          environment: challengeFormData.simulatorConfig?.environment,
+          missions: challengeFormData.simulatorConfig?.missions as MissionDTO[] | undefined,
+          startingPosition: challengeFormData.simulatorConfig?.startingPosition as PositionDTO | undefined,
+          targetPosition: challengeFormData.simulatorConfig?.targetPosition as PositionDTO | undefined,
         });
         idActivity = created.idActivity;
       }
-
-      const payload = {
-        type: "challenge",
-        idActivity,
-        courseId: selectedCourse.idCourse,
-        title: challengeFormData.title,
-        description: challengeFormData.description,
-        order: challengeFormData.order,
-        difficulty: challengeFormData.difficulty,
-        complexity: challengeFormData.complexity,
-        logicLevel: challengeFormData.logicLevel,
-        points: challengeFormData.points,
-        environment: challengeFormData.simulatorConfig?.environment || "obstacle",
-        maxBlocks: challengeFormData.simulatorConfig?.maxBlocks || 10,
-        missions: challengeFormData.simulatorConfig?.missions || [],
-        allowedHardware: challengeFormData.simulatorConfig?.allowedHardware || [],
-        startingPosition: challengeFormData.simulatorConfig?.startingPosition || { x: 0, z: 0 },
-        targetPosition: challengeFormData.simulatorConfig?.targetPosition || { x: 10, z: 10 },
-        expectedOutput: challengeFormData.expectedOutput,
-        reward: challengeFormData.reward,
-        deleted: false,
-        createdAt: selectedChallenge?.idActivity ? undefined : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await apiService.simulations.postResult({
-        id_student: idStudent,
-        id_activity: idActivity,
-        result: JSON.stringify(payload),
-      });
 
       setChallengeModalType(null);
       setFormErrors({});
@@ -490,13 +392,7 @@ export const DocenteRetosPage: React.FC = () => {
   const handleDeleteChallenge = async (idActivity: string) => {
     try {
       const courseId = selectedCourse!.idCourse;
-      const authUser = getAuthState().user;
-      const userId = authUser?.id || "config-store";
-      await apiService.simulations.postResult({
-        id_student: userId,
-        id_activity: idActivity,
-        result: JSON.stringify({ deleted: true, type: "challenge", courseId }),
-      });
+      await apiService.activities.delete(idActivity);
       fetchChallengesByCourse(courseId);
     } catch (err) {
       console.error("Error deleting challenge:", err);
@@ -770,7 +666,7 @@ export const DocenteRetosPage: React.FC = () => {
                       <div className="space-y-4">
                         {[...selectedCourseChallenges]
                           .sort((a, b) => a.order - b.order)
-                          .slice(challengePage * CHALLENGES_PER_PAGE, (challengePage + 1) * CHALLENGES_PER_PAGE)
+                          .slice(challengePage * pageSize, (challengePage + 1) * pageSize)
                           .map((challenge) => (
                             <div
                               key={challenge.idActivity}
@@ -851,26 +747,84 @@ export const DocenteRetosPage: React.FC = () => {
                             </div>
                           ))}
                       </div>
-                      {selectedCourseChallenges.length > CHALLENGES_PER_PAGE && (
+                      {selectedCourseChallenges.length > pageSize && (
                         <div className="flex items-center justify-between pt-4 border-t border-border/10">
-                          <span className="text-[10px] text-text-muted">
-                            {challengePage * CHALLENGES_PER_PAGE + 1}–{Math.min((challengePage + 1) * CHALLENGES_PER_PAGE, selectedCourseChallenges.length)} de {selectedCourseChallenges.length}
-                          </span>
-                          <div className="flex gap-2">
-                            <button
-                              disabled={challengePage === 0}
-                              onClick={() => setChallengePage(p => Math.max(0, p - 1))}
-                              className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all rounded"
-                            >
-                              ← Anterior
-                            </button>
-                            <button
-                              disabled={(challengePage + 1) * CHALLENGES_PER_PAGE >= selectedCourseChallenges.length}
-                              onClick={() => setChallengePage(p => p + 1)}
-                              className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all rounded"
-                            >
-                              Siguiente →
-                            </button>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-text-muted">Ver</span>
+                            {PAGE_SIZE_OPTIONS.map((size) => (
+                              <button
+                                key={size}
+                                type="button"
+                                onClick={() => applyPageSize(size)}
+                                className={`px-2 py-0.5 text-[10px] font-bold font-mono border rounded transition-all ${
+                                  pageSize === size && !customPageSize
+                                    ? "border-primary text-primary bg-primary/10"
+                                    : "border-border/20 text-text-muted hover:border-primary"
+                                }`}
+                              >
+                                {size}
+                              </button>
+                            ))}
+                            {customPageSize ? (
+                              <span className="px-2 py-0.5 text-[10px] font-bold font-mono border border-primary text-primary bg-primary/10 rounded">
+                                {customPageSize}
+                              </span>
+                            ) : (
+                              <input
+                                type="number"
+                                min="1"
+                                max="999"
+                                placeholder="—"
+                                value={customPageSize}
+                                onChange={(e) => setCustomPageSize(e.target.value)}
+                                onBlur={() => {
+                                  const n = parseInt(customPageSize, 10);
+                                  if (n > 0 && n !== pageSize) {
+                                    setPageSize(n);
+                                    setChallengePage(0);
+                                  } else {
+                                    setCustomPageSize("");
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    const n = parseInt(customPageSize, 10);
+                                    if (n > 0) {
+                                      setPageSize(n);
+                                      setChallengePage(0);
+                                    } else {
+                                      setCustomPageSize("");
+                                    }
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
+                                className="w-10 px-1 py-0.5 text-[10px] font-mono text-center border border-border/20 rounded bg-transparent outline-none focus:border-primary transition-all"
+                              />
+                            )}
+                            <span className="text-[10px] text-text-muted ml-1">
+                              por página
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-text-muted">
+                              {challengePage * pageSize + 1}–{Math.min((challengePage + 1) * pageSize, selectedCourseChallenges.length)} de {selectedCourseChallenges.length}
+                            </span>
+                            <div className="flex gap-2">
+                              <button
+                                disabled={challengePage === 0}
+                                onClick={() => setChallengePage(p => Math.max(0, p - 1))}
+                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all rounded"
+                              >
+                                ← Anterior
+                              </button>
+                              <button
+                                disabled={(challengePage + 1) * pageSize >= selectedCourseChallenges.length}
+                                onClick={() => setChallengePage(p => p + 1)}
+                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all rounded"
+                              >
+                                Siguiente →
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

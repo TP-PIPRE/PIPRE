@@ -1,5 +1,4 @@
 import { apiService } from "../../infrastructure/api/apiService";
-import { getAuthState } from "../../infrastructure/store/authStore";
 import { simuladorRepository } from "../../infrastructure/adapters/storage/SimuladorRepository";
 
 import type { Block, MissionTemplate, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
@@ -18,48 +17,40 @@ export interface ChallengeData {
   maxBlocks: number;
   expectedOutput?: string;
   reward?: { type: string; value: string | number };
+  startingPosition?: { x: number; z: number };
+  targetPosition?: { x: number; z: number };
 }
 
 export class SimuladorUseCase {
   async loadChallengesByCourse(courseId: string): Promise<ChallengeData[]> {
     try {
-      const authUser = getAuthState().user;
-      const userId = authUser?.id || "config-store";
-      const sims = await apiService.simulations.getByUser(userId);
-      const configs = sims
-        .map((s) => {
-          try {
-            return { ...JSON.parse(s.result), id_simulation: s.id_simulation };
-          } catch {
-            return null;
-          }
-        })
-        .filter((x): x is Record<string, unknown> => x !== null);
+      const modules = await apiService.modules.getByCourse(courseId);
+      if (modules.length === 0) return [];
 
-      const grouped = new Map<string, Record<string, unknown>>();
-      for (const c of configs) {
-        const key = c.id_activity || c.id_simulation;
-        if (!grouped.has(key) || (c.id_simulation > grouped.get(key).id_simulation)) {
-          grouped.set(key, c);
-        }
-      }
+      const lessons = (await Promise.all(
+        modules.map((mod) => apiService.lessons.getByModule(mod.idModule)),
+      )).flat();
+      if (lessons.length === 0) return [];
 
-      return Array.from(grouped.values())
-        .filter((c: Record<string, unknown>) => c.type === "challenge" && c.courseId === courseId && !c.deleted)
-        .sort((a: Record<string, unknown>, b: Record<string, unknown>) => ((a.order as number) || 0) - ((b.order as number) || 0))
-        .map((c: Record<string, unknown>) => ({
-          id: c.id_activity || c.id_simulation,
-          idCourse: c.courseId,
-          title: c.title || "Sin título",
-          description: c.description || "",
-          order: c.order || 1,
-          difficulty: c.difficulty || "EASY",
-          points: c.points || 100,
-          environment: c.environment || "battle",
-          missions: c.missions || [],
-          maxBlocks: c.maxBlocks || 10,
-          expectedOutput: c.expectedOutput,
-          reward: c.reward,
+      const activities = (await Promise.all(
+        lessons.map((lesson) => apiService.activities.getByLesson(lesson.idLesson)),
+      )).flat();
+
+      return activities
+        .filter((act) => act.type === "robotics")
+        .map((act, i) => ({
+          id: act.idActivity,
+          idCourse: courseId,
+          title: act.name,
+          description: "",
+          order: i + 1,
+          difficulty: (act.difficulty as "EASY" | "MEDIUM" | "HARD") || "EASY",
+          points: 100,
+          environment: (act.environment as EnvironmentType) || "battle",
+          missions: (act.missions as MissionTemplate[]) || [],
+          maxBlocks: 10,
+          startingPosition: act.startingPosition as { x: number; z: number } | undefined,
+          targetPosition: act.targetPosition as { x: number; z: number } | undefined,
         }));
     } catch (error) {
       console.error("Error loading challenges from API:", error);

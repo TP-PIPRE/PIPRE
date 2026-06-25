@@ -10,15 +10,15 @@ import type {
   RiaInfoResponse,
 } from "../../infrastructure/api/models/aiModels";
 import { RobotIcon } from "../components/common/RobotIcon";
+import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
 import {
   BsPlusCircleFill,
   BsMortarboardFill,
   BsPeopleFill,
   BsGraphUpArrow,
-  BsPencilSquare,
-  BsTrashFill
 } from "react-icons/bs";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
+import { Modal } from "../components/common/Modal";
 
 const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): RiaStudentData => {
   const score = totalPoints ?? 75;
@@ -376,7 +376,7 @@ export const DocenteDashboard = () => {
                 className="divide-y"
                 style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
               >
-                {dataToShow.retos.map((r) => (
+                {dashboardMetrics.retos.map((r) => (
                   <tr
                     key={r.id}
                     className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
@@ -429,90 +429,26 @@ export const DocenteDashboard = () => {
                     </td>
                     <td className="py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1">
-                          <BsPencilSquare className="text-base" />
+                        <button
+                          onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
+                          className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1"
+                        >
+                          <span className="material-symbols-outlined text-base">
+                            edit
+                          </span>
                         </button>
-                        <button className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1">
-                          <BsTrashFill className="text-base" />
+                        <button
+                          onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
+                          className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1"
+                        >
+                          <span className="material-symbols-outlined text-base">
+                            delete
+                          </span>
                         </button>
                       </div>
                     </td>
                   </tr>
-                ) : (
-                  dashboardMetrics.retos.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
-                    >
-                      <td
-                        className="py-4 font-mono text-xs font-semibold"
-                        style={{ color: "var(--text)" }}
-                      >
-                        {r.nombre}
-                      </td>
-                      <td className="py-4">
-                        <span
-                          className="text-xs font-mono border border-border px-2 py-0.5 rounded-md"
-                          style={{
-                            color: "var(--text-muted)",
-                            borderColor: "var(--border)",
-                          }}
-                        >
-                          {r.categoria}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-1">
-                          {[1, 2, 3].map((i) => (
-                            <div
-                              key={i}
-                              style={{
-                                width: "12px",
-                                height: "12px",
-                                borderRadius: "2px",
-                                backgroundColor:
-                                  i <= r.dificultad
-                                    ? "var(--primary)"
-                                    : "var(--border)",
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </td>
-                      <td className="py-4 text-center">
-                        <span
-                          className={`text-xs font-mono px-2 py-1 rounded-full ${
-                            r.estado
-                              ? "bg-green-500/10 text-green-500"
-                              : "bg-yellow-500/10 text-yellow-500"
-                          }`}
-                        >
-                          {r.estado ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
-                      <td className="py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
-                            className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1"
-                          >
-                            <span className="material-symbols-outlined text-base">
-                              edit
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
-                            className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1"
-                          >
-                            <span className="material-symbols-outlined text-base">
-                              delete
-                            </span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>

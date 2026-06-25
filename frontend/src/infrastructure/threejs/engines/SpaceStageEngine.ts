@@ -13,7 +13,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private ultrasonicCone: THREE.Mesh;
   private particles: ParticleSystem;
   private animationId: number | null = null;
-  private clock: THREE.Clock;
+  private lastTime = 0;
   private controls!: MapControls;
   private isRunning = false;
   private collectedSamples = 0;
@@ -29,7 +29,6 @@ export class SpaceStageEngine implements ISimulatorEngine {
     );
     this.camera.position.set(28, 28, 28);
     this.camera.lookAt(0, 0, 0);
-    this.clock = new THREE.Clock();
     this.setupLighting();
     this.botParts = SpaceBotBuilder.create();
     this.botGroup = this.botParts.group;
@@ -38,6 +37,13 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.particles = new ParticleSystem(this.scene);
     this.createEnvironment();
+  }
+
+  private getDelta(): number {
+    const now = performance.now();
+    const delta = (now - this.lastTime) / 1000;
+    this.lastTime = now;
+    return delta;
   }
 
   private setupLighting() {
@@ -230,13 +236,13 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const p = Math.min(elapsed / (duration / 1000), 1);
         (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity = p < 0.5 ? p * 1.6 : (1 - p) * 1.6;
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.getDelta()));
         } else {
           (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity = 0;
           resolve(Math.floor(Math.random() * 15) + 5);
         }
       };
-      this.clock.getDelta();
+      this.getDelta();
       animate(0);
     });
   }
@@ -252,13 +258,13 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.position.y = THREE.MathUtils.lerp(startY, endY, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.getDelta()));
         } else {
           this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "move");
           resolve();
         }
       };
-      this.clock.getDelta();
+      this.getDelta();
       animate(0);
     });
   }
@@ -274,13 +280,13 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.position.y = THREE.MathUtils.lerp(startY, endY, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.getDelta()));
         } else {
           this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "success");
           resolve();
         }
       };
-      this.clock.getDelta();
+      this.getDelta();
       animate(0);
     });
   }
@@ -320,12 +326,12 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const p = Math.min(elapsed / (duration / 1000), 1);
         bit.position.y = origY + Math.sin(elapsed * 40) * 0.02;
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => vibrate(this.clock.getDelta()));
+          requestAnimationFrame(() => vibrate(this.getDelta()));
         } else {
           bit.position.y = origY;
         }
       };
-      this.clock.getDelta();
+      this.getDelta();
       vibrate(0);
     }
     return new Promise((resolve) => setTimeout(resolve, duration));
@@ -352,10 +358,10 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.position.lerpVectors(start, end, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.getDelta()));
         } else resolve();
       };
-      this.clock.getDelta();
+      this.getDelta();
       animate(0);
     });
   }
@@ -371,10 +377,10 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.rotation.y = THREE.MathUtils.lerp(start, end, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.getDelta()));
         } else resolve();
       };
-      this.clock.getDelta();
+      this.getDelta();
       animate(0);
     });
   }

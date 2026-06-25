@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
-import { getAuthState } from "../../infrastructure/store/authStore";
 import { BsExclamationOctagonFill, BsChevronRight } from "react-icons/bs";
 import type {
   CourseResponseDTO,
@@ -56,27 +55,23 @@ export const CursosPage: React.FC = () => {
     try {
       const modules = await apiService.modules.getByCourse(courseId);
       if (modules.length === 0) return [];
-      const challenges: ChallengeView[] = [];
-      let order = 0;
-      for (const mod of modules) {
-        const lessons = await apiService.lessons.getByModule(mod.idModule);
-        for (const lesson of lessons) {
-          const activities = await apiService.activities.getByLesson(lesson.idLesson);
-          for (const act of activities) {
-            challenges.push({
-              id: act.idActivity,
-              idActivity: act.idActivity,
-              title: act.name,
-              description: "",
-              order: order++,
-              difficulty: "MEDIUM",
-              points: 0,
-              courseId,
-            });
-          }
-        }
-      }
-      return challenges;
+      const lessons = (await Promise.all(
+        modules.map((mod) => apiService.lessons.getByModule(mod.idModule)),
+      )).flat();
+      if (lessons.length === 0) return [];
+      const activities = (await Promise.all(
+        lessons.map((lesson) => apiService.activities.getByLesson(lesson.idLesson)),
+      )).flat();
+      return activities.map((act, i) => ({
+        id: act.idActivity,
+        idActivity: act.idActivity,
+        title: act.name,
+        description: "",
+        order: i,
+        difficulty: "MEDIUM",
+        points: 0,
+        courseId,
+      }));
     } catch {
       return [];
     }
@@ -85,50 +80,11 @@ export const CursosPage: React.FC = () => {
   const fetchChallenges = async (courseId: string) => {
     setChallengePage(0);
     setSelectedCourseChallenges([]);
-    try {
-      const authUser = getAuthState().user;
-      const userId = authUser?.id || "config-store";
-      const sims = await apiService.simulations.getByUser(userId);
-      const parsed = sims
-        .map((s) => {
-          try {
-            const data = JSON.parse(s.result);
-            if (data.type === "challenge" && data.courseId === courseId && !data.deleted) {
-              return {
-                id: data.idActivity,
-                idActivity: data.idActivity,
-                title: data.title || "Sin título",
-                description: data.description || "",
-                order: data.order || 0,
-                difficulty: data.difficulty || "EASY",
-                points: data.points || 0,
-                courseId,
-              } as ChallengeView;
-            }
-            return null;
-          } catch {
-            return null;
-          }
-        })
-        .filter((c): c is ChallengeView => c !== null)
-        .sort((a, b) => a.order - b.order);
-      if (parsed.length > 0) {
-        setSelectedCourseChallenges(parsed);
-      } else {
-        const fallback = await fetchChallengesFromActivities(courseId);
-        setSelectedCourseChallenges(fallback);
-      }
-      setIsChallengesVisible(
-        isChallengesVisible === courseId ? null : courseId,
-      );
-    } catch (err) {
-      console.error("Error fetching challenges:", err);
-      const fallback = await fetchChallengesFromActivities(courseId);
-      setSelectedCourseChallenges(fallback);
-      setIsChallengesVisible(
-        isChallengesVisible === courseId ? null : courseId,
-      );
-    }
+    const challenges = await fetchChallengesFromActivities(courseId);
+    setSelectedCourseChallenges(challenges);
+    setIsChallengesVisible(
+      isChallengesVisible === courseId ? null : courseId,
+    );
   };
 
   if (isLoading) {
