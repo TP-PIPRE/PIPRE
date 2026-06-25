@@ -32,7 +32,7 @@ const ENV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 export const Stage3D = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineInstanceRef = useRef<ISimulatorEngine | null>(null);
-  const { engineRef, isRunning, installedHardware, currentTheme, environment } =
+  const { engineRef, isRunning, installedHardware, currentTheme, environment, energy } =
     useSimulador();
 
   const config = ENVIRONMENT_CONFIGS[environment];
@@ -126,14 +126,6 @@ export const Stage3D = () => {
           </div>
         </div>
 
-        {/* Center decoration (Smiley Robot) */}
-        <div className="absolute inset-0 flex justify-center items-center opacity-10 pointer-events-none select-none">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-5xl animate-bounce-soft">🤖</span>
-            <span className="font-mono text-[8px] tracking-widest text-text">PIPRE SIMULATOR</span>
-          </div>
-        </div>
-
         {/* Bottom bar */}
         <div className="flex justify-between items-end">
           <div className="bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[250px]">
@@ -150,17 +142,25 @@ export const Stage3D = () => {
             </div>
           </div>
           
-          <div className="flex flex-col gap-1 items-end bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md">
-            <span className="font-bold text-[8px] text-text-muted uppercase tracking-wider">🔋 Batería de Aventura</span>
-            <div className="w-24 h-2 bg-border rounded-full overflow-hidden">
+          {typeof energy === "number" && (
+          <div className="flex flex-col gap-1 items-end bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md min-w-[180px]">
+            <div className="flex items-center justify-between w-full gap-2">
+              <span className="font-bold text-[8px] text-text-muted uppercase tracking-wider">🔋 Energía</span>
+              <span className="font-mono text-[9px] font-bold" style={{ color: energy > 30 ? "var(--success)" : energy > 10 ? "var(--accent)" : "var(--danger)" }}>
+                {Math.round(energy)}%
+              </span>
+            </div>
+            <div className="w-full h-2 bg-border rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary transition-all duration-1000"
+                className="h-full rounded-full transition-all duration-300"
                 style={{
-                  width: isRunning ? "100%" : "50%",
+                  width: `${energy}%`,
+                  backgroundColor: energy > 30 ? "var(--success)" : energy > 10 ? "var(--accent)" : "var(--danger)",
                 }}
               />
             </div>
           </div>
+          )}
         </div>
       </div>
 

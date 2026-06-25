@@ -1,32 +1,33 @@
 import { useCallback, useState } from "react";
-import { specService } from "../../infrastructure/api/specService";
-import type { RoboticsSimulationRequest, RoboticsSimulationResponse } from "../../shared/types/SpecContracts";
+import { apiService } from "../../infrastructure/api/apiService";
+import type { SimulationRequest, SimulationResponse } from "../../infrastructure/api/models/apiModels";
 
 interface UseRobotSimulationsReturn {
   submitSimulation: (
-    data: RoboticsSimulationRequest,
-  ) => Promise<RoboticsSimulationResponse | null>;
-  simulations: RoboticsSimulationResponse[];
+    data: SimulationRequest,
+  ) => Promise<SimulationResponse | null>;
+  simulations: SimulationResponse[];
   loading: boolean;
   error: string | null;
 }
 
 export function useRobotSimulations(): UseRobotSimulationsReturn {
-  const [simulations, setSimulations] = useState<RoboticsSimulationResponse[]>([]);
+  const [simulations, setSimulations] = useState<SimulationResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const submitSimulation = useCallback(
-    async (data: RoboticsSimulationRequest) => {
+    async (data: SimulationRequest) => {
       setLoading(true);
       setError(null);
       try {
-        const result = await specService.roboticsSimulations.create(data);
-        if (result) {
-          setSimulations((prev) => [result, ...prev]);
-          return result;
-        }
-        return null;
+        await apiService.simulations.postResult(data);
+        const result: SimulationResponse = {
+          id_simulation: "",
+          result: data.result,
+        };
+        setSimulations((prev) => [result, ...prev]);
+        return result;
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : "Error al registrar simulación";

@@ -247,7 +247,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const installedHardware = Object.values(portAssignments).filter(Boolean);
 
   const consumeEnergy = (amount: number) => {
-    setEnergy((prev) => Math.max(0, prev - amount));
+    setEnergy((prev) => {
+      const next = Math.max(0, prev - amount);
+      addLog(`⚡ -${amount} energía (${Math.round(next)}%)`, "info");
+      return next;
+    });
   };
 
   const completeMission = () => {
@@ -277,6 +281,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
     setScore((prev) => prev + points);
     addLog(`¡Misión completada! +${points} pts`, "success");
+
+    // Recargar energía al completar una misión
+    const recharge = 50;
+    setEnergy((prev) => Math.min(100, prev + recharge));
+    addLog(`🔋 +${recharge} energía por misión completada`, "success");
 
     // Si hay más misiones, avanzar; si no, completar el reto automáticamente
     if (currentMissionIndex < missions.length - 1) {
@@ -364,8 +373,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     const result: SimulationResultType = score >= missions.filter((m) => m.isCompleted).length * 1000 ? "SUCCESS" : score > 0 ? "PARTIAL" : "FAILURE";
 
     await submitSimulation({
-      id_student: userId,
-      id_activity: selectedActivity?.idActivity ?? challengeId ?? "",
+      idStudent: userId,
+      idActivity: selectedActivity?.idActivity ?? challengeId ?? "",
       result,
     });
 
@@ -877,6 +886,15 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         const currentMission = missions[currentMissionIndex];
         if (currentMission && !currentMission.isCompleted && !isFreeMode) {
           completeMission();
+        } else if (currentMission && !currentMission.isCompleted) {
+          // Restaurar energía si la misión no se completó (playground)
+          setEnergy(100);
+        }
+      } else {
+        // Restaurar energía si la ejecución se detuvo o se agotó la batería
+        const pendingMission = missions[currentMissionIndex];
+        if (pendingMission && !pendingMission.isCompleted) {
+          setEnergy(100);
         }
       }
     } catch (e) {

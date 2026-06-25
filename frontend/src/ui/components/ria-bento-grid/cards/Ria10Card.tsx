@@ -90,11 +90,11 @@ export const Ria10Card = ({ student, studentId }: Props) => {
             )}
           </div>
           {metrics.length > 0 && (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3">
               {metrics.map((m) => (
-                <div key={m.label} className="text-center p-2 rounded-lg border border-border/30" style={{ backgroundColor: "var(--bg)" }}>
-                  <div className="text-[9px] font-mono font-bold" style={{ color: "var(--text)" }}>{(m.value * 100).toFixed(0)}%</div>
-                  <div className="text-[7px] font-mono uppercase" style={{ color: "var(--text-muted)" }}>{m.label}</div>
+                <div key={m.label} className="text-center p-4 rounded-lg border border-border/30" style={{ backgroundColor: "var(--bg)" }}>
+                  <div className="text-xl font-mono font-bold tracking-tight" style={{ color: "var(--text)" }}>{(m.value * 100).toFixed(0)}%</div>
+                  <div className="text-[10px] font-mono uppercase tracking-wide mt-1" style={{ color: "var(--text-muted)" }}>{m.label}</div>
                 </div>
               ))}
             </div>

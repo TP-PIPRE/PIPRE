@@ -30,21 +30,21 @@ import type {
 export const apiService = {
   users: {
     create: async (data: UserRequestDTO) => {
-      const response = await axiosInstance.post<string>("users", data);
+      const response = await axiosInstance.post<string>(API_ENDPOINTS.USERS, data);
       return response.data;
     },
     getById: async (id: string) => {
-      const response = await axiosInstance.get<UserResponseDTO>(`users/${id}`);
+      const response = await axiosInstance.get<UserResponseDTO>(API_ENDPOINTS.USER_BY_ID(id));
       return response.data;
     },
   },
   roles: {
     getAll: async () => {
-      const response = await axiosInstance.get<RoleDTO[]>("roles");
+      const response = await axiosInstance.get<RoleDTO[]>(API_ENDPOINTS.ROLES);
       return response.data;
     },
     assignToUser: async (data: { idUser: string; idRole: string }) => {
-      await axiosInstance.post("roles/user", {
+      await axiosInstance.post(API_ENDPOINTS.ROLES_USER, {
         idUser: data.idUser,
         idRole: data.idRole,
       });
@@ -52,9 +52,11 @@ export const apiService = {
   },
   groups: {
     getAll: async () => {
-      const response = await axiosInstance.get<GroupDTO[]>(
-        API_ENDPOINTS.GROUPS,
-      );
+      const response = await axiosInstance.get<GroupDTO[]>(API_ENDPOINTS.GROUPS);
+      return response.data;
+    },
+    getById: async (id: string) => {
+      const response = await axiosInstance.get<GroupDTO>(API_ENDPOINTS.GROUP_BY_ID(id));
       return response.data;
     },
   },
@@ -78,23 +80,23 @@ export const apiService = {
     getByCourse: async (idCourse: string, pageable?: Pageable) => {
       const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
       const response = await axiosInstance.get<PageModuleDTO>(
-        `modules/course/${idCourse}`, { params },
+        API_ENDPOINTS.MODULES_BY_COURSE(idCourse), { params },
       );
       return response.data.content;
     },
     create: async (data: ModuleRequestDTO) => {
-      await axiosInstance.post("modules", data);
+      await axiosInstance.post(API_ENDPOINTS.MODULES, data);
     },
   },
   lessons: {
     getByModule: async (idModule: string) => {
       const response = await axiosInstance.get<LessonResponseDTO[]>(
-        `lessons/module/${idModule}`,
+        API_ENDPOINTS.LESSONS_BY_MODULE(idModule),
       );
       return response.data;
     },
     create: async (data: LessonRequestDTO) => {
-      await axiosInstance.post("lessons", data);
+      await axiosInstance.post(API_ENDPOINTS.LESSONS, data);
     },
   },
   activities: {
@@ -105,12 +107,22 @@ export const apiService = {
       );
       return response.data.content;
     },
+    getById: async (id: string) => {
+      const response = await axiosInstance.get<ActivityResponseDTO>(API_ENDPOINTS.ACTIVITY_BY_ID(id));
+      return response.data;
+    },
     create: async (data: CreateActivityCommand) => {
       const response = await axiosInstance.post<{ idActivity: string }>(
         API_ENDPOINTS.ACTIVITIES,
         data,
       );
       return response.data;
+    },
+    update: async (id: string, data: CreateActivityCommand) => {
+      await axiosInstance.put(API_ENDPOINTS.ACTIVITY_BY_ID(id), data);
+    },
+    delete: async (id: string) => {
+      await axiosInstance.delete(API_ENDPOINTS.ACTIVITY_BY_ID(id));
     },
   },
   results: {
@@ -138,12 +150,12 @@ export const apiService = {
   ranking: {
     getGroupRanking: async (idGroup: string) => {
       const response = await axiosInstance.get<RankingDTO[]>(
-        API_ENDPOINTS.GROUP_STUDENTS(idGroup),
+        API_ENDPOINTS.GROUP_STUDENTS_BY_ID(idGroup),
       );
       return response.data;
     },
     addToGroup: async (data: { idGroup: string; idStudent: string }) => {
-      await axiosInstance.post("group-students", data);
+      await axiosInstance.post(API_ENDPOINTS.GROUP_STUDENTS, data);
     },
   },
   performance: {
@@ -158,12 +170,12 @@ export const apiService = {
   },
   analytics: {
     postProgress: async (data: ModuleProgressRequest) => {
-      await axiosInstance.post("module-progress", data);
+      await axiosInstance.post(API_ENDPOINTS.MODULE_PROGRESS, data);
     },
     getProgressByUser: async (idStudent: string) => {
       const response = await axiosInstance.get<
         { idModule: string; percentage: number }[]
-      >(`module-progress/user/${idStudent}`);
+      >(API_ENDPOINTS.MODULE_PROGRESS_BY_USER(idStudent));
       return response.data;
     },
     postHelpRequest: async (data: HelpRequest) => {
@@ -177,7 +189,7 @@ export const apiService = {
     },
     getDropoutRisk: async (idStudent: string) => {
       const response = await axiosInstance.get<DropoutRiskResponse>(
-        `dropout-risk/${idStudent}`,
+        API_ENDPOINTS.DROPOUT_RISK_BY_USER(idStudent),
       );
       return response.data;
     },

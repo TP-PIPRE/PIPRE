@@ -12,4 +12,9 @@ export const AI_ENDPOINTS = {
   RIA10_INFO: "/ria10/info",
   RIA11_INFO: "/ria11/info",
   HEALTH: "/health",
+
+  CODE_FEEDBACK_ANALYZE: "/code/feedback/analyze",
+  RIA12_PSEINT: "/ria12/pseint",
+  FEATURES_AGGREGATE_GROUP: (idGroup: string) => `/features/aggregate/group/${idGroup}`,
+  FEATURES_AGGREGATE_STUDENT: (idStudent: string) => `/features/aggregate/student/${idStudent}`,
 };

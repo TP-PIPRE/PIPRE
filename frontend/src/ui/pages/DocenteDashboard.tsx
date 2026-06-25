@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
 import { getAuthState } from "../../infrastructure/store/authStore";
-import { Modal } from "../components/common/Modal";
 import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
 import type { RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
 import {
@@ -10,10 +9,9 @@ import {
   BsMortarboardFill,
   BsPeopleFill,
   BsGraphUpArrow,
-  BsPencilSquare,
-  BsTrashFill
 } from "react-icons/bs";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
+import { Modal } from "../components/common/Modal";
 
 const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): RiaStudentData => {
   const score = totalPoints ?? 75;

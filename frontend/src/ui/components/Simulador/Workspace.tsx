@@ -2,6 +2,7 @@ import React from "react";
 import { useSimulador } from "../../../application/context/SimuladorProvider";
 import type { Block, BlockCategory } from "../../../shared/types/Simulador";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
+import { ENERGY_COST } from "../../../shared/constants/energyCosts";
 import { LoopBlockRenderer } from "./LoopBlockRenderer";
 import {
   BsPlayCircleFill,
@@ -173,12 +174,19 @@ export const Workspace = () => {
 
           {/* Block Content */}
           <div className="flex-1 min-w-0">
-            <span
-              className="font-mono text-[10px] block truncate"
-              style={{ color: "var(--text)" }}
-            >
-              {getBlockLabel(block.type, block.params)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="font-mono text-[10px] block truncate"
+                style={{ color: "var(--text)" }}
+              >
+                {getBlockLabel(block.type, block.params)}
+              </span>
+              {ENERGY_COST[block.type] && (
+                <span className="font-mono text-[7px] px-1 py-0.5 rounded bg-accent/10 text-accent font-bold shrink-0">
+                  ⚡{ENERGY_COST[block.type]}
+                </span>
+              )}
+            </div>
             {hasOptions && def?.paramOptions && (
               <div className="mt-1" onClick={(e) => e.stopPropagation()}>
                 {Object.entries(def.paramOptions).map(([pName, options]) => (
