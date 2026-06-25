@@ -187,6 +187,7 @@ export const LoginPage: React.FC = () => {
               <input
                 name="email"
                 type="email"
+                autoComplete="username"
                 required
                 className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
                 style={{ borderRadius: "var(--theme-radius)" }}
@@ -201,6 +202,7 @@ export const LoginPage: React.FC = () => {
               <input
                 name="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
                 style={{ borderRadius: "var(--theme-radius)" }}
