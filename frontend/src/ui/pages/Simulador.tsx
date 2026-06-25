@@ -9,7 +9,6 @@ import { Workspace } from "../components/Simulador/Workspace";
 import { Stage3D } from "../components/Simulador/Stage3D";
 import { Console } from "../components/Simulador/Console";
 import { MissionsPanel } from "../components/Simulador/MissionsPanel";
-import { ActivityCascade } from "../components/Simulador/ActivityCascade";
 import { MissionCanvas } from "../components/Simulador/MissionCanvas";
 import { TabBar } from "../components/Simulador/TabBar";
 import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
@@ -18,7 +17,6 @@ import { NavigationModeDetector } from "../../application/adapters/NavigationMod
 import { ChallengeAdapter, type AdaptedChallenge } from "../../application/adapters/ChallengeAdapter";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import type { EnvironmentType } from "../../shared/types/Simulador";
-import type { ActivityResponse } from "../../shared/types/SpecContracts";
 import {
   BsRocketFill,
   BsGearFill,
@@ -128,37 +126,6 @@ const ChallengeInfoBar = ({ challenge }: { challenge: AdaptedChallenge }) => {
   );
 };
 
-const PlaygroundHeader = () => {
-  const { selectedActivity, isFreeMode } = useSimulador();
-
-  if (!isFreeMode) return null;
-
-  return (
-    <div
-      className="flex items-center justify-between px-4 py-1.5 border-b border-border"
-      style={{ backgroundColor: "var(--surface)" }}
-    >
-      <div className="flex items-center gap-2">
-        <BsRocketFill className="text-[10px] text-primary" />
-        <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">
-          Modo Playground
-        </span>
-        {selectedActivity && (
-          <>
-            <span className="text-text-muted/30">|</span>
-            <span className="font-mono text-[9px] text-text">
-              Actividad: {selectedActivity.name}
-            </span>
-          </>
-        )}
-      </div>
-      <span className="font-mono text-[9px] text-text-muted">
-        Explora y experimenta libremente
-      </span>
-    </div>
-  );
-};
-
 const SimuladorInner = () => {
   const { courseId } = useParams<{ courseId?: string }>();
   const navigate = useNavigate();
@@ -170,7 +137,6 @@ const SimuladorInner = () => {
     selectChallenge,
     challengeData,
     selectedActivity,
-    setSelectedActivity,
     environment,
     submitRobotSimulation,
     simulationLoading,
@@ -185,7 +151,6 @@ const SimuladorInner = () => {
   } = useSimulador();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [showChallengeList, setShowChallengeList] = useState(false);
-  const [showPanel, setShowPanel] = useState(true);
   const [activeLeftTab, setActiveLeftTab] = useState("hardware");
   const [activeRightTab, setActiveRightTab] = useState("missions");
 
@@ -229,11 +194,6 @@ const SimuladorInner = () => {
   const handleBackToCourses = () => {
     setFreeMode();
     navigate("/cursos");
-  };
-
-  const handleActivitySelect = (activity: ActivityResponse) => {
-    setSelectedActivity(activity);
-    setShowPanel(false);
   };
 
   const leftPanelTabs = [
@@ -284,38 +244,6 @@ const SimuladorInner = () => {
       {navigationMode.mode === "playground" && <EnvironmentSelector />}
       {navigationMode.mode === "challenge" && adaptedChallenge && (
         <ChallengeInfoBar challenge={adaptedChallenge} />
-      )}
-
-      {navigationMode.mode === "playground" && (
-        <>
-          {showPanel && (
-            <div
-              className="px-4 py-3 border-b border-border"
-              style={{ backgroundColor: "var(--surface)" }}
-            >
-              <div className="flex items-start gap-6">
-                <div className="w-56">
-                  <ActivityCascade
-                    selectedActivityId={selectedActivity?.idActivity ?? null}
-                    onSelect={handleActivitySelect}
-                  />
-                </div>
-                {selectedActivity && (
-                  <button
-                    onClick={() => setShowPanel(false)}
-                    className="text-[10px] text-primary font-bold uppercase tracking-wider"
-                  >
-                    Cerrar panel
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {!showPanel && (
-            <PlaygroundHeader />
-          )}
-        </>
       )}
 
       {navigationMode.mode === "challenge" && !isFreeMode && (
