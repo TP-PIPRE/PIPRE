@@ -21,6 +21,10 @@ import type {
   ModuleProgressRequest,
   HelpRequest,
   DropoutRiskResponse,
+  PageCourseDTO,
+  PageModuleDTO,
+  PageActivityDTO,
+  Pageable,
 } from "./models/apiModels";
 
 export const apiService = {
@@ -55,9 +59,10 @@ export const apiService = {
     },
   },
   courses: {
-    getAll: async () => {
-      const response = await axiosInstance.get<CourseResponseDTO[]>(API_ENDPOINTS.COURSES);
-      return response.data;
+    getAll: async (pageable?: Pageable) => {
+      const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
+      const response = await axiosInstance.get<PageCourseDTO>(API_ENDPOINTS.COURSES, { params });
+      return response.data.content;
     },
     create: async (data: CourseRequestDTO) => {
       await axiosInstance.post(API_ENDPOINTS.COURSES, data);
@@ -70,11 +75,12 @@ export const apiService = {
     },
   },
   modules: {
-    getByCourse: async (idCourse: string) => {
-      const response = await axiosInstance.get<ModuleResponseDTO[]>(
-        `modules/course/${idCourse}`,
+    getByCourse: async (idCourse: string, pageable?: Pageable) => {
+      const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
+      const response = await axiosInstance.get<PageModuleDTO>(
+        `modules/course/${idCourse}`, { params },
       );
-      return response.data;
+      return response.data.content;
     },
     create: async (data: ModuleRequestDTO) => {
       await axiosInstance.post("modules", data);
@@ -92,11 +98,12 @@ export const apiService = {
     },
   },
   activities: {
-    getByLesson: async (idLesson: string) => {
-      const response = await axiosInstance.get<ActivityResponseDTO[]>(
-        API_ENDPOINTS.ACTIVITIES_BY_LESSON(idLesson),
+    getByLesson: async (idLesson: string, pageable?: Pageable) => {
+      const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
+      const response = await axiosInstance.get<PageActivityDTO>(
+        API_ENDPOINTS.ACTIVITIES_BY_LESSON(idLesson), { params },
       );
-      return response.data;
+      return response.data.content;
     },
     create: async (data: CreateActivityCommand) => {
       const response = await axiosInstance.post<{ idActivity: string }>(

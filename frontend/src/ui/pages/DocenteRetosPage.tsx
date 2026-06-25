@@ -152,9 +152,14 @@ export const DocenteRetosPage: React.FC = () => {
   };
 
   // Fallback: fetch activities as challenges via modules->lessons->activities
+  // Si no hay módulos, intenta con simulations
   const fetchChallengesFromActivities = async (courseId: string): Promise<ChallengeView[]> => {
     try {
       const modules = await apiService.modules.getByCourse(courseId);
+      if (modules.length === 0) {
+        console.warn(`[RetosPage] Sin módulos para courseId=${courseId}, usando fallback simulations`);
+        return await fetchChallengesFromSimulations(courseId);
+      }
       const challenges: ChallengeView[] = [];
       let order = 0;
       for (const mod of modules) {
@@ -174,8 +179,39 @@ export const DocenteRetosPage: React.FC = () => {
           }
         }
       }
+      if (challenges.length === 0) {
+        console.warn(`[RetosPage] Actividades vacías para courseId=${courseId}, usando fallback simulations`);
+        return await fetchChallengesFromSimulations(courseId);
+      }
       return challenges;
-    } catch {
+    } catch (err) {
+      console.warn(`[RetosPage] Error en fetchChallengesFromActivities para courseId=${courseId}:`, err);
+      return await fetchChallengesFromSimulations(courseId);
+    }
+  };
+
+  // Fallback desde simulations (misma lógica que fetchChallengesByCourse pero sin courseId estricto)
+  const fetchChallengesFromSimulations = async (courseId: string): Promise<ChallengeView[]> => {
+    try {
+      const authUser = getAuthState().user;
+      const userId = authUser?.id || "config-store";
+      const sims = await apiService.simulations.getByUser(userId);
+      const challenges: ChallengeView[] = [];
+      for (const s of sims) {
+        try {
+          const data = JSON.parse(s.result);
+          if (data.type === "challenge" && !data.deleted) {
+            // Si el courseId del challenge coincide o no hay courseId, lo incluimos
+            if (!data.courseId || data.courseId === courseId) {
+              challenges.push({ ...data, id_simulation: s.id_simulation } as ChallengeView);
+            }
+          }
+        } catch {}
+      }
+      console.warn(`[RetosPage] fetchChallengesFromSimulations: ${challenges.length} retos para courseId=${courseId}`);
+      return challenges.sort((a, b) => (a.order || 0) - (b.order || 0));
+    } catch (err) {
+      console.warn(`[RetosPage] Error en fetchChallengesFromSimulations:`, err);
       return [];
     }
   };
@@ -186,6 +222,7 @@ export const DocenteRetosPage: React.FC = () => {
       const authUser = getAuthState().user;
       const userId = authUser?.id || "config-store";
       const sims = await apiService.simulations.getByUser(userId);
+      console.warn(`[RetosPage] fetchChallengesByCourse: sims=${sims.length}, courseId=${courseId}`);
       const parsed = sims
         .map((s) => {
           try {
@@ -199,6 +236,7 @@ export const DocenteRetosPage: React.FC = () => {
           c !== null && c.type === "challenge" && c.courseId === courseId && !c.deleted
         )
         .sort((a, b) => (a.order || 0) - (b.order || 0));
+      console.warn(`[RetosPage] fetchChallengesByCourse: parsed=${parsed.length} filtrados para courseId=${courseId}`);
       if (parsed.length === 0) {
         const fallback = await fetchChallengesFromActivities(courseId);
         setSelectedCourseChallenges(fallback);
@@ -225,6 +263,7 @@ export const DocenteRetosPage: React.FC = () => {
       if (course) {
         setChallengePage(0);
         setSelectedCourse(course);
+        setSelectedCourseChallenges([]);
         setIsChallengesModalOpen(true);
         fetchChallengesByCourse(course.idCourse);
       }
@@ -1246,6 +1285,7 @@ export const DocenteRetosPage: React.FC = () => {
                   onClick={() => {
                     setChallengePage(0);
                     setSelectedCourse(course);
+                    setSelectedCourseChallenges([]);
                     fetchChallengesByCourse(course.idCourse);
                     setIsChallengesModalOpen(true);
                   }}

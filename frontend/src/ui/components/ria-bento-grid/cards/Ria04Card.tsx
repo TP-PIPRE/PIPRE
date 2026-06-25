@@ -42,9 +42,10 @@ export const Ria04Card = ({ student, studentId }: Props) => {
     }
   };
 
-  const diff = typeof result?.difficulty_level === "string" ? getDifficultyMeter(result.difficulty_level.toLowerCase()) : null;
-  const rec = typeof result?.recommendation === "string" ? result.recommendation : "";
-  const reasons = Array.isArray(result?.reasons) ? result.reasons as string[] : [];
+  const details = result?.details as Record<string, unknown> | undefined;
+  const diff = typeof result?.result === "string" ? getDifficultyMeter(result.result.toLowerCase()) : null;
+  const rec = (typeof details?.recommendation === "string" ? details.recommendation : "") || (typeof result?.recommendation === "string" ? result.recommendation as string : "");
+  const reasons: string[] = (Array.isArray(details?.reasons) ? details.reasons : []) as string[];
 
   return (
     <div className="h-full border border-border bg-surface rounded-xl p-5 flex flex-col transition-all duration-300 hover:shadow-lg" style={{ backgroundColor: "var(--surface)" }}>
@@ -56,7 +57,9 @@ export const Ria04Card = ({ student, studentId }: Props) => {
       </div>
 
       {!studentId ? (
-        <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>Selecciona un estudiante</div>
+        <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+          Selecciona un estudiante
+        </div>
       ) : loading ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -76,6 +79,10 @@ export const Ria04Card = ({ student, studentId }: Props) => {
               <span className="text-xs font-mono font-bold" style={{ color: diff.fill }}>{diff.label}</span>
             </div>
           )}
+          <div className="flex justify-between text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>
+            <span>Precisión</span>
+            <span className="font-bold" style={{ color: "var(--text)" }}>{typeof result.accuracy === "number" ? `${(result.accuracy * 100).toFixed(0)}%` : "-"}</span>
+          </div>
           {rec && (
             <div className="p-3 rounded-lg border border-border/30 text-[9px] font-mono leading-relaxed" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
               {rec}

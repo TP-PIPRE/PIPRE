@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import { Modal } from "../components/common/Modal";
 import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
 import type { RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
@@ -32,15 +33,23 @@ const fetchRetosFromActivities = async () => {
   const retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[] = [];
   try {
     const courses = await apiService.courses.getAll();
-    if (!courses || courses.length === 0) return retos;
+    if (!courses || courses.length === 0) {
+      console.warn("[Dashboard] No se encontraron cursos en la API, intentando fallback simulations...");
+      return await fetchRetosFromSimulations();
+    }
     let count = 0;
     const MAX_RETOS = 10;
     for (const course of courses.slice(0, 3)) {
       if (count >= MAX_RETOS) break;
       const modules = await apiService.modules.getByCourse(course.idCourse).catch(() => []);
+      if (modules.length === 0) {
+        console.warn(`[Dashboard] Sin módulos para curso ${course.idCourse}, usando fallback simulations`);
+        return await fetchRetosFromSimulations();
+      }
       for (const mod of modules) {
         if (count >= MAX_RETOS) break;
         const lessons = await apiService.lessons.getByModule(mod.idModule).catch(() => []);
+        if (lessons.length === 0) continue;
         for (const lesson of lessons) {
           if (count >= MAX_RETOS) break;
           const activities = await apiService.activities.getByLesson(lesson.idLesson).catch(() => []);
@@ -59,7 +68,48 @@ const fetchRetosFromActivities = async () => {
         }
       }
     }
-  } catch {}
+    if (retos.length === 0) {
+      console.warn("[Dashboard] Retos vacíos desde módulos, intentando fallback simulations");
+      return await fetchRetosFromSimulations();
+    }
+  } catch (err) {
+    console.warn("[Dashboard] Error en fetchRetosFromActivities, usando fallback simulations:", err);
+    return await fetchRetosFromSimulations();
+  }
+  return retos;
+};
+
+const fetchRetosFromSimulations = async () => {
+  const retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[] = [];
+  try {
+    const authUser = getAuthState().user;
+    const userId = authUser?.id || "config-store";
+    const sims = await apiService.simulations.getByUser(userId);
+    const courses = await apiService.courses.getAll().catch(() => []);
+    const courseMap = new Map(courses.map((c) => [c.idCourse, c.name]));
+    let count = 0;
+    const MAX_RETOS = 10;
+    for (const s of sims) {
+      if (count >= MAX_RETOS) break;
+      try {
+        const data = JSON.parse(s.result);
+        if (data.type === "challenge" && !data.deleted) {
+          retos.push({
+            id: data.idActivity || s.id_simulation,
+            nombre: data.title || "Reto sin título",
+            categoria: courseMap.get(data.courseId) || `Curso ${data.courseId || "?"}`,
+            courseId: data.courseId || "",
+            dificultad: data.difficulty === "HARD" ? 3 : data.difficulty === "MEDIUM" ? 2 : 1,
+            estado: true,
+          });
+          count++;
+        }
+      } catch {}
+    }
+    console.warn(`[Dashboard] Fallback simulations: ${retos.length} retos encontrados`);
+  } catch (err) {
+    console.warn("[Dashboard] Error en fetchRetosFromSimulations:", err);
+  }
   return retos;
 };
 

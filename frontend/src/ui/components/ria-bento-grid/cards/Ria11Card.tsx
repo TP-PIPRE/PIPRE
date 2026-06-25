@@ -7,6 +7,14 @@ interface Props {
   studentId: string;
 }
 
+const timeMap: Record<string, string> = {
+  short: "fast",
+  normal: "normal",
+  medium: "normal",
+  long: "slow",
+  very_long: "very_slow",
+};
+
 const getTimeBadge = (c: string) => {
   const m: Record<string, { label: string; cls: string }> = {
     fast: { label: "Rápido", cls: "bg-green-500/10 text-green-500 border-green-500/20" },
@@ -44,10 +52,8 @@ export const Ria11Card = ({ student, studentId }: Props) => {
       .finally(() => setLoading(false));
   }, [studentId, student]);
 
-  const classification = typeof result?.classification === "string" ? result.classification.toLowerCase() : "";
-  const badge = getTimeBadge(classification);
-  const scores = result?.classification_scores as Record<string, number> | undefined;
-  const scoreColors: Record<string, string> = { fast: "#22c55e", normal: "#3b82f6", slow: "#f59e0b", very_slow: "#ef4444" };
+  const raw = typeof result?.result === "string" ? result.result.toLowerCase() : "";
+  const badge = getTimeBadge(timeMap[raw] ?? raw);
 
   return (
     <div className="h-full border border-border bg-surface rounded-xl p-5 flex flex-col transition-all duration-300 hover:shadow-lg" style={{ backgroundColor: "var(--surface)" }}>
@@ -71,28 +77,13 @@ export const Ria11Card = ({ student, studentId }: Props) => {
         <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>Sin datos</div>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <span className={`text-[9px] font-mono font-bold px-3 py-1 rounded-full border ${badge.cls}`}>{badge.label}</span>
-          {scores && (
-            <div className="w-full space-y-1.5">
-              <div className="w-full h-2 rounded-full overflow-hidden flex" style={{ backgroundColor: "var(--bg)" }}>
-                {Object.entries(scores).map(([key, val]) => {
-                  const total = Object.values(scores).reduce((a, b) => a + b, 0);
-                  const pct = total > 0 ? (val / total) * 100 : 0;
-                  if (pct <= 0) return null;
-                  return <div key={key} style={{ width: `${pct}%`, backgroundColor: scoreColors[key] ?? "#6b7280", minWidth: 2 }} title={`${key}: ${(val * 100).toFixed(0)}%`} />;
-                })}
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {Object.entries(scores).map(([key, val]) => (
-                  <div key={key} className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: scoreColors[key] ?? "#6b7280" }} />
-                    <span className="text-[7px] font-mono capitalize" style={{ color: "var(--text-muted)" }}>{key.replace("_", " ")}</span>
-                    <span className="text-[7px] font-mono font-bold" style={{ color: "var(--text)" }}>{(val * 100).toFixed(0)}%</span>
-                  </div>
-                ))}
-              </div>
+          <span className={`text-lg font-mono font-bold px-4 py-1.5 rounded-full border ${badge.cls}`}>{badge.label}</span>
+          <div className="w-full space-y-1 text-center">
+            <div className="text-[10px] font-mono" style={{ color: "var(--text)" }}>
+              <span style={{ color: "var(--text-muted)" }}>Precisión: </span>
+              <span className="font-bold">{typeof result.accuracy === "number" ? `${(result.accuracy * 100).toFixed(0)}%` : "-"}</span>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
