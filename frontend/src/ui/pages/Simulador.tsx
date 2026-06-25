@@ -10,6 +10,7 @@ import { Stage3D } from "../components/Simulador/Stage3D";
 import { Console } from "../components/Simulador/Console";
 import { MissionsPanel } from "../components/Simulador/MissionsPanel";
 import { MissionCanvas } from "../components/Simulador/MissionCanvas";
+import { ChatbotPanel } from "../components/Simulador/ChatbotPanel";
 import { TabBar } from "../components/Simulador/TabBar";
 import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
 import { SimulatorLayout } from "../components/Simulador/SimulatorLayout";
@@ -35,7 +36,8 @@ import {
   BsCrosshair,
   BsGrid3X3GapFill,
   BsSpeedometer2,
-  BsDiagram3Fill
+  BsDiagram3Fill,
+  BsRobot
 } from "react-icons/bs";
 
 const ENVIRONMENTS: { id: EnvironmentType; Icon: React.ComponentType<{ className?: string }>; color: string }[] = [
@@ -207,7 +209,7 @@ const SimuladorInner = () => {
 
   const handleBackToCourses = () => {
     setFreeMode();
-    navigate("/cursos");
+    navigate("/");
   };
 
   const leftPanelTabs = [
@@ -227,6 +229,11 @@ const SimuladorInner = () => {
       label: "Mapa",
       icon: <BsRocketFill className="text-[10px]" />,
     }] : []),
+    {
+      id: "feedback",
+      label: "Asistente",
+      icon: <BsRobot className="text-[10px]" />,
+    },
   ];
 
   const leftPanelContent = () => {
@@ -246,6 +253,8 @@ const SimuladorInner = () => {
         return <MissionsPanel />;
       case "canvas":
         return <MissionCanvas />;
+      case "feedback":
+        return <ChatbotPanel />;
       default:
         return <MissionsPanel />;
     }

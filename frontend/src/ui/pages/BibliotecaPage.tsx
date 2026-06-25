@@ -1,257 +1,117 @@
-import { useState, useId, useRef, useEffect } from "react";
-import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
-import { ENERGY_COST } from "../../shared/constants/energyCosts";
-import { generateMermaid } from "../../application/adapters/mermaidGenerator";
-import { BsRocketFill, BsCrosshair, BsGrid3X3GapFill, BsSpeedometer2, BsDiagram3Fill, BsLightningFill } from "react-icons/bs";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
-import type { EnvironmentType, BlockCategory } from "../../shared/types/Simulador";
+﻿import { useState, useMemo } from "react";
+import { COMPONENT_THEMES, COMPONENT_WIKI } from "../../shared/constants/componentWiki";
+import { ComponentCard } from "../components/Biblioteca/ComponentCard";
+import { ComponentDetail } from "../components/Biblioteca/ComponentDetail";
+import type { ComponentThemeId, ComponentWikiEntry } from "../../shared/constants/componentWiki";
 
-const ENV_META: Record<EnvironmentType, { color: string; Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
-  battle: { color: "#ef4444", Icon: BsCrosshair },
-  space: { color: "#3b82f6", Icon: BsRocketFill },
-  maze: { color: "#8b5cf6", Icon: BsGrid3X3GapFill },
-  obstacle: { color: "#f97316", Icon: BsSpeedometer2 },
+const THEME_META: Record<ComponentThemeId, { bg: string; border: string; text: string; ring: string }> = {
+  movimiento: { bg: "bg-blue-500/8", border: "border-blue-500/15", text: "text-blue-400", ring: "ring-blue-500/30" },
+  sensores: { bg: "bg-emerald-500/8", border: "border-emerald-500/15", text: "text-emerald-400", ring: "ring-emerald-500/30" },
+  actuadores: { bg: "bg-amber-500/8", border: "border-amber-500/15", text: "text-amber-400", ring: "ring-amber-500/30" },
+  control: { bg: "bg-purple-500/8", border: "border-purple-500/15", text: "text-purple-400", ring: "ring-purple-500/30" },
+  comunicacion: { bg: "bg-cyan-500/8", border: "border-cyan-500/15", text: "text-cyan-400", ring: "ring-cyan-500/30" },
+  estructura: { bg: "bg-rose-500/8", border: "border-rose-500/15", text: "text-rose-400", ring: "ring-rose-500/30" },
 };
-
-const CATEGORY_LABELS: Record<BlockCategory, string> = {
-  event: "Evento",
-  action: "Acci\u00f3n",
-  condition: "Condici\u00f3n",
-  loop: "Bucle",
-};
-
-const CATEGORY_COLORS: Record<BlockCategory, string> = {
-  event: "#00f5d4",
-  action: "#94a3b8",
-  condition: "#9b5de5",
-  loop: "#f97316",
-};
-
-function defaultMermaidExample(blockType: string, _: string, category: BlockCategory): string {
-  if (category === "event") {
-    return generateMermaid([
-      { id: "b0", type: blockType, category, params: {} },
-      { id: "b1", type: "avanzar", category: "action", params: { distancia: "40" } },
-    ]);
-  }
-  if (category === "loop") {
-    return generateMermaid([
-      { id: "b0", type: "al_iniciar_sistema", category: "event", params: {} },
-      {
-        id: "b1",
-        type: blockType,
-        category,
-        params: { iteraciones: "3" },
-        children: [
-          { id: "c0", type: "avanzar", category: "action", params: { distancia: "40" } },
-          { id: "c1", type: "girar", category: "action", params: { angulo: "90" } },
-        ],
-      },
-    ]);
-  }
-  if (category === "condition") {
-    return generateMermaid([
-      { id: "b0", type: "al_iniciar_sistema", category: "event", params: {} },
-      { id: "b1", type: blockType, category, params: { distancia: "10" } },
-      { id: "b2", type: "avanzar", category: "action", params: { distancia: "40" } },
-    ]);
-  }
-  return generateMermaid([
-    { id: "b0", type: "al_iniciar_sistema", category: "event", params: {} },
-    { id: "b1", type: blockType, category, params: {} },
-  ]);
-}
 
 export function BibliotecaPage() {
-  const [selectedEnv, setSelectedEnv] = useState<EnvironmentType>("battle");
-  const [selectedBlock, setSelectedBlock] = useState<{ type: string; label: string; category: BlockCategory } | null>(null);
-  const [showDiagram, setShowDiagram] = useState(false);
-  const uid = useId();
+  const [activeTheme, setActiveTheme] = useState<ComponentThemeId>("movimiento");
+  const [selectedComponent, setSelectedComponent] = useState<ComponentWikiEntry | null>(null);
+  const [search, setSearch] = useState("");
 
-  const config = ENVIRONMENT_CONFIGS[selectedEnv];
-  const meta = ENV_META[selectedEnv];
-  const Icon = meta.Icon;
-  const blocks = config?.blocks || [];
+  const filtered = useMemo(() => {
+    const byTheme = COMPONENT_WIKI.filter((c) => c.theme === activeTheme);
+    if (!search.trim()) return byTheme;
+    const q = search.toLowerCase();
+    return byTheme.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.industrialUses.some((u) => u.toLowerCase().includes(q)) ||
+        c.relatedBlockTypes.some((t) => t.toLowerCase().includes(q)),
+    );
+  }, [activeTheme, search]);
 
-  const envIds = Object.keys(ENVIRONMENT_CONFIGS) as EnvironmentType[];
-  const envColors: Record<EnvironmentType, string> = {
-    battle: "#ef4444",
-    space: "#3b82f6",
-    maze: "#8b5cf6",
-    obstacle: "#f97316",
-  };
+  const activeMeta = THEME_META[activeTheme];
 
   return (
     <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
       <header className="mb-8">
-        <h1 className="text-xl font-mono font-bold tracking-tight mb-2">
-          Biblioteca de Bloques
+        <h1 className="text-xl font-bold tracking-tight mb-2">
+          Biblioteca de Componentes
         </h1>
         <p className="text-sm text-muted-foreground">
-          Explora los componentes disponibles por entorno y visualiza diagramas de ejemplo con Mermaid.
+          Wiki t\u00e9cnica de componentes industriales. Cada entrada describe su uso real y lo relaciona con los bloques del simulador.
         </p>
       </header>
 
-      <div className="flex gap-2 mb-8 flex-wrap">
-        {envIds.map((eid) => {
-          const cfg = ENVIRONMENT_CONFIGS[eid];
-          const active = selectedEnv === eid;
-          return (
-            <button
-              key={eid}
-              onClick={() => setSelectedEnv(eid)}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all"
-              style={{
-                backgroundColor: active ? envColors[eid] : undefined,
-                borderColor: active ? envColors[eid] : undefined,
-                color: active ? "#fff" : undefined,
-              }}
-            >
-              {cfg?.name || eid}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Icon className="text-xl" style={{ color: meta.color }} />
-          <div>
-            <h2 className="text-base font-bold font-mono">{config?.name}</h2>
-            <p className="text-xs text-muted-foreground">{config?.description}</p>
-          </div>
+      {/* Search + Theme tabs */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8 items-start sm:items-center justify-between">
+        <div className="flex gap-2 flex-wrap">
+          {COMPONENT_THEMES.map((theme) => {
+            const active = activeTheme === theme.id;
+            const meta = THEME_META[theme.id];
+            return (
+              <button
+                key={theme.id}
+                onClick={() => setActiveTheme(theme.id)}
+                className={
+                  "flex items-center gap-2 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-xl border transition-all " +
+                  (active
+                    ? meta.bg + " " + meta.border + " " + meta.text + " shadow-sm ring-1 " + meta.ring
+                    : "border-border/20 text-muted-foreground/60 hover:border-border/40 hover:text-foreground")
+                }
+              >
+                <span>{theme.icon}</span>
+                {theme.name}
+              </button>
+            );
+          })}
         </div>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar componente..."
+          className="w-full sm:w-56 h-9 px-3 text-[10px] bg-muted/30 border border-border/20 rounded-lg placeholder:text-muted-foreground/30 focus:outline-none focus:border-primary/30 transition-colors"
+        />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {blocks.map((block) => {
-          const cost = ENERGY_COST[block.type] ?? 0;
-          const catColor = CATEGORY_COLORS[block.category];
-          const catLabel = CATEGORY_LABELS[block.category];
-          return (
-            <Card key={block.type} className="group hover:shadow-lg transition-all cursor-pointer" onClick={() => {
-              setSelectedBlock({ type: block.type, label: block.label, category: block.category });
-              setShowDiagram(true);
-            }}>
-              <CardHeader className="p-4 pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-xs font-mono font-bold uppercase tracking-wider">
-                    {block.label}
-                  </CardTitle>
-                  <div className="flex gap-1 shrink-0">
-                  <span
-                    className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-wider border"
-                    style={{
-                      backgroundColor: `${catColor}22`,
-                      color: catColor,
-                      borderColor: catColor,
-                    }}
-                  >
-                    {catLabel}
-                  </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                {block.description && (
-                  <p className="text-[10px] text-muted-foreground mb-2 line-clamp-2">
-                    {block.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-1.5 items-center text-[9px] text-muted-foreground font-mono">
-                  <span className="flex items-center gap-0.5">
-                    <BsLightningFill className="text-[8px]" />
-                    {cost}
-                  </span>
-                  {block.hardwareRequired && (
-                    <Badge variant="outline" className="text-[8px] px-1 py-0 font-mono">
-                      {block.hardwareRequired}
-                    </Badge>
-                  )}
-                  {block.paramOptions && Object.keys(block.paramOptions).length > 0 && (
-                    <span className="opacity-60">
-                      {Object.keys(block.paramOptions).join(", ")}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-2 flex items-center gap-1 text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                  <BsDiagram3Fill className="text-[9px]" />
-                  Ver diagrama
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {/* Section info */}
+      <div className={"mb-6 px-4 py-3 rounded-xl border " + activeMeta.border + " " + activeMeta.bg}>
+        <p className={"text-[11px] font-medium " + activeMeta.text}>
+          {filtered.length} componente{filtered.length !== 1 ? "s" : ""} en esta categor\u00eda
+        </p>
       </div>
 
-      <Dialog open={showDiagram} onOpenChange={setShowDiagram}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-mono font-bold uppercase tracking-wider">
-              Diagrama de ejemplo: {selectedBlock?.label}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedBlock && (
-            <MermaidPreview
-              key={`${uid}-${selectedBlock.type}`}
-              definition={defaultMermaidExample(selectedBlock.type, selectedBlock.label, selectedBlock.category)}
+      {/* Component grid */}
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((comp) => (
+            <ComponentCard
+              key={comp.id}
+              name={comp.name}
+              description={comp.description}
+              theme={comp.theme}
+              blockCount={comp.relatedBlockTypes.length}
+              onClick={() => setSelectedComponent(comp)}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-20">
+          <p className="text-xs text-muted-foreground/40 font-medium">
+            {search ? "No se encontraron componentes con esa b\u00fasqueda." : "No hay componentes en esta categor\u00eda."}
+          </p>
+        </div>
+      )}
+
+      {selectedComponent && (
+        <ComponentDetail
+          component={selectedComponent}
+          isOpen={!!selectedComponent}
+          onClose={() => setSelectedComponent(null)}
+        />
+      )}
     </main>
   );
 }
-
-function MermaidPreview({ definition }: { definition: string }) {
-  const [mermaidError, setMermaidError] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    setMermaidError(null);
-    const el = containerRef.current;
-    el.textContent = definition;
-    import("mermaid").then((mermaid) => {
-      mermaid.default
-        .run({ nodes: [el] })
-        .catch((err: Error) => setMermaidError(err.message));
-    });
-  }, [definition]);
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(definition);
-  };
-
-  return (
-    <div>
-      <div className="flex justify-end gap-2 mb-2">
-        <button
-          onClick={copyToClipboard}
-          className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
-        >
-          Copiar
-        </button>
-      </div>
-      <div className="border rounded-lg p-4 bg-white/5 overflow-x-auto min-h-[100px] flex items-center justify-center">
-        {mermaidError ? (
-          <div className="text-[10px] text-destructive font-mono">
-            Error al renderizar: {mermaidError}
-            <pre className="mt-2 text-muted-foreground text-[8px] max-w-full overflow-x-auto whitespace-pre-wrap">{definition}</pre>
-          </div>
-        ) : (
-          <div ref={containerRef} className="mermaid w-full" />
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default BibliotecaPage;
