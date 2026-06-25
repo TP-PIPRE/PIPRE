@@ -8,7 +8,6 @@ import { DocenteDashboard } from "../pages/DocenteDashboard";
 import { DocenteMetricasPage } from "../pages/DocenteMetricasPage";
 import { DocenteRetosPage } from "../pages/DocenteRetosPage";
 import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
-import { CursosPage } from "../pages/CursosPage";
 import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
 import { BibliotecaPage } from "../pages/BibliotecaPage";
@@ -55,16 +54,6 @@ export const AppRouter = () => {
           <ProtectedRoute>
             <AppLayout>
               <PaginaInicio />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/cursos"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CursosPage />
             </AppLayout>
           </ProtectedRoute>
         }

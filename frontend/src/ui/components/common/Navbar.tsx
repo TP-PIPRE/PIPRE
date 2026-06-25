@@ -57,7 +57,6 @@ export const Navbar: React.FC = () => {
       ]
     : [
         { name: "Inicio", path: "/" },
-        { name: "Cursos", path: "/cursos" },
         { name: "Simulador", path: "/simulador" },
         { name: "Resultados", path: "/resultados" },
         { name: "Ranking", path: "/ranking" },
