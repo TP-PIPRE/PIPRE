@@ -8,8 +8,8 @@ ARG VITE_LOCAL_BACKEND_URL=http://localhost:8080
 ENV VITE_USE_LOCAL_BACKEND=$VITE_USE_LOCAL_BACKEND
 ENV VITE_LOCAL_BACKEND_URL=$VITE_LOCAL_BACKEND_URL
 
-# Activar pnpm (mejor que instalar global)
-RUN corepack enable
+# Activar pnpm y pin a v9 (v10+ bloquea build scripts de cypress/msw)
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
