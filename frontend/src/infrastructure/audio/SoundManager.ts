@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* BACKEND:
  * Este módulo no requiere conexión con backend.
  * Utiliza Web Audio API para feedback sonoro local.
@@ -33,7 +32,7 @@ export class SoundManager {
   init() {
     if (this.initialized) return;
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
       this.initialized = true;
     } catch {
       console.warn("AudioContext not available, sounds disabled.");

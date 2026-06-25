@@ -8,12 +8,25 @@ import { MazeStageEngine } from "../../../infrastructure/threejs/engines/MazeSta
 import { RaceStageEngine } from "../../../infrastructure/threejs/engines/RaceStageEngine";
 import type { ISimulatorEngine } from "../../../infrastructure/ports/ISimulatorEngine";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
+import {
+  BsCrosshair,
+  BsRocketFill,
+  BsGrid3X3GapFill,
+  BsSpeedometer2
+} from "react-icons/bs";
 
 const ENGINE_CLASSES: Record<string, new () => ISimulatorEngine> = {
   battle: BattleStageEngine,
   space: SpaceStageEngine,
   maze: MazeStageEngine,
   obstacle: RaceStageEngine,
+};
+
+const ENV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  battle: BsCrosshair,
+  space: BsRocketFill,
+  maze: BsGrid3X3GapFill,
+  obstacle: BsSpeedometer2,
 };
 
 export const Stage3D = () => {
@@ -23,6 +36,7 @@ export const Stage3D = () => {
     useSimulador();
 
   const config = ENVIRONMENT_CONFIGS[environment];
+  const EnvIcon = ENV_ICONS[environment] || BsRocketFill;
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -81,70 +95,71 @@ export const Stage3D = () => {
   }, [currentTheme]);
 
   return (
-    <div className="relative w-full h-full bg-bg overflow-hidden border border-border panel-border">
-      {/* Reticle / HUD */}
-      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
+    <div className="relative w-full h-full bg-bg overflow-hidden border border-border panel-border rounded-lg">
+      {/* Kid-friendly HUD */}
+      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-4">
+        {/* Top bar */}
         <div className="flex justify-between items-start">
-          <div className="flex flex-col gap-1 animate-fade-in">
-            <div className="font-mono text-[10px] text-primary uppercase tracking-[0.3em] font-bold">
-              Visión Orto 2.5D // {config?.name || "Activa"}
+          <div className="flex flex-col gap-1 bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[280px]">
+            <div className="flex items-center gap-1.5 font-bold text-[10px] text-primary uppercase tracking-wider">
+              <EnvIcon className="text-[12px] text-accent animate-pulse" />
+              <span>🎮 Mundo: {config?.name || "Aventura"}</span>
             </div>
-            <div className="font-mono text-[9px] text-text-muted uppercase tracking-widest flex gap-4 opacity-70">
-              <span>[DRAG] PAN</span>
-              <span>[SCROLL] ZOOM</span>
-              {config?.icon && (
-                <span className="material-symbols-outlined text-[14px]">
-                  {config.icon}
-                </span>
-              )}
+            <div className="text-[8px] text-text-muted leading-tight font-medium">
+              🖱️ Arrastra para mover la cámara • 🔄 Rueda para acercar o alejar
             </div>
           </div>
+
           <div
-            className={`font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border-2 transition-all duration-500 ${
+            className={`flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm transition-all duration-300 ${
               isRunning
-                ? "border-success text-success shadow-[0_0_15px_var(--theme-success)]"
-                : "border-border text-text-muted"
+                ? "bg-success/15 border-success text-success animate-pulse"
+                : "bg-surface/85 border-border text-text-muted"
             }`}
           >
             <span
-              className={`inline-block w-2 h-2 rounded-full mr-2 ${
-                isRunning
-                  ? "bg-success animate-pulse"
-                  : "bg-text-muted"
+              className={`w-2 h-2 rounded-full ${
+                isRunning ? "bg-success animate-ping" : "bg-text-muted"
               }`}
-            ></span>
-            {isRunning ? "Ejecutando" : "Standby"}
+            />
+            {isRunning ? "🚀 ¡Ejecutando!" : "💤 En espera..."}
           </div>
         </div>
 
-        {/* Bottom Telemetry */}
-        <div
-          className="flex justify-between items-end animate-fade-in"
-          style={{ animationDelay: "0.2s" }}
-        >
-          <div className="font-mono text-[9px] text-text-muted/50 max-w-[200px]">
-            {"SYS_READY >> LATENCY: 24ms"}
-            <br />
-            POSITION_SYNC: 100%
-          </div>
-          <div className="w-32 h-1 bg-primary-low border border-border">
-            <div
-              className="h-full bg-primary"
-              style={{
-                width: isRunning ? "100%" : "30%",
-                transition: "width 2s ease",
-              }}
-            ></div>
+        {/* Center decoration (Smiley Robot) */}
+        <div className="absolute inset-0 flex justify-center items-center opacity-10 pointer-events-none select-none">
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-5xl animate-bounce-soft">🤖</span>
+            <span className="font-mono text-[8px] tracking-widest text-text">PIPRE SIMULATOR</span>
           </div>
         </div>
 
-        {/* Center Reticle */}
-        <div className="absolute inset-0 flex justify-center items-center opacity-10 pointer-events-none">
-          <div className="w-80 h-80 border border-border rounded-full flex items-center justify-center">
-            <div className="w-64 h-64 border border-dashed border-border rounded-full flex items-center justify-center animate-[spin_60s_linear_infinite]">
-              <div className="w-1 h-32 border-l border-primary absolute top-0"></div>
+        {/* Bottom bar */}
+        <div className="flex justify-between items-end">
+          <div className="bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[250px]">
+            <div className="font-bold text-[9px] text-text flex items-center gap-1">
+              {isRunning ? (
+                <>
+                  <span>🔥 ¡Increíble! El robot está en movimiento...</span>
+                </>
+              ) : (
+                <>
+                  <span>💡 Tip: ¡Conecta bloques y dale a 'Ejecutar'!</span>
+                </>
+              )}
             </div>
-            <div className="w-2 h-2 bg-primary rounded-full"></div>
+          </div>
+          
+          <div className="flex flex-col gap-1 items-end bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md">
+            <span className="font-bold text-[8px] text-text-muted uppercase tracking-wider">🔋 Batería de Aventura</span>
+            <div className="w-24 h-2 bg-border rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-1000"
+                style={{
+                  width: isRunning ? "100%" : "50%",
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

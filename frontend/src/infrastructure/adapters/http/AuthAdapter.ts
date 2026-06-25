@@ -29,11 +29,19 @@ export class AuthAdapter implements IAuthRepository {
       const token = getCookie("jwt") || "";
 
       let role = "student";
-      const backendRole = authUser.role || "";
-      if (backendRole === "admin") role = "admin";
-      else if (backendRole === "teacher") role = "docente";
-      else if (backendRole === "student") role = "student";
-      else {
+      try {
+        const payloadBase64 = token.split(".")[1];
+        const payload = JSON.parse(atob(payloadBase64));
+        const backendRole = payload.role || "";
+        
+        if (backendRole === "admin") role = "admin";
+        else if (backendRole === "teacher") role = "docente";
+        else if (backendRole === "student") role = "student";
+        else {
+          if (email.includes("admin")) role = "admin";
+          else if (email.includes("docente")) role = "docente";
+        }
+      } catch {
         if (email.includes("admin")) role = "admin";
         else if (email.includes("docente")) role = "docente";
       }
@@ -46,9 +54,10 @@ export class AuthAdapter implements IAuthRepository {
       };
 
       return { user, token };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       throw new Error(
-        error.response?.data?.message || 
+        err.response?.data?.message || 
         "Credenciales incorrectas o error en el servidor"
       );
     }
@@ -76,10 +85,11 @@ export class AuthAdapter implements IAuthRepository {
       // Auto-login after registration
       const { user } = await this.login(email, password);
       return user;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       throw new Error(
-        error.response?.data?.message || 
-        "Error al registrar usuario: " + error.message
+        err.response?.data?.message || 
+        "Error al registrar usuario: " + err.message
       );
     }
   }

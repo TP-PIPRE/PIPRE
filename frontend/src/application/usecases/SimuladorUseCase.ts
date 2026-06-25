@@ -1,5 +1,6 @@
 import { apiService } from "../../infrastructure/api/apiService";
 import { getAuthState } from "../../infrastructure/store/authStore";
+import { simuladorRepository } from "../../infrastructure/adapters/storage/SimuladorRepository";
 
 import type { Block, MissionTemplate, EnvironmentType, StudentResult } from "../../shared/types/Simulador";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
@@ -33,9 +34,9 @@ export class SimuladorUseCase {
             return null;
           }
         })
-        .filter(Boolean) as any[];
+        .filter((x): x is Record<string, unknown> => x !== null);
 
-      const grouped = new Map<string, any>();
+      const grouped = new Map<string, Record<string, unknown>>();
       for (const c of configs) {
         const key = c.id_activity || c.id_simulation;
         if (!grouped.has(key) || (c.id_simulation > grouped.get(key).id_simulation)) {
@@ -44,9 +45,9 @@ export class SimuladorUseCase {
       }
 
       return Array.from(grouped.values())
-        .filter((c: any) => c.type === "challenge" && c.courseId === courseId && !c.deleted)
-        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-        .map((c: any) => ({
+        .filter((c: Record<string, unknown>) => c.type === "challenge" && c.courseId === courseId && !c.deleted)
+        .sort((a: Record<string, unknown>, b: Record<string, unknown>) => ((a.order as number) || 0) - ((b.order as number) || 0))
+        .map((c: Record<string, unknown>) => ({
           id: c.id_activity || c.id_simulation,
           idCourse: c.courseId,
           title: c.title || "Sin título",
@@ -157,22 +158,6 @@ export class SimuladorUseCase {
       console.warn("Backend no disponible, guardando resultado localmente:", error);
     }
 
-    // Persistir en localStorage para compartir entre páginas
-    const stored = localStorage.getItem("pipre_results");
-    const results: StudentResult[] = stored ? JSON.parse(stored) : [];
-
-    const existingIndex = results.findIndex(
-      (r) => r.studentId === result.studentId && r.courseId === result.courseId && r.challengeId === result.challengeId,
-    );
-
-    if (existingIndex >= 0) {
-      if (result.score > results[existingIndex].score) {
-        results[existingIndex] = { ...result, completedAt: new Date().toISOString() };
-      }
-    } else {
-      results.push({ ...result, completedAt: result.completedAt || new Date().toISOString() });
-    }
-
-    localStorage.setItem("pipre_results", JSON.stringify(results));
+    simuladorRepository.saveResult(result);
   }
 }

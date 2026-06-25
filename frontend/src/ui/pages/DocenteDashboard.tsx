@@ -1,10 +1,23 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
-import { getAuthState } from "../../infrastructure/store/authStore";
-import { Modal } from "../components/common/Modal";
-import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
-import type { RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
+import type {
+  Ria01PredictRequest,
+  Ria03RecommendRequest,
+  Ria04DifficultyRequest,
+  Ria08AnomalyRequest,
+  Ria11TimeRequest,
+  RiaInfoResponse,
+} from "../../infrastructure/api/models/aiModels";
+import { RobotIcon } from "../components/common/RobotIcon";
+import {
+  BsPlusCircleFill,
+  BsMortarboardFill,
+  BsPeopleFill,
+  BsGraphUpArrow,
+  BsPencilSquare,
+  BsTrashFill
+} from "react-icons/bs";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 
 const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): RiaStudentData => {
@@ -147,6 +160,19 @@ const loadDashboardMetrics = async () => {
   }
 };
 
+const renderMetricaIcon = (iconoName: string) => {
+  switch (iconoName) {
+    case "school":
+      return <BsMortarboardFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    case "group":
+      return <BsPeopleFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    case "trending_up":
+      return <BsGraphUpArrow className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    default:
+      return <BsPlusCircleFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+  }
+};
+
 export const DocenteDashboard = () => {
   const [dashboardMetrics, setDashboardMetrics] = useState<{
     metricas: { id: string; titulo: string; valor: string | number; variacion: string; icono: string }[];
@@ -279,7 +305,7 @@ export const DocenteDashboard = () => {
           </p>
         </div>
         <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
-          <span className="material-symbols-outlined text-sm">add_circle</span>
+          <BsPlusCircleFill className="text-sm" />
           Nuevo Reto
         </button>
       </div>
@@ -292,12 +318,7 @@ export const DocenteDashboard = () => {
             className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg hover:scale-102 rounded-lg"
           >
             <div className="flex justify-between items-start mb-4">
-              <span
-                className="material-symbols-outlined text-2xl transition-colors duration-300"
-                style={{ color: "var(--primary)" }}
-              >
-                {m.icono}
-              </span>
+              {renderMetricaIcon(m.icono)}
               <span
                 className="font-mono text-xs transition-colors duration-300"
                 style={{ color: "var(--primary)" }}
@@ -355,16 +376,65 @@ export const DocenteDashboard = () => {
                 className="divide-y"
                 style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
               >
-                {dashboardMetrics.retos.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.4}>
-                          <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
-                        </svg>
-                        <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-                          No hay retos disponibles
-                        </span>
+                {dataToShow.retos.map((r) => (
+                  <tr
+                    key={r.id}
+                    className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
+                  >
+                    <td
+                      className="py-4 font-mono text-xs font-semibold"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {r.nombre}
+                    </td>
+                    <td className="py-4">
+                      <span
+                        className="text-xs font-mono border border-border px-2 py-0.5 rounded-md"
+                        style={{
+                          color: "var(--text-muted)",
+                          borderColor: "var(--border)",
+                        }}
+                      >
+                        {r.categoria}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      <div className="flex gap-1">
+                        {[1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              borderRadius: "2px",
+                              backgroundColor:
+                                i <= r.dificultad
+                                  ? "var(--primary)"
+                                  : "var(--border)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </td>
+                    <td className="py-4 text-center">
+                      <span
+                        className={`text-xs font-mono px-2 py-1 rounded-full ${
+                          r.estado
+                            ? "bg-green-500/10 text-green-500"
+                            : "bg-yellow-500/10 text-yellow-500"
+                        }`}
+                      >
+                        {r.estado ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    <td className="py-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1">
+                          <BsPencilSquare className="text-base" />
+                        </button>
+                        <button className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1">
+                          <BsTrashFill className="text-base" />
+                        </button>
                       </div>
                     </td>
                   </tr>

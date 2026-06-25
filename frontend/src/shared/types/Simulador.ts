@@ -1,4 +1,4 @@
-export type BlockCategory = 'event' | 'action' | 'condition';
+export type BlockCategory = 'event' | 'action' | 'condition' | 'loop';
 
 export type EnvironmentType = 'battle' | 'space' | 'maze' | 'obstacle';
 
@@ -7,6 +7,8 @@ export interface Block {
   type: string;
   category: BlockCategory;
   params: Record<string, string>;
+  children?: Block[];
+  parentId?: string;
 }
 
 export interface ParamOption {
@@ -21,6 +23,17 @@ export interface BlockDefinition {
   hardwareRequired?: string;
   params?: Record<string, string>;
   paramOptions?: Record<string, ParamOption[]>;
+  color?: string;
+  icon?: string;
+  description?: string;
+  loopConfig?: LoopConfig;
+}
+
+export interface LoopConfig {
+  type: 'count' | 'while' | 'forEach';
+  defaultIterations?: number;
+  maxIterations?: number;
+  condition?: string;
 }
 
 export interface PortSlotDefinition {
@@ -70,6 +83,15 @@ export interface EnvironmentConfig {
   hardware: HardwareDefinition[];
   missions: MissionTemplate[];
   defaultHardware: string[];
+  theme?: EnvironmentTheme;
+}
+
+export interface EnvironmentTheme {
+  primary: string;
+  secondary: string;
+  accent: string;
+  background: string;
+  particles: string;
 }
 
 export interface StudentResult {

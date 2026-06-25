@@ -2,6 +2,53 @@ import { useState } from "react";
 import { useSimulador } from "../../../application/context/SimuladorProvider";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
 import type { HardwareDefinition, PortSlotDefinition } from "../../../shared/types/Simulador";
+import {
+  BsLightningFill,
+  BsShieldFill,
+  BsGearFill,
+  BsWifi,
+  BsTools,
+  BsActivity,
+  BsArrowRightShort,
+  BsLightbulbFill,
+  BsKeyFill,
+  BsEyeFill,
+  BsSignpostSplitFill,
+  BsSnow,
+  BsSpeedometer2,
+  BsArrowDownUp,
+  BsWind,
+  BsQuestionSquareFill,
+  BsCrosshair
+} from "react-icons/bs";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  bolt: BsLightningFill,
+  shield: BsShieldFill,
+  settings_motion_mode: BsGearFill,
+  radar: BsWifi,
+  sensors: BsWifi,
+  swords: BsCrosshair,
+  flight: BsWind,
+  precision_manufacturing: BsTools,
+  biotech: BsActivity,
+  hardware: BsTools,
+  directions_run: BsArrowRightShort,
+  highlight: BsLightbulbFill,
+  vpn_key: BsKeyFill,
+  visibility: BsEyeFill,
+  swipe: BsSignpostSplitFill,
+  ac_unit: BsSnow,
+  speed: BsSpeedometer2,
+  swap_vertical_circle: BsArrowDownUp,
+  air: BsWind,
+  parachuting: BsWind,
+};
+
+const renderIcon = (iconName: string, className?: string) => {
+  const IconComponent = ICON_MAP[iconName] || BsQuestionSquareFill;
+  return <IconComponent className={className} />;
+};
 
 const CATEGORY_LABELS: Record<string, string> = {
   movement: "Movimiento",
@@ -85,11 +132,11 @@ export const HardwarePanel = () => {
               } font-mono font-bold text-lg`}
               style={{ borderRadius: "var(--theme-radius)" }}
             >
-              <span className="material-symbols-outlined">{slot.icon}</span>
+              {renderIcon(slot.icon, "text-[20px]")}
             </div>
             <div>
               <span
-                className={`font-bold text-xs ${
+                className={`font-bold text-[9px] ${
                   installedHw ? installedHw.textClass : "text-text-muted"
                 } transition-colors`}
               >
@@ -158,7 +205,7 @@ export const HardwarePanel = () => {
                       assignHardware(slot.id, hwId);
                       setOpenSlot(null);
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-[10px] font-mono transition-colors border ${
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-[9px] font-mono transition-colors border ${
                       taken
                         ? "opacity-40 cursor-not-allowed border-border"
                         : "border-border hover:border-primary/40 hover:bg-surface-brighter cursor-pointer"
@@ -169,9 +216,7 @@ export const HardwarePanel = () => {
                       className={`w-6 h-6 flex items-center justify-center ${hw.bgClass}`}
                       style={{ borderRadius: "var(--theme-radius)" }}
                     >
-                      <span className="material-symbols-outlined text-[12px]">
-                        {hw.icon}
-                      </span>
+                      {renderIcon(hw.icon, "text-[12px]")}
                     </span>
                     <span className="flex-1 text-left text-text">{hw.name}</span>
                     {taken && (
@@ -216,7 +261,7 @@ export const HardwarePanel = () => {
         {/* Grouped by category */}
         {sortedCategories.map((cat) => (
           <div key={cat} className="space-y-2">
-            <h4 className="font-mono text-[9px] uppercase tracking-widest text-text-muted/40 flex items-center gap-2 sticky top-0 bg-surface pb-1">
+            <h4 className="font-mono text-[8px] uppercase tracking-widest text-text-muted/40 flex items-center gap-2 sticky top-0 bg-surface pb-1">
               <span className="w-4 h-[1px] bg-border" />
               {CATEGORY_LABELS[cat] || cat}
             </h4>
