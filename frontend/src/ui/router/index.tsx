@@ -11,6 +11,7 @@ import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
 import { CursosPage } from "../pages/CursosPage";
 import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
+import { BibliotecaPage } from "../pages/BibliotecaPage";
 import { getAuthState } from "../../infrastructure/store/authStore";
 
 // Componente para rutas protegidas
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Layout base que incluye la Navbar
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="min-h-screen pt-14 flex flex-col bg-bg text-text">
+    <div className="min-h-screen pt-12 flex flex-col bg-bg text-text">
       <Navbar />
       <main className="flex-1 flex flex-col">{children}</main>
     </div>
@@ -94,6 +95,16 @@ export const AppRouter = () => {
           <ProtectedRoute>
             <AppLayout>
               <RankingPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/biblioteca"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <BibliotecaPage />
             </AppLayout>
           </ProtectedRoute>
         }

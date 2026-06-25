@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
+import { getAuthState } from "../../infrastructure/store/authStore";
 import type { StudentResult } from "../../shared/types/Simulador";
-
-const MOCK_RESULTS: ResultRow[] = [
-  { id: "1", activity: "Cinemática de Brazo 3DOF", score: 92, date: "2026-04-20", status: "Excelente", type: "Simulación" },
-  { id: "2", activity: "Control de Servomotores", score: 85, date: "2026-04-18", status: "Aprobado", type: "Teórico" },
-  { id: "3", activity: "Sensores Ultrasónicos", score: 78, date: "2026-04-15", status: "Aprobado", type: "Simulación" },
-  { id: "4", activity: "Lógica Difusa Aplicada", score: 98, date: "2026-04-10", status: "Excelente", type: "Proyecto" },
-];
 
 interface ResultRow {
   id: string;
@@ -35,84 +29,66 @@ const statusColor = (status: string): string => {
   }
 };
 
-const getLocalResults = (): ResultRow[] => {
-  try {
-    const stored = localStorage.getItem("pipre_results");
-    if (!stored) return [];
-    const results: StudentResult[] = JSON.parse(stored);
-    if (results.length === 0) return [];
-    return results.map((r) => ({
-      id: r.challengeId,
-      activity: r.challengeTitle,
-      score: r.score,
-      date: r.completedAt,
-      status: deriveStatus(r.score),
-      type: "Simulación",
-    }));
-  } catch {
-    return [];
-  }
-};
-
-const fetchApiResults = async (): Promise<ResultRow[]> => {
-  const userId = "current-user";
-  try {
-    const [apiResults, sims] = await Promise.all([
-      apiService.results.getByUser(userId).catch(() => []),
-      apiService.simulations.getByUser(userId).catch(() => []),
-    ]);
-    const rows: ResultRow[] = [];
-    if (apiResults.length > 0) {
-      rows.push(
-        ...apiResults.map((r) => ({
-          id: r.idActivity,
-          activity: `Actividad ${r.idActivity}`,
-          score: r.score,
-          date: new Date().toISOString().split("T")[0],
-          status: deriveStatus(r.score),
-          type: "Actividad",
-        })),
-      );
-    }
-    if (sims.length > 0) {
-      rows.push(
-        ...sims.map((s) => {
-          const parsedScore = parseInt(s.result, 10) || 0;
-          return {
-            id: s.id_simulation,
-            activity: `Simulación ${s.id_simulation}`,
-            score: parsedScore,
-            date: new Date().toISOString().split("T")[0],
-            status: deriveStatus(parsedScore),
-            type: "Simulación",
-          };
-        }),
-      );
-    }
-    return rows;
-  } catch {
-    return [];
-  }
-};
-
 export const ResultadosPage: React.FC = () => {
   const [results, setResults] = useState<ResultRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
-      let data = getLocalResults();
-      if (data.length > 0) {
-        setResults(data);
+      const { user } = getAuthState();
+      const userId = user?.id || user?.email || "";
+
+      if (!userId) {
+        setError("Inicia sesi\u00f3n para ver tus resultados.");
         setLoading(false);
         return;
       }
-      data = await fetchApiResults();
-      if (data.length > 0) {
-        setResults(data);
-      } else {
-        setResults(MOCK_RESULTS);
+
+      try {
+        const [apiResults, sims] = await Promise.all([
+          apiService.results.getByUser(userId),
+          apiService.simulations.getByUser(userId),
+        ]);
+
+        const rows: ResultRow[] = [];
+
+        if (apiResults && apiResults.length > 0) {
+          rows.push(...apiResults.map((r) => ({
+            id: r.idActivity,
+            activity: `Actividad ${r.idActivity}`,
+            score: r.score ?? 0,
+            date: new Date().toISOString().split("T")[0],
+            status: deriveStatus(r.score ?? 0),
+            type: "Actividad",
+          })));
+        }
+
+        if (sims && sims.length > 0) {
+          rows.push(...sims.map((s) => ({
+            id: s.id_simulation,
+            activity: `Simulaci\u00f3n ${s.id_simulation}`,
+            score: parseInt(s.result, 10) || 0,
+            date: new Date().toISOString().split("T")[0],
+            status: deriveStatus(parseInt(s.result, 10) || 0),
+            type: "Simulaci\u00f3n",
+          })));
+        }
+
+        if (rows.length > 0) {
+          setResults(rows);
+        } else {
+          setError("No hay resultados disponibles desde el servidor.");
+        }
+      } catch {
+        const stored = getLocalResults();
+        if (stored.length > 0) {
+          setResults(stored);
+        } else {
+          setError("No se pudieron cargar los resultados. Verifica tu conexi\u00f3n.");
+        }
       }
+
       setLoading(false);
     };
     load();
@@ -126,108 +102,97 @@ export const ResultadosPage: React.FC = () => {
     : 0;
 
   return (
-    <main
-      className="flex-1 p-6 max-w-7xl mx-auto w-full"
-      style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
-    >
+    <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
       <header className="mb-10">
-        <h1 className="text-xl font-mono font-bold tracking-tight mb-2" style={{ color: "var(--text)" }}>
+        <h1 className="text-xl font-mono font-bold tracking-tight mb-2">
           Mis Resultados
         </h1>
-        <p className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
-          Seguimiento de desempeño en actividades y simulaciones robóticas.
+        <p className="text-sm font-medium text-muted-foreground">
+          Seguimiento de desempe\u00f1o en actividades y simulaciones rob\u00f3ticas.
         </p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-        <div
-          className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
-          style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
-        >
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
+        <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Promedio General
           </span>
-          <span className="text-3xl font-mono font-bold" style={{ color: "var(--primary)" }}>
+          <span className="text-3xl font-mono font-bold text-primary">
             {loading ? "--" : avgScore}
           </span>
-          <span className="text-[10px] mt-2 font-mono" style={{ color: "rgba(var(--primary-rgb), 0.6)" }}>
+          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
             {results.length} actividad(es) registrada(s)
           </span>
         </div>
 
-        <div
-          className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
-          style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
-        >
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
+        <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Actividades Completadas
           </span>
-          <span className="text-3xl font-mono font-bold" style={{ color: "var(--text)" }}>
+          <span className="text-3xl font-mono font-bold">
             {loading ? "--" : results.length}
           </span>
-          <span className="text-[10px] mt-2 font-mono">
+          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
             {loading ? "" : `Mejor puntaje: ${maxScore}`}
           </span>
         </div>
 
-        <div
-          className="border border-border p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl"
-          style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
-        >
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2">
+        <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Mejor Resultado
           </span>
-          <span className="text-3xl font-mono font-bold" style={{ color: "var(--text)" }}>
+          <span className="text-3xl font-mono font-bold">
             {loading ? "--" : maxScore}
           </span>
-          <span className="text-[10px] mt-2 font-mono">
+          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
             {loading ? "" : deriveStatus(maxScore)}
           </span>
         </div>
       </div>
 
-      <div
-        className="border border-border rounded-lg overflow-hidden"
-        style={{ backgroundColor: "var(--surface)" }}
-      >
-        <div className="p-6 border-b border-border flex justify-between items-center bg-surface">
-          <h2 className="text-xs font-mono font-bold uppercase tracking-widest text-text">
+      <div className="border rounded-lg overflow-hidden bg-card">
+        <div className="p-6 border-b flex justify-between items-center">
+          <h2 className="text-xs font-mono font-bold uppercase tracking-widest">
             Historial de Actividades
           </h2>
         </div>
 
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-6 text-center text-sm font-mono" style={{ color: "var(--text-muted)" }}>
+            <div className="p-6 text-center text-sm font-mono text-muted-foreground">
               Cargando resultados...
             </div>
+          ) : error ? (
+            <div className="p-6 text-center text-sm font-mono text-muted-foreground">
+              {error}
+            </div>
           ) : results.length === 0 ? (
-            <div className="p-6 text-center text-sm font-mono" style={{ color: "var(--text-muted)" }}>
+            <div className="p-6 text-center text-sm font-mono text-muted-foreground">
               No hay resultados disponibles.
             </div>
           ) : (
             <table className="w-full text-left font-mono">
               <thead>
-                <tr className="text-[10px] uppercase tracking-widest border-b border-border">
-                  <th className="px-6 py-4 font-normal text-text-muted">Actividad</th>
-                  <th className="px-6 py-4 font-normal text-text-muted">Tipo</th>
-                  <th className="px-6 py-4 font-normal text-text-muted">Fecha</th>
-                  <th className="px-6 py-4 font-normal text-text-muted">Calificación</th>
-                  <th className="px-6 py-4 font-normal text-right text-text-muted">Estatus</th>
+                <tr className="text-[10px] uppercase tracking-widest border-b text-muted-foreground">
+                  <th className="px-6 py-4 font-normal">Actividad</th>
+                  <th className="px-6 py-4 font-normal">Tipo</th>
+                  <th className="px-6 py-4 font-normal">Fecha</th>
+                  <th className="px-6 py-4 font-normal">Calificaci\u00f3n</th>
+                  <th className="px-6 py-4 font-normal text-right">Estatus</th>
                 </tr>
               </thead>
               <tbody className="text-xs">
                 {results.map((res, index) => (
                   <tr
                     key={res.id}
-                    className={`border-b border-border transition-colors duration-200 hover:bg-surface-brighter ${index % 2 === 0 ? "bg-surface" : "bg-surface/50"}`}
+                    className={`border-b transition-colors duration-200 hover:bg-muted/50 ${index % 2 === 0 ? "bg-card" : "bg-muted/20"}`}
                   >
-                    <td className="px-6 py-4 font-semibold text-text">{res.activity}</td>
-                    <td className="px-6 py-4 text-text-muted">{res.type}</td>
-                    <td className="px-6 py-4 text-text-muted">{res.date}</td>
+                    <td className="px-6 py-4 font-semibold">{res.activity}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{res.type}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{res.date}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-surface-brighter rounded-full overflow-hidden" style={{ width: "120px" }}>
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden" style={{ width: "120px" }}>
                           <div
                             className="h-full transition-all duration-500 rounded-full"
                             style={{ width: `${res.score}%`, backgroundColor: "var(--primary)" }}
@@ -237,9 +202,7 @@ export const ResultadosPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span
-                        className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider rounded-full ${statusColor(res.status)}`}
-                      >
+                      <span className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider rounded-full ${statusColor(res.status)}`}>
                         {res.status}
                       </span>
                     </td>
@@ -250,8 +213,27 @@ export const ResultadosPage: React.FC = () => {
           )}
         </div>
       </div>
+
     </main>
   );
 };
+
+function getLocalResults(): ResultRow[] {
+  try {
+    const stored = localStorage.getItem("pipre_results");
+    if (!stored) return [];
+    const results: StudentResult[] = JSON.parse(stored);
+    return results.map((r) => ({
+      id: r.challengeId,
+      activity: r.challengeTitle,
+      score: r.score,
+      date: r.completedAt,
+      status: deriveStatus(r.score),
+      type: "Simulación",
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export default ResultadosPage;

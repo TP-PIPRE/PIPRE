@@ -38,11 +38,11 @@ import {
   BsDiagram3Fill
 } from "react-icons/bs";
 
-const ENVIRONMENTS: { id: EnvironmentType; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "battle", Icon: BsCrosshair },
-  { id: "space", Icon: BsRocketFill },
-  { id: "maze", Icon: BsGrid3X3GapFill },
-  { id: "obstacle", Icon: BsSpeedometer2 },
+const ENVIRONMENTS: { id: EnvironmentType; Icon: React.ComponentType<{ className?: string }>; color: string }[] = [
+  { id: "battle", Icon: BsCrosshair, color: "#ef4444" },
+  { id: "space", Icon: BsRocketFill, color: "#3b82f6" },
+  { id: "maze", Icon: BsGrid3X3GapFill, color: "#8b5cf6" },
+  { id: "obstacle", Icon: BsSpeedometer2, color: "#f97316" },
 ];
 
 const EnvironmentSelector = () => {
@@ -52,11 +52,11 @@ const EnvironmentSelector = () => {
 
   return (
     <div
-      className="flex gap-2 px-4 py-3 border-b border-border"
+      className="flex gap-2 px-4 py-3 border-b border-border items-center"
       style={{ backgroundColor: "var(--surface)" }}
     >
       <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest mr-2 self-center">
-        Entorno:
+        Mapa:
       </span>
       {ENVIRONMENTS.map((env) => {
         const config = ENVIRONMENT_CONFIGS[env.id];
@@ -68,12 +68,23 @@ const EnvironmentSelector = () => {
             onClick={() => setEnvironment(env.id)}
             className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider transition-all border rounded-lg ${
               isActive
-                ? "bg-primary/20 text-primary border-primary/40 shadow-[0_0_10px_var(--primary-glow)]"
+                ? "text-white shadow-[0_0_12px_rgba(0,0,0,0.3)] scale-[1.02]"
                 : "bg-surface-brighter text-text-muted border-border hover:border-primary/30 hover:text-text"
             }`}
+            style={{
+              backgroundColor: isActive ? env.color : undefined,
+              borderColor: isActive ? env.color : undefined,
+            }}
           >
             <Icon className="text-[14px]" />
-            {config?.name || env.id}
+            <div className="flex flex-col items-start leading-tight">
+              <span>{config?.name || env.id}</span>
+              {config?.hardware && (
+                <span className="text-[7px] opacity-70 font-normal tracking-normal">
+                  {Object.keys(config.hardware).length} hardware
+                </span>
+              )}
+            </div>
           </button>
         );
       })}
