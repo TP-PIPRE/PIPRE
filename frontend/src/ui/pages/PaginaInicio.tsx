@@ -1,47 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FaRobot,
-  FaCode,
-  FaGamepad,
-  FaMicrochip,
-  FaCheckCircle,
-} from "react-icons/fa";
+  BsCodeSlash,
+  BsCpu,
+  BsCheckCircleFill,
+} from "react-icons/bs";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { Course } from "../../shared/types/Course";
 import { Modal } from "../components/common/Modal";
+import { RobotIcon } from "../components/common/RobotIcon";
+
+const RobotIconCat = ({ className }: { className?: string }) => (
+  <RobotIcon size={20} className={className} />
+);
 
 const CATEGORIES = [
   { key: "all", label: "Todos", icon: null },
-  { key: "curso", label: "Cursos", icon: FaRobot },
-  { key: "simulador", label: "Simuladores", icon: FaGamepad },
-];
-
-const DEMO_RETOS: Course[] = [
-  {
-    id: "demo-1",
-    nombre: "Introducción a la Robótica",
-    descripcion:
-      "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
-    imagen: "",
-    tipo: "curso",
-  },
-  {
-    id: "demo-2",
-    nombre: "Navegación Autónoma",
-    descripcion:
-      "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
-    imagen: "",
-    tipo: "simulador",
-  },
-  {
-    id: "demo-3",
-    nombre: "Brazo Robótico v2",
-    descripcion:
-      "Controla una garra mecánica para clasificar objetos por color.",
-    imagen: "",
-    tipo: "simulador",
-  },
+  { key: "curso", label: "Cursos", icon: RobotIconCat },
 ];
 
 export const PaginaInicio = () => {
@@ -56,11 +31,12 @@ export const PaginaInicio = () => {
       try {
         const data = await apiService.courses.getAll();
         const mapped: Course[] = data.map((c) => ({
-          id: c.id_course,
+          id: c.idCourse,
           nombre: c.name,
           descripcion: "Explora los fundamentos de este módulo industrial.",
           imagen: "",
           tipo: "curso",
+          challenges: [],
         }));
         setCursos(mapped);
       } catch {
@@ -72,11 +48,10 @@ export const PaginaInicio = () => {
     fetchCourses();
   }, []);
 
-  const allItems = [...DEMO_RETOS, ...cursos];
   const filteredItems =
     activeCategory === "all"
-      ? allItems
-      : allItems.filter((item) => item.tipo === activeCategory);
+      ? cursos
+      : cursos.filter((item) => item.tipo === activeCategory);
 
   return (
     <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-8 pt-[6rem] pb-24 animate-fade-in-soft">
@@ -138,7 +113,7 @@ export const PaginaInicio = () => {
                 <div className="p-6 bg-surface/30 rounded-2xl border border-border/10 space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted/60 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FaMicrochip className="text-primary text-sm" />
+                      <BsCpu className="text-primary text-sm" />
                     </div>
                     Configuración de Hardware
                   </h3>
@@ -152,7 +127,7 @@ export const PaginaInicio = () => {
                         key={i}
                         className="flex items-center gap-3 text-sm font-semibold text-text/80"
                       >
-                        <FaCheckCircle className="text-success text-[12px] shrink-0" />{" "}
+                        <BsCheckCircleFill className="text-success text-[12px] shrink-0" />{" "}
                         {item}
                       </li>
                     ))}
@@ -163,7 +138,7 @@ export const PaginaInicio = () => {
                 <div className="p-6 bg-surface/30 rounded-2xl border border-border/10 space-y-6">
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-text-muted/60 flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <FaCode className="text-primary text-sm" />
+                      <BsCodeSlash className="text-primary text-sm" />
                     </div>
                     Arquitectura de Software
                   </h3>
@@ -177,7 +152,7 @@ export const PaginaInicio = () => {
                         key={i}
                         className="flex items-center gap-3 text-sm font-semibold text-text/80"
                       >
-                        <FaCheckCircle className="text-success text-[12px] shrink-0" />{" "}
+                        <BsCheckCircleFill className="text-success text-[12px] shrink-0" />{" "}
                         {item}
                       </li>
                     ))}
@@ -194,10 +169,14 @@ export const PaginaInicio = () => {
                   CANCELAR MISIÓN
                 </button>
                 <button
-                  onClick={() => navigate("/simulador")}
+                  onClick={() =>
+                    selectedReto.tipo === "curso"
+                      ? navigate("/cursos")
+                      : navigate("/simulador")
+                  }
                   className="flex-[2] btn-premium py-5 text-[11px] font-black tracking-[0.3em] shadow-2xl shadow-primary/20"
                 >
-                  INICIAR SECUENCIA →
+                  {selectedReto.tipo === "curso" ? "VER CURSOS →" : "INICIAR SECUENCIA →"}
                 </button>
               </div>
             </div>
@@ -245,7 +224,7 @@ export const PaginaInicio = () => {
           {filteredItems.map((item) => (
             <article
               key={item.id}
-              onClick={() => setSelectedReto(item)}
+              onClick={() => item.tipo === "curso" ? navigate("/cursos") : setSelectedReto(item)}
               className="group bg-surface/30 border border-border/10 flex flex-col cursor-pointer transition-all duration-700 hover:border-primary/20 hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden"
               style={{ borderRadius: "var(--theme-radius)" }}
             >
@@ -259,7 +238,7 @@ export const PaginaInicio = () => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-primary/10 group-hover:text-primary/30 transition-colors duration-500">
-                    <FaRobot className="text-5xl group-hover:scale-110 transition-transform" />
+                    <RobotIcon size={48} className="group-hover:scale-110 transition-transform opacity-20 group-hover:opacity-40" />
                   </div>
                 )}
                 {/* Type badge */}

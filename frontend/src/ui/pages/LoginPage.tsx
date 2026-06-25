@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../application/hooks/useAuth";
 import { apiService } from "../../infrastructure/api/apiService";
+import { RobotIcon } from "../components/common/RobotIcon";
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -23,23 +24,34 @@ export const LoginPage: React.FC = () => {
       if (isLogin) {
         await login(email, password);
       } else {
-        const first_name = formData.get("first_name") as string;
-        const last_name = formData.get("last_name") as string;
+        const firstName = formData.get("firstName") as string;
+        const lastName = formData.get("lastName") as string;
         const age = parseInt(formData.get("age") as string);
         const grade = formData.get("grade") as string;
         const institution = formData.get("institution") as string;
         const zone = formData.get("zone") as string;
 
-        await apiService.users.create({
-          first_name,
-          last_name,
+        const uuid = await apiService.users.create({
+          firstName,
+          lastName,
           age,
           grade,
           email,
           passwordHash: password,
           institution,
           zone,
+          roleIdList: [],
         });
+
+        // Store UUID for login lookup
+        const storedUsers = JSON.parse(
+          localStorage.getItem("pipre_registered_users") || "{}",
+        );
+        storedUsers[email] = uuid;
+        localStorage.setItem(
+          "pipre_registered_users",
+          JSON.stringify(storedUsers),
+        );
 
         setSuccessMessage("Nodo de usuario creado. Identifícate para entrar.");
         setIsLogin(true);
@@ -68,20 +80,14 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-md z-10">
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-6">
-          <div
-            className="w-20 h-20 flex items-center justify-center font-bold text-bg text-3xl mb-4 shadow-2xl hover:rotate-12 transition-transform duration-500"
-            style={{
-              backgroundColor: "var(--primary)",
-              borderRadius: "var(--theme-radius)",
-            }}
-          >
-            P
+          <div className="w-20 h-20 text-bg flex items-center justify-center mb-4 hover:rotate-12 transition-transform duration-500">
+            <RobotIcon size={48} />
           </div>
           <h1 className="text-3xl font-bold tracking-widest text-text mb-2">
             PIPRE
           </h1>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-text-muted font-bold">
-            Plataforma Industrial de Retos
+          <p className="text-[10px] uppercase tracking-[0.4em] text-text-muted font-bold text-center">
+            Plataforma Inteligente Para<br></br> Robotica Escolar
           </p>
         </div>
 
@@ -109,7 +115,7 @@ export const LoginPage: React.FC = () => {
                     Nombre
                   </label>
                   <input
-                    name="first_name"
+                    name="firstName"
                     required
                     className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
                     style={{ borderRadius: "var(--theme-radius)" }}
@@ -120,7 +126,7 @@ export const LoginPage: React.FC = () => {
                     Apellido
                   </label>
                   <input
-                    name="last_name"
+                    name="lastName"
                     required
                     className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
                     style={{ borderRadius: "var(--theme-radius)" }}

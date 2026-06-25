@@ -6,8 +6,8 @@ WORKDIR /app
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# Activar pnpm (mejor que instalar global)
-RUN corepack enable
+# Activar pnpm y pin a v9 (v10+ bloquea build scripts de cypress/msw)
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 COPY package.json pnpm-lock.yaml ./
 

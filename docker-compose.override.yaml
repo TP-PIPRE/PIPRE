@@ -19,3 +19,6 @@ services:
     build:
       args:
         - REACT_APP_API_URL=https://dev-back.yoshua-cloud.dedyn.io
+networks:
+  pipre-infra-net:
+    internal: false

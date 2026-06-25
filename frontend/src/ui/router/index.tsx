@@ -69,7 +69,7 @@ export const AppRouter = () => {
         }
       />
       <Route
-        path="/simulador"
+        path="/simulador/:courseId?"
         element={
           <ProtectedRoute>
             <AppLayout>

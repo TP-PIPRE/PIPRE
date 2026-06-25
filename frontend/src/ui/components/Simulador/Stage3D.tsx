@@ -1,44 +1,93 @@
-import { useEffect, useRef } from 'react';
-import { useSimulador } from '../../../application/context/SimuladorProvider';
-import { BotStageEngine } from '../../../infrastructure/threejs/BotStageEngine';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useRef } from "react";
+import { useSimulador } from "../../../application/context/SimuladorProvider";
+import { BotStageEngine } from "../../../infrastructure/threejs/BotStageEngine";
+import { BattleStageEngine } from "../../../infrastructure/threejs/engines/BattleStageEngine";
+import { SpaceStageEngine } from "../../../infrastructure/threejs/engines/SpaceStageEngine";
+import { MazeStageEngine } from "../../../infrastructure/threejs/engines/MazeStageEngine";
+import { RaceStageEngine } from "../../../infrastructure/threejs/engines/RaceStageEngine";
+import type { ISimulatorEngine } from "../../../infrastructure/ports/ISimulatorEngine";
+import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
+import {
+  BsCrosshair,
+  BsRocketFill,
+  BsGrid3X3GapFill,
+  BsSpeedometer2
+} from "react-icons/bs";
+
+const ENGINE_CLASSES: Record<string, new () => ISimulatorEngine> = {
+  battle: BattleStageEngine,
+  space: SpaceStageEngine,
+  maze: MazeStageEngine,
+  obstacle: RaceStageEngine,
+};
+
+const ENV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  battle: BsCrosshair,
+  space: BsRocketFill,
+  maze: BsGrid3X3GapFill,
+  obstacle: BsSpeedometer2,
+};
 
 export const Stage3D = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { engineRef, isRunning, installedHardware, currentTheme } = useSimulador();
+  const engineInstanceRef = useRef<ISimulatorEngine | null>(null);
+  const { engineRef, isRunning, installedHardware, currentTheme, environment, energy } =
+    useSimulador();
+
+  const config = ENVIRONMENT_CONFIGS[environment];
+  const EnvIcon = ENV_ICONS[environment] || BsRocketFill;
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    
-    const engine = new BotStageEngine();
+
+    if (engineInstanceRef.current) {
+      engineInstanceRef.current.dispose();
+      engineInstanceRef.current = null;
+    }
+
+    const EngineClass = ENGINE_CLASSES[environment];
+    let engine: ISimulatorEngine;
+
+    if (EngineClass) {
+      engine = new EngineClass();
+    } else {
+      engine = new BotStageEngine();
+    }
+
     engine.init(canvasRef.current);
     engine.updateHardware(installedHardware);
     if (currentTheme?.colors) {
       engine.updateTheme(currentTheme.colors);
     }
+
     engineRef.current = engine;
+    engineInstanceRef.current = engine;
 
     const handleResize = () => {
       if (canvasRef.current) {
-        engine.resize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
+        engine.resize(
+          canvasRef.current.clientWidth,
+          canvasRef.current.clientHeight,
+        );
       }
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       engine.dispose();
       engineRef.current = null;
+      engineInstanceRef.current = null;
     };
-  }, []); // Run only once on mount
+  }, [environment]);
 
-  // Sync hardware
   useEffect(() => {
     if (engineRef.current) {
       engineRef.current.updateHardware(installedHardware);
     }
   }, [installedHardware]);
 
-  // Sync theme
   useEffect(() => {
     if (engineRef.current && currentTheme?.colors) {
       engineRef.current.updateTheme(currentTheme.colors);
@@ -46,51 +95,76 @@ export const Stage3D = () => {
   }, [currentTheme]);
 
   return (
-    <div className="relative w-full h-full bg-bg overflow-hidden border border-border panel-border">
-      {/* Reticle / HUD */}
-      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6">
+    <div className="relative w-full h-full bg-bg overflow-hidden border border-border panel-border rounded-lg">
+      {/* Kid-friendly HUD */}
+      <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-4">
+        {/* Top bar */}
         <div className="flex justify-between items-start">
-          <div className="flex flex-col gap-1 animate-fade-in">
-            <div className="font-mono text-[10px] text-primary uppercase tracking-[0.3em] font-bold">
-              Visión Orto 2.5D // Activa
+          <div className="flex flex-col gap-1 bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[280px]">
+            <div className="flex items-center gap-1.5 font-bold text-[10px] text-primary uppercase tracking-wider">
+              <EnvIcon className="text-[12px] text-accent animate-pulse" />
+              <span>🎮 Mundo: {config?.name || "Aventura"}</span>
             </div>
-            <div className="font-mono text-[9px] text-text-muted uppercase tracking-widest flex gap-4 opacity-70">
-              <span>[DRAG] PAN</span>
-              <span>[SCROLL] ZOOM</span>
+            <div className="text-[8px] text-text-muted leading-tight font-medium">
+              🖱️ Arrastra para mover la cámara • 🔄 Rueda para acercar o alejar
             </div>
           </div>
-          <div className={`font-mono text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 border-2 transition-all duration-500 ${isRunning ? 'border-success text-success shadow-[0_0_15px_var(--theme-success)]' : 'border-border text-text-muted'}`}>
-            <span className={`inline-block w-2 h-2 rounded-full mr-2 ${isRunning ? 'bg-success animate-pulse' : 'bg-text-muted'}`}></span>
-            {isRunning ? 'Ejecutando' : 'Standby'}
+
+          <div
+            className={`flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm transition-all duration-300 ${
+              isRunning
+                ? "bg-success/15 border-success text-success animate-pulse"
+                : "bg-surface/85 border-border text-text-muted"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isRunning ? "bg-success animate-ping" : "bg-text-muted"
+              }`}
+            />
+            {isRunning ? "🚀 ¡Ejecutando!" : "💤 En espera..."}
           </div>
         </div>
 
-        {/* Bottom Telemetry */}
-        <div className="flex justify-between items-end animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <div className="font-mono text-[9px] text-text-muted/50 max-w-[200px]">
-             {'SYS_READY >> LATENCY: 24ms'}<br/>
-             POSITION_SYNC: 100%
-          </div>
-          <div className="w-32 h-1 bg-primary-low border border-border">
-            <div className="h-full bg-primary" style={{ width: isRunning ? '100%' : '30%', transition: 'width 2s ease' }}></div>
-          </div>
-        </div>
-
-        {/* Center Reticle */}
-        <div className="absolute inset-0 flex justify-center items-center opacity-10 pointer-events-none">
-          <div className="w-80 h-80 border border-border rounded-full flex items-center justify-center">
-            <div className="w-64 h-64 border border-dashed border-border rounded-full flex items-center justify-center animate-[spin_60s_linear_infinite]">
-              <div className="w-1 h-32 border-l border-primary absolute top-0"></div>
+        {/* Bottom bar */}
+        <div className="flex justify-between items-end">
+          <div className="bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[250px]">
+            <div className="font-bold text-[9px] text-text flex items-center gap-1">
+              {isRunning ? (
+                <>
+                  <span>🔥 ¡Increíble! El robot está en movimiento...</span>
+                </>
+              ) : (
+                <>
+                  <span>💡 Tip: ¡Conecta bloques y dale a 'Ejecutar'!</span>
+                </>
+              )}
             </div>
-            <div className="w-2 h-2 bg-primary rounded-full"></div>
           </div>
+          
+          {typeof energy === "number" && (
+          <div className="flex flex-col gap-1 items-end bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md min-w-[180px]">
+            <div className="flex items-center justify-between w-full gap-2">
+              <span className="font-bold text-[8px] text-text-muted uppercase tracking-wider">🔋 Energía</span>
+              <span className="font-mono text-[9px] font-bold" style={{ color: energy > 30 ? "var(--success)" : energy > 10 ? "var(--accent)" : "var(--danger)" }}>
+                {Math.round(energy)}%
+              </span>
+            </div>
+            <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${energy}%`,
+                  backgroundColor: energy > 30 ? "var(--success)" : energy > 10 ? "var(--accent)" : "var(--danger)",
+                }}
+              />
+            </div>
+          </div>
+          )}
         </div>
       </div>
 
-      <canvas 
-        ref={canvasRef} 
-        className="w-full h-full block"
-      />
+      <canvas ref={canvasRef} className="w-full h-full block" />
     </div>
   );
 };

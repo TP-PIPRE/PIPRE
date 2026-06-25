@@ -1,12 +1,14 @@
 // frontend/src/application/store/authStore.ts
 import type { User } from "../../shared/types/User";
 
-// Función para obtener una cookie por nombre
+// Función para obtener una cookie por nombre (soporta valores con =)
 const getCookie = (name: string): string | null => {
   const cookies = document.cookie.split(";");
   for (const cookie of cookies) {
-    const [cookieName, cookieValue] = cookie.trim().split("=");
-    if (cookieName === name) return decodeURIComponent(cookieValue);
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith(name + "=")) {
+      return decodeURIComponent(trimmed.substring(name.length + 1));
+    }
   }
   return null;
 };
@@ -32,20 +34,21 @@ export const getAuthState = (): {
   token: string | null;
   isAuthenticated: boolean;
 } => {
-  const token = getCookie("pipre_token");
+  const token = getCookie("jwt");
   const userCookie = getCookie("pipre_user");
   const user = userCookie ? JSON.parse(userCookie) : null;
   return {
     user,
     token,
-    isAuthenticated: !!token,
+    isAuthenticated: !!user,
   };
 };
 
 // Guardar usuario y token en cookies
 export const setAuthState = (user: User, token: string) => {
   setCookie("pipre_user", JSON.stringify(user));
-  setCookie("pipre_token", token);
+  // El backend ya establece la cookie jwt, pero guardamos por si acaso
+  if (token) setCookie("jwt", token);
   console.log("Usuario y token guardados en cookies.");
 };
 
@@ -53,6 +56,7 @@ export const setAuthState = (user: User, token: string) => {
 export const clearAuthState = () => {
   console.log("Borrando cookies de autenticación...");
   removeCookie("pipre_user");
+  removeCookie("jwt");
   removeCookie("pipre_token");
   console.log("Cookies de autenticación eliminadas.");
 };
