@@ -1,30 +1,30 @@
-// PMV01 – Plataforma educativa base
 export interface UserRequestDTO {
-  first_name: string;
-  last_name: string;
-  age: number;
-  grade: string;
+  firstName: string;
+  lastName: string;
   email: string;
   passwordHash: string;
-  institution: string;
-  zone: string;
+  grade: string;
+  age: number;
+  roleIdList: string[];
+  institution?: string;
+  zone?: string;
 }
 
 export interface UserResponseDTO {
-  id_user: string;
-  first_name: string;
-  last_name: string;
+  idUser: string;
+  firstName: string;
+  lastName: string;
   email: string;
 }
 
 export interface RoleDTO {
-  id_role: string;
+  idRole: string;
   name: string;
 }
 
 export interface GroupDTO {
-  id_group: string;
-  group_name: string;
+  idGroup: string;
+  groupName: string;
 }
 
 export interface CourseRequestDTO {
@@ -34,62 +34,92 @@ export interface CourseRequestDTO {
 }
 
 export interface CourseResponseDTO {
-  id_course: string;
+  idCourse: string;
   name: string;
+  description?: string;
+  level?: string;
 }
 
 export interface ModuleRequestDTO {
-  id_course: string;
+  idCourse: string;
   title: string;
 }
 
 export interface ModuleResponseDTO {
-  id_module: string;
+  idModule: string;
   title: string;
 }
 
 export interface LessonRequestDTO {
-  id_module: string;
+  idModule: string;
   title: string;
 }
 
 export interface LessonResponseDTO {
-  id_lesson: string;
+  idLesson: string;
   title: string;
 }
 
-export interface ActivityRequestDTO {
-  id_lesson: string;
+export interface PositionDTO {
+  x: number;
+  z: number;
+}
+
+export interface MissionDTO {
+  id: string;
+  title: string;
+  objective: string;
+  maxBlocks: number;
+}
+
+export interface CreateActivityCommand {
+  idLesson: string;
   name: string;
+  complexity?: string;
+  difficulty?: string;
+  logicLevel?: number;
+  type?: string;
+  environment?: string;
+  missions?: MissionDTO[];
+  startingPosition?: PositionDTO;
+  targetPosition?: PositionDTO;
 }
 
 export interface ActivityResponseDTO {
-  id_activity: string;
+  idActivity: string;
   name: string;
+  idLesson?: string;
+  complexity?: string;
+  difficulty?: string;
+  logicLevel?: number;
+  type?: string;
+  environment?: string;
+  startingPosition?: PositionDTO;
+  targetPosition?: PositionDTO;
+  missions?: MissionDTO[];
 }
 
-// PMV02 – Gamificación y ranking
 export interface ActivityResultRequest {
-  id_student: string;
-  id_activity: string;
+  idStudent: string;
+  idActivity: string;
   score: number;
   attempts: number;
 }
 
 export interface ActivityResultResponse {
-  id_activity: string;
+  idActivity: string;
   score: number;
 }
 
 export interface RankingDTO {
-  id_student: string;
-  total_points: number;
+  idStudent: string;
+  totalPoints: number;
   position: number;
 }
 
 export interface SimulationRequest {
-  id_student: string;
-  id_activity: string;
+  idStudent: string;
+  idActivity: string;
   result: string;
 }
 
@@ -98,27 +128,66 @@ export interface SimulationResponse {
   result: string;
 }
 
-// PMV03 – Analítica inteligente
 export interface ModuleProgressRequest {
-  id_student: string;
-  id_module: string;
+  idStudent: string;
+  idModule: string;
   percentage: number;
 }
 
 export interface HelpRequest {
-  id_student: string;
-  times_requested: number;
-  ai_interactions: number;
+  idStudent: string;
+  idActivity?: string;
+  description: string;
 }
 
 export interface DropoutRiskResponse {
-  risk_level: string;
-  performance: string;
-  motivation_level: string;
+  riesgo: number;
+  nivel: string;
 }
-// En src/infrastructure/models/apiModels.ts
-export interface HomeResponseDTO {
-  status: string; // Ejemplo: "ok" | "error"
-  message?: string;
-  data?: any; // Ajusta según lo que devuelva el endpoint /home
+
+// --- Nuevos modelos para API paginada (Spring Page) y login ---
+
+export interface AuthUserResponseDTO {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface LoginResponseDTO {
+  message: string;
+  user: AuthUserResponseDTO;
+}
+
+export interface Pageable {
+  page?: number;
+  size?: number;
+  sort?: string[];
+}
+
+export interface PageCourseDTO {
+  content: CourseResponseDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
+}
+
+export interface PageModuleDTO {
+  content: ModuleResponseDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
+}
+
+export interface PageActivityDTO {
+  content: ActivityResponseDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
 }

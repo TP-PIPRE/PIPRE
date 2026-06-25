@@ -6,6 +6,8 @@ import {
 } from "../../../infrastructure/store/authStore";
 import { useThemeStore } from "../../../infrastructure/store/themeStore";
 import { themes } from "../../../shared/constants/themes";
+import { RobotIcon } from "./RobotIcon";
+import { BsPaletteFill, BsPersonFill, BsPower, BsXLg, BsList } from "react-icons/bs";
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated } = getAuthState();
@@ -53,10 +55,10 @@ export const Navbar: React.FC = () => {
           className="flex items-center gap-3 px-6 hover:bg-surface/40 transition-all group"
         >
           <div
-            className="w-8 h-8 bg-primary flex items-center justify-center font-bold text-bg text-lg shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
+            className="w-8 h-8 bg-primary text-bg flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
-            P
+            <RobotIcon size={20} />
           </div>
           <div className="hidden sm:flex flex-col leading-none">
             <span className="text-sm font-bold tracking-widest text-text">
@@ -99,7 +101,7 @@ export const Navbar: React.FC = () => {
             className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
             title="Cambiar Tema"
           >
-            <span className="material-symbols-outlined text-xl">palette</span>
+            <BsPaletteFill className="text-xl" />
           </button>
 
           {isThemeMenuOpen && (
@@ -143,9 +145,7 @@ export const Navbar: React.FC = () => {
               className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
               style={{ borderRadius: "var(--theme-radius)" }}
             >
-              <span className="material-symbols-outlined text-text-muted text-lg">
-                person
-              </span>
+              <BsPersonFill className="text-text-muted text-lg" />
             </div>
           </div>
         )}
@@ -158,9 +158,7 @@ export const Navbar: React.FC = () => {
               className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
               title="Desconectar"
             >
-              <span className="material-symbols-outlined text-xl">
-                power_settings_new
-              </span>
+              <BsPower className="text-xl" />
             </button>
           )}
 
@@ -169,9 +167,7 @@ export const Navbar: React.FC = () => {
             className="md:hidden w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            <span className="material-symbols-outlined text-xl">
-              {isMenuOpen ? "close" : "menu"}
-            </span>
+            {isMenuOpen ? <BsXLg className="text-xl" /> : <BsList className="text-xl" />}
           </button>
         </div>
       </div>

@@ -1,215 +1,271 @@
-import { useDashboardDocente } from "../../application/hooks/useDashboardDocente";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiService } from "../../infrastructure/api/apiService";
+import { RiaBentoGrid, type RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
+import { getAuthState } from "../../infrastructure/store/authStore";
+import {
+  BsPlusCircleFill,
+  BsMortarboardFill,
+  BsPeopleFill,
+  BsGraphUpArrow,
+} from "react-icons/bs";
+import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
+import { Modal } from "../components/common/Modal";
 
-// Mock original (retos, estudiantes, métricas)
-const mockDashboardData = {
-  metricas: [
-    {
-      id: "1",
-      titulo: "Retos Activos",
-      valor: 12,
-      variacion: "+2",
-      icono: "school",
-    },
-    {
-      id: "2",
-      titulo: "Estudiantes",
-      valor: 120,
-      variacion: "+15",
-      icono: "group",
-    },
-    {
-      id: "3",
-      titulo: "Progreso Global",
-      valor: "78%",
-      variacion: "↑",
-      icono: "trending_up",
-    },
-  ],
-  retos: [
-    {
-      id: "1",
-      nombre: "Chatbot Educativo",
-      categoria: "ML",
-      dificultad: 2,
-      estado: true,
-    },
-    {
-      id: "2",
-      nombre: "Brazo Robótico v2",
-      categoria: "Robótica",
-      dificultad: 3,
-      estado: true,
-    },
-    {
-      id: "3",
-      nombre: "Debate: Ética IA",
-      categoria: "Ética",
-      dificultad: 1,
-      estado: false,
-    },
-  ],
-  estudiantesDestacados: [
-    {
-      id: "1",
-      nombre: "Lucía Mendez",
-      xp: 4850,
-      variacionXP: 120,
-      posicion: 1,
-      avatar: "https://ui-avatars.com/api/?name=Lucia+Mendez&background=random",
-    },
-    {
-      id: "2",
-      nombre: "Mateo Rivera",
-      xp: 4120,
-      variacionXP: 85,
-      posicion: 2,
-      avatar: "https://ui-avatars.com/api/?name=Mateo+Rivera&background=random",
-    },
-    {
-      id: "3",
-      nombre: "Sofía Chen",
-      xp: 3980,
-      variacionXP: 40,
-      posicion: 3,
-      avatar: "https://ui-avatars.com/api/?name=Sofia+Chen&background=random",
-    },
-  ],
+const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): RiaStudentData => {
+  const score = totalPoints ?? 75;
+  const attempts = Math.round(score / 20) + 2;
+  const logical_level = score > 75 ? "alto" : score > 45 ? "medio" : "bajo";
+  return {
+    id,
+    name: `Estudiante #${position}`,
+    attempts,
+    errors: Math.max(0, Math.round(attempts * (1 - score / 100))),
+    logical_level,
+    ai_interactions: Math.round(score / 15),
+    inactive_days: Math.max(0, 7 - Math.round(score / 15)),
+    score,
+    success_rate: score / 100,
+    help_requested: Math.max(0, 5 - Math.round(score / 20)),
+    completed_activities: Math.round(score / 12) + 1,
+    age: 13,
+    grade: 7,
+    rankingPosition: position,
+  };
 };
 
-// Mock para el dashboard de IA (nuevo)
-const mockIADashboardData = {
-  datosEvaluados: [
-    { variable: "id_estudiante", valor: "ALUM-097" },
-    { variable: "edad", valor: "6" },
-    { variable: "grado", valor: "1" },
-    { variable: "tiempo_sesion_min", valor: "41" },
-    { variable: "intentos", valor: "6" },
-    { variable: "errores", valor: "9" },
-  ],
-  resultado: "Desempeño bajo",
-  metricasIA: [
-    { nombre: "Accuracy", valor: 0.87 },
-    { nombre: "Precisión", valor: 0.87 },
-  ],
-  importanciaVariables: [
-    { nombre: "uso_codigo", importancia: 0.25 },
-    { nombre: "errores", importancia: 0.23 },
-    { nombre: "ratio_error", importancia: 0.18 },
-    { nombre: "tiempo_sesion_min", importancia: 0.12 },
-    { nombre: "intensidad_uso", importancia: 0.08 },
-    { nombre: "dependencia_ia", importancia: 0.06 },
-    { nombre: "interacciones_ia", importancia: 0.05 },
-    { nombre: "intentos", importancia: 0.03 },
-  ],
+const fetchRetosFromActivities = async () => {
+  const retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[] = [];
+  try {
+    const courses = await apiService.courses.getAll();
+    if (!courses || courses.length === 0) {
+      console.warn("[Dashboard] No se encontraron cursos en la API, intentando fallback simulations...");
+      return await fetchRetosFromSimulations();
+    }
+    let count = 0;
+    const MAX_RETOS = 10;
+    for (const course of courses.slice(0, 3)) {
+      if (count >= MAX_RETOS) break;
+      const modules = await apiService.modules.getByCourse(course.idCourse).catch(() => []);
+      if (modules.length === 0) {
+        console.warn(`[Dashboard] Sin módulos para curso ${course.idCourse}, usando fallback simulations`);
+        return await fetchRetosFromSimulations();
+      }
+      for (const mod of modules) {
+        if (count >= MAX_RETOS) break;
+        const lessons = await apiService.lessons.getByModule(mod.idModule).catch(() => []);
+        if (lessons.length === 0) continue;
+        for (const lesson of lessons) {
+          if (count >= MAX_RETOS) break;
+          const activities = await apiService.activities.getByLesson(lesson.idLesson).catch(() => []);
+          for (const act of activities) {
+            if (count >= MAX_RETOS) break;
+            retos.push({
+              id: act.idActivity,
+              nombre: act.name,
+              categoria: course.name,
+              courseId: course.idCourse,
+              dificultad: 2,
+              estado: true,
+            });
+            count++;
+          }
+        }
+      }
+    }
+    if (retos.length === 0) {
+      console.warn("[Dashboard] Retos vacíos desde módulos, intentando fallback simulations");
+      return await fetchRetosFromSimulations();
+    }
+  } catch (err) {
+    console.warn("[Dashboard] Error en fetchRetosFromActivities, usando fallback simulations:", err);
+    return await fetchRetosFromSimulations();
+  }
+  return retos;
 };
 
-// Componente para el gráfico de barras horizontal (SVG puro)
-const HorizontalBarChart = ({
-  data,
-}: {
-  data: { nombre: string; importancia: number }[];
-}) => {
-  const maxImportancia = Math.max(...data.map((d) => d.importancia));
-  const barHeight = 20;
-  const barSpacing = 10;
-  const width = 500;
-  const height = data.length * (barHeight + barSpacing);
+const fetchRetosFromSimulations = async () => {
+  const retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[] = [];
+  try {
+    const authUser = getAuthState().user;
+    const userId = authUser?.id || "config-store";
+    const sims = await apiService.simulations.getByUser(userId);
+    const courses = await apiService.courses.getAll().catch(() => []);
+    const courseMap = new Map(courses.map((c) => [c.idCourse, c.name]));
+    let count = 0;
+    const MAX_RETOS = 10;
+    for (const s of sims) {
+      if (count >= MAX_RETOS) break;
+      try {
+        const data = JSON.parse(s.result);
+        if (data.type === "challenge" && !data.deleted) {
+          retos.push({
+            id: data.idActivity || s.id_simulation,
+            nombre: data.title || "Reto sin título",
+            categoria: courseMap.get(data.courseId) || `Curso ${data.courseId || "?"}`,
+            courseId: data.courseId || "",
+            dificultad: data.difficulty === "HARD" ? 3 : data.difficulty === "MEDIUM" ? 2 : 1,
+            estado: true,
+          });
+          count++;
+        }
+      } catch {}
+    }
+    console.warn(`[Dashboard] Fallback simulations: ${retos.length} retos encontrados`);
+  } catch (err) {
+    console.warn("[Dashboard] Error en fetchRetosFromSimulations:", err);
+  }
+  return retos;
+};
 
-  return (
-    <svg
-      width="100%"
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="overflow-visible"
-    >
-      {data.map((d, index) => {
-        const barWidth = (d.importancia / maxImportancia) * (width - 120);
-        const y = index * (barHeight + barSpacing);
-        return (
-          <g key={d.nombre}>
-            <rect
-              x={120}
-              y={y}
-              width={barWidth}
-              height={barHeight}
-              fill="var(--primary)"
-              rx={2}
-              ry={2}
-            />
-            <text
-              x={115}
-              y={y + barHeight / 2 + 5}
-              textAnchor="end"
-              dominantBaseline="middle"
-              className="text-xs font-mono"
-              style={{ fill: "var(--text-muted)" }}
-            >
-              {d.nombre}
-            </text>
-            <text
-              x={120 + barWidth + 5}
-              y={y + barHeight / 2 + 5}
-              textAnchor="start"
-              dominantBaseline="middle"
-              className="text-xs font-mono"
-              style={{ fill: "var(--text)" }}
-            >
-              {d.importancia.toFixed(2)}
-            </text>
-          </g>
-        );
-      })}
-      <line
-        x1={120}
-        y1={0}
-        x2={120}
-        y2={height}
-        stroke="var(--border)"
-        strokeWidth={1}
-      />
-      <line
-        x1={120}
-        y1={height}
-        x2={width}
-        y2={height}
-        stroke="var(--border)"
-        strokeWidth={1}
-      />
-      {[0, 0.05, 0.1, 0.15, 0.2, 0.25].map((val) => {
-        const x = 120 + (val / maxImportancia) * (width - 120);
-        return (
-          <text
-            key={val}
-            x={x}
-            y={height + 15}
-            textAnchor="middle"
-            className="text-xs font-mono"
-            style={{ fill: "var(--text-muted)" }}
-          >
-            {val.toFixed(2)}
-          </text>
-        );
-      })}
-      <text
-        x={width / 2}
-        y={height + 30}
-        textAnchor="middle"
-        className="text-xs font-mono"
-        style={{ fill: "var(--text-muted)" }}
-      >
-        Importancia
-      </text>
-    </svg>
-  );
+const loadDashboardMetrics = async () => {
+  try {
+    const groups = await apiService.groups.getAll();
+    const groupCount = groups?.length ?? 0;
+    let studentCount = 0;
+    let courseCount = 0;
+    if (groups && groups.length > 0) {
+      const ranking = await apiService.ranking.getGroupRanking(groups[0].idGroup);
+      studentCount = ranking?.length ?? 0;
+    }
+    try {
+      const courses = await apiService.courses.getAll();
+      courseCount = courses?.length ?? 0;
+    } catch {}
+    return {
+      metricas: [
+        { id: "1", titulo: "Grupos Activos", valor: groupCount, variacion: "", icono: "school" },
+        { id: "2", titulo: "Estudiantes", valor: studentCount, variacion: "", icono: "group" },
+        { id: "3", titulo: "Cursos", valor: courseCount, variacion: "", icono: "trending_up" },
+      ],
+      retos: await fetchRetosFromActivities(),
+    };
+  } catch {
+    return {
+      metricas: [
+        { id: "1", titulo: "Grupos Activos", valor: 0, variacion: "", icono: "school" },
+        { id: "2", titulo: "Estudiantes", valor: 0, variacion: "", icono: "group" },
+        { id: "3", titulo: "Cursos", valor: 0, variacion: "", icono: "trending_up" },
+      ],
+      retos: [],
+    };
+  }
+};
+
+const renderMetricaIcon = (iconoName: string) => {
+  switch (iconoName) {
+    case "school":
+      return <BsMortarboardFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    case "group":
+      return <BsPeopleFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    case "trending_up":
+      return <BsGraphUpArrow className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+    default:
+      return <BsPlusCircleFill className="text-2xl transition-colors duration-300" style={{ color: "var(--primary)" }} />;
+  }
 };
 
 export const DocenteDashboard = () => {
-  const { dashboardData, loading, error } = useDashboardDocente();
-  const dataToShow = error
-    ? mockDashboardData
-    : dashboardData || mockDashboardData;
+  const [dashboardMetrics, setDashboardMetrics] = useState<{
+    metricas: { id: string; titulo: string; valor: string | number; variacion: string; icono: string }[];
+    retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[];
+    estudiantesDestacados: { id: string; nombre: string; xp: number; variacionXP: number; posicion: number; avatar: string }[];
+  }>({ metricas: [], retos: [], estudiantesDestacados: [] });
+  const [metricsReady, setMetricsReady] = useState(false);
 
-  if (loading && !dataToShow)
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [students, setStudents] = useState<RiaStudentData[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
+
+  const [rankingModalOpen, setRankingModalOpen] = useState(false);
+  const [modalRankingData, setModalRankingData] = useState<{ position: number; studentId: string; studentName: string; totalScore: number }[]>([]);
+  const [modalIsLoading, setModalIsLoading] = useState(false);
+  const [modalActiveTab, setModalActiveTab] = useState<"global" | "course">("global");
+  const [modalCourses, setModalCourses] = useState<{ id: string; name: string }[]>([]);
+  const [modalSelectedCourse, setModalSelectedCourse] = useState("");
+  const navigate = useNavigate();
+  const [deleteConfirmReto, setDeleteConfirmReto] = useState<{ id: string; nombre: string } | null>(null);
+
+  useEffect(() => {
+    if (!rankingModalOpen) return;
+    setModalIsLoading(true);
+    setModalRankingData([]);
+    const doFetch = async () => {
+      try {
+        const courseData = await apiService.courses.getAll();
+        if (courseData && courseData.length > 0) {
+          setModalCourses(courseData.map((c) => ({ id: c.idCourse, name: c.name })));
+          if (!modalSelectedCourse) setModalSelectedCourse(courseData[0].idCourse);
+        } else {
+          setModalCourses([{ id: "1", name: "Curso principal" }]);
+        }
+      } catch {
+        setModalCourses([{ id: "1", name: "Curso principal" }]);
+      }
+      try {
+        const groups = await apiService.groups.getAll();
+        if (groups && groups.length > 0) {
+          const data = await apiService.ranking.getGroupRanking(groups[0].idGroup);
+          if (data && data.length > 0) {
+            setModalRankingData(data.map((dto: RankingDTO) => ({
+              position: dto.position,
+              studentId: dto.idStudent,
+              studentName: `Estudiante #${dto.position}`,
+              totalScore: dto.totalPoints,
+            })));
+          }
+        }
+      } catch {}
+      setModalIsLoading(false);
+    };
+    doFetch();
+  }, [rankingModalOpen]);
+
+  useEffect(() => {
+    loadDashboardMetrics().then(({ metricas, retos }) => {
+      setDashboardMetrics(prev => ({ ...prev, metricas, retos }));
+      setMetricsReady(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    const loadStudents = async () => {
+      try {
+        const groups = await apiService.groups.getAll();
+        if (!groups || groups.length === 0) throw new Error("No hay grupos");
+        const ranking = await apiService.ranking.getGroupRanking(groups[0].idGroup);
+        if (ranking && ranking.length > 0) {
+          const derived = ranking.map((s: RankingDTO, i: number) =>
+            deriveFeaturesFromRanking(s.idStudent, s.position || i + 1, s.totalPoints ?? 50)
+          );
+          setStudents(derived);
+          const destacados = ranking.slice(0, 3).map((s: RankingDTO, i: number) => ({
+            id: s.idStudent,
+            nombre: `Estudiante #${s.position}`,
+            xp: s.totalPoints,
+            variacionXP: 0,
+            posicion: i + 1,
+            avatar: `https://ui-avatars.com/api/?name=Estudiante+${s.position}&background=random`,
+          }));
+          setDashboardMetrics((prev) => ({ ...prev, estudiantesDestacados: destacados }));
+          if (!selectedStudentId) {
+            setSelectedStudentId(derived[0].id);
+          }
+        }
+      } catch {
+        setStudents([]);
+      } finally {
+        setStudentsLoading(false);
+      }
+    };
+    loadStudents();
+  }, []);
+
+  const handleStudentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedStudentId(e.target.value);
+  };
+
+  if (!metricsReady && studentsLoading)
     return (
       <div
         className="flex-1 flex items-center justify-center font-mono text-xs"
@@ -241,25 +297,20 @@ export const DocenteDashboard = () => {
           </p>
         </div>
         <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
-          <span className="material-symbols-outlined text-sm">add_circle</span>
+          <BsPlusCircleFill className="text-sm" />
           Nuevo Reto
         </button>
       </div>
 
       {/* Métricas originales (Retos Activos, Estudiantes, Progreso Global) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        {dataToShow.metricas.map((m) => (
+        {dashboardMetrics.metricas.map((m) => (
           <div
             key={m.id}
             className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg hover:scale-102 rounded-lg"
           >
             <div className="flex justify-between items-start mb-4">
-              <span
-                className="material-symbols-outlined text-2xl transition-colors duration-300"
-                style={{ color: "var(--primary)" }}
-              >
-                {m.icono}
-              </span>
+              {renderMetricaIcon(m.icono)}
               <span
                 className="font-mono text-xs transition-colors duration-300"
                 style={{ color: "var(--primary)" }}
@@ -317,7 +368,7 @@ export const DocenteDashboard = () => {
                 className="divide-y"
                 style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
               >
-                {dataToShow.retos.map((r) => (
+                {dashboardMetrics.retos.map((r) => (
                   <tr
                     key={r.id}
                     className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
@@ -370,12 +421,18 @@ export const DocenteDashboard = () => {
                     </td>
                     <td className="py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1">
+                        <button
+                          onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
+                          className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1"
+                        >
                           <span className="material-symbols-outlined text-base">
                             edit
                           </span>
                         </button>
-                        <button className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1">
+                        <button
+                          onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
+                          className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1"
+                        >
                           <span className="material-symbols-outlined text-base">
                             delete
                           </span>
@@ -398,7 +455,7 @@ export const DocenteDashboard = () => {
             Mejores Estudiantes
           </h2>
           <div className="space-y-4">
-            {dataToShow.estudiantesDestacados.map((e) => (
+            {dashboardMetrics.estudiantesDestacados.map((e) => (
               <div
                 key={e.id}
                 className="flex items-center gap-4 p-3 border border-border/50 transition-all duration-300 hover:shadow-sm rounded-lg"
@@ -456,146 +513,189 @@ export const DocenteDashboard = () => {
               </div>
             ))}
           </div>
-          <button className="w-full mt-6 py-3 border border-dashed border-border text-text-muted hover:text-primary hover:border-primary transition-all duration-300 text-xs font-mono uppercase tracking-wider rounded-lg">
+          <button
+            onClick={() => setRankingModalOpen(true)}
+            className="w-full mt-6 py-3 border border-dashed border-border text-text-muted hover:text-primary hover:border-primary transition-all duration-300 text-xs font-mono uppercase tracking-wider rounded-lg"
+          >
             Ver ranking completo
           </button>
         </div>
       </div>
 
-      {/* --- NUEVAS SECCIONES DEL DASHBOARD DE IA --- */}
+      {/* --- SECCIÓN DE ANALÍTICA IA (BENTO GRID) --- */}
       <div className="border-t border-border my-8" />
 
-      {/* Título del Dashboard de IA */}
-      <div className="mb-6">
-        <h2
-          className="text-xl font-mono font-bold tracking-tight mb-2"
-          style={{ color: "var(--text)" }}
-        >
-          Dashboard de Resultados IA
-        </h2>
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          Análisis de desempeño basado en inteligencia artificial
-        </p>
-      </div>
-
-      {/* Datos evaluados (Tabla) */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
-          style={{ color: "var(--text)" }}
-        >
-          Datos evaluados
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr
-                className="text-xs uppercase tracking-wider border-b"
-                style={{
-                  borderColor: "var(--border)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                <th className="pb-2 font-normal">Variable</th>
-                <th className="pb-2 font-normal">Valor</th>
-              </tr>
-            </thead>
-            <tbody
-              className="divide-y"
-              style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
-            >
-              {mockIADashboardData.datosEvaluados.map((d, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-surface/30 transition-colors duration-300"
-                >
-                  <td
-                    className="py-2 font-mono text-xs"
-                    style={{ color: "var(--text)" }}
-                  >
-                    {d.variable}
-                  </td>
-                  <td
-                    className="py-2 font-mono text-xs"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {d.valor}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Resultado */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
-          style={{ color: "var(--text)" }}
-        >
-          Resultado
-        </h3>
-        <div
-          className="bg-surface p-4 rounded-lg text-center font-mono font-bold"
-          style={{
-            backgroundColor: "var(--surface)",
-            color: "var(--text)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          {mockIADashboardData.resultado}
-        </div>
-      </div>
-
-      {/* Métricas de IA */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4"
-          style={{ color: "var(--text)" }}
-        >
-          Métricas
-        </h3>
-        <div className="flex gap-8">
-          {mockIADashboardData.metricasIA.map((m) => (
-            <div key={m.nombre} className="flex flex-col">
-              <span
-                className="text-xs font-mono"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {m.nombre}:
-              </span>
-              <span
-                className="text-lg font-mono font-bold"
-                style={{ color: "var(--text)" }}
-              >
-                {m.valor}
-              </span>
+      {/* Selector de Estudiante */}
+      <div className="mb-8 p-5 border border-border bg-surface rounded-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-9 h-9 rounded-lg border border-border/50 flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-          ))}
+            <span className="text-xs font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              Estudiante
+            </span>
+          </div>
+          <div className="flex-1 min-w-[200px] relative">
+            <select
+              value={selectedStudentId}
+              onChange={handleStudentChange}
+              disabled={studentsLoading}
+              className="w-full bg-bg border border-border px-10 py-2.5 text-xs font-mono outline-none focus:border-primary transition-all rounded-lg disabled:opacity-50 appearance-none"
+              style={{ color: "var(--text)" }}
+            >
+              <option value="">{studentsLoading ? "Cargando estudiantes..." : "Seleccionar estudiante..."}</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            {studentsLoading && (
+              <div className="absolute right-10 top-1/2 -translate-y-1/2">
+                <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+          <span className="text-[9px] font-mono italic shrink-0" style={{ color: "var(--text-muted)" }}>
+            {students.length > 0 ? "Sincronizado" : "Sin datos"}
+          </span>
         </div>
       </div>
 
-      {/* Gráfico de Importancia de Variables */}
-      <div className="border border-border bg-surface p-6 mb-8 transition-all duration-300 rounded-lg">
-        <h3
-          className="text-sm font-mono font-bold uppercase tracking-wider mb-4 text-center"
-          style={{ color: "var(--text)" }}
-        >
-          Importancia de Variables
-        </h3>
-        <div className="w-full overflow-x-auto">
-          <HorizontalBarChart data={mockIADashboardData.importanciaVariables} />
-        </div>
-      </div>
+      <RiaBentoGrid
+        student={students.find((s) => s.id === selectedStudentId) ?? null}
+        studentId={selectedStudentId}
+      />
 
-      {/* Botón "Evaluar otra fila" */}
-      <div className="mt-8 flex justify-center">
-        <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
-          <span className="material-symbols-outlined text-sm">refresh</span>
-          Evaluar otra fila
-        </button>
-      </div>
+      {/* Modal Confirmación Eliminar */}
+      <Modal isOpen={deleteConfirmReto !== null} onClose={() => setDeleteConfirmReto(null)} maxWidth="max-w-sm">
+        <div className="p-8 text-center">
+          <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-red-500/10 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </div>
+          <h3 className="text-base font-mono font-bold mb-3" style={{ color: "var(--text)" }}>¿Eliminar reto?</h3>
+          <p className="text-sm font-mono mb-6" style={{ color: "var(--text-muted)" }}>
+            ¿Estás seguro de eliminar <strong style={{ color: "var(--text)" }}>{deleteConfirmReto?.nombre}</strong>?
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => setDeleteConfirmReto(null)}
+              className="px-6 py-3 text-xs font-mono font-bold uppercase tracking-wider border border-border/60 text-text-muted hover:text-text transition-all rounded-lg"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                if (!deleteConfirmReto) return;
+                setDashboardMetrics((prev) => ({
+                  ...prev,
+                  retos: prev.retos.filter((r) => r.id !== deleteConfirmReto.id),
+                }));
+                setDeleteConfirmReto(null);
+              }}
+              className="px-6 py-3 text-xs font-mono font-bold uppercase tracking-wider bg-red-500 text-white hover:bg-red-600 transition-all rounded-lg"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Ranking Completo */}
+      <Modal isOpen={rankingModalOpen} onClose={() => setRankingModalOpen(false)} maxWidth="max-w-4xl">
+        <div className="p-6 md:p-8">
+          <h2 className="text-lg font-mono font-bold tracking-tight mb-6" style={{ color: "var(--text)" }}>
+            Ranking Completo
+          </h2>
+
+          {/* Tabs */}
+          <div className="flex gap-6 mb-6 border-b border-border/30 pb-3">
+            <button
+              onClick={() => setModalActiveTab("global")}
+              className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-3 -mb-3 transition-all ${
+                modalActiveTab === "global"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-text-muted hover:text-text"
+              }`}
+            >
+              Global
+            </button>
+            <button
+              onClick={() => setModalActiveTab("course")}
+              className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-3 -mb-3 transition-all ${
+                modalActiveTab === "course"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-text-muted hover:text-text"
+              }`}
+            >
+              Por Curso
+            </button>
+          </div>
+
+          {modalActiveTab === "course" && (
+            <div className="mb-6">
+              <select
+                value={modalSelectedCourse}
+                onChange={(e) => setModalSelectedCourse(e.target.value)}
+                className="bg-bg border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none rounded-lg"
+              >
+                {modalCourses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {modalIsLoading ? (
+            <div className="text-center py-16 text-text-muted text-[10px] font-mono uppercase tracking-widest animate-pulse">
+              Cargando ranking...
+            </div>
+          ) : modalRankingData.length === 0 ? (
+            <div className="text-center py-16 text-text-muted text-xs font-mono">
+              No hay datos de ranking disponibles.
+            </div>
+          ) : (
+            <div className="border border-border overflow-hidden rounded-xl">
+              <div className="p-4 border-b border-border flex justify-between items-center" style={{ backgroundColor: "var(--surface-brighter)" }}>
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "var(--text)" }}>
+                  {modalActiveTab === "global" ? "Ranking Global" : `Ranking del Curso`}
+                </span>
+                <span className="text-[9px] font-mono text-text-muted">{modalRankingData.length} estudiantes</span>
+              </div>
+              <div className="divide-y divide-border/30">
+                {modalRankingData.map((entry) => (
+                  <div key={entry.studentId} className="flex items-center p-4 hover:bg-surface-brighter/50 transition-all duration-200">
+                    <div
+                      className="w-10 font-mono font-bold text-center text-xs"
+                      style={{ color: entry.position <= 3 ? "var(--primary)" : "var(--text-muted)" }}
+                    >
+                      {entry.position}
+                    </div>
+                    <div
+                      className="w-10 h-10 border flex items-center justify-center font-bold text-xs mr-4 rounded-lg"
+                      style={{ backgroundColor: "var(--surface-brighter)", borderColor: "var(--border)", color: "var(--text)" }}
+                    >
+                      {entry.studentName.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold" style={{ color: "var(--text)" }}>{entry.studentName}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>
+                        {entry.totalScore.toLocaleString()} XP
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </main>
   );
 };
