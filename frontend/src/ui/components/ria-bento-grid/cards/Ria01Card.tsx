@@ -65,12 +65,14 @@ export const Ria01Card = ({ student, studentId }: Props) => {
       ) : !result ? (
         <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>Sin datos</div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <span className="text-3xl font-mono font-bold" style={{ color: rawScore > 75 ? "var(--primary)" : rawScore > 40 ? "#f59e0b" : "#ef4444" }}>{rawScore}%</span>
-          <span className={`text-[9px] font-mono font-bold px-3 py-1 rounded-full border ${rawScore > 75 ? "bg-green-500/10 text-green-500 border-green-500/20" : rawScore > 40 ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
-            {rawScore > 75 ? "Alto" : rawScore > 40 ? "Medio" : "Bajo"}
-          </span>
-          <div className="mt-auto w-full space-y-1 pt-3 border-t border-border/30">
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <span className="text-3xl font-mono font-bold" style={{ color: rawScore > 75 ? "var(--primary)" : rawScore > 40 ? "#f59e0b" : "#ef4444" }}>{rawScore}%</span>
+            <span className={`text-[9px] font-mono font-bold px-3 py-1 rounded-full border ${rawScore > 75 ? "bg-green-500/10 text-green-500 border-green-500/20" : rawScore > 40 ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"}`}>
+              {rawScore > 75 ? "Alto" : rawScore > 40 ? "Medio" : "Bajo"}
+            </span>
+          </div>
+          <div className="w-full space-y-1 pt-3 border-t border-border/30">
             <div className="flex justify-between text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>
               <span>Precisión</span>
               <span className="font-bold" style={{ color: "var(--text)" }}>{typeof r.precision === "number" ? `${(r.precision * 100).toFixed(0)}%` : "-"}</span>

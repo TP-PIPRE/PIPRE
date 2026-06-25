@@ -29,9 +29,11 @@ export const Ria03Card = ({ student, studentId }: Props) => {
       .finally(() => setLoading(false));
   }, [studentId, student]);
 
+  const scoreMap: Record<string, number> = { low: 30, medium: 60, high: 90 };
+  const colorMap: Record<string, string> = { low: "#ef4444", medium: "#f59e0b", high: "var(--primary)" };
   const getBadge = (level: string) => {
     const m: Record<string, { label: string; cls: string }> = {
-      low: { label: "Básico", cls: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+      low: { label: "Básico", cls: "bg-red-500/10 text-red-500 border-red-500/20" },
       medium: { label: "Intermedio", cls: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20" },
       high: { label: "Avanzado", cls: "bg-green-500/10 text-green-500 border-green-500/20" },
     };
@@ -40,6 +42,8 @@ export const Ria03Card = ({ student, studentId }: Props) => {
 
   const resultLevel = typeof result?.result === "string" ? result.result.toLowerCase() : "";
   const badge = getBadge(resultLevel);
+  const rawScore = scoreMap[resultLevel] ?? 50;
+  const scoreColor = colorMap[resultLevel] ?? "var(--text-muted)";
   const reasons = Array.isArray(result?.reasons) ? result.reasons as string[] : [];
   const activities = Array.isArray(result?.activities) ? result.activities as string[] : [];
 
@@ -53,7 +57,9 @@ export const Ria03Card = ({ student, studentId }: Props) => {
       </div>
 
       {!studentId ? (
-        <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>Selecciona un estudiante</div>
+        <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>
+          Selecciona un estudiante
+        </div>
       ) : loading ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
           <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -64,32 +70,34 @@ export const Ria03Card = ({ student, studentId }: Props) => {
       ) : !result ? (
         <div className="flex-1 flex items-center justify-center text-[10px] font-mono" style={{ color: "var(--text-muted)" }}>Sin datos</div>
       ) : (
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <span className="text-3xl font-mono font-bold" style={{ color: scoreColor }}>{rawScore}%</span>
             <span className={`text-[9px] font-mono font-bold px-3 py-1 rounded-full border ${badge.cls}`}>{badge.label}</span>
-            {typeof result.accuracy === "number" && (
-              <span className="text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>Precisión: {(result.accuracy as number * 100).toFixed(0)}%</span>
+            {reasons.length > 0 && (
+              <div className="w-full space-y-0.5 pt-2">
+                {reasons.slice(0, 2).map((r, i) => (
+                  <div key={i} className="text-[8px] font-mono flex gap-1.5" style={{ color: "var(--text)" }}>
+                    <span style={{ color: "var(--primary)" }}>▸</span>
+                    <span>{r}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          {reasons.length > 0 && (
-            <div className="space-y-1">
-              <span className="text-[8px] font-mono font-semibold uppercase" style={{ color: "var(--text-muted)" }}>Razones</span>
-              {reasons.map((r, i) => (
-                <div key={i} className="text-[9px] font-mono flex gap-1.5" style={{ color: "var(--text)" }}>
-                  <span style={{ color: "var(--primary)" }}>▸</span>
-                  <span>{r}</span>
-                </div>
-              ))}
+          <div className="w-full space-y-1 pt-3 border-t border-border/30">
+            <div className="flex justify-between text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>
+              <span>Precisión</span>
+              <span className="font-bold" style={{ color: "var(--text)" }}>{typeof result.accuracy === "number" ? `${(result.accuracy * 100).toFixed(0)}%` : "-"}</span>
             </div>
-          )}
-          {activities.length > 0 && (
-            <div className="mt-auto space-y-1 pt-3 border-t border-border/30">
-              <span className="text-[8px] font-mono font-semibold uppercase" style={{ color: "var(--text-muted)" }}>Actividades sugeridas</span>
-              {activities.map((a, i) => (
-                <span key={i} className="block text-[8px] font-mono px-2 py-1 rounded border border-border/30" style={{ backgroundColor: "var(--bg)" }}>{a}</span>
-              ))}
-            </div>
-          )}
+            {activities.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {activities.map((a, i) => (
+                  <span key={i} className="text-[7px] font-mono px-1.5 py-0.5 rounded border border-border/30" style={{ backgroundColor: "var(--bg)" }}>{a}</span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

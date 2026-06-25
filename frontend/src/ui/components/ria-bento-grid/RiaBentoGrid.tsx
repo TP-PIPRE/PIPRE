@@ -60,18 +60,18 @@ export const RiaBentoGrid = ({ student, studentId }: Props) => {
         <div className="col-span-1" style={{ gridRow: "span 2" }}>
           <Ria08Card student={student} studentId={studentId} />
         </div>
-        <div className="col-span-1" style={{ gridRow: "span 2" }}>
+        <div className="col-span-1" style={{ gridRow: "span 1" }}>
           <Ria11Card student={student} studentId={studentId} />
+        </div>
+        <div className="col-span-1" style={{ gridRow: "span 1" }}>
+          <Ria04Card student={student} studentId={studentId} />
         </div>
 
         <div className="col-span-4" style={{ gridRow: "span 3" }}>
           <Ria10Card student={student} studentId={studentId} />
         </div>
 
-        <div className="col-span-2" style={{ gridRow: "span 3" }}>
-          <Ria04Card student={student} studentId={studentId} />
-        </div>
-        <div className="col-span-2" style={{ gridRow: "span 3" }}>
+        <div className="col-span-4" style={{ gridRow: "span 2" }}>
           <ModelStatusCard health={health} />
         </div>
       </div>
