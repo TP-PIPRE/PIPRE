@@ -13,6 +13,7 @@ import { MissionCanvas } from "../components/Simulador/MissionCanvas";
 import { TabBar } from "../components/Simulador/TabBar";
 import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
 import { SimulatorLayout } from "../components/Simulador/SimulatorLayout";
+import { MermaidViewer } from "../components/Simulador/MermaidViewer";
 import { NavigationModeDetector } from "../../application/adapters/NavigationModeDetector";
 import { ChallengeAdapter, type AdaptedChallenge } from "../../application/adapters/ChallengeAdapter";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
@@ -33,7 +34,8 @@ import {
   BsList,
   BsCrosshair,
   BsGrid3X3GapFill,
-  BsSpeedometer2
+  BsSpeedometer2,
+  BsDiagram3Fill
 } from "react-icons/bs";
 
 const ENVIRONMENTS: { id: EnvironmentType; Icon: React.ComponentType<{ className?: string }> }[] = [
@@ -151,6 +153,7 @@ const SimuladorInner = () => {
   } = useSimulador();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [showChallengeList, setShowChallengeList] = useState(false);
+  const [showMermaid, setShowMermaid] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState("hardware");
   const [activeRightTab, setActiveRightTab] = useState("missions");
 
@@ -412,6 +415,13 @@ const SimuladorInner = () => {
                 >
                   <BsTrashFill className="text-[9px]" /> Limpiar
                 </button>
+                <button
+                  onClick={() => setShowMermaid(true)}
+                  disabled={blocks.length === 0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/50 transition-colors rounded-md disabled:opacity-30"
+                >
+                  <BsDiagram3Fill className="text-[9px]" /> Diagrama
+                </button>
               </div>
 
               <div className="w-px h-6 bg-border mx-1" />
@@ -468,6 +478,8 @@ const SimuladorInner = () => {
           }
         />
       </main>
+
+      <MermaidViewer isOpen={showMermaid} onClose={() => setShowMermaid(false)} />
     </div>
   );
 };
