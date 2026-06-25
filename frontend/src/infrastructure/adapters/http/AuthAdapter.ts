@@ -64,7 +64,7 @@ export class AuthAdapter implements IAuthRepository {
     grade: string,
   ): Promise<User> {
     try {
-      const response = await axiosInstance.post<string>(REGISTER_ENDPOINT, {
+      await axiosInstance.post<string>(REGISTER_ENDPOINT, {
         firstName: name,
         lastName: lastname,
         email,

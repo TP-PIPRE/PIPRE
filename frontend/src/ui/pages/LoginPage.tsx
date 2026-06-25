@@ -40,6 +40,7 @@ export const LoginPage: React.FC = () => {
           passwordHash: password,
           institution,
           zone,
+          roleIdList: [],
         });
 
         // Store UUID for login lookup

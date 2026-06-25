@@ -21,9 +21,9 @@ const LOOP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   check_circle: BsCheckCircleFill,
 };
 
-const renderLoopIcon = (iconName: string, className?: string, style?: React.CSSProperties) => {
+const renderLoopIcon = (iconName: string, className?: string) => {
   const IconComponent = LOOP_ICONS[iconName] || BsQuestionSquareFill;
-  return <IconComponent className={className} style={style} />;
+  return <IconComponent className={className} />;
 };
 
 interface LoopBlockRendererProps {
@@ -31,7 +31,6 @@ interface LoopBlockRendererProps {
     children?: Block[];
   };
   label: string;
-  icon?: string;
   color?: string;
   blockNumber?: string;
   onRemove: (id: string) => void;
@@ -47,7 +46,6 @@ interface LoopBlockRendererProps {
 export const LoopBlockRenderer: React.FC<LoopBlockRendererProps> = ({
   block,
   label,
-  icon = "repeat",
   color = "#f97316",
   blockNumber = "1",
   onRemove,
@@ -111,7 +109,7 @@ export const LoopBlockRenderer: React.FC<LoopBlockRendererProps> = ({
   };
 
   const handleAddChild = useCallback(
-    (childType: string, childLabel: string, childCategory: BlockCategory) => {
+    (childType: string, _childLabel: string, childCategory: BlockCategory) => {
       if (onAddChild) {
         onAddChild(block.id, {
           type: childType,
@@ -168,7 +166,7 @@ export const LoopBlockRenderer: React.FC<LoopBlockRendererProps> = ({
           </span>
 
           <BsGrid3X3GapFill className="text-[9px] text-text-muted/30 cursor-grab" />
-          {renderLoopIcon(getLoopIcon(), "text-[12px]", { color })}
+          {renderLoopIcon(getLoopIcon(), "text-[12px]")}
           <span className="font-mono text-[10px] text-text font-semibold">
             {label}
           </span>
@@ -267,7 +265,7 @@ export const LoopBlockRenderer: React.FC<LoopBlockRendererProps> = ({
                         >
                           {blockNumber}.{childIndex + 1}
                         </span>
-                        {renderLoopIcon(getChildBlockIcon(child), "text-[10px]", { color })}
+                        {renderLoopIcon(getChildBlockIcon(child), "text-[10px]")}
                         <span className="text-text">{getChildBlockLabel(child)}</span>
                       </div>
                       {onRemoveChild && (

@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
+import { RiaBentoGrid, type RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
 import { getAuthState } from "../../infrastructure/store/authStore";
-import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
-import type { RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
 import {
   BsPlusCircleFill,
   BsMortarboardFill,

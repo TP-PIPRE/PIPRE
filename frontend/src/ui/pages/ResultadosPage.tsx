@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { StudentResult } from "../../shared/types/Simulador";
 
@@ -47,7 +47,7 @@ const getLocalResults = (): ResultRow[] => {
       score: r.score,
       date: r.completedAt,
       status: deriveStatus(r.score),
-      type: r.environment === "robotics" ? "Simulación" : "Actividad",
+      type: "Simulación",
     }));
   } catch {
     return [];
@@ -76,14 +76,17 @@ const fetchApiResults = async (): Promise<ResultRow[]> => {
     }
     if (sims.length > 0) {
       rows.push(
-        ...sims.map((s) => ({
-          id: s.id_simulation,
-          activity: `Simulación ${s.id_simulation}`,
-          score: s.result,
-          date: new Date().toISOString().split("T")[0],
-          status: deriveStatus(s.result),
-          type: "Simulación",
-        })),
+        ...sims.map((s) => {
+          const parsedScore = parseInt(s.result, 10) || 0;
+          return {
+            id: s.id_simulation,
+            activity: `Simulación ${s.id_simulation}`,
+            score: parsedScore,
+            date: new Date().toISOString().split("T")[0],
+            status: deriveStatus(parsedScore),
+            type: "Simulación",
+          };
+        }),
       );
     }
     return rows;

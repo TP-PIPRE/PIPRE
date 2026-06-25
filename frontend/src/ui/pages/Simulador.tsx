@@ -14,7 +14,7 @@ import { MissionCanvas } from "../components/Simulador/MissionCanvas";
 import { TabBar } from "../components/Simulador/TabBar";
 import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
 import { SimulatorLayout } from "../components/Simulador/SimulatorLayout";
-import { NavigationModeDetector, type NavigationMode } from "../../application/adapters/NavigationModeDetector";
+import { NavigationModeDetector } from "../../application/adapters/NavigationModeDetector";
 import { ChallengeAdapter, type AdaptedChallenge } from "../../application/adapters/ChallengeAdapter";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import type { EnvironmentType } from "../../shared/types/Simulador";
@@ -28,7 +28,7 @@ import {
   BsStopFill,
   BsTrashFill,
   BsSaveFill,
-  BsInfoCircleFill,
+   
   BsTrophyFill,
   BsStarFill,
   BsArrowLeft,
@@ -281,12 +281,12 @@ const SimuladorInner = () => {
     <div className="flex flex-col h-screen max-h-screen overflow-hidden">
       <h1 className="sr-only">Simulador</h1>
 
-      {navigationMode === "playground" && <EnvironmentSelector />}
-      {navigationMode === "challenge" && adaptedChallenge && (
+      {navigationMode.mode === "playground" && <EnvironmentSelector />}
+      {navigationMode.mode === "challenge" && adaptedChallenge && (
         <ChallengeInfoBar challenge={adaptedChallenge} />
       )}
 
-      {navigationMode === "playground" && (
+      {navigationMode.mode === "playground" && (
         <>
           {showPanel && (
             <div
@@ -318,7 +318,7 @@ const SimuladorInner = () => {
         </>
       )}
 
-      {navigationMode === "challenge" && !isFreeMode && (
+      {navigationMode.mode === "challenge" && !isFreeMode && (
         <div
           className="flex items-center justify-between px-4 py-2 border-b border-border"
           style={{ backgroundColor: "var(--surface-brighter)" }}
@@ -488,7 +488,7 @@ const SimuladorInner = () => {
 
               <div className="w-px h-6 bg-border mx-1" />
 
-              {navigationMode === "challenge" && (
+              {navigationMode.mode === "challenge" && (
                 <div className="flex items-center gap-2 px-2 py-1 rounded bg-surface-brighter/30">
                   <BsTrophyFill className="text-[9px] text-[#eab308]" />
                   <span className="font-mono text-[9px] text-[#eab308] font-bold">{score}</span>

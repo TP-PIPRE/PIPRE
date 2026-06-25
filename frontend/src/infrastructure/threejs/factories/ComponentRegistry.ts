@@ -1,4 +1,5 @@
 import type { RobotComponent, IRobotComponentFactory } from "./RobotComponentFactory";
+import { robotComponentFactory } from "./RobotComponentFactory";
 
 export interface ComponentDefinition {
   id: string;
@@ -265,5 +266,5 @@ export class ComponentRegistry {
 }
 
 export const componentRegistry = new ComponentRegistry(
-  require("./RobotComponentFactory").robotComponentFactory
+  robotComponentFactory
 );

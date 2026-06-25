@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { BsXLg, BsDash, BsArrowsFullscreen, BsFullscreenExit, BsArrowsMove, BsCode } from "react-icons/bs";
-import { useSimulador } from "../../../application/context/SimuladorProvider";
+import { BsDash, BsArrowsFullscreen, BsFullscreenExit, BsCode } from "react-icons/bs";
 
 interface Position {
   x: number;

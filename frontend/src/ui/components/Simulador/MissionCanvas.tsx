@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSimulador } from "../../../application/context/SimuladorProvider";
 import { BsMapFill, BsCheckCircleFill, BsArrowRepeat, BsStarFill } from "react-icons/bs";
-import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
 
 interface MissionObject {
   id: string;
@@ -20,11 +19,9 @@ export const MissionCanvas = () => {
     engineRef,
     missions,
     currentMissionIndex,
-    environment,
   } = useSimulador();
   const [loading] = useState(false);
   const currentMission = missions[currentMissionIndex];
-  const config = ENVIRONMENT_CONFIGS[environment];
 
   const [missionObjects, setMissionObjects] = useState<MissionObject[]>([]);
 
@@ -266,11 +263,13 @@ export const MissionCanvas = () => {
       });
 
       const engine = engineRef.current;
-      if (engine) {
+      if (engine && engine.getState) {
         const state = engine.getState();
         if (state) {
-          const cx = centerX + (state.x || 0) * 2;
-          const cy = centerY - (state.y || 0) * 2;
+          const sx = (state.x as number) || 0;
+          const sy = (state.y as number) || 0;
+          const cx = centerX + sx * 2;
+          const cy = centerY - sy * 2;
 
           ctx.save();
           ctx.translate(cx, cy);
@@ -286,7 +285,8 @@ export const MissionCanvas = () => {
           ctx.arc(0, 0, 12, 0, Math.PI * 2);
           ctx.stroke();
 
-          ctx.rotate(-((state.angle || 0) * Math.PI) / 180);
+          const angle = (state.angle as number) || 0;
+          ctx.rotate(-((angle * Math.PI) / 180));
           ctx.fillStyle = "#00f5d4";
           ctx.beginPath();
           ctx.moveTo(12, 0);
