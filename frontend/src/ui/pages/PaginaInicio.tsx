@@ -18,37 +18,6 @@ const RobotIconCat = ({ className }: { className?: string }) => (
 const CATEGORIES = [
   { key: "all", label: "Todos", icon: null },
   { key: "curso", label: "Cursos", icon: RobotIconCat },
-  { key: "simulador", label: "Simuladores", icon: BsController },
-];
-
-const DEMO_RETOS: Course[] = [
-  {
-    id: "demo-1",
-    nombre: "Introducción a la Robótica",
-    descripcion:
-      "Aprende los fundamentos de la robótica y construye tu primer robot virtual.",
-    imagen: "",
-    tipo: "curso",
-    challenges: [],
-  },
-  {
-    id: "demo-2",
-    nombre: "Navegación Autónoma",
-    descripcion:
-      "Programa un bot para navegar un laberinto usando sensores ultrasónicos.",
-    imagen: "",
-    tipo: "simulador",
-    challenges: [],
-  },
-  {
-    id: "demo-3",
-    nombre: "Brazo Robótico v2",
-    descripcion:
-      "Controla una garra mecánica para clasificar objetos por color.",
-    imagen: "",
-    tipo: "simulador",
-    challenges: [],
-  },
 ];
 
 export const PaginaInicio = () => {
@@ -80,11 +49,10 @@ export const PaginaInicio = () => {
     fetchCourses();
   }, []);
 
-  const allItems = [...DEMO_RETOS, ...cursos];
   const filteredItems =
     activeCategory === "all"
-      ? allItems
-      : allItems.filter((item) => item.tipo === activeCategory);
+      ? cursos
+      : cursos.filter((item) => item.tipo === activeCategory);
 
   return (
     <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-8 pt-[6rem] pb-24 animate-fade-in-soft">

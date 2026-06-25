@@ -15,22 +15,8 @@ interface ChallengeView {
   order: number;
   difficulty: string;
   points: number;
+  courseId?: string;
 }
-
-const MOCK_COURSES = [
-  {
-    idCourse: "1",
-    name: "Robótica Nivel 1: Fundamentos (Local)",
-    description: "Aprende las bases de la robótica y electrónica.",
-    level: "Básico",
-  },
-  {
-    idCourse: "2",
-    name: "Programación de Microcontroladores (Local)",
-    description: "Domina el lenguaje C++ para control de hardware.",
-    level: "Intermedio",
-  },
-];
 
 export const CursosPage: React.FC = () => {
   const navigate = useNavigate();
@@ -43,6 +29,8 @@ export const CursosPage: React.FC = () => {
   const [isChallengesVisible, setIsChallengesVisible] = useState<string | null>(
     null,
   );
+  const [challengePage, setChallengePage] = useState(0);
+  const CHALLENGES_PER_PAGE = 10;
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -51,13 +39,11 @@ export const CursosPage: React.FC = () => {
         const data = await apiService.courses.getAll();
         if (data && data.length > 0) {
           setCourses(data);
-        } else {
-          setCourses(MOCK_COURSES as unknown as CourseResponseDTO[]);
         }
         setError(null);
       } catch (err) {
-        console.error("Error fetching courses, using fallback:", err);
-        setCourses(MOCK_COURSES as unknown as CourseResponseDTO[]);
+        console.error("Error fetching courses:", err);
+        setError("No se pudieron cargar los cursos.");
       } finally {
         setIsLoading(false);
       }
@@ -66,11 +52,42 @@ export const CursosPage: React.FC = () => {
     fetchCourses();
   }, []);
 
+  const fetchChallengesFromActivities = async (courseId: string): Promise<ChallengeView[]> => {
+    try {
+      const modules = await apiService.modules.getByCourse(courseId);
+      if (modules.length === 0) return [];
+      const challenges: ChallengeView[] = [];
+      let order = 0;
+      for (const mod of modules) {
+        const lessons = await apiService.lessons.getByModule(mod.idModule);
+        for (const lesson of lessons) {
+          const activities = await apiService.activities.getByLesson(lesson.idLesson);
+          for (const act of activities) {
+            challenges.push({
+              id: act.idActivity,
+              idActivity: act.idActivity,
+              title: act.name,
+              description: "",
+              order: order++,
+              difficulty: "MEDIUM",
+              points: 0,
+              courseId,
+            });
+          }
+        }
+      }
+      return challenges;
+    } catch {
+      return [];
+    }
+  };
+
   const fetchChallenges = async (courseId: string) => {
+    setChallengePage(0);
+    setSelectedCourseChallenges([]);
     try {
       const authUser = getAuthState().user;
-      const userId = authUser?.id;
-      if (!userId) return;
+      const userId = authUser?.id || "config-store";
       const sims = await apiService.simulations.getByUser(userId);
       const parsed = sims
         .map((s) => {
@@ -85,6 +102,7 @@ export const CursosPage: React.FC = () => {
                 order: data.order || 0,
                 difficulty: data.difficulty || "EASY",
                 points: data.points || 0,
+                courseId,
               } as ChallengeView;
             }
             return null;
@@ -94,13 +112,22 @@ export const CursosPage: React.FC = () => {
         })
         .filter((c): c is ChallengeView => c !== null)
         .sort((a, b) => a.order - b.order);
-      setSelectedCourseChallenges(parsed);
+      if (parsed.length > 0) {
+        setSelectedCourseChallenges(parsed);
+      } else {
+        const fallback = await fetchChallengesFromActivities(courseId);
+        setSelectedCourseChallenges(fallback);
+      }
       setIsChallengesVisible(
         isChallengesVisible === courseId ? null : courseId,
       );
     } catch (err) {
       console.error("Error fetching challenges:", err);
-      setSelectedCourseChallenges([]);
+      const fallback = await fetchChallengesFromActivities(courseId);
+      setSelectedCourseChallenges(fallback);
+      setIsChallengesVisible(
+        isChallengesVisible === courseId ? null : courseId,
+      );
     }
   };
 
@@ -276,9 +303,11 @@ export const CursosPage: React.FC = () => {
                 {isChallengesVisible === course.idCourse && (
                   <div className="mt-4 space-y-3">
                     {selectedCourseChallenges.length > 0 ? (
-                      selectedCourseChallenges
-                        .sort((a, b) => a.order - b.order) // Ordenar por `order`
-                        .map((challenge) => (
+                      <>
+                        {selectedCourseChallenges
+                          .sort((a, b) => a.order - b.order)
+                          .slice(challengePage * CHALLENGES_PER_PAGE, (challengePage + 1) * CHALLENGES_PER_PAGE)
+                          .map((challenge) => (
                           <div
                             key={challenge.id}
                             className="p-3 bg-[var(--surface-brighter)] border border-border/30 rounded-lg flex justify-between items-center"
@@ -329,7 +358,33 @@ export const CursosPage: React.FC = () => {
                               Iniciar
                             </button>
                           </div>
-                        ))
+                        ))}
+                        {selectedCourseChallenges.length > CHALLENGES_PER_PAGE && (
+                          <div className="flex items-center justify-between pt-4">
+                            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                              {challengePage * CHALLENGES_PER_PAGE + 1}–{Math.min((challengePage + 1) * CHALLENGES_PER_PAGE, selectedCourseChallenges.length)} de {selectedCourseChallenges.length}
+                            </span>
+                            <div className="flex gap-2">
+                              <button
+                                disabled={challengePage === 0}
+                                onClick={() => setChallengePage(p => Math.max(0, p - 1))}
+                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all"
+                                style={{ borderRadius: "var(--theme-radius)" }}
+                              >
+                                ← Anterior
+                              </button>
+                              <button
+                                disabled={(challengePage + 1) * CHALLENGES_PER_PAGE >= selectedCourseChallenges.length}
+                                onClick={() => setChallengePage(p => p + 1)}
+                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all"
+                                style={{ borderRadius: "var(--theme-radius)" }}
+                              >
+                                Siguiente →
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p
                         className="text-[10px] text-center"

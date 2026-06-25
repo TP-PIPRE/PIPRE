@@ -43,9 +43,14 @@ export const LoginPage: React.FC = () => {
         });
 
         // Store UUID for login lookup
-        const storedUsers = JSON.parse(localStorage.getItem("pipre_registered_users") || "{}");
+        const storedUsers = JSON.parse(
+          localStorage.getItem("pipre_registered_users") || "{}",
+        );
         storedUsers[email] = uuid;
-        localStorage.setItem("pipre_registered_users", JSON.stringify(storedUsers));
+        localStorage.setItem(
+          "pipre_registered_users",
+          JSON.stringify(storedUsers),
+        );
 
         setSuccessMessage("Nodo de usuario creado. Identifícate para entrar.");
         setIsLogin(true);
@@ -74,16 +79,14 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-md z-10">
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-6">
-          <div
-            className="w-20 h-20 text-bg flex items-center justify-center mb-4 hover:rotate-12 transition-transform duration-500"
-          >
+          <div className="w-20 h-20 text-bg flex items-center justify-center mb-4 hover:rotate-12 transition-transform duration-500">
             <RobotIcon size={48} />
           </div>
           <h1 className="text-3xl font-bold tracking-widest text-text mb-2">
             PIPRE
           </h1>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-text-muted font-bold">
-            Plataforma Industrial de Retos
+          <p className="text-[10px] uppercase tracking-[0.4em] text-text-muted font-bold text-center">
+            Plataforma Inteligente Para<br></br> Robotica Escolar
           </p>
         </div>
 

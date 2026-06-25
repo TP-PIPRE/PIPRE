@@ -1,24 +1,18 @@
 import axiosInstance from "../../api/axiosInstance";
 import type { IAuthRepository } from "../../ports/IAuthRepository";
 import type { User } from "../../../shared/types/User";
+import type { LoginResponseDTO } from "../../api/models/apiModels";
 
 const LOGIN_ENDPOINT = "auth/login";
 const REGISTER_ENDPOINT = "users";
 
-const STORAGE_KEY = "pipre_registered_users";
-
-function getStoredUserIds(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  } catch {
-    return {};
+function getCookie(name: string): string | null {
+  const cookies = document.cookie.split(";");
+  for (const cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.trim().split("=");
+    if (cookieName === name) return decodeURIComponent(cookieValue);
   }
-}
-
-function storeUserId(email: string, uuid: string): void {
-  const users = getStoredUserIds();
-  users[email] = uuid;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+  return null;
 }
 
 export class AuthAdapter implements IAuthRepository {
@@ -27,8 +21,12 @@ export class AuthAdapter implements IAuthRepository {
     password: string,
   ): Promise<{ user: User; token: string }> {
     try {
-      const response = await axiosInstance.post(LOGIN_ENDPOINT, { email, password });
-      const token = response.data;
+      const response = await axiosInstance.post<LoginResponseDTO>(LOGIN_ENDPOINT, { email, password });
+      const loginData = response.data;
+      const authUser = loginData.user;
+
+      // El backend establece la cookie jwt automáticamente vía Set-Cookie
+      const token = getCookie("jwt") || "";
 
       let role = "student";
       try {
@@ -48,14 +46,10 @@ export class AuthAdapter implements IAuthRepository {
         else if (email.includes("docente")) role = "docente";
       }
 
-      // Look up real UUID stored during registration
-      const storedUsers = getStoredUserIds();
-      const uuid = storedUsers[email] || "";
-
       const user: User = {
-        id: uuid,
-        name: role === "admin" ? "Admin" : (role === "docente" ? "Profesor" : "Estudiante"),
-        email: email,
+        id: authUser.email || "",
+        name: authUser.firstName || (role === "admin" ? "Admin" : role === "docente" ? "Profesor" : "Estudiante"),
+        email: authUser.email,
         role: role,
       };
 
@@ -85,11 +79,8 @@ export class AuthAdapter implements IAuthRepository {
         passwordHash: password,
         age,
         grade,
-        role: "student",
+        roleIdList: [],
       });
-
-      const uuid = response.data;
-      storeUserId(email, uuid);
 
       // Auto-login after registration
       const { user } = await this.login(email, password);

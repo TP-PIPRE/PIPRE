@@ -111,3 +111,50 @@ export interface DropoutRiskResponse {
   riesgo: number;
   nivel: string;
 }
+
+// --- Nuevos modelos para API paginada (Spring Page) y login ---
+
+export interface AuthUserResponseDTO {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface LoginResponseDTO {
+  message: string;
+  user: AuthUserResponseDTO;
+}
+
+export interface Pageable {
+  page?: number;
+  size?: number;
+  sort?: string[];
+}
+
+export interface PageCourseDTO {
+  content: CourseResponseDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
+}
+
+export interface PageModuleDTO {
+  content: ModuleResponseDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
+}
+
+export interface PageActivityDTO {
+  content: ActivityResponseDTO[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
+}

@@ -10,34 +10,9 @@ const axiosInstance = axios.create({
     "Content-Type": "application/json",
     "Accept": "*/*",
   },
+  // El backend usa cookie auth (jwt), no enviamos Authorization header manualmente
+  withCredentials: true,
 });
-
-// Interceptor para añadir el token de autenticación a cada petición
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const getCookie = (name: string): string | null => {
-      const cookies = document.cookie.split(";");
-      for (const cookie of cookies) {
-        const [cookieName, cookieValue] = cookie.trim().split("=");
-        if (cookieName === name) return decodeURIComponent(cookieValue);
-      }
-      return null;
-    };
-
-    const token = getCookie("pipre_token");
-
-    if (token) {
-      console.log("API Request - Token found:", token.substring(0, 10) + "...");
-      config.headers.set("Authorization", `Bearer ${token}`);
-    } else {
-      console.warn("API Request - No token found in cookies!");
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 export default axiosInstance;
 
