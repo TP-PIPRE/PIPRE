@@ -1,21 +1,59 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   getAuthState,
   clearAuthState,
 } from "../../../infrastructure/store/authStore";
 import { useThemeStore } from "../../../infrastructure/store/themeStore";
+import { apiService } from "../../../infrastructure/api/apiService";
 import { themes } from "../../../shared/constants/themes";
 import { RobotIcon } from "./RobotIcon";
-import { BsPaletteFill, BsPersonFill, BsPower, BsXLg, BsList } from "react-icons/bs";
+import { BsPaletteFill, BsPersonFill, BsPower, BsList, BsTrophyFill, BsBarChartFill } from "react-icons/bs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../../../components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "../../../components/ui/dropdown-menu";
+
+const themeIcons: Record<string, string> = {
+  candyHarmony: "\u2728",
+  dark: "\uD83C\uDFAE",
+  light: "\uD83C\uDF1F",
+};
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated } = getAuthState();
   const { currentThemeName, setTheme } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [profileInfo, setProfileInfo] = useState<{ level: number; stars: number } | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    const userId = user.id;
+    apiService.profile.get(userId).then((p) => {
+      setProfileInfo({ level: p.level, stars: p.totalStars });
+    }).catch(() => {});
+  }, [isAuthenticated, user?.id]);
 
   const isDocente = user?.role === "docente";
 
@@ -25,173 +63,206 @@ export const Navbar: React.FC = () => {
         { name: "Métricas", path: "/docente/metricas" },
         { name: "Retos", path: "/docente/retos" },
         { name: "Estudiantes", path: "/docente/estudiantes" },
+        { name: "Biblioteca", path: "/biblioteca" },
       ]
     : [
         { name: "Inicio", path: "/" },
-        { name: "Cursos", path: "/cursos" },
         { name: "Simulador", path: "/simulador" },
         { name: "Resultados", path: "/resultados" },
         { name: "Ranking", path: "/ranking" },
+        { name: "Biblioteca", path: "/biblioteca" },
       ];
 
   const handleLogout = () => {
-    console.log("Manejador de logout llamado desde Navbar.");
     clearAuthState();
     navigate("/login");
   };
 
-  const handleThemeChange = (themeName: keyof typeof themes) => {
-    setTheme(themeName);
-    setIsThemeMenuOpen(false);
-  };
+  const currentThemeDisplay = themes[currentThemeName]?.name || currentThemeName;
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 border-b border-border/60 bg-bg/95 backdrop-blur-2xl z-[1001] flex items-stretch">
-      {/* Left: Brand + Nav */}
-      <div className="flex items-stretch flex-1">
-        {/* Brand */}
+    <header className="fixed top-0 left-0 right-0 h-12 border-b bg-background/95 backdrop-blur-2xl z-[1001] flex items-stretch">
+      <div className="flex items-stretch flex-1 max-w-[1920px] mx-auto w-full px-2">
         <Link
           to="/"
-          className="flex items-center gap-3 px-6 hover:bg-surface/40 transition-all group"
+          className="flex items-center gap-2 px-3 hover:opacity-80 transition-all group shrink-0"
         >
-          <div
-            className="w-8 h-8 bg-primary text-bg flex items-center justify-center shrink-0 shadow-lg group-hover:rotate-12 transition-transform"
-            style={{ borderRadius: "var(--theme-radius)" }}
-          >
-            <RobotIcon size={20} />
-          </div>
-          <div className="hidden sm:flex flex-col leading-none">
-            <span className="text-sm font-bold tracking-widest text-text">
+          <RobotIcon
+            size={30}
+            className="drop-shadow-sm transition-transform duration-200 ease-out group-hover:scale-105"
+          />
+          <div className="hidden sm:flex flex-col leading-tight">
+            <span className="text-xs font-bold tracking-widest text-foreground">
               PIPRE
             </span>
-            <span className="text-[8px] uppercase tracking-[0.3em] text-primary font-black">
+            <span className="text-[7px] uppercase tracking-[0.25em] text-primary font-black leading-none">
               Industrial
             </span>
           </div>
         </Link>
 
-        {/* Nav links */}
-        <nav className="hidden md:flex items-stretch ml-4">
+        <nav className="hidden md:flex items-stretch ml-3">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center px-6 text-[10px] font-bold uppercase tracking-[0.2em] relative transition-all active:scale-95 ${
-                  isActive ? "text-primary" : "text-text-muted hover:text-text"
+                className={`flex items-center px-3 text-[9px] font-bold uppercase tracking-[0.15em] relative transition-all hover:opacity-100 ${
+                  isActive
+                    ? "text-primary opacity-100"
+                    : "text-muted-foreground/60 hover:text-foreground"
                 }`}
               >
                 {link.name}
                 {isActive && (
-                  <span className="absolute bottom-0 left-6 right-6 h-0.5 bg-primary rounded-full shadow-[0_0_10px_var(--primary)]" />
+                  <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full shadow-[0_0_6px_var(--primary)]" />
                 )}
               </Link>
             );
           })}
         </nav>
-      </div>
 
-      {/* Right: User + Actions */}
-      <div className="flex items-stretch px-2">
-        {/* Theme Picker */}
-        <div className="relative flex items-center h-full">
-          <button
-            onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
-            className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
-            title="Cambiar Tema"
-          >
-            <BsPaletteFill className="text-xl" />
-          </button>
-
-          {isThemeMenuOpen && (
-            <div
-              className="absolute right-0 top-full mt-1 w-40 bg-surface border border-border p-2 shadow-2xl animate-scale-up z-[1100]"
-              style={{ borderRadius: "var(--theme-radius)" }}
+        <div className="flex items-center gap-0 ml-auto">
+          <div className="hidden md:flex items-center">
+            <Select
+              value={currentThemeName}
+              onValueChange={(v) => setTheme(v as keyof typeof themes)}
             >
-              {(Object.keys(themes) as Array<keyof typeof themes>).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => handleThemeChange(t)}
-                  className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-all ${
-                    currentThemeName === t
-                      ? "text-primary bg-primary/10"
-                      : "text-text-muted hover:bg-surface-brighter"
-                  }`}
-                  style={{ borderRadius: "calc(var(--theme-radius) - 2px)" }}
-                >
-                  {t}
-                </button>
-              ))}
+              <SelectTrigger className="h-7 w-auto min-w-0 border-0 bg-transparent hover:bg-muted/30 text-[10px] font-medium gap-1 px-2 [&>svg]:text-muted-foreground [&>svg]:h-3 [&>svg]:w-3">
+                <BsPaletteFill className="h-3 w-3 shrink-0 text-muted-foreground" />
+                <SelectValue placeholder={currentThemeDisplay} />
+              </SelectTrigger>
+              <SelectContent className="min-w-[140px]">
+                {(Object.entries(themes) as [keyof typeof themes, typeof themes[keyof typeof themes]][]).map(([key, theme]) => (
+                  <SelectItem key={key} value={key} className="text-[10px] py-1">
+                    {themeIcons[key] || "\u2728"} {theme.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isAuthenticated && (
+            <div className="hidden md:flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1.5 px-2 py-1 mx-0.5 rounded-md hover:bg-muted/30 transition-colors cursor-pointer">
+                  <div className="w-6 h-6 bg-muted border border-border rounded-md flex items-center justify-center overflow-hidden">
+                    <BsPersonFill className="text-muted-foreground text-xs" />
+                  </div>
+                  <div className="flex flex-col items-start leading-tight max-w-[80px]">
+                    <span className="text-[9px] font-semibold text-foreground truncate w-full">
+                      {user?.name || user?.email?.split("@")[0] || "Operador"}
+                    </span>
+                    <span className="text-[7px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
+                      {isDocente ? "Instructor" : profileInfo ? `Nvl ${profileInfo.level} \u00B7 ${profileInfo.stars} \u2606` : "Estudiante"}
+                    </span>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[160px] p-1">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1">
+                      {user?.name || "Usuario"}
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator className="my-1" />
+                  {!isDocente && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/perfil")}
+                        className="text-[10px] font-medium cursor-pointer px-2 py-1"
+                      >
+                        <BsBarChartFill className="h-3 w-3 mr-1.5" />
+                        Mi Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/perfil?tab=achievements")}
+                        className="text-[10px] font-medium cursor-pointer px-2 py-1"
+                      >
+                        <BsTrophyFill className="h-3 w-3 mr-1.5" />
+                        Logros
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="my-1" />
+                    </>
+                  )}
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-[10px] text-destructive font-medium cursor-pointer px-2 py-1"
+                  >
+                    <BsPower className="h-3 w-3 mr-1.5" />
+                    Cerrar sesión
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
-        </div>
 
-        {/* User Status */}
-        {isAuthenticated && (
-          <div className="hidden sm:flex items-center gap-4 px-6 border-x border-border/30">
-            <div className="flex flex-col items-end leading-tight">
-              <span className="text-[10px] font-bold text-text truncate max-w-[120px]">
-                {user?.name || user?.email?.split("@")[0] || "Operador"}
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1 h-1 bg-success rounded-full animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-text-muted">
-                  {isDocente ? "Instructor" : "Estudiante"}
-                </span>
-              </div>
-            </div>
-            <div
-              className="w-8 h-8 bg-surface border border-border flex items-center justify-center overflow-hidden"
-              style={{ borderRadius: "var(--theme-radius)" }}
-            >
-              <BsPersonFill className="text-text-muted text-lg" />
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 px-2">
           {isAuthenticated && (
             <button
               onClick={handleLogout}
-              className="w-10 h-10 flex items-center justify-center text-text-muted hover:text-danger transition-all hover:bg-danger/10 rounded-full"
+              className="md:hidden w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-destructive/10"
               title="Desconectar"
             >
-              <BsPower className="text-xl" />
+              <BsPower className="text-sm" />
             </button>
           )}
 
-          {/* Mobile menu toggle */}
-          <button
-            className="md:hidden w-10 h-10 flex items-center justify-center text-text-muted hover:text-primary transition-all hover:bg-surface/60 rounded-full"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <BsXLg className="text-xl" /> : <BsList className="text-xl" />}
-          </button>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger className="md:hidden w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted/30 cursor-pointer">
+              <BsList className="text-lg" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[260px] p-0">
+              <SheetHeader className="p-3 border-b">
+                <SheetTitle className="flex items-center gap-2 text-xs">
+                  <RobotIcon size={24} />
+                  PIPRE
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col p-1.5">
+                {navLinks.map((link) => {
+                  const isActive = location.pathname === link.path;
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setIsSheetOpen(false)}
+                      className={`flex items-center gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider rounded-md transition-all ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                })}
+                <div className="border-t my-1.5" />
+                <div className="px-3 py-2">
+                  <span className="text-[8px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5 block">Tema</span>
+                  <Select
+                    value={currentThemeName}
+                    onValueChange={(v) => {
+                      setTheme(v as keyof typeof themes);
+                      setIsSheetOpen(false);
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-7 text-[10px]">
+                      <SelectValue placeholder={currentThemeDisplay} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.entries(themes) as [keyof typeof themes, typeof themes[keyof typeof themes]][]).map(([key, theme]) => (
+                        <SelectItem key={key} value={key} className="text-[10px] py-1">
+                          {themeIcons[key] || "\u2728"} {theme.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-
-      {/* Mobile dropdown */}
-      {isMenuOpen && (
-        <div className="absolute top-16 left-0 w-full bg-surface border-b border-border md:hidden flex flex-col p-4 gap-2 animate-fade-in">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={() => setIsMenuOpen(false)}
-              className={`px-6 py-4 text-[10px] font-bold uppercase tracking-widest transition-all ${
-                location.pathname === link.path
-                  ? "bg-primary/10 text-primary"
-                  : "text-text-muted hover:bg-bg"
-              }`}
-              style={{ borderRadius: "var(--theme-radius)" }}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </div>
-      )}
     </header>
   );
 };

@@ -26,8 +26,10 @@ const candyHarmonyColors = {
   text: "#2E1A28",            // Dark aubergine — warm dark, never pure black
   textMuted: "#7D6975",       // Muted mauve-gray
   textInverted: "#FAF5F8",
-  success: "#5BA870",         // Sage green — natural, not neon
-  danger: "#C94F5A",          // Muted rose-red — firm but not harsh
+  robotC1: "#C084D6",          // Lavender — soft gradient base
+  robotC2: "#E8B4DE",          // Soft pink — gradient highlight
+  success: "#5BA870",
+  danger: "#C94F5A",
 };
 
 const darkColors = {
@@ -45,8 +47,10 @@ const darkColors = {
   text: "#E8EDF2",            // Slight blue tint — not pure white
   textMuted: "#6B8299",       // Steel blue-gray — never pure gray
   textInverted: "#0C1117",
-  success: "#22C55E",         // Vivid green — clear signal
-  danger: "#EF4444",          // Alarm red — unmistakable
+  robotC1: "#6CB6FF",          // Blue — tech gradient base
+  robotC2: "#34D399",          // Emerald — tech gradient highlight
+  success: "#22C55E",
+  danger: "#EF4444",
 };
 
 const lightColors = {
@@ -63,8 +67,10 @@ const lightColors = {
   text: "#1A1828",            // Near-black tinted toward indigo
   textMuted: "#6E6B80",       // Muted purple-gray — tinted neutral
   textInverted: "#F7F8FB",
-  success: "#16A34A",         // Natural green
-  danger: "#DC2626",          // Clear red
+  robotC1: "#818CF8",          // Light indigo — calm gradient base
+  robotC2: "#4F46E5",          // True indigo — gradient highlight
+  success: "#16A34A",
+  danger: "#DC2626",
 };
 
 export const themes = {

@@ -8,4 +8,5 @@ public interface RankingRepositoryPort {
     List<Ranking> findAllByIdGroup(String idGroup);
     void save(Ranking ranking);
     void sortRanking(String idGroup);
+    void deleteByGroupAndStudent(String idGroup, String idStudent);
 }

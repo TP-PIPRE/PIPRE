@@ -14,5 +14,11 @@ public interface RankingMapper {
 
     @Mapping(target = "idGroup", source = "groupJpaEntity.idGroup")
     @Mapping(target = "idStudent", source = "studentJpaEntity.idUser")
+    @Mapping(target = "studentName", expression = "java(entity.getStudentJpaEntity() != null ? entity.getStudentJpaEntity().getFirstName() + \" \" + entity.getStudentJpaEntity().getLastName() : null)")
+    @Mapping(target = "level", source = "level")
+    @Mapping(target = "xpTotal", source = "xpTotal")
+    @Mapping(target = "totalStars", source = "totalStars")
+    @Mapping(target = "currentStreak", source = "currentStreak")
+    @Mapping(target = "maxStreak", source = "maxStreak")
     Ranking toDomain(RankingJpaEntity entity);
 }

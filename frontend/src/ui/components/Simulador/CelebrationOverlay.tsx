@@ -7,6 +7,8 @@ interface CelebrationOverlayProps {
   blocks: number;
   energy: number;
   challengeTitle: string;
+  stars?: number;
+  xpEarned?: number;
   onNext: () => void;
   onExit: () => void;
 }
@@ -16,6 +18,8 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
   blocks,
   energy,
   challengeTitle,
+  stars = 0,
+  xpEarned = 0,
   onNext,
   onExit,
 }) => {
@@ -67,13 +71,34 @@ export const CelebrationOverlay: React.FC<CelebrationOverlayProps> = ({
         </h2>
 
         <p
-          className="text-xs text-text-muted/70 mb-6 font-medium"
+          className="text-xs text-text-muted/70 mb-1 font-medium"
           style={{ color: "var(--text-muted)" }}
         >
           {challengeTitle}
         </p>
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="flex justify-center gap-1 mb-4">
+          {[1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className="text-lg transition-all"
+              style={{
+                color: i <= stars ? "var(--accent)" : "var(--border)",
+                filter: i <= stars ? "drop-shadow(0 0 4px var(--accent))" : "none",
+              }}
+            >
+              ⭐
+            </span>
+          ))}
+        </div>
+
+        {xpEarned > 0 && (
+          <p className="mb-4 text-xs font-black" style={{ color: "var(--accent)" }}>
+            +{xpEarned} XP
+          </p>
+        )}
+
+        <div className="grid grid-cols-3 gap-3 mb-4">
           <div
             className="p-3 border border-border/20"
             style={{
