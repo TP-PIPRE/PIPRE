@@ -27,7 +27,7 @@ public class RegisterUserService implements RegisterUserUseCase {
     @Transactional
     public String execute(RegisterUserCommand command) {
         if (repositoryPort.existsByEmail(command.email())) {
-           throw new BusinessException("El email ya se encuentra registrado.");
+            throw new BusinessException("El email ya se encuentra registrado.");
         }
 
         if (command.roleIdList() == null || command.roleIdList().isEmpty()) {
@@ -42,7 +42,8 @@ public class RegisterUserService implements RegisterUserUseCase {
 
         for (String roleId : command.roleIdList()) {
             if (!validRoleIds.contains(roleId)) {
-                throw new BusinessException("El rol con ID " + roleId + " no es válido o no existe en la base de datos.");
+                throw new BusinessException(
+                        "El rol con ID " + roleId + " no es válido o no existe en la base de datos.");
             }
         }
 
@@ -55,8 +56,7 @@ public class RegisterUserService implements RegisterUserUseCase {
                 encodedPassword,
                 command.grade(),
                 command.age(),
-                command.roleIdList()
-        );
+                command.roleIdList());
         repositoryPort.save(newUser);
 
         return newUser.getIdUser();
