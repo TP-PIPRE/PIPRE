@@ -1,63 +1,142 @@
-export const RobotIcon = ({ size = 16, className }: { size?: number; className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 180 180"
-    width={size}
-    height={size}
-    className={`shrink-0 ${className ?? ""}`}
-    style={{ "--c1": "var(--robot-c1, #6CB6FF)", "--c2": "var(--robot-c2, #D26BFF)" } as React.CSSProperties}
-  >
-    <defs>
-      <linearGradient id="robotGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-        <animate attributeName="x1" values="0%;30%;0%" dur="6s" repeatCount="indefinite" />
-        <animate attributeName="y1" values="100%;70%;100%" dur="6s" repeatCount="indefinite" />
-        <animate attributeName="x2" values="100%;70%;100%" dur="6s" repeatCount="indefinite" />
-        <animate attributeName="y2" values="0%;30%;0%" dur="6s" repeatCount="indefinite" />
-        <stop offset="0%" stopColor="var(--c1)" />
-        <stop offset="100%" stopColor="var(--c2)" />
-      </linearGradient>
-      <filter id="robotGlow">
-        <feGaussianBlur stdDeviation="4" result="blur">
-          <animate attributeName="stdDeviation" values="3;6;3" dur="3s" repeatCount="indefinite" />
-        </feGaussianBlur>
-        <feMerge>
-          <feMergeNode in="blur" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
-      </filter>
-    </defs>
-    <g
-      fill="url(#robotGradient)"
-      filter="url(#robotGlow)"
-      stroke="currentColor"
-      strokeOpacity="0.12"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+import { useId, type CSSProperties } from "react";
+
+interface RobotIconProps {
+  size?: number;
+  className?: string;
+  label?: string;
+}
+
+export const RobotIcon = ({
+  size = 32,
+  className,
+  label = "PIPRE",
+}: RobotIconProps) => {
+  const id = useId().replace(/:/g, "");
+  const blockGradientId = `robot-block-gradient-${id}`;
+  const wheelGradientId = `robot-wheel-gradient-${id}`;
+  const auraGradientId = `robot-aura-gradient-${id}`;
+  const glowId = `robot-pixel-glow-${id}`;
+  const blocks = [
+    [82, 40],
+    [64, 58],
+    [82, 58],
+    [100, 58],
+    [64, 76],
+    [82, 76],
+    [100, 76],
+    [46, 94],
+    [64, 94],
+    [82, 94],
+    [100, 94],
+    [118, 94],
+    [28, 112],
+    [46, 112],
+    [64, 112],
+    [100, 112],
+    [118, 112],
+    [136, 112],
+  ];
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 180 180"
+      width={size}
+      height={size}
+      className={`shrink-0 overflow-visible ${className ?? ""}`}
+      style={
+        {
+          "--robot-a": "var(--robot-c1, #93c5fd)",
+          "--robot-b": "var(--robot-c2, #c084fc)",
+          "--robot-c": "var(--robot-c3, #a78bfa)",
+          "--robot-shell": "oklch(16% 0.018 265)",
+          "--robot-shell-raised": "oklch(20% 0.02 265)",
+          "--robot-line": "oklch(92% 0.012 265)",
+          "--robot-cut": "oklch(11% 0.014 265)",
+        } as CSSProperties
+      }
+      role="img"
+      aria-label={label}
     >
-      <rect x="82" y="10" width="16" height="16" rx="3" />
-      <rect x="64" y="28" width="16" height="16" rx="3" />
-      <rect x="82" y="28" width="16" height="16" rx="3" />
-      <rect x="100" y="28" width="16" height="16" rx="3" />
-      <rect x="64" y="46" width="16" height="16" rx="3" />
-      <rect x="82" y="46" width="16" height="16" rx="3" />
-      <rect x="100" y="46" width="16" height="16" rx="3" />
-      <rect x="46" y="64" width="16" height="16" rx="3" />
-      <rect x="64" y="64" width="16" height="16" rx="3" />
-      <rect x="82" y="64" width="16" height="16" rx="3" />
-      <rect x="100" y="64" width="16" height="16" rx="3" />
-      <rect x="118" y="64" width="16" height="16" rx="3" />
-      <rect x="64" y="84" width="16" height="16" rx="3" />
-      <rect x="82" y="84" width="16" height="16" rx="3" />
-      <rect x="100" y="84" width="16" height="16" rx="3" />
-      <rect x="18" y="82" width="16" height="16" rx="3" />
-      <rect x="36" y="82" width="16" height="16" rx="3" />
-      <rect x="18" y="100" width="16" height="16" rx="3" />
-      <rect x="36" y="100" width="16" height="16" rx="3" />
-      <rect x="128" y="82" width="16" height="16" rx="3" />
-      <rect x="146" y="82" width="16" height="16" rx="3" />
-      <rect x="128" y="100" width="16" height="16" rx="3" />
-      <rect x="146" y="100" width="16" height="16" rx="3" />
-    </g>
-  </svg>
-);
+      <defs>
+        <radialGradient id={auraGradientId} cx="50%" cy="58%" r="54%">
+          <stop offset="0%" stopColor="var(--robot-c)" stopOpacity="0.28" />
+          <stop offset="62%" stopColor="var(--robot-b)" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="var(--robot-a)" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={blockGradientId} x1="18%" y1="92%" x2="84%" y2="8%">
+          <stop offset="0%" stopColor="var(--robot-a)" />
+          <stop offset="48%" stopColor="var(--robot-c)" />
+          <stop offset="100%" stopColor="var(--robot-b)" />
+        </linearGradient>
+        <linearGradient id={wheelGradientId} x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="var(--robot-a)" />
+          <stop offset="100%" stopColor="var(--robot-b)" />
+        </linearGradient>
+        <filter id={glowId} x="-35%" y="-35%" width="170%" height="170%">
+          <feGaussianBlur stdDeviation="2.8" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      <rect
+        x="7"
+        y="7"
+        width="166"
+        height="166"
+        rx="42"
+        fill="var(--robot-shell)"
+        stroke="var(--robot-line)"
+        strokeOpacity="0.22"
+        strokeWidth="4"
+      />
+      <rect
+        x="15"
+        y="15"
+        width="150"
+        height="150"
+        rx="34"
+        fill="var(--robot-shell-raised)"
+        fillOpacity="0.28"
+      />
+      <circle cx="90" cy="96" r="68" fill={`url(#${auraGradientId})`} />
+
+      <g filter={`url(#${glowId})`}>
+        <g fill={`url(#${blockGradientId})`}>
+          {blocks.map(([x, y]) => (
+            <rect
+              key={`${x}-${y}`}
+              x={x}
+              y={y}
+              width="16"
+              height="16"
+              rx="4"
+            />
+          ))}
+        </g>
+
+        <g fill={`url(#${wheelGradientId})`}>
+          <rect x="28" y="126" width="34" height="22" rx="6" />
+          <rect x="118" y="126" width="34" height="22" rx="6" />
+        </g>
+      </g>
+
+      <g stroke="var(--robot-cut)" strokeLinecap="round" strokeWidth="7">
+        <path d="M45 130v14" />
+        <path d="M38 137h14" />
+        <path d="M135 130v14" />
+        <path d="M128 137h14" />
+      </g>
+      <path
+        d="M68 116h44"
+        stroke="var(--robot-line)"
+        strokeLinecap="round"
+        strokeOpacity="0.28"
+        strokeWidth="4"
+      />
+    </svg>
+  );
+};

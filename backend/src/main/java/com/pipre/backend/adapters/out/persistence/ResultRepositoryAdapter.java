@@ -51,4 +51,14 @@ public class ResultRepositoryAdapter implements ResultRepositoryPort {
 
         resultJpaRepository.save(entity);
     }
+
+    @Override
+    public List<Object[]> findCourseRankingRaw(String courseId) {
+        return resultJpaRepository.findCourseRankingRaw(courseId);
+    }
+
+    @Override
+    public List<Object[]> findModuleRankingRaw(String moduleId) {
+        return resultJpaRepository.findModuleRankingRaw(moduleId);
+    }
 }

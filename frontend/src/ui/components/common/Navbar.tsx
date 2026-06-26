@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   getAuthState,
   clearAuthState,
 } from "../../../infrastructure/store/authStore";
 import { useThemeStore } from "../../../infrastructure/store/themeStore";
+import { apiService } from "../../../infrastructure/api/apiService";
 import { themes } from "../../../shared/constants/themes";
 import { RobotIcon } from "./RobotIcon";
-import { BsPaletteFill, BsPersonFill, BsPower, BsList } from "react-icons/bs";
+import { BsPaletteFill, BsPersonFill, BsPower, BsList, BsTrophyFill, BsBarChartFill } from "react-icons/bs";
 import {
   Select,
   SelectContent,
@@ -44,13 +45,22 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [profileInfo, setProfileInfo] = useState<{ level: number; stars: number } | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+    const userId = user.id;
+    apiService.profile.get(userId).then((p) => {
+      setProfileInfo({ level: p.level, stars: p.totalStars });
+    }).catch(() => {});
+  }, [isAuthenticated, user?.id]);
 
   const isDocente = user?.role === "docente";
 
   const navLinks = isDocente
     ? [
         { name: "Dashboard", path: "/docente/dashboard" },
-        { name: "M\u00e9tricas", path: "/docente/metricas" },
+        { name: "Métricas", path: "/docente/metricas" },
         { name: "Retos", path: "/docente/retos" },
         { name: "Estudiantes", path: "/docente/estudiantes" },
         { name: "Biblioteca", path: "/biblioteca" },
@@ -77,9 +87,10 @@ export const Navbar: React.FC = () => {
           to="/"
           className="flex items-center gap-2 px-3 hover:opacity-80 transition-all group shrink-0"
         >
-          <div className="w-7 h-7 bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow group-hover:scale-110 transition-transform rounded-md">
-            <RobotIcon size={16} />
-          </div>
+          <RobotIcon
+            size={30}
+            className="drop-shadow-sm transition-transform duration-200 ease-out group-hover:scale-105"
+          />
           <div className="hidden sm:flex flex-col leading-tight">
             <span className="text-xs font-bold tracking-widest text-foreground">
               PIPRE
@@ -144,23 +155,42 @@ export const Navbar: React.FC = () => {
                       {user?.name || user?.email?.split("@")[0] || "Operador"}
                     </span>
                     <span className="text-[7px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
-                      {isDocente ? "Instructor" : "Estudiante"}
+                      {isDocente ? "Instructor" : profileInfo ? `Nvl ${profileInfo.level} \u00B7 ${profileInfo.stars} \u2606` : "Estudiante"}
                     </span>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[140px] p-1">
+                <DropdownMenuContent align="end" className="min-w-[160px] p-1">
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1">
                       {user?.name || "Usuario"}
                     </DropdownMenuLabel>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator className="my-1" />
+                  {!isDocente && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/perfil")}
+                        className="text-[10px] font-medium cursor-pointer px-2 py-1"
+                      >
+                        <BsBarChartFill className="h-3 w-3 mr-1.5" />
+                        Mi Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => navigate("/perfil?tab=achievements")}
+                        className="text-[10px] font-medium cursor-pointer px-2 py-1"
+                      >
+                        <BsTrophyFill className="h-3 w-3 mr-1.5" />
+                        Logros
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="my-1" />
+                    </>
+                  )}
                   <DropdownMenuItem
                     onClick={handleLogout}
                     className="text-[10px] text-destructive font-medium cursor-pointer px-2 py-1"
                   >
                     <BsPower className="h-3 w-3 mr-1.5" />
-                    Cerrar sesi\u00f3n
+                    Cerrar sesión
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -184,7 +214,7 @@ export const Navbar: React.FC = () => {
             <SheetContent side="right" className="w-[260px] p-0">
               <SheetHeader className="p-3 border-b">
                 <SheetTitle className="flex items-center gap-2 text-xs">
-                  <RobotIcon size={16} />
+                  <RobotIcon size={24} />
                   PIPRE
                 </SheetTitle>
               </SheetHeader>

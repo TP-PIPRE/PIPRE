@@ -40,7 +40,7 @@ export function BibliotecaPage() {
           Biblioteca de Componentes
         </h1>
         <p className="text-sm text-muted-foreground">
-          Wiki t\u00e9cnica de componentes industriales. Cada entrada describe su uso real y lo relaciona con los bloques del simulador.
+          Wiki técnica de componentes industriales. Cada entrada describe su uso real y lo relaciona con los bloques del simulador.
         </p>
       </header>
 
@@ -79,7 +79,7 @@ export function BibliotecaPage() {
       {/* Section info */}
       <div className={"mb-6 px-4 py-3 rounded-xl border " + activeMeta.border + " " + activeMeta.bg}>
         <p className={"text-[11px] font-medium " + activeMeta.text}>
-          {filtered.length} componente{filtered.length !== 1 ? "s" : ""} en esta categor\u00eda
+          {filtered.length} componente{filtered.length !== 1 ? "s" : ""} en esta categoría
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export function BibliotecaPage() {
       ) : (
         <div className="text-center py-20">
           <p className="text-xs text-muted-foreground/40 font-medium">
-            {search ? "No se encontraron componentes con esa b\u00fasqueda." : "No hay componentes en esta categor\u00eda."}
+            {search ? "No se encontraron componentes con esa búsqueda." : "No hay componentes en esta categoría."}
           </p>
         </div>
       )}

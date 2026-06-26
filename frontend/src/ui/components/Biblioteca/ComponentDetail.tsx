@@ -4,6 +4,7 @@ import { Modal } from "../common/Modal";
 import { generateMermaid } from "../../../application/adapters/mermaidGenerator";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
 import type { Block, BlockDefinition } from "../../../shared/types/Simulador";
+import { WiringDiagram } from "./WiringDiagram";
 
 const THEME_BADGE: Record<string, { label: string; class: string }> = {
   movimiento: { label: "Movimiento", class: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
@@ -68,8 +69,22 @@ export const ComponentDetail = ({
     const def = generateMermaid(blocks, blockDefs);
     import("mermaid").then((mermaid) => {
       if (cancelled) return;
+      mermaid.default.initialize({
+        startOnLoad: false,
+        theme: "base",
+        securityLevel: "strict",
+        flowchart: { curve: "basis", htmlLabels: true, nodeSpacing: 34, rankSpacing: 42 },
+        themeVariables: {
+          background: "transparent",
+          primaryColor: "#172033",
+          primaryTextColor: "#e5edf8",
+          primaryBorderColor: "#52627a",
+          lineColor: "#718096",
+          fontFamily: "Geist, ui-sans-serif, system-ui",
+        },
+      });
       mermaid.default
-        .render("wiki-mermaid", def)
+        .render(`wiki-mermaid-${component.id}`, def)
         .then(({ svg }) => {
           if (!cancelled) setMermaidSvg(svg);
         })
@@ -80,7 +95,7 @@ export const ComponentDetail = ({
   }, [isOpen, component.id]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl" height="min(90vh, 800px)">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-5xl" height="min(92vh, 860px)">
       <div className="p-6 md:p-8 space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
@@ -93,7 +108,7 @@ export const ComponentDetail = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
           {/* Technical Specs */}
           <div className="space-y-4">
             <h3 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
@@ -116,9 +131,7 @@ export const ComponentDetail = ({
             <h3 className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
               Conexionado / Wiring
             </h3>
-            <div className="p-4 bg-muted/20 rounded-xl border border-border/10 font-mono text-[10px] text-muted-foreground/80 leading-relaxed">
-              {component.wiring}
-            </div>
+            <WiringDiagram componentName={component.name} wiring={component.wiring} />
           </div>
         </div>
 
@@ -156,7 +169,7 @@ export const ComponentDetail = ({
             </div>
             {mermaidSvg && (
               <div
-                className="p-4 bg-muted/10 rounded-xl border border-border/10 overflow-x-auto mermaid"
+                className="mermaid flex min-h-52 justify-center overflow-x-auto rounded-xl border border-border/20 bg-muted/10 p-4 [&_svg]:h-auto [&_svg]:max-w-full"
                 dangerouslySetInnerHTML={{ __html: mermaidSvg }}
               />
             )}

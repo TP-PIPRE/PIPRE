@@ -3,13 +3,15 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ARG VITE_USE_LOCAL_BACKEND=false
+ARG VITE_LOCAL_BACKEND_URL=http://localhost:8080
+ENV VITE_USE_LOCAL_BACKEND=$VITE_USE_LOCAL_BACKEND
+ENV VITE_LOCAL_BACKEND_URL=$VITE_LOCAL_BACKEND_URL
 
 # Activar pnpm (mejor que instalar global)
 RUN corepack enable
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN pnpm install --frozen-lockfile
 

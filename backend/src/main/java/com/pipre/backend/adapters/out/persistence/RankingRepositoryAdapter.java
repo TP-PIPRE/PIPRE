@@ -9,6 +9,7 @@ import com.pipre.backend.application.ports.output.RankingRepositoryPort;
 import com.pipre.backend.domain.entities.ranking.Ranking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class RankingRepositoryAdapter implements RankingRepositoryPort {
     private final RankingMapper rankingMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public List<Ranking> findAllByIdGroup(String idGroup) {
         return rankingJpaRepository.findAllByGroupJpaEntityIdGroupOrderByPositionAsc(idGroup)
                 .stream()
@@ -48,5 +50,14 @@ public class RankingRepositoryAdapter implements RankingRepositoryPort {
     @Override
     public void sortRanking(String idGroup) {
         rankingJpaRepository.sortRanking(idGroup);
+    }
+
+    @Override
+    public void deleteByGroupAndStudent(String idGroup, String idStudent) {
+        rankingJpaRepository.findAllByGroupJpaEntityIdGroupOrderByPositionAsc(idGroup)
+                .stream()
+                .filter(r -> idStudent.equals(r.getStudentJpaEntity().getIdUser()))
+                .findFirst()
+                .ifPresent(rankingJpaRepository::delete);
     }
 }

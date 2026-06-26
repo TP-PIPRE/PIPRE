@@ -39,6 +39,13 @@ export const API_ENDPOINTS = {
 
   DROPOUT_RISK_BY_USER: (idStudent: string) => `/dropout-risk/${idStudent}`,
 
+  RANKING_COURSE: (courseId: string) => `/ranking/course/${courseId}`,
+  RANKING_MODULE: (moduleId: string) => `/ranking/module/${moduleId}`,
+
   ROLES: "/roles",
   ROLES_USER: "/roles/user",
+
+  PROFILE: (id: string) => `/profile/${id}`,
+  PROFILE_ACHIEVEMENTS: (id: string) => `/profile/${id}/achievements`,
+  PROFILE_HISTORY: (id: string) => `/profile/${id}/history`,
 };

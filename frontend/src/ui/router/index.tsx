@@ -11,6 +11,7 @@ import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
 import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
 import { BibliotecaPage } from "../pages/BibliotecaPage";
+import { PerfilPage } from "../pages/PerfilPage";
 import { getAuthState } from "../../infrastructure/store/authStore";
 
 // Componente para rutas protegidas
@@ -74,6 +75,16 @@ export const AppRouter = () => {
           <ProtectedRoute>
             <AppLayout>
               <ResultadosPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PerfilPage />
             </AppLayout>
           </ProtectedRoute>
         }
