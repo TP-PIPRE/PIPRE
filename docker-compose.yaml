@@ -29,7 +29,7 @@ services:
     image: pipre-ml-api
     container_name: pipre-ml-ia
     volumes:
-      - ./data-science/saved_models:/app/saved_models
+      - ml-models:/app/saved_models
     networks:
       - pipre-infra-net
       - cloud-network
@@ -51,7 +51,7 @@ services:
       - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
-      - FAST_API_URL=${FAST_API_URL:-http://dev-ml-ia:8000}
+      - FAST_API_URL=${FAST_API_URL:-http://ml-ia:8000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,13 +66,15 @@ services:
     build:
       context: ./frontend
       args:
-        - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
+        - VITE_USE_LOCAL_BACKEND=false
+        - VITE_LOCAL_BACKEND_URL=https://pipre-backend.yoshua-cloud.dedyn.io
     image: pipre-frontend
     container_name: pipre-frontend
     ports:
       - "${PORT_FRONT:-3000}:3000"
     environment:
-      - REACT_APP_API_URL=https://pipre-backend.yoshua-cloud.dedyn.io/
+      - VITE_USE_LOCAL_BACKEND=false
+      - VITE_LOCAL_BACKEND_URL=https://pipre-backend.yoshua-cloud.dedyn.io
     networks:
       - cloud-network
     logging: *default-logging
@@ -81,5 +83,8 @@ networks:
   pipre-infra-net:
     internal: true
   cloud-network:
-    name: ${CLOUD_NETWORK}
+    name: ${CLOUD_NETWORK:-pipre-cloud-network}
     external: true
+
+volumes:
+  ml-models:

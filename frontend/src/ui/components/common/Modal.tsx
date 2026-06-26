@@ -6,6 +6,7 @@ interface ModalProps {
   children: React.ReactNode;
   maxWidth?: string;
   height?: string;
+  zIndex?: number;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -14,6 +15,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = "max-w-3xl",
   height,
+  zIndex = 2000,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -30,7 +32,8 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center p-4 md:p-9 animate-fade-in-soft"
+      className={`fixed inset-0 flex items-center justify-center p-4 md:p-9 animate-fade-in-soft`}
+      style={{ zIndex }}
       onClick={(e) => {
         if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
           onClose();

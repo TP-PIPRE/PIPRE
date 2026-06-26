@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "group_students")
@@ -27,4 +28,12 @@ public class RankingJpaEntity {
 
     private Integer position;
     private BigDecimal totalPoints;
+
+    // Gamification fields (from V11 migration)
+    private Integer level;
+    private Integer xpTotal;
+    private Integer totalStars;
+    private Integer currentStreak;
+    private Integer maxStreak;
+    private LocalDateTime updatedAt;
 }

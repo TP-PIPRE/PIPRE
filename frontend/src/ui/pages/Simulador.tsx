@@ -9,7 +9,7 @@ import { Workspace } from "../components/Simulador/Workspace";
 import { Stage3D } from "../components/Simulador/Stage3D";
 import { Console } from "../components/Simulador/Console";
 import { MissionsPanel } from "../components/Simulador/MissionsPanel";
-import { MissionCanvas } from "../components/Simulador/MissionCanvas";
+import { MissionMapView } from "../components/Simulador/MissionMapView";
 import { ChatbotPanel } from "../components/Simulador/ChatbotPanel";
 import { TabBar } from "../components/Simulador/TabBar";
 import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
@@ -252,7 +252,7 @@ const SimuladorInner = () => {
       case "missions":
         return <MissionsPanel />;
       case "canvas":
-        return <MissionCanvas />;
+        return <MissionMapView />;
       case "feedback":
         return <ChatbotPanel />;
       default:
@@ -451,6 +451,11 @@ const SimuladorInner = () => {
                   <BsTrophyFill className="text-[9px] text-[#eab308]" />
                   <span className="font-mono text-[9px] text-[#eab308] font-bold">{score}</span>
                   <span className="font-mono text-[8px] text-text-muted/60">pts</span>
+                  {missions.filter(m => m.isCompleted).length > 0 && (
+                    <span className="font-mono text-[8px] text-accent ml-1">
+                      ⭐{missions.filter(m => m.isCompleted).length}
+                    </span>
+                  )}
                 </div>
               )}
 

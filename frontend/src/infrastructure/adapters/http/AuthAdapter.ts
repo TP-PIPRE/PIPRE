@@ -39,7 +39,7 @@ export class AuthAdapter implements IAuthRepository {
       }
 
       const user: User = {
-        id: authUser.email || "",
+        id: authUser.idUser || authUser.email || "",
         name: authUser.firstName || (role === "admin" ? "Admin" : role === "docente" ? "Profesor" : "Estudiante"),
         email: authUser.email,
         role: role,

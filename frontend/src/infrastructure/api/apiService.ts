@@ -19,6 +19,9 @@ import type {
   ModuleProgressRequest,
   HelpRequest,
   DropoutRiskResponse,
+  PlayerProfileDTO,
+  AchievementDTO,
+  StudentHistoryDTO,
   PageCourseDTO,
   PageModuleDTO,
   PageActivityDTO,
@@ -27,6 +30,10 @@ import type {
 
 export const apiService = {
   users: {
+    getAll: async () => {
+      const response = await axiosInstance.get<UserResponseDTO[]>(API_ENDPOINTS.USERS);
+      return response.data;
+    },
     create: async (data: UserRequestDTO) => {
       const response = await axiosInstance.post<string>(API_ENDPOINTS.USERS, data);
       return response.data;
@@ -152,8 +159,23 @@ export const apiService = {
       );
       return response.data;
     },
+    getCourseRanking: async (courseId: string) => {
+      const response = await axiosInstance.get<RankingDTO[]>(
+        API_ENDPOINTS.RANKING_COURSE(courseId),
+      );
+      return response.data;
+    },
+    getModuleRanking: async (moduleId: string) => {
+      const response = await axiosInstance.get<RankingDTO[]>(
+        API_ENDPOINTS.RANKING_MODULE(moduleId),
+      );
+      return response.data;
+    },
     addToGroup: async (data: { idGroup: string; idStudent: string }) => {
       await axiosInstance.post(API_ENDPOINTS.GROUP_STUDENTS, data);
+    },
+    removeFromGroup: async (idGroup: string, idStudent: string) => {
+      await axiosInstance.delete(`${API_ENDPOINTS.GROUP_STUDENTS}/${idGroup}/${idStudent}`);
     },
   },
   performance: {
@@ -188,6 +210,26 @@ export const apiService = {
     getDropoutRisk: async (idStudent: string) => {
       const response = await axiosInstance.get<DropoutRiskResponse>(
         API_ENDPOINTS.DROPOUT_RISK_BY_USER(idStudent),
+      );
+      return response.data;
+    },
+  },
+  profile: {
+    get: async (idStudent: string) => {
+      const response = await axiosInstance.get<PlayerProfileDTO>(
+        API_ENDPOINTS.PROFILE(idStudent),
+      );
+      return response.data;
+    },
+    getAchievements: async (idStudent: string) => {
+      const response = await axiosInstance.get<AchievementDTO[]>(
+        API_ENDPOINTS.PROFILE_ACHIEVEMENTS(idStudent),
+      );
+      return response.data;
+    },
+    getHistory: async (idStudent: string) => {
+      const response = await axiosInstance.get<StudentHistoryDTO[]>(
+        API_ENDPOINTS.PROFILE_HISTORY(idStudent),
       );
       return response.data;
     },

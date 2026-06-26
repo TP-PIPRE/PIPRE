@@ -11,4 +11,8 @@ public interface ResultRepositoryPort {
     List<Result> findByIdStudent(String idStudent);
 
     void save(Result result);
+
+    List<Object[]> findCourseRankingRaw(String courseId);
+
+    List<Object[]> findModuleRankingRaw(String moduleId);
 }

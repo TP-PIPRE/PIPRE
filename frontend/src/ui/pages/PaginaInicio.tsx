@@ -116,7 +116,7 @@ export const PaginaInicio = () => {
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-border/10">
             <div className="flex items-center gap-3 mb-1">
-              <RobotIcon size={18} />
+              <RobotIcon size={24} />
               <h2 className="text-lg font-bold">{selectedCourseName}</h2>
             </div>
             <p className="text-xs text-text-muted/60">
@@ -221,8 +221,11 @@ export const PaginaInicio = () => {
                     alt={item.nombre}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-primary/10 group-hover:text-primary/30 transition-colors duration-500">
-                    <RobotIcon size={48} className="group-hover:scale-110 transition-transform opacity-20 group-hover:opacity-40" />
+                  <div className="w-full h-full flex items-center justify-center">
+                    <RobotIcon
+                      size={64}
+                      className="opacity-75 drop-shadow-md transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-100"
+                    />
                   </div>
                 )}
                 <span

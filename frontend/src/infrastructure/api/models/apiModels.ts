@@ -113,8 +113,14 @@ export interface ActivityResultResponse {
 
 export interface RankingDTO {
   idStudent: string;
+  studentName: string;
   totalPoints: number;
   position: number;
+  level: number;
+  xpTotal: number;
+  totalStars: number;
+  currentStreak: number;
+  maxStreak: number;
 }
 
 export interface SimulationRequest {
@@ -148,6 +154,7 @@ export interface DropoutRiskResponse {
 // --- Nuevos modelos para API paginada (Spring Page) y login ---
 
 export interface AuthUserResponseDTO {
+  idUser: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -181,6 +188,45 @@ export interface PageModuleDTO {
   size: number;
   number: number;
   empty: boolean;
+}
+
+export interface PlayerProfileDTO {
+  idStudent: string;
+  studentName: string;
+  totalPoints: number;
+  position: number;
+  level: number;
+  xpTotal: number;
+  totalStars: number;
+  currentStreak: number;
+  maxStreak: number;
+  challengesCompleted: number;
+  totalBlocksUsed: number;
+  efficiencyAvg: number;
+}
+
+export interface AchievementDTO {
+  idAchievement: string;
+  code: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  xpReward: number;
+  hidden: boolean;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface StudentHistoryDTO {
+  idResult: string;
+  idActivity: string;
+  activityName: string;
+  score: number;
+  stars: number;
+  xpEarned: number;
+  efficiency: number;
+  dateAttempted: string;
 }
 
 export interface PageActivityDTO {

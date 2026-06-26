@@ -19,8 +19,14 @@ public class GetGroupRankingService implements GetGroupRankingUseCase {
                 .stream()
                 .map(r -> new RankingDTO(
                         r.getIdStudent(),
+                        r.getStudentName(),
                         r.getTotalPoints(),
-                        r.getPosition()
+                        r.getPosition(),
+                        r.getLevel(),
+                        r.getXpTotal(),
+                        r.getTotalStars(),
+                        r.getCurrentStreak(),
+                        r.getMaxStreak()
                 ))
                 .toList();
     }

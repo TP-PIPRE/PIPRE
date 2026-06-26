@@ -80,8 +80,8 @@ export const LoginPage: React.FC = () => {
       <div className="w-full max-w-md z-10">
         {/* Logo Section */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-20 h-20 text-bg flex items-center justify-center mb-4 hover:rotate-12 transition-transform duration-500">
-            <RobotIcon size={48} />
+          <div className="mb-4 flex h-20 w-20 items-center justify-center">
+            <RobotIcon size={72} className="drop-shadow-[0_12px_28px_var(--theme-primary-glow)]" />
           </div>
           <h1 className="text-3xl font-bold tracking-widest text-text mb-2">
             PIPRE

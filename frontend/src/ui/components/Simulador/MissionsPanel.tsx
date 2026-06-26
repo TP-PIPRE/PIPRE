@@ -12,6 +12,7 @@ export const MissionsPanel = () => {
     isFreeMode,
     challengeCompleted,
     lastScore,
+    lastStars,
     challengeData,
     dismissChallengeCompletion,
   } = useSimulador();
@@ -168,6 +169,8 @@ export const MissionsPanel = () => {
           blocks={blocks.length}
           energy={Math.round(energy)}
           challengeTitle={challengeData.title}
+          stars={lastStars}
+          xpEarned={lastScore}
           onNext={dismissChallengeCompletion}
           onExit={dismissChallengeCompletion}
         />

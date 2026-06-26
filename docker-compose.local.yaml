@@ -27,7 +27,7 @@ services:
     image: pipre-ml-api
     container_name: pipre-ml-ia
     volumes:
-      - ./data-science/saved_models:/app/saved_models
+      - ml-models:/app/saved_models
       - ./data-science/data:/app/data
     networks:
       - pipre-infra-net
@@ -49,6 +49,7 @@ services:
       - DATABASE_URL=${DATABASE_URL:-jdbc:postgresql://postgres:5432/pipre_database}
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
+      - FAST_API_URL=http://ml-ia:8000
     depends_on:
       postgres:
         condition: service_healthy
@@ -62,15 +63,20 @@ services:
     build:
       context: ./frontend
       args:
-        - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
+        - VITE_USE_LOCAL_BACKEND=true
+        - VITE_LOCAL_BACKEND_URL=http://localhost:${PORT_BACK:-8080}
     image: pipre-frontend
     container_name: pipre-frontend
     ports:
       - ${PORT_FRONT:-3000}:3000
     environment:
-      - REACT_APP_API_URL=http://localhost:${PORT_BACK:-8080}
+      - VITE_USE_LOCAL_BACKEND=true
+      - VITE_LOCAL_BACKEND_URL=http://localhost:${PORT_BACK:-8080}
     logging: *default-logging
 
 networks:
   pipre-infra-net:
     internal: true
+
+volumes:
+  ml-models:

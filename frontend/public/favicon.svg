@@ -1,49 +1,66 @@
-<svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 180 180"
->
-<style>
-    --c1:#6CB6FF;
-    --c2:#D26BFF;
-</style>
-
-<defs>
-<linearGradient id="robotGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-    <stop offset="0%" stop-color="var(--c1)" />
-    <stop offset="100%" stop-color="var(--c2)" />
-</linearGradient>
-<filter id="glow">
-    <feGaussianBlur stdDeviation="4" result="blur" />
-    <feMerge>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <radialGradient id="aura" cx="50%" cy="58%" r="54%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity=".28"/>
+      <stop offset="62%" stop-color="#c084fc" stop-opacity=".12"/>
+      <stop offset="100%" stop-color="#93c5fd" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="blocks" x1="18%" y1="92%" x2="84%" y2="8%">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="48%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="wheels" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="2.8" result="blur"/>
+      <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
-    </feMerge>
-</filter>
-</defs>
+      </feMerge>
+    </filter>
+  </defs>
 
-<g fill="url(#robotGradient)" filter="url(#glow)">
-    <rect x="82" y="10" width="16" height="16" rx="3"/>
-    <rect x="64" y="28" width="16" height="16" rx="3"/>
-    <rect x="82" y="28" width="16" height="16" rx="3"/>
-    <rect x="100" y="28" width="16" height="16" rx="3"/>
-    <rect x="64" y="46" width="16" height="16" rx="3"/>
-    <rect x="82" y="46" width="16" height="16" rx="3"/>
-    <rect x="100" y="46" width="16" height="16" rx="3"/>
-    <rect x="46" y="64" width="16" height="16" rx="3"/>
-    <rect x="64" y="64" width="16" height="16" rx="3"/>
-    <rect x="82" y="64" width="16" height="16" rx="3"/>
-    <rect x="100" y="64" width="16" height="16" rx="3"/>
-    <rect x="118" y="64" width="16" height="16" rx="3"/>
-    <rect x="64" y="84" width="16" height="16" rx="3"/>
-    <rect x="82" y="84" width="16" height="16" rx="3"/>
-    <rect x="100" y="84" width="16" height="16" rx="3"/>
-    <rect x="18" y="82" width="16" height="16" rx="3"/>
-    <rect x="36" y="82" width="16" height="16" rx="3"/>
-    <rect x="18" y="100" width="16" height="16" rx="3"/>
-    <rect x="36" y="100" width="16" height="16" rx="3"/>
-    <rect x="128" y="82" width="16" height="16" rx="3"/>
-    <rect x="146" y="82" width="16" height="16" rx="3"/>
-    <rect x="128" y="100" width="16" height="16" rx="3"/>
-    <rect x="146" y="100" width="16" height="16" rx="3"/>
-</g>
+  <rect x="7" y="7" width="166" height="166" rx="42" fill="#111827"
+        stroke="#e2e8f0" stroke-opacity=".22" stroke-width="4"/>
+  <rect x="15" y="15" width="150" height="150" rx="34" fill="#1e293b" fill-opacity=".28"/>
+  <circle cx="90" cy="96" r="68" fill="url(#aura)"/>
+
+  <g filter="url(#glow)">
+    <g fill="url(#blocks)">
+      <rect x="82" y="40" width="16" height="16" rx="4"/>
+      <rect x="64" y="58" width="16" height="16" rx="4"/>
+      <rect x="82" y="58" width="16" height="16" rx="4"/>
+      <rect x="100" y="58" width="16" height="16" rx="4"/>
+      <rect x="64" y="76" width="16" height="16" rx="4"/>
+      <rect x="82" y="76" width="16" height="16" rx="4"/>
+      <rect x="100" y="76" width="16" height="16" rx="4"/>
+      <rect x="46" y="94" width="16" height="16" rx="4"/>
+      <rect x="64" y="94" width="16" height="16" rx="4"/>
+      <rect x="82" y="94" width="16" height="16" rx="4"/>
+      <rect x="100" y="94" width="16" height="16" rx="4"/>
+      <rect x="118" y="94" width="16" height="16" rx="4"/>
+      <rect x="28" y="112" width="16" height="16" rx="4"/>
+      <rect x="46" y="112" width="16" height="16" rx="4"/>
+      <rect x="64" y="112" width="16" height="16" rx="4"/>
+      <rect x="100" y="112" width="16" height="16" rx="4"/>
+      <rect x="118" y="112" width="16" height="16" rx="4"/>
+      <rect x="136" y="112" width="16" height="16" rx="4"/>
+    </g>
+    <g fill="url(#wheels)">
+      <rect x="28" y="126" width="34" height="22" rx="6"/>
+      <rect x="118" y="126" width="34" height="22" rx="6"/>
+    </g>
+  </g>
+
+  <g stroke="#0f172a" stroke-linecap="round" stroke-width="7">
+    <path d="M45 130v14"/>
+    <path d="M38 137h14"/>
+    <path d="M135 130v14"/>
+    <path d="M128 137h14"/>
+  </g>
+  <path d="M68 116h44" stroke="#e2e8f0" stroke-linecap="round"
+        stroke-opacity=".28" stroke-width="4"/>
 </svg>

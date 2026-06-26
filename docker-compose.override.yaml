@@ -1,4 +1,4 @@
-name: dev-app
+name: pipre-local
 
 services:
   postgres:
@@ -8,6 +8,8 @@ services:
 
   backend:
     container_name: dev-back
+    environment:
+      - FAST_API_URL=http://ml-ia:8000
 
   ml-ia:
     container_name: dev-ml-ia
@@ -15,7 +17,14 @@ services:
   frontend:
     container_name: dev-front
     environment:
-      - REACT_APP_API_URL=https://dev-back.yoshua-cloud.dedyn.io
+      - VITE_USE_LOCAL_BACKEND=true
+      - VITE_LOCAL_BACKEND_URL=http://localhost:${PORT_BACK:-8080}
     build:
       args:
-        - REACT_APP_API_URL=https://dev-back.yoshua-cloud.dedyn.io
+        - VITE_USE_LOCAL_BACKEND=true
+        - VITE_LOCAL_BACKEND_URL=http://localhost:${PORT_BACK:-8080}
+
+networks:
+  cloud-network:
+    name: pipre-local-cloud-network
+    external: false
