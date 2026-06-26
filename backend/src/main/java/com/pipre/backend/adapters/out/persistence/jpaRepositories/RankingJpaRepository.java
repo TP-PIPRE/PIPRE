@@ -8,10 +8,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RankingJpaRepository extends JpaRepository<RankingJpaEntity, String> {
     List<RankingJpaEntity> findAllByGroupJpaEntityIdGroupOrderByPositionAsc(String idGroup);
+    Optional<RankingJpaEntity> findByStudentJpaEntityIdUser(String idStudent);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """

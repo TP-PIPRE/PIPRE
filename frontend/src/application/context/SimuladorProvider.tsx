@@ -12,6 +12,7 @@ import { simuladorRepository } from "../../infrastructure/adapters/storage/Simul
 import type { SimulationResultType } from "../../shared/types/SpecContracts";
 import { useRobotSimulations } from "../hooks/useRobotSimulations";
 import type { ActivityResponse } from "../../shared/types/SpecContracts";
+import { calculateStars, calculateCombo, calculateEfficiency, calculateXpEarned } from "../adapters/GamificationEngine";
 
 interface LogEntry {
   time: string;
@@ -77,6 +78,8 @@ interface SimuladorContextType {
 
   challengeCompleted: boolean;
   lastScore: number;
+  lastStars: number;
+  consecutiveCompletions: number;
   completeChallenge: () => void;
   dismissChallengeCompletion: () => void;
 
@@ -121,6 +124,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [currentMissionIndex, setCurrentMissionIndex] = useState(0);
   const [challengeCompleted, setChallengeCompleted] = useState(false);
   const [lastScore, setLastScore] = useState(0);
+  const [consecutiveCompletions, setConsecutiveCompletions] = useState(0);
+  const [lastStars, setLastStars] = useState(0);
 
   const engineRef = useRef<ISimulatorEngine | null>(null);
   const blockIdCounter = useRef(0);
@@ -259,20 +264,33 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     const mission = missions[currentMissionIndex];
     if (!mission) return;
 
-    /* BACKEND: Enviar resultado al API
-     * if (courseId && challengeId) {
-     *   simuladorUseCase.current.submitResult(
-     *     getAuthState().user?.id || "",
-     *     challengeId,
-     *     result.score,
-     *     { completed: result.completed, blocks: blocks.length, energy }
-     *   );
-     * }
-     */
+    const loopsUsed = blocks.filter((b) => b.category === "loop").length;
+    const nestedLoops = blocks.some(
+      (b) => b.category === "loop" && b.children && b.children.some((c) => c.category === "loop")
+    ) ? 2 : 1;
+
+    const efficiency = calculateEfficiency(blocks.length, mission.maxBlocks, loopsUsed);
+    const starResult = calculateStars({
+      score: score || (blocks.length <= mission.maxBlocks ? 95 : 65),
+      blocksUsed: blocks.length,
+      maxBlocks: mission.maxBlocks || 10,
+      energyRemaining: energy,
+      loopsUsed,
+      nestedLoops,
+      environmentsCompleted: [environment],
+      consecutiveCompletions,
+    });
+
+    const combo = calculateCombo(consecutiveCompletions);
+    const diff = challengeData?.difficulty || "EASY";
+    const xpEarned = calculateXpEarned(starResult.stars, diff, combo.multiplier, efficiency);
 
     let points = 1000;
     if (blocks.length <= mission.maxBlocks) points += 500;
     points += energy * 10;
+    points += combo.bonus;
+
+    setLastStars(starResult.stars);
 
     setMissions((prev) => {
       const next = [...prev];
@@ -281,18 +299,17 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     });
 
     setScore((prev) => prev + points);
-    addLog(`¡Misión completada! +${points} pts`, "success");
+    addLog(`¡Misión completada! +${points} pts (${starResult.label})`, "success");
+    if (combo.label) addLog(combo.label, "success");
 
-    // Recargar energía al completar una misión
     const recharge = 50;
     setEnergy((prev) => Math.min(100, prev + recharge));
     addLog(`🔋 +${recharge} energía por misión completada`, "success");
 
-    // Si hay más misiones, avanzar; si no, completar el reto automáticamente
     if (currentMissionIndex < missions.length - 1) {
       setCurrentMissionIndex((prev) => prev + 1);
     } else if (!isFreeMode && challengeData) {
-      // Todas las misiones completadas → completar el reto
+      setConsecutiveCompletions((prev) => prev + 1);
       setTimeout(() => {
         const authUser = getAuthState().user;
         const total = score + points;
@@ -312,7 +329,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         simuladorUseCase.current.saveResult(result).catch(console.warn);
         setLastScore(total);
         setChallengeCompleted(true);
-        addLog(`¡Reto completado! Puntaje: ${total} pts`, "success");
+        addLog(`¡Reto completado! Puntaje: ${total} pts ⭐${starResult.stars} +${xpEarned}XP`, "success");
       }, 500);
     }
   };
@@ -956,6 +973,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         completeMission,
         challengeCompleted,
         lastScore,
+        lastStars,
+        consecutiveCompletions,
         completeChallenge,
         dismissChallengeCompletion,
         currentTheme,

@@ -83,6 +83,7 @@ public class AuthController {
                                 .toList();
 
                 LoginResponseDTO.UserResponseDTO userResponse = new LoginResponseDTO.UserResponseDTO(
+                                user.getIdUser(),
                                 user.getEmail(),
                                 user.getFirstName(),
                                 user.getLastName(),

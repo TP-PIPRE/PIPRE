@@ -2,6 +2,7 @@ package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.application.dto.UserDTO;
 import com.pipre.backend.application.commands.RegisterUserCommand;
+import com.pipre.backend.application.ports.input.GetAllUsersUseCase;
 import com.pipre.backend.application.ports.input.GetUserByIdUseCase;
 import com.pipre.backend.application.ports.input.RegisterUserUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -22,6 +25,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class UserController {
     private final RegisterUserUseCase registerUserUseCase;
     private final GetUserByIdUseCase getUserByIdUseCase;
+    private final GetAllUsersUseCase getAllUsersUseCase;
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @Operation(summary = "Listar todos los usuarios")
+    @ApiResponse(responseCode = "200", description = "Usuarios obtenidos exitosamente")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        List<UserDTO> users = getAllUsersUseCase.execute();
+        return ResponseEntity.ok(users);
+    }
 
     @GetMapping("/{userId}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#userId)")

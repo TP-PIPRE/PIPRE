@@ -94,7 +94,7 @@ Dentro encontrarás un json con información del proyecto, además:
 3. Copiar el archivo ".env.example" en un archivo llamado ".env" en la raiz del proyecto, no es necesario modificar nada.
 4. Ingresar el siguiente comando en la consola en la raiz del proyecto:
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
 5. Esperar de 3 a 5 minutos la primera vez, los arranques posteriores tardan menos de 10 segundos.
 6. Para detener la aplicación, hacer ctrl+c un par de veces en la consola.

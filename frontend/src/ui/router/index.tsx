@@ -8,9 +8,10 @@ import { DocenteDashboard } from "../pages/DocenteDashboard";
 import { DocenteMetricasPage } from "../pages/DocenteMetricasPage";
 import { DocenteRetosPage } from "../pages/DocenteRetosPage";
 import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
-import { CursosPage } from "../pages/CursosPage";
 import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
+import { BibliotecaPage } from "../pages/BibliotecaPage";
+import { PerfilPage } from "../pages/PerfilPage";
 import { getAuthState } from "../../infrastructure/store/authStore";
 
 // Componente para rutas protegidas
@@ -25,7 +26,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Layout base que incluye la Navbar
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="min-h-screen pt-14 flex flex-col bg-bg text-text">
+    <div className="min-h-screen pt-12 flex flex-col bg-bg text-text">
       <Navbar />
       <main className="flex-1 flex flex-col">{children}</main>
     </div>
@@ -59,16 +60,6 @@ export const AppRouter = () => {
         }
       />
       <Route
-        path="/cursos"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <CursosPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/simulador/:courseId?"
         element={
           <ProtectedRoute>
@@ -89,11 +80,31 @@ export const AppRouter = () => {
         }
       />
       <Route
+        path="/perfil"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <PerfilPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/ranking"
         element={
           <ProtectedRoute>
             <AppLayout>
               <RankingPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/biblioteca"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <BibliotecaPage />
             </AppLayout>
           </ProtectedRoute>
         }
