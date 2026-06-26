@@ -10,7 +10,7 @@ const baseURL = useLocalBackend
   ? `${localBackendUrl}/api/v1/`
   : isDev
     ? "/api/v1/"
-    : "https://pipre-backend.yoshua-cloud.dedyn.io/";
+    : "https://pipre-backend.yoshua-cloud.dedyn.io/api/v1/";
 
 const axiosInstance = axios.create({
   baseURL,
