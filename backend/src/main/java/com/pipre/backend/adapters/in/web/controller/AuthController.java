@@ -63,10 +63,11 @@ public class AuthController {
                                 .secure(true)
                                 .path("/")
                                 .maxAge(3600)
-                                .sameSite("Strict")
+                                .sameSite("none")
                                 .build();
 
-                com.pipre.backend.domain.entities.user.User user = userRepositoryPort.findByEmail(authentication.getName())
+                com.pipre.backend.domain.entities.user.User user = userRepositoryPort
+                                .findByEmail(authentication.getName())
                                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
                 Map<String, String> roleMap = roleRepositoryPort.findAll().stream()
@@ -87,8 +88,7 @@ public class AuthController {
                                 user.getEmail(),
                                 user.getFirstName(),
                                 user.getLastName(),
-                                roleNames.isEmpty() ? "student" : roleNames.get(0)
-                );
+                                roleNames.isEmpty() ? "student" : roleNames.get(0));
 
                 LoginResponseDTO responseBody = new LoginResponseDTO("Sesión iniciada correctamente", userResponse);
 
