@@ -23,6 +23,11 @@ REASON_LABELS = {
     "mixed_adaptation_signals": "Senales mixtas.",
 }
 
+RIA2_RESULT_LABELS = {
+    "needs_guidance": "Requiere retroalimentacion",
+    "on_track": "En buen camino",
+}
+
 
 def traducir_detalle_dificultad(detalle):
     difficulty_level = detalle.get("difficulty_level")
@@ -43,11 +48,13 @@ def traducir_detalle_dificultad(detalle):
     }
 
 
-def generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12):
+def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
 
     data = df.sample(1)
     ria4_resultado = ria4.predict(data)
     ria4_detalle = ria4.predict_detailed(data)
+    ria2_input = construir_input_ria2(data)
+    ria2_detalle = ria2.predict_detailed(ria2_input)
 
     def get_input_data(columns):
         available_columns = [col for col in columns if col in data.columns]
@@ -68,6 +75,24 @@ def generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12):
                 "nivel_logico",
                 "interacciones_ia"
             ])
+        },
+
+        "RIA2 - Retroalimentación": {
+            "resultado": RIA2_RESULT_LABELS.get(
+                ria2_detalle.get("result"),
+                ria2_detalle.get("result", "N/A")
+            ),
+            "detalle": {
+                "tipo_feedback": ria2_detalle.get("feedback_type"),
+                "prioridad": ria2_detalle.get("priority"),
+                "complejidad_codigo": ria2_detalle.get("code_complexity"),
+                "errores_recurrentes": ria2_detalle.get("recurrent_errors", []),
+                "sugerencias": ria2_detalle.get("suggestions", []),
+                "contexto_ia": ria2_detalle.get("llm_context", {}),
+            },
+            "accuracy": round_metric(ria2.accuracy),
+            "precision": round_metric(ria2.precision),
+            "input_data": ria2_input.to_dict(orient="records")[0],
         },
 
         "RIA3 - Recomendación": {
@@ -165,3 +190,40 @@ def generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12):
     }
 
     return resultados
+
+
+def construir_input_ria2(data):
+    row = data.iloc[0]
+    errors = int(row.get("errores", 0))
+    attempts = int(row.get("intentos", 0))
+    logical_level = str(row.get("nivel_logico", "medio"))
+
+    current_errors = []
+    previous_errors = []
+
+    if errors >= 7:
+        current_errors.append("high_error_count")
+        previous_errors.extend(["high_error_count", "logic_error"])
+    if attempts >= 6:
+        current_errors.append("too_many_attempts")
+        previous_errors.append("too_many_attempts")
+    if not current_errors:
+        current_errors.append("minor_review")
+
+    code = (
+        "while x < 10:\n"
+        "    print(x)\n"
+        "    # revisar actualizacion de la variable"
+        if "logic_error" in previous_errors
+        else "for paso in range(3):\n    print(paso)"
+    )
+
+    return data.__class__([{
+        "code": code,
+        "language": "python",
+        "errors": current_errors,
+        "attempts": attempts,
+        "previous_errors": previous_errors,
+        "logical_level": logical_level,
+        "activity_objective": "Resolver la actividad de programacion con pasos claros",
+    }])

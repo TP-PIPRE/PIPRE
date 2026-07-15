@@ -16,6 +16,74 @@ class AppResultados:
 
         self.crear_interfaz()
 
+    @staticmethod
+    def formatear_valor_tabla(valor):
+        if isinstance(valor, dict):
+            partes = []
+            for clave, item in valor.items():
+                partes.append(f"{clave}: {AppResultados.formatear_valor_tabla(item)}")
+            texto = "; ".join(partes)
+        elif isinstance(valor, (list, tuple, set)):
+            texto = ", ".join(str(item) for item in valor)
+        else:
+            texto = str(valor)
+
+        texto = texto.replace("\n", " ").strip()
+        return texto if len(texto) <= 90 else f"{texto[:87]}..."
+
+    @staticmethod
+    def formatear_detalle(valor, nivel=0):
+        sangria = "  " * nivel
+
+        if isinstance(valor, dict):
+            lineas = []
+            for clave, item in valor.items():
+                if isinstance(item, (dict, list, tuple, set)):
+                    lineas.append(f"{sangria}{clave}:")
+                    lineas.append(AppResultados.formatear_detalle(item, nivel + 1))
+                else:
+                    lineas.append(f"{sangria}{clave}: {item}")
+            return "\n".join(lineas)
+
+        if isinstance(valor, (list, tuple, set)):
+            if not valor:
+                return f"{sangria}- Sin datos"
+
+            lineas = []
+            for item in valor:
+                if isinstance(item, (dict, list, tuple, set)):
+                    lineas.append(f"{sangria}-")
+                    lineas.append(AppResultados.formatear_detalle(item, nivel + 1))
+                else:
+                    lineas.append(f"{sangria}- {item}")
+            return "\n".join(lineas)
+
+        return f"{sangria}{valor}"
+
+    @staticmethod
+    def crear_texto_lectura(frame, texto):
+        contenedor = tk.Frame(frame)
+        contenedor.pack(fill="both", expand=True, padx=20, pady=10)
+
+        scrollbar = ttk.Scrollbar(contenedor, orient="vertical")
+        texto_widget = tk.Text(
+            contenedor,
+            height=12,
+            width=92,
+            wrap="word",
+            font=("Consolas", 10),
+            yscrollcommand=scrollbar.set,
+            relief="solid",
+            borderwidth=1
+        )
+
+        scrollbar.configure(command=texto_widget.yview)
+        texto_widget.insert("1.0", texto)
+        texto_widget.configure(state="disabled")
+
+        texto_widget.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
     def crear_interfaz(self):
 
         titulo = tk.Label(
@@ -77,17 +145,17 @@ class AppResultados:
                 box,
                 columns=("Variable", "Valor"),
                 show="headings",
-                height=6
+                height=min(max(len(input_data), 4), 10)
             )
 
             tabla.heading("Variable", text="Variable")
             tabla.heading("Valor", text="Valor")
 
-            tabla.column("Variable", width=250, anchor="center")
-            tabla.column("Valor", width=150, anchor="center")
+            tabla.column("Variable", width=240, anchor="w")
+            tabla.column("Valor", width=520, anchor="w")
 
             for k, v in input_data.items():
-                tabla.insert("", "end", values=(k, v))
+                tabla.insert("", "end", values=(k, self.formatear_valor_tabla(v)))
 
             tabla.pack(padx=20, pady=10)
 
@@ -107,18 +175,10 @@ class AppResultados:
         detalle = data.get("detalle")
         if detalle:
             box_detalle = tk.LabelFrame(center_frame, text="Detalle", font=("Arial", 11, "bold"))
-            box_detalle.pack(pady=10)
+            box_detalle.pack(pady=10, fill="x")
 
-            detalle_texto = "\n".join(
-                f"{k}: {v}" for k, v in detalle.items()
-            )
-
-            tk.Label(
-                box_detalle,
-                text=detalle_texto,
-                font=("Arial", 11),
-                justify="left"
-            ).pack(padx=20, pady=10)
+            detalle_texto = self.formatear_detalle(detalle)
+            self.crear_texto_lectura(box_detalle, detalle_texto)
 
         # =========================
         #  RIA8
@@ -152,14 +212,14 @@ class AppResultados:
 
             tk.Label(
                 frame_metrics,
-                text=f"Accuracy: {accuracy:.4f}",
-                width=20
+                text=f"Accuracy: {accuracy:.4f} ({accuracy * 100:.2f}%)",
+                width=28
             ).grid(row=0, column=0, padx=20, pady=5)
 
             tk.Label(
                 frame_metrics,
-                text=f"Precision: {precision:.4f}",
-                width=20
+                text=f"Precision: {precision:.4f} ({precision * 100:.2f}%)",
+                width=28
             ).grid(row=0, column=1, padx=20, pady=5)
 
             # =========================

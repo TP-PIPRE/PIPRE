@@ -36,9 +36,6 @@ class RIA11Service:
             "result": self._normalize_result(label),
             "accuracy": round_metric(getattr(self.model, "accuracy", None)),
             "precision": round_metric(getattr(self.model, "precision", None)),
-            "details": {
-                "recall": round_metric(getattr(self.model, "recall", None)),
-            },
         }
 
     def _normalize_result(self, label):
