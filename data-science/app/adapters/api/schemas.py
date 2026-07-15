@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class RIA01Input(BaseModel):
@@ -6,6 +8,18 @@ class RIA01Input(BaseModel):
     errors: int
     logical_level: str
     ai_interactions: float
+
+
+class RIA02Input(BaseModel):
+    code: str
+    language: str = "python"
+    errors: list[str] = Field(default_factory=list)
+    attempts: int
+    score: Optional[float] = None
+    success_rate: Optional[float] = None
+    previous_errors: list[str] = Field(default_factory=list)
+    logical_level: str
+    activity_objective: str = ""
 
 
 class RIA03Input(BaseModel):

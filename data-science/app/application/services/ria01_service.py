@@ -4,6 +4,8 @@ from app.domain.ports.ria01_usecase import RIA01UseCase
 
 
 class RIA01Service(RIA01UseCase):
+    MODEL_VERSION = "ria01-v4"
+
     RESULT_LABELS = {
         "bajo": "low",
         "medio": "medium",
@@ -20,6 +22,7 @@ class RIA01Service(RIA01UseCase):
 
     def train(self, df):
         self.model.train(df)
+        self.model.model_version = self.MODEL_VERSION
         self._trained = True
 
     def predict(self, data_dict):

@@ -1,99 +1,88 @@
-## Estructura de ejemplo
+# Data Science - PIPRE
+
+Este modulo concentra la capa de machine learning del proyecto PIPRE. Su
+responsabilidad es transformar datos de interaccion del estudiante en senales
+interpretables para el backend, el frontend y una futura capa de IA.
+
+## Estructura actual
+
+```text
+data-science/
+  app/
+    adapters/
+      api/              FastAPI y schemas de entrada.
+      ml_models/        Modelos y reglas de cada RIA.
+      repositories/     Carga de dataset y persistencia joblib.
+    application/
+      services/         Servicios que estandarizan el uso de modelos.
+      metrics.py        Redondeo comun de metricas.
+    domain/
+      ports/            Puertos/contratos de arquitectura.
+    infrastructure/
+      container.py      Wiring de repositorios, modelos y servicios.
+      settings.py       Rutas de dataset y modelos guardados.
+    ui/                 UI local para pruebas con el dataset.
+  data/                 Dataset de entrenamiento.
+  saved_models/         Modelos entrenados en formato .pkl.
+  AI_CONTEXT.md         Contexto compacto para futuras IAs.
 ```
-ml_service/
-│
-├── src/
-│   │
-│   ├── domain/                                 # Núcleo de ML: sin FastAPI, sin sklearn, sin torch
-│   │   ├── model/                              # Entidades y reglas del dominio de ML
-│   │   │   ├── prediction.py                   #   Clase Prediction (dataclass): input + output + score
-│   │   │   ├── training_sample.py              #   Representa un sample de entrenamiento
-│   │   │   └── model_metadata.py               #   Versión, fecha, métricas del modelo registrado
-│   │   │
-│   │   ├── ports/
-│   │   │   ├── in_/                            # Interfaces de entrada al dominio ML
-│   │   │   │   ├── predict_use_case.py         # ABC: predict(input) → Prediction
-│   │   │   │   └── train_use_case.py           # ABC: train(dataset) → ModelMetadata
-│   │   │   │
-│   │   │   └── out/                            # Interfaces que el dominio necesita del exterior
-│   │   │       ├── model_repository.py         # ABC: load_model(), save_model()
-│   │   │       ├── feature_store_port.py       # ABC: get_features(entity_id)
-│   │   │       └── metrics_port.py             # ABC: log_metric(name, value)
-│   │   │
-│   │   └── exceptions/
-│   │       ├── model_not_found.py
-│   │       └── prediction_error.py
-│   │
-│   ├── application/                        # Casos de uso: orquesta domain + ports
-│   │   ├── predict_service.py              # Implementa predict_use_case usando model_repository
-│   │   ├── train_service.py                # Implementa train_use_case, llama a metrics_port
-│   │   └── dto/
-│   │       ├── prediction_request.py       # Pydantic: payload de entrada (validación)
-│   │       └── prediction_response.py      # Pydantic: respuesta serializada
-│   │
-│   ├── adapters/                           # Implementaciones concretas de los ports
-│   │   │
-│   │   ├── in_/                            # Driving adapters (exponen el servicio al exterior)
-│   │   │   └── api/
-│   │   │       ├── prediction_router.py    # FastAPI router: POST /predict → predict_service
-│   │   │       ├── training_router.py      # FastAPI router: POST /train
-│   │   │       ├── health_router.py        # GET /health (liveness / readiness)
-│   │   │       └── schemas/
-│   │   │           └── api_schemas.py      # Pydantic models de request/response HTTP
-│   │   │
-│   │   └── out/                            # Driven adapters (implementan ports de salida)
-│   │       ├── model_loader/
-│   │       │   ├── sklearn_adapter.py      # Implementa model_repository con joblib/pickle
-│   │       │   └── pytorch_adapter.py      # Implementa model_repository con torch.load
-│   │       │
-│   │       ├── feature_store/
-│   │       │   └── redis_feature_adapter.py  # Implementa feature_store_port usando Redis
-│   │       │
-│   │       └── metrics/
-│   │           └── mlflow_adapter.py     # Implementa metrics_port con MLflow tracking
-│   │
-│   ├── infrastructure/                 # Configuración, wiring y bootstrapping
-│   │   ├── config/
-│   │   │   ├── settings.py             # Pydantic BaseSettings: MODEL_PATH, REDIS_URL, etc.
-│   │   │   └── dependencies.py         # FastAPI Depends: inyección del service correcto
-│   │   │
-│   │   ├── container.py                # Dependency Injection: instancia adapters y services
-│   │   │                               # (ej. usando dependency-injector o manualmente)
-│   │   └── logging_config.py           # Logging estructurado (structlog / loguru)
-│   │
-│   ├── training/                       # Pipeline de entrenamiento (desacoplado del servicio)
-│   │   ├── pipelines/
-│   │   │   ├── preprocessing.py        # Limpieza, normalización, feature engineering
-│   │   │   ├── training_pipeline.py    # Orquesta train → evaluate → register
-│   │   │   └── evaluation.py           # Calcula métricas: accuracy, F1, RMSE, etc.
-│   │   │
-│   │   ├── experiments/
-│   │   │   └── experiment_tracker.py   # Wrapper sobre MLflow / Weights & Biases
-│   │   │
-│   │   └── scripts/
-│   │       └── train.py                # Entry point: python train.py --config cfg.yaml
-│   │
-│   └── main.py                         # Entry point FastAPI: crea app, incluye routers
-│
-├── models/                             # Artefactos serializados de los modelos entrenados
-│   ├── v1/
-│   │   └── model.pkl
-│   └── v2/
-│       └── model.pt
-│
-├── data/                               # Datos (ignorados en git salvo muestras pequeñas)
-│   ├── raw/
-│   └── processed/
-│
-├── tests/
-│   ├── unit/
-│   │   ├── domain/                     # Tests de entidades y reglas puras
-│   │   └── application/                # Tests de servicios con mocks de los ports
-│   │
-│   └── integration/                    # Tests del API completo (TestClient de FastAPI)
-│       └── test_prediction_api.py
-│
-├── requirements.txt                    # o pyproject.toml
-├── Dockerfile
-└── .env                                # MODEL_PATH, REDIS_URL, MLFLOW_TRACKING_URI
+
+## Flujo general
+
+1. El dataset se carga desde `data/dataset.xlsx`.
+2. Los modelos se entrenan o se cargan desde `saved_models`.
+3. FastAPI valida el body con Pydantic.
+4. El endpoint transforma nombres externos en columnas internas.
+5. El servicio llama al modelo y devuelve una respuesta compacta.
+6. El frontend/backend consume `result`, metricas principales y `details`.
+
+## RIA disponibles
+
+| RIA | Funcion | Endpoint |
+| --- | --- | --- |
+| RIA01 | Clasificacion de desempeno. | `POST /ria01/predict` |
+| RIA02 | Retroalimentacion automatica y contexto para IA. | `POST /ria02/feedback` |
+| RIA03 | Recomendacion de actividades. | `POST /ria03/recommend` |
+| RIA04 | Ajuste adaptativo de dificultad. | `POST /ria04/difficulty` |
+| RIA08 | Deteccion de anomalias. | `POST /ria08/anomaly` |
+| RIA10 | Recomendacion pedagogica. | `POST /ria10/pedagogical` |
+| RIA11 | Clasificacion de tiempo. | `POST /ria11/time` |
+| RIA12 | Evaluacion de codigo en UI local. | Sin endpoint directo actual. |
+
+## Respuesta API recomendada
+
+```json
+{
+  "result": "category",
+  "accuracy": 0.8154,
+  "precision": 0.587,
+  "details": {}
+}
+```
+
+Las predicciones deben mantenerse cortas. Las metricas diagnosticas o reportes
+extendidos deben exponerse en `/riaXX/info`.
+
+## Documentacion para IA
+
+Para que una IA entienda el contexto sin leer todo el repositorio, empezar por:
+
+1. `AI_CONTEXT.md`
+2. El servicio en `app/application/services/riaXX_service.py`
+3. El modelo en `app/adapters/ml_models/riaXX_*.py`
+4. El schema y endpoint en `app/adapters/api/`
+
+`AI_CONTEXT.md` incluye las skills operativas necesarias: control de alcance,
+revision de leakage, contrato API, persistencia de modelos, smoke tests y
+construccion de contexto para agentes IA.
+
+## Validacion rapida
+
+```powershell
+data-science\venv\Scripts\python.exe -m compileall -q data-science/app
+```
+
+```powershell
+$env:PYTHONPATH='data-science'
+data-science\venv\Scripts\python.exe -c "from app.adapters.api.main import app; print('api import ok')"
 ```

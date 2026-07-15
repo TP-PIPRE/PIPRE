@@ -3,8 +3,8 @@ import pandas as pd
 from app.application.metrics import round_metric
 
 
-class RIA10Service:
-    MODEL_VERSION = "ria10-v1"
+class RIA02Service:
+    MODEL_VERSION = "ria02-v3"
 
     def __init__(self, model):
         self.model = model
@@ -27,12 +27,15 @@ class RIA10Service:
         result = self.model.predict_detailed(df)
 
         return {
-            "result": result["pedagogical_recommendation"],
+            "result": result["result"],
             "accuracy": round_metric(getattr(self.model, "accuracy", None)),
             "precision": round_metric(getattr(self.model, "precision", None)),
             "details": {
-                "pedagogical_profile": result["pedagogical_profile"],
-                "pedagogical_risk": result["pedagogical_risk"],
-                "reasons": result["reasons"],
+                "feedback_type": result["feedback_type"],
+                "priority": result["priority"],
+                "recurrent_errors": result["recurrent_errors"],
+                "code_complexity": result["code_complexity"],
+                "suggestions": result["suggestions"],
+                "llm_context": result["llm_context"],
             },
         }

@@ -12,10 +12,10 @@ def main():
     pipeline = create_pipeline()
     pipeline.train(df)
 
-    ria1, ria3, ria4, ria8, ria11, ria12 = pipeline.get_models()
+    ria1, ria2, ria3, ria4, ria8, ria11, ria12 = pipeline.get_models()
 
     def evaluar():
-        return generar_resultados(df, ria1, ria3, ria4, ria8, ria11, ria12)
+        return generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12)
 
     resultados = evaluar()
 
