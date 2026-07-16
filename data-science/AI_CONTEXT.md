@@ -26,7 +26,7 @@ proyecto.
 
 | RIA | Archivo principal | Funcion |
 | --- | --- | --- |
-| RIA01 | `ria01_desempeño.py` | Clasifica desempeno: low, medium, high. |
+| RIA01 | `ria01_desempeño.py` | Regla exacta con score/success rate o estimacion ML binaria sin esas variables. |
 | RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion y arma contexto para IA. |
 | RIA03 | `ria03_recomendador.py` | Recomienda actividades: basic, intermediate, advanced. |
 | RIA04 | `ria04_dificultad.py` | Ajusta dificultad: low, medium, high. |
@@ -34,6 +34,21 @@ proyecto.
 | RIA10 | `ria10_pedagogica.py` | Recomienda intervencion pedagogica. |
 | RIA11 | `ria11_tiempo.py` | Clasifica tiempo: short, medium, long. |
 | RIA12 | `ria12_codigo.py` | Evalua codigo en la UI local. No tiene endpoint FastAPI directo actualmente. |
+
+### RIA01: modos y restricciones
+
+- `predict(data)` ejecuta ML predictivo con intentos, errores, nivel logico e interacciones IA.
+- `predict_rule(data)` aplica la formula exacta con puntaje y tasa de exito.
+- El target predictivo predeterminado se construye con la regla, pero puntaje y tasa de exito no son features.
+- `rendimiento` solo se usa como target cuando se configura `target_source="existing"` y se considera una etiqueta externa valida.
+- La seleccion de features y modelos usa validacion cruzada; el test solo se usa para la evaluacion final.
+- La imputacion y la ingenieria de variables viven en `ria01_preprocessing.py` y se ajustan dentro de cada fold.
+- La busqueda conjunta selecciona algoritmo, hiperparametros y conjunto de features en un mismo Pipeline.
+- Las clases usan un mapeo explicito y estable: `bajo=0`, `adecuado=1`.
+- En RIA01, `errores` cuenta eventos: un intento puede contener varios errores. Por ello `errores > intentos` es valido y `ratio_error` significa errores por intento.
+- El origen de `nivel_logico` debe declararse con `logical_level_source` cuando se conozca.
+- `target_source="existing"` admite datasets sin puntaje, tasa de exito o features opcionales; en ese caso el baseline de regla se marca como no disponible.
+- Las pruebas reproducibles de RIA01 estan en `tests/test_ria01.py` y el flujo demostrativo en `scripts/demo_ria01.py`.
 
 ## Endpoints principales
 
@@ -112,6 +127,11 @@ Si cambia `feature_columns`, version del modelo o logica incompatible, actualiza
 Si se toca `app/ui`, verificar que `generar_resultados` y `ui_resultados` puedan
 mostrar datos anidados sin romper la pantalla.
 
+La UI carga los modelos desde `saved_models` mediante
+`PipelineIA.load_or_train`; no debe llamar `pipeline.train(df)` en cada inicio.
+Solo se reentrena el RIA cuyo archivo falte, tenga otro tipo o una version
+incompatible.
+
 ### 7. FastAPI smoke test
 
 Validar imports, carga de modelos y al menos una prediccion por endpoint
@@ -133,4 +153,3 @@ data-science\venv\Scripts\python.exe -m compileall -q data-science/app
 $env:PYTHONPATH='data-science'
 data-science\venv\Scripts\python.exe -c "from app.adapters.api.main import app; print('api import ok')"
 ```
-

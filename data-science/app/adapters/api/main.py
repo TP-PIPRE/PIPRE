@@ -46,6 +46,14 @@ RIA01_FEATURE_NAME_MAP = {
     "interacciones_ia": "ai_interactions",
     "ratio_error": "error_ratio",
     "dependencia_ia": "ai_dependency",
+    "ia_por_error": "ai_per_error",
+    "tuvo_errores": "had_errors",
+    "uso_ia": "used_ai",
+    "nivel_x_error": "logical_level_x_error",
+    "errores_faltante": "errors_missing",
+    "intentos_faltante": "attempts_missing",
+    "interacciones_ia_faltante": "ai_interactions_missing",
+    "nivel_logico_faltante": "logical_level_missing",
 }
 
 RIA02_FEATURE_NAME_MAP = {
@@ -297,12 +305,12 @@ def load_or_train_ria01():
 
         try:
             loaded_model = ria01_model_repository.load()
-            expected_features = ria01_service.model.feature_columns
-            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_schema = getattr(ria01_service.model, "input_feature_schema", None)
+            loaded_schema = getattr(loaded_model, "input_feature_schema", None)
             expected_version = ria01_service.MODEL_VERSION
             loaded_version = getattr(loaded_model, "model_version", None)
 
-            if loaded_features != expected_features or loaded_version != expected_version:
+            if loaded_schema != expected_schema or loaded_version != expected_version:
                 train_and_save_ria01("Existing RIA01 model is incompatible. Retraining model...")
             else:
                 ria01_service.set_model(loaded_model)

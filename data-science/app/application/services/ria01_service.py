@@ -4,12 +4,11 @@ from app.domain.ports.ria01_usecase import RIA01UseCase
 
 
 class RIA01Service(RIA01UseCase):
-    MODEL_VERSION = "ria01-v4"
+    MODEL_VERSION = "ria01-v10-error-events"
 
     RESULT_LABELS = {
         "bajo": "low",
-        "medio": "medium",
-        "alto": "high",
+        "adecuado": "adequate",
     }
 
     def __init__(self, model):
