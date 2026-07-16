@@ -48,6 +48,25 @@ def traducir_detalle_dificultad(detalle):
     }
 
 
+def obtener_importancias_modelo(modelo):
+    if hasattr(modelo, "native_feature_importance") and not modelo.native_feature_importance.empty:
+        return dict(zip(
+            modelo.native_feature_importance["variable"],
+            modelo.native_feature_importance["importancia"]
+        ))
+
+    if hasattr(modelo, "permutation_feature_importance") and not modelo.permutation_feature_importance.empty:
+        return dict(zip(
+            modelo.permutation_feature_importance["variable"],
+            modelo.permutation_feature_importance["importancia_promedio"]
+        ))
+
+    if hasattr(modelo.model, "feature_importances_"):
+        return dict(zip(modelo.feature_columns, modelo.model.feature_importances_))
+
+    return {}
+
+
 def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
 
     data = df.sample(1)
@@ -65,10 +84,7 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
             "resultado": ria1.predict(data),
             "accuracy": round_metric(ria1.accuracy),
             "precision": round_metric(ria1.precision),
-            "importancias": dict(zip(
-                ria1.feature_columns,
-                ria1.model.feature_importances_
-            )),
+            "importancias": obtener_importancias_modelo(ria1),
             "input_data": get_input_data([
                 "intentos",
                 "errores",

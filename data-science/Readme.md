@@ -24,6 +24,8 @@ data-science/
     ui/                 UI local para pruebas con el dataset.
   data/                 Dataset de entrenamiento.
   saved_models/         Modelos entrenados en formato .pkl.
+  scripts/              Demostraciones ejecutables y diagnosticos.
+  tests/                Pruebas unitarias y de integracion.
   AI_CONTEXT.md         Contexto compacto para futuras IAs.
 ```
 
@@ -36,11 +38,15 @@ data-science/
 5. El servicio llama al modelo y devuelve una respuesta compacta.
 6. El frontend/backend consume `result`, metricas principales y `details`.
 
+La UI local reutiliza los modelos de `saved_models`. En un inicio normal no
+reentrena los RIA; solo entrena y persiste un modelo cuando falta o su version no
+es compatible.
+
 ## RIA disponibles
 
 | RIA | Funcion | Endpoint |
 | --- | --- | --- |
-| RIA01 | Clasificacion de desempeno. | `POST /ria01/predict` |
+| RIA01 | Estimacion predictiva binaria sin score/success rate; incluye un modo de regla separado para datos finales. | `POST /ria01/predict` |
 | RIA02 | Retroalimentacion automatica y contexto para IA. | `POST /ria02/feedback` |
 | RIA03 | Recomendacion de actividades. | `POST /ria03/recommend` |
 | RIA04 | Ajuste adaptativo de dificultad. | `POST /ria04/difficulty` |
@@ -85,4 +91,11 @@ data-science\venv\Scripts\python.exe -m compileall -q data-science/app
 ```powershell
 $env:PYTHONPATH='data-science'
 data-science\venv\Scripts\python.exe -c "from app.adapters.api.main import app; print('api import ok')"
+```
+
+Pruebas y demostracion de RIA01:
+
+```powershell
+data-science\venv\Scripts\python.exe -B -m unittest tests.test_ria01 -v
+data-science\venv\Scripts\python.exe -B scripts/demo_ria01.py
 ```

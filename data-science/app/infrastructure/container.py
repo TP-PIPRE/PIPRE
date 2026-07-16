@@ -25,6 +25,7 @@ from app.infrastructure.settings import (
     RIA08_MODEL_PATH,
     RIA10_MODEL_PATH,
     RIA11_MODEL_PATH,
+    RIA12_MODEL_PATH,
 )
 
 
@@ -58,6 +59,22 @@ def create_ria10_model_repository():
 
 def create_ria11_model_repository():
     return JoblibModelRepository(RIA11_MODEL_PATH)
+
+
+def create_ria12_model_repository():
+    return JoblibModelRepository(RIA12_MODEL_PATH)
+
+
+def create_ui_model_repositories():
+    return {
+        "ria1": create_ria01_model_repository(),
+        "ria2": create_ria02_model_repository(),
+        "ria3": create_ria03_model_repository(),
+        "ria4": create_ria04_model_repository(),
+        "ria8": create_ria08_model_repository(),
+        "ria11": create_ria11_model_repository(),
+        "ria12": create_ria12_model_repository(),
+    }
 
 
 def create_ria01_service():
