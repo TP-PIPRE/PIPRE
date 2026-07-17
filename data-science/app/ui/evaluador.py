@@ -62,7 +62,10 @@ def obtener_importancias_modelo(modelo):
         ))
 
     if hasattr(modelo.model, "feature_importances_"):
-        return dict(zip(modelo.feature_columns, modelo.model.feature_importances_))
+        columns = getattr(
+            modelo, "selected_feature_columns", modelo.feature_columns
+        )
+        return dict(zip(columns, modelo.model.feature_importances_))
 
     return {}
 
@@ -115,15 +118,18 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
             "resultado": ria3.predict(data),
             "accuracy": round_metric(ria3.accuracy),
             "precision": round_metric(ria3.precision),
-            "importancias": dict(zip(
-                ria3.feature_columns,
-                ria3.model_stage1.feature_importances_
-            )),
+            "importancias": obtener_importancias_modelo(ria3),
             "input_data": get_input_data([
                 "nivel_logico",
                 "dias_inactivo",
                 "interacciones_ia",
-                "intentos"
+                "intentos",
+                "errores",
+                "ayuda_solicitada",
+                "intentos_historicos_promedio",
+                "errores_historicos_promedio",
+                "ayuda_historica_promedio",
+                "rendimiento_previo",
             ])
         },
 

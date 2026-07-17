@@ -28,7 +28,7 @@ proyecto.
 | --- | --- | --- |
 | RIA01 | `ria01_desempeño.py` | Regla exacta con score/success rate o estimacion ML binaria sin esas variables. |
 | RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion y arma contexto para IA. |
-| RIA03 | `ria03_recomendador.py` | Recomienda actividades: basic, intermediate, advanced. |
+| RIA03 | `ria03_recomendador.py` | Compara XGBoost jerarquico/multiclase para recomendar basic, intermediate o advanced. |
 | RIA04 | `ria04_dificultad.py` | Ajusta dificultad: low, medium, high. |
 | RIA08 | `ria08_anomalias.py` | Detecta comportamiento normal o anomalous. |
 | RIA10 | `ria10_pedagogica.py` | Recomienda intervencion pedagogica. |
@@ -49,6 +49,17 @@ proyecto.
 - El origen de `nivel_logico` debe declararse con `logical_level_source` cuando se conozca.
 - `target_source="existing"` admite datasets sin puntaje, tasa de exito o features opcionales; en ese caso el baseline de regla se marca como no disponible.
 - Las pruebas reproducibles de RIA01 estan en `tests/test_ria01.py` y el flujo demostrativo en `scripts/demo_ria01.py`.
+
+### RIA03: target y evaluacion
+
+- `train()` usa `rendimiento` historico del estudiante como etiqueta supervisada con bajo, medio y alto; no genera el target internamente.
+- `rendimiento` solo existe en entrenamiento/evaluacion: no entra como feature ni se solicita al backend durante prediccion.
+- El preprocessing se ajusta solo con train.
+- La division `auto` prioriza fecha, luego estudiante y finalmente estratificacion.
+- La busqueda compara features core/extended y modelos jerarquico/multiclase con CV agrupada.
+- La calibracion usa predicciones OOF de train; validacion selecciona arquitectura, modo de probabilidad y umbrales.
+- FastAPI exige logical_level, inactive_days, ai_interactions y attempts. Acepta opcionalmente errors, help_requested, promedios historicos y previous_performance.
+- `previous_performance` y los promedios historicos deben haberse calculado antes de la actividad actual; nunca se derivan del resultado que se intenta predecir.
 
 ## Endpoints principales
 
