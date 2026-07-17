@@ -31,6 +31,12 @@ services:
       - ./data-science/data:/app/data
     networks:
       - pipre-infra-net
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=4)" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
     logging: *default-logging
 
   backend:
@@ -45,6 +51,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
     depends_on:
       postgres:
+        condition: service_healthy
+      ml-ia:
         condition: service_healthy
     networks:
       - pipre-infra-net
