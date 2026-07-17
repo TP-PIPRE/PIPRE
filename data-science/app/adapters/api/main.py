@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from app.adapters.api.schemas import RIA01Input, RIA02Input, RIA03Input, RIA04Input, RIA08Input, RIA10Input, RIA11Input
@@ -38,6 +39,16 @@ ria04_service = create_ria04_service()
 ria08_service = create_ria08_service()
 ria10_service = create_ria10_service()
 ria11_service = create_ria11_service()
+
+ML_SERVICES = {
+    "ria01": ria01_service,
+    "ria02": ria02_service,
+    "ria03": ria03_service,
+    "ria04": ria04_service,
+    "ria08": ria08_service,
+    "ria10": ria10_service,
+    "ria11": ria11_service,
+}
 
 RIA01_FEATURE_NAME_MAP = {
     "intentos": "attempts",
@@ -705,4 +716,26 @@ def info_ria11():
 def health():
     return {
         "status": "ok"
+    }
+
+
+@app.get("/ready")
+def readiness():
+    pending_models = [
+        name for name, service in ML_SERVICES.items()
+        if not service._trained
+    ]
+
+    if pending_models:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "not_ready",
+                "pending_models": pending_models,
+            },
+        )
+
+    return {
+        "status": "ready",
+        "models": list(ML_SERVICES),
     }
