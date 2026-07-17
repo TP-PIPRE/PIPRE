@@ -4,7 +4,7 @@ from app.application.metrics import round_metric
 
 
 class RIA03Service:
-    MODEL_VERSION = "ria03-v3"
+    MODEL_VERSION = "ria03-v5.1-historical-target"
 
     RESULT_LABELS = {
         "bas": "basic",

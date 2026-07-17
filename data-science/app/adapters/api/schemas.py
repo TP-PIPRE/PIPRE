@@ -27,6 +27,12 @@ class RIA03Input(BaseModel):
     inactive_days: int
     ai_interactions: float
     attempts: int
+    errors: Optional[int] = None
+    help_requested: Optional[int] = None
+    historical_attempts_avg: Optional[float] = None
+    historical_errors_avg: Optional[float] = None
+    historical_help_avg: Optional[float] = None
+    previous_performance: Optional[str] = None
 
 
 class RIA04Input(BaseModel):

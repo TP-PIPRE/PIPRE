@@ -71,12 +71,26 @@ RIA03_FEATURE_NAME_MAP = {
     "dias_inactivo": "inactive_days",
     "interacciones_ia": "ai_interactions",
     "intentos": "attempts",
+    "errores": "errors",
+    "ayuda_solicitada": "help_requested",
+    "intentos_historicos_promedio": "historical_attempts_avg",
+    "errores_historicos_promedio": "historical_errors_avg",
+    "ayuda_historica_promedio": "historical_help_avg",
+    "rendimiento_previo_score": "previous_performance_score",
     "ratio_ia": "ai_ratio",
     "inactividad_relativa": "relative_inactivity",
     "engagement": "engagement",
     "consistencia": "consistency",
     "intensidad_total": "total_intensity",
     "eficiencia": "efficiency",
+    "errores_por_intento": "errors_per_attempt",
+    "ayuda_por_intento": "help_per_attempt",
+    "errores_faltante": "errors_missing",
+    "ayuda_solicitada_faltante": "help_requested_missing",
+    "intentos_historicos_promedio_faltante": "historical_attempts_avg_missing",
+    "errores_historicos_promedio_faltante": "historical_errors_avg_missing",
+    "ayuda_historica_promedio_faltante": "historical_help_avg_missing",
+    "rendimiento_previo_faltante": "previous_performance_missing",
 }
 
 RIA04_FEATURE_NAME_MAP = {
@@ -170,6 +184,12 @@ def to_ria03_model_input(data: RIA03Input):
         "dias_inactivo": data.inactive_days,
         "interacciones_ia": data.ai_interactions,
         "intentos": data.attempts,
+        "errores": data.errors,
+        "ayuda_solicitada": data.help_requested,
+        "intentos_historicos_promedio": data.historical_attempts_avg,
+        "errores_historicos_promedio": data.historical_errors_avg,
+        "ayuda_historica_promedio": data.historical_help_avg,
+        "rendimiento_previo": data.previous_performance,
     }
 
 
@@ -611,7 +631,11 @@ def info_ria03():
         "trained": ria03_service._trained,
         "features": [
             RIA03_FEATURE_NAME_MAP.get(feature, feature)
-            for feature in ria03_service.model.feature_columns
+            for feature in getattr(
+                ria03_service.model,
+                "selected_feature_columns",
+                ria03_service.model.feature_columns,
+            )
         ] if ria03_service._trained else [],
         "accuracy": round_metric(getattr(ria03_service.model, "accuracy", None)),
         "precision": round_metric(getattr(ria03_service.model, "precision", None))
