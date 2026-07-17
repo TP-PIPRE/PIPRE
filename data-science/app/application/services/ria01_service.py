@@ -4,7 +4,7 @@ from app.domain.ports.ria01_usecase import RIA01UseCase
 
 
 class RIA01Service(RIA01UseCase):
-    MODEL_VERSION = "ria01-v10-error-events"
+    MODEL_VERSION = "ria01-v10.1-support-package"
 
     RESULT_LABELS = {
         "bajo": "low",

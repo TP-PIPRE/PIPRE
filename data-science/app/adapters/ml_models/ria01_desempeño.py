@@ -38,7 +38,7 @@ from sklearn.model_selection import (
 from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier
 
-from app.adapters.ml_models.ria01_preprocessing import (
+from app.adapters.ml_support.ria01_preprocessing import (
     FULL_FEATURE_COLUMNS,
     KNOWN_LOGICAL_LEVELS,
     NUMERIC_BASE_COLUMNS,
@@ -151,7 +151,7 @@ class ClasificadorDesempeno:
         self.classification_mode = classification_mode
         self.random_label_permutations = random_label_permutations
         self.minimum_stable_rows = minimum_stable_rows
-        self.model_version = "ria01-v10-error-events"
+        self.model_version = "ria01-v10.1-support-package"
         self.input_feature_schema = list(self.INPUT_FEATURE_SCHEMA)
         self._reset_training_state()
 

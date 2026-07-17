@@ -365,7 +365,7 @@ def build_pdf():
             "La prueba con etiquetas aleatorias obtiene balanced accuracy cercana a 0.50, como se espera al azar.",
         ])
         y = section(ax, y, "Archivos responsables")
-        y = code_box(ax, y, "app/adapters/ml_models/ria01_desempeño.py      lógica principal\napp/adapters/ml_models/ria01_preprocessing.py   transformación fold-safe\napp/application/services/ria01_service.py       contrato de respuesta\napp/adapters/api/schemas.py                     body validado\napp/adapters/api/main.py                        endpoint /ria01/predict", 0.16)
+        y = code_box(ax, y, "app/adapters/ml_models/ria01_desempeño.py      lógica principal\napp/adapters/ml_support/ria01_preprocessing.py  transformación fold-safe\napp/application/services/ria01_service.py       contrato de respuesta\napp/adapters/api/schemas.py                     body validado\napp/adapters/api/main.py                        endpoint /ria01/predict", 0.16)
         footer(ax, 9)
         pdf.savefig(fig, bbox_inches="tight")
         plt.close(fig)

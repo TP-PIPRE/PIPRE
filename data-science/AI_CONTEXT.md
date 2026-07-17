@@ -14,7 +14,8 @@ proyecto.
 
 ## Arquitectura rapida
 
-- `app/adapters/ml_models`: logica de cada RIA/modelo.
+- `app/adapters/ml_models`: logica principal de cada RIA/modelo.
+- `app/adapters/ml_support`: preprocessing, seleccion de modelos y apoyo tecnico de los adaptadores ML.
 - `app/application/services`: contrato estable para usar cada modelo.
 - `app/adapters/api`: FastAPI, schemas Pydantic y endpoints.
 - `app/infrastructure`: rutas, repositorios y wiring de dependencias.
@@ -42,7 +43,7 @@ proyecto.
 - El target predictivo predeterminado se construye con la regla, pero puntaje y tasa de exito no son features.
 - `rendimiento` solo se usa como target cuando se configura `target_source="existing"` y se considera una etiqueta externa valida.
 - La seleccion de features y modelos usa validacion cruzada; el test solo se usa para la evaluacion final.
-- La imputacion y la ingenieria de variables viven en `ria01_preprocessing.py` y se ajustan dentro de cada fold.
+- La imputacion y la ingenieria de variables viven en `app/adapters/ml_support/ria01_preprocessing.py` y se ajustan dentro de cada fold.
 - La busqueda conjunta selecciona algoritmo, hiperparametros y conjunto de features en un mismo Pipeline.
 - Las clases usan un mapeo explicito y estable: `bajo=0`, `adecuado=1`.
 - En RIA01, `errores` cuenta eventos: un intento puede contener varios errores. Por ello `errores > intentos` es valido y `ratio_error` significa errores por intento.
