@@ -12,6 +12,7 @@ data-science/
     adapters/
       api/              FastAPI y schemas de entrada.
       ml_models/        Modelos y reglas de cada RIA.
+      ml_support/       Preprocessing y seleccion interna de modelos.
       repositories/     Carga de dataset y persistencia joblib.
     application/
       services/         Servicios que estandarizan el uso de modelos.

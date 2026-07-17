@@ -20,7 +20,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from xgboost import XGBClassifier
 
-from app.adapters.ml_models.ria03_model_selection import (
+from app.adapters.ml_support.ria03_model_selection import (
     RIA03ModelSelector,
     TARGET_TO_INT,
 )

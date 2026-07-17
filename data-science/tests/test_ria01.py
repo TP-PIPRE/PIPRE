@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.adapters.ml_models.ria01_desempeño import ClasificadorDesempeno
-from app.adapters.ml_models.ria01_preprocessing import RIA01FeatureEngineer
+from app.adapters.ml_support.ria01_preprocessing import RIA01FeatureEngineer
 from app.application.services.ria01_service import RIA01Service
 
 
