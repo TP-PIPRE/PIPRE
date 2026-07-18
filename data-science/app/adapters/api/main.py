@@ -3,7 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-from app.adapters.api.schemas import RIA01Input, RIA02Input, RIA03Input, RIA04Input, RIA08Input, RIA10Input, RIA11Input
+from app.adapters.api.schemas import (
+    RIA01Input,
+    RIA02Input,
+    RIA03Input,
+    RIA04Input,
+    RIA08Input,
+    RIA10Input,
+    RIA10Response,
+    RIA11Input,
+)
 from app.application.metrics import round_metric
 from app.infrastructure.container import (
     create_dataset_repository,
@@ -576,7 +585,7 @@ def detect_ria08(data: RIA08Input):
     return ria08_service.predict(to_ria08_model_input(data))
 
 
-@app.post("/ria10/pedagogical")
+@app.post("/ria10/pedagogical", response_model=RIA10Response)
 def recommend_ria10(data: RIA10Input):
     return ria10_service.predict(to_ria10_model_input(data))
 
@@ -682,6 +691,20 @@ def info_ria08():
 def info_ria10():
     return {
         "trained": ria10_service._trained,
+        "comparison_scope": "same_grade_training_group",
+        "recommendation_classes": [
+            "individual_support",
+            "reinforce_group",
+            "maintain_strategy",
+            "increase_challenge",
+        ],
+        "grade_references": {
+            str(grade): {
+                metric: round_metric(value)
+                for metric, value in metrics.items()
+            }
+            for grade, metrics in ria10_service.model.grade_group_stats.items()
+        } if ria10_service._trained else {},
         "features": [
             RIA10_FEATURE_NAME_MAP.get(feature, feature)
             for feature in ria10_service.model.feature_columns

@@ -234,18 +234,33 @@ class RecomendadorPedagogico:
     def predict_detailed(self, data):
         self._ensure_trained()
         data = self.preprocess(data)
-        predictions = self._predict_target(data)
+        X = self._build_model_features(data)
+        predictions = self.model.predict(X)
+        probabilities = self.model.predict_proba(X)
         recommendations = self.le_target.inverse_transform(predictions)
 
-        results = [
-            {
+        results = []
+        for recommendation, probability, (_, row) in zip(
+            recommendations,
+            probabilities,
+            data.iterrows(),
+        ):
+            reasons = self._build_reasons(row, recommendation)
+            grade_comparison = self._build_grade_comparison(row)
+            results.append({
                 "pedagogical_profile": self._profile_from_recommendation(recommendation),
                 "pedagogical_risk": self._risk_from_recommendation(recommendation),
                 "pedagogical_recommendation": recommendation,
-                "reasons": self._build_reasons(row, recommendation),
-            }
-            for recommendation, (_, row) in zip(recommendations, data.iterrows())
-        ]
+                "confidence": round(float(max(probability)), 4),
+                "grade_comparison": grade_comparison,
+                "reasons": reasons,
+                "teacher_suggestion": self._build_teacher_suggestion(
+                    recommendation,
+                    reasons,
+                    grade_comparison,
+                    row,
+                ),
+            })
 
         if len(results) == 1:
             return results[0]
@@ -441,6 +456,158 @@ class RecomendadorPedagogico:
             reasons.append("Senales de comportamiento cercanas al promedio del grupo")
 
         return reasons or ["Senales mixtas de comportamiento pedagogico"]
+
+    def _build_grade_comparison(self, row):
+        grade = self._clean_number(row["grado"])
+        uses_grade_reference = row["grado"] in self.grade_group_stats
+        reference_scope = (
+            "same_grade_training_group"
+            if uses_grade_reference
+            else "global_training_group"
+        )
+
+        return {
+            "grade": int(grade) if float(grade).is_integer() else grade,
+            "reference_scope": reference_scope,
+            "metrics": {
+                "errors": self._comparison_metric(
+                    row["errores"],
+                    row["grupo_errores"],
+                    higher_is_better=False,
+                ),
+                "inactive_days": self._comparison_metric(
+                    row["dias_inactivo"],
+                    row["grupo_dias_inactivo"],
+                    higher_is_better=False,
+                ),
+                "completed_activities": self._comparison_metric(
+                    row["actividades_completadas"],
+                    row["grupo_actividades_completadas"],
+                    higher_is_better=True,
+                ),
+            },
+        }
+
+    def _comparison_metric(self, student_value, grade_average, higher_is_better):
+        student_value = self._clean_number(student_value)
+        grade_average = self._clean_number(grade_average)
+        difference = student_value - grade_average
+        tolerance = max(abs(grade_average) * 0.1, 0.5)
+
+        if abs(difference) <= tolerance:
+            status = "near_grade_average"
+        elif difference > 0:
+            status = "favorable" if higher_is_better else "needs_attention"
+        else:
+            status = "needs_attention" if higher_is_better else "favorable"
+
+        return {
+            "student_value": round(student_value, 2),
+            "grade_average": round(grade_average, 2),
+            "difference": round(difference, 2),
+            "status": status,
+        }
+
+    def _build_teacher_suggestion(
+        self,
+        recommendation,
+        reasons,
+        grade_comparison,
+        row,
+    ):
+        base_suggestions = {
+            "individual_support": {
+                "title": "Planificar apoyo individual prioritario",
+                "summary": (
+                    "El estudiante presenta senales que requieren acompanamiento "
+                    "personalizado y seguimiento cercano."
+                ),
+                "priority": "high",
+                "actions": [
+                    "Programar una sesion breve de acompanamiento individual.",
+                    "Asignar una actividad de refuerzo con dificultad basica.",
+                ],
+                "review_after_activities": 2,
+            },
+            "reinforce_group": {
+                "title": "Aplicar refuerzo pedagogico",
+                "summary": (
+                    "El estudiante necesita refuerzo y conviene comprobar si el "
+                    "mismo patron se repite en otros estudiantes del grado."
+                ),
+                "priority": "medium",
+                "actions": [
+                    "Preparar una explicacion guiada del concepto con mayor dificultad.",
+                    "Asignar ejercicios de practica antes del siguiente reto.",
+                ],
+                "review_after_activities": 3,
+            },
+            "maintain_strategy": {
+                "title": "Mantener la estrategia actual",
+                "summary": (
+                    "El comportamiento del estudiante es estable respecto al grado "
+                    "y no requiere una intervencion inmediata."
+                ),
+                "priority": "low",
+                "actions": [
+                    "Continuar con la secuencia de aprendizaje planificada.",
+                    "Revisar nuevamente las metricas despues de nuevas actividades.",
+                ],
+                "review_after_activities": 4,
+            },
+            "increase_challenge": {
+                "title": "Proponer un reto de mayor complejidad",
+                "summary": (
+                    "El estudiante muestra condiciones para avanzar y asumir una "
+                    "actividad con mayor exigencia."
+                ),
+                "priority": "low",
+                "actions": [
+                    "Asignar un reto que combine dos conceptos de programacion.",
+                    "Mantener disponible una pista opcional sin reducir la dificultad inicial.",
+                ],
+                "review_after_activities": 3,
+            },
+        }
+
+        suggestion = base_suggestions.get(
+            recommendation,
+            {
+                "title": "Revisar el caso",
+                "summary": "Las senales disponibles requieren evaluacion docente.",
+                "priority": "medium",
+                "actions": ["Revisar las evidencias del estudiante antes de intervenir."],
+                "review_after_activities": 2,
+            },
+        ).copy()
+        actions = list(suggestion["actions"])
+
+        metrics = grade_comparison["metrics"]
+        if metrics["errors"]["status"] == "needs_attention":
+            actions.append(
+                "Revisar los errores recurrentes y modelar paso a paso una solucion correcta."
+            )
+        if metrics["inactive_days"]["status"] == "needs_attention":
+            actions.append(
+                "Contactar al estudiante y acordar una actividad corta de reincorporacion."
+            )
+        if metrics["completed_activities"]["status"] == "needs_attention":
+            actions.append(
+                "Definir un plan de recuperacion para completar las actividades pendientes."
+            )
+        if row["dependencia_ia"] >= 1:
+            actions.append(
+                "Solicitar primero una explicacion propia antes de habilitar ayuda de IA."
+            )
+
+        suggestion["actions"] = list(dict.fromkeys(actions))
+        suggestion["based_on_reasons"] = reasons
+        return suggestion
+
+    @staticmethod
+    def _clean_number(value):
+        numeric = pd.to_numeric(value, errors="coerce")
+        return 0.0 if pd.isna(numeric) else float(numeric)
 
     def _normalize_success_rate(self, value):
         value = pd.to_numeric(value, errors="coerce").fillna(0)

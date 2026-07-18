@@ -63,6 +63,44 @@ class RIA10Input(BaseModel):
     logical_level: str
 
 
+class RIA10MetricComparison(BaseModel):
+    student_value: float
+    grade_average: float
+    difference: float
+    status: str
+
+
+class RIA10GradeComparison(BaseModel):
+    grade: int | float
+    reference_scope: str
+    metrics: dict[str, RIA10MetricComparison]
+
+
+class RIA10TeacherSuggestion(BaseModel):
+    title: str
+    summary: str
+    priority: str
+    actions: list[str]
+    review_after_activities: int
+    based_on_reasons: list[str]
+
+
+class RIA10Details(BaseModel):
+    pedagogical_profile: str
+    pedagogical_risk: str
+    confidence: float
+    grade_comparison: RIA10GradeComparison
+    reasons: list[str]
+    teacher_suggestion: RIA10TeacherSuggestion
+
+
+class RIA10Response(BaseModel):
+    result: str
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    details: RIA10Details
+
+
 class RIA11Input(BaseModel):
     attempts: int
     errors: int

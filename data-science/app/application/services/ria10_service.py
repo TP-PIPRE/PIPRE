@@ -4,7 +4,7 @@ from app.application.metrics import round_metric
 
 
 class RIA10Service:
-    MODEL_VERSION = "ria10-v1"
+    MODEL_VERSION = "ria10-v2-grade-comparison"
 
     def __init__(self, model):
         self.model = model
@@ -33,6 +33,9 @@ class RIA10Service:
             "details": {
                 "pedagogical_profile": result["pedagogical_profile"],
                 "pedagogical_risk": result["pedagogical_risk"],
+                "confidence": result["confidence"],
+                "grade_comparison": result["grade_comparison"],
                 "reasons": result["reasons"],
+                "teacher_suggestion": result["teacher_suggestion"],
             },
         }

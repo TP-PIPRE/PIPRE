@@ -11,7 +11,16 @@ if str(ROOT) not in sys.path:
 from app.application.services.pipeline_service import PipelineIA
 
 
-MODEL_NAMES = ("ria1", "ria2", "ria3", "ria4", "ria8", "ria11", "ria12")
+MODEL_NAMES = (
+    "ria1",
+    "ria2",
+    "ria3",
+    "ria4",
+    "ria8",
+    "ria10",
+    "ria11",
+    "ria12",
+)
 
 
 class FakeModel:
@@ -48,6 +57,7 @@ class UIPipelineCacheTest(unittest.TestCase):
             ria3=models["ria3"],
             ria4=models["ria4"],
             ria8=models["ria8"],
+            ria10=models["ria10"],
             ria11=models["ria11"],
             ria12=models["ria12"],
         )

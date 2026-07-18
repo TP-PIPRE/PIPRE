@@ -73,6 +73,18 @@ proyecto.
 - No reportar `accuracy` ni `precision`; medir validez de formato,
   compatibilidad de bloques, ejecucion de casos de prueba y aprobacion docente.
 
+### RIA10: recomendacion pedagogica por grado
+
+- Compara errores, dias de inactividad y actividades completadas del estudiante
+  con promedios aprendidos del mismo grado en el conjunto de entrenamiento.
+- Si el grado no existe en entrenamiento, usa el promedio global e informa ese
+  alcance en `reference_scope`.
+- Devuelve categoria, perfil, riesgo, confianza, comparacion por grado, razones
+  y una sugerencia docente accionable.
+- Las acciones se construyen a partir de la categoria y de las brechas
+  observadas; siempre requieren criterio final del docente.
+- RIA10 forma parte tanto de FastAPI como del pipeline de la UI local.
+
 ## Endpoints principales
 
 - `POST /ria01/predict`

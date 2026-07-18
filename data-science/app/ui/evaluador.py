@@ -5,6 +5,24 @@ RIA2_RESULT_LABELS = {
     "on_track": "En buen camino",
 }
 
+RIA10_RESULT_LABELS = {
+    "individual_support": "Requiere apoyo individual",
+    "reinforce_group": "Requiere refuerzo pedagogico",
+    "maintain_strategy": "Mantener estrategia actual",
+    "increase_challenge": "Proponer un reto mayor",
+}
+
+RIA10_COMPARISON_LABELS = {
+    "favorable": "Favorable respecto al grado",
+    "near_grade_average": "Cercano al promedio del grado",
+    "needs_attention": "Requiere atencion",
+}
+
+RIA10_REFERENCE_LABELS = {
+    "same_grade_training_group": "Promedio del mismo grado en entrenamiento",
+    "global_training_group": "Promedio global de entrenamiento",
+}
+
 
 def obtener_importancias_modelo(modelo):
     if hasattr(modelo, "native_feature_importance") and not modelo.native_feature_importance.empty:
@@ -20,15 +38,17 @@ def obtener_importancias_modelo(modelo):
         ))
 
     if hasattr(modelo.model, "feature_importances_"):
-        columns = getattr(
-            modelo, "selected_feature_columns", modelo.feature_columns
+        columns = (
+            getattr(modelo, "model_feature_columns", None)
+            or getattr(modelo, "selected_feature_columns", None)
+            or modelo.feature_columns
         )
         return dict(zip(columns, modelo.model.feature_importances_))
 
     return {}
 
 
-def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
+def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria10, ria11, ria12):
 
     data = df.sample(1)
     ria4_input = {
@@ -43,6 +63,7 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
     ria4_detalle = ria4.predict_detailed(ria4_input)
     ria2_input = construir_input_ria2(data)
     ria2_detalle = ria2.predict_detailed(ria2_input)
+    ria10_detalle = ria10.predict_detailed(data)
 
     def get_input_data(columns):
         available_columns = [col for col in columns if col in data.columns]
@@ -122,6 +143,38 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
             ])
         },
 
+        "RIA10 - Recomendacion pedagogica": {
+            "resultado": RIA10_RESULT_LABELS.get(
+                ria10_detalle["pedagogical_recommendation"],
+                ria10_detalle["pedagogical_recommendation"],
+            ),
+            "detalle": {
+                "perfil_pedagogico": ria10_detalle["pedagogical_profile"],
+                "riesgo_pedagogico": ria10_detalle["pedagogical_risk"],
+                "confianza": f"{ria10_detalle['confidence']:.2%}",
+                "comparacion_con_grado": traducir_comparacion_ria10(
+                    ria10_detalle["grade_comparison"]
+                ),
+                "razones": ria10_detalle["reasons"],
+                "sugerencia_docente": traducir_sugerencia_ria10(
+                    ria10_detalle["teacher_suggestion"]
+                ),
+            },
+            "accuracy": round_metric(ria10.accuracy),
+            "precision": round_metric(ria10.precision),
+            "importancias": obtener_importancias_modelo(ria10),
+            "input_data": get_input_data([
+                "intentos",
+                "errores",
+                "interacciones_ia",
+                "dias_inactivo",
+                "ayuda_solicitada",
+                "actividades_completadas",
+                "grado",
+                "nivel_logico",
+            ]),
+        },
+
         "RIA11 - Tiempo": {
             "resultado": ria11.predict(data),
             "accuracy": round_metric(ria11.accuracy),
@@ -167,6 +220,46 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
     }
 
     return resultados
+
+
+def traducir_comparacion_ria10(comparison):
+    metric_labels = {
+        "errors": "errores",
+        "inactive_days": "dias_inactivo",
+        "completed_activities": "actividades_completadas",
+    }
+    metrics = {}
+
+    for metric, values in comparison["metrics"].items():
+        metrics[metric_labels.get(metric, metric)] = {
+            "valor_estudiante": values["student_value"],
+            "promedio_grado": values["grade_average"],
+            "diferencia": values["difference"],
+            "estado": RIA10_COMPARISON_LABELS.get(
+                values["status"],
+                values["status"],
+            ),
+        }
+
+    return {
+        "grado": comparison["grade"],
+        "referencia": RIA10_REFERENCE_LABELS.get(
+            comparison["reference_scope"],
+            comparison["reference_scope"],
+        ),
+        "metricas": metrics,
+    }
+
+
+def traducir_sugerencia_ria10(suggestion):
+    return {
+        "titulo": suggestion["title"],
+        "resumen": suggestion["summary"],
+        "prioridad": suggestion["priority"],
+        "acciones": suggestion["actions"],
+        "revisar_despues_de_actividades": suggestion["review_after_activities"],
+        "basada_en_razones": suggestion["based_on_reasons"],
+    }
 
 
 def construir_input_ria2(data):

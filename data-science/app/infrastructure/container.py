@@ -72,6 +72,7 @@ def create_ui_model_repositories():
         "ria3": create_ria03_model_repository(),
         "ria4": create_ria04_model_repository(),
         "ria8": create_ria08_model_repository(),
+        "ria10": create_ria10_model_repository(),
         "ria11": create_ria11_model_repository(),
         "ria12": create_ria12_model_repository(),
     }
@@ -112,6 +113,7 @@ def create_pipeline():
         ria3=RecomendadorActividades(),
         ria4=GeneradorRetosProgramacion(),
         ria8=DetectorAnomalias(),
+        ria10=RecomendadorPedagogico(),
         ria11=ClasificadorTiempo(),
         ria12=EvaluadorCodigo(),
     )
