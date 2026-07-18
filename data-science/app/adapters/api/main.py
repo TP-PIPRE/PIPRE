@@ -105,18 +105,13 @@ RIA03_FEATURE_NAME_MAP = {
 }
 
 RIA04_FEATURE_NAME_MAP = {
-    "puntaje": "score",
-    "tasa_exito": "success_rate",
-    "errores": "errors",
-    "intentos": "attempts",
-    "ayuda_solicitada": "help_requested",
-    "actividades_completadas": "completed_activities",
-    "dias_inactivo": "inactive_days",
-    "nivel_logico": "logical_level",
-    "ratio_error": "error_ratio",
-    "frustracion": "frustration",
-    "progreso_reciente": "recent_progress",
-    "estabilidad": "stability",
+    "topic": "topic",
+    "learning_objective": "learning_objective",
+    "difficulty": "difficulty",
+    "allowed_blocks": "allowed_blocks",
+    "constraints": "constraints",
+    "quantity": "quantity",
+    "seed": "seed",
 }
 
 RIA08_FEATURE_NAME_MAP = {
@@ -206,14 +201,13 @@ def to_ria03_model_input(data: RIA03Input):
 
 def to_ria04_model_input(data: RIA04Input):
     return {
-        "puntaje": data.score,
-        "tasa_exito": data.success_rate,
-        "errores": data.errors,
-        "intentos": data.attempts,
-        "ayuda_solicitada": data.help_requested,
-        "actividades_completadas": data.completed_activities,
-        "dias_inactivo": data.inactive_days,
-        "nivel_logico": data.logical_level,
+        "topic": data.topic,
+        "learning_objective": data.learning_objective,
+        "difficulty": data.difficulty,
+        "allowed_blocks": data.allowed_blocks,
+        "constraints": data.constraints,
+        "quantity": data.quantity,
+        "seed": data.seed,
     }
 
 
@@ -289,12 +283,10 @@ def train_and_save_ria03(reason: str):
 def train_and_save_ria04(reason: str):
     print(reason)
 
-    df = dataset_repository.load()
-
-    ria04_service.train(df)
+    ria04_service.train(None)
     ria04_model_repository.save(ria04_service.model)
 
-    print("RIA04 model trained and saved")
+    print("RIA04 generator initialized and saved")
 
 
 def train_and_save_ria08(reason: str):
@@ -574,8 +566,8 @@ def recommend_ria03(data: RIA03Input):
     return ria03_service.predict(to_ria03_model_input(data))
 
 
-@app.post("/ria04/difficulty")
-def adjust_ria04(data: RIA04Input):
+@app.post("/ria04/generate")
+def generate_ria04(data: RIA04Input):
     return ria04_service.predict(to_ria04_model_input(data))
 
 
@@ -657,12 +649,19 @@ def info_ria03():
 def info_ria04():
     return {
         "trained": ria04_service._trained,
+        "technique": ria04_service.model.TECHNIQUE,
         "features": [
             RIA04_FEATURE_NAME_MAP.get(feature, feature)
             for feature in ria04_service.model.feature_columns
         ] if ria04_service._trained else [],
-        "accuracy": round_metric(getattr(ria04_service.model, "accuracy", None)),
-        "precision": round_metric(getattr(ria04_service.model, "precision", None)),
+        "supported_topics": list(ria04_service.model.SUPPORTED_TOPICS),
+        "supported_difficulties": list(
+            ria04_service.model.SUPPORTED_DIFFICULTIES
+        ),
+        "metrics_note": (
+            "RIA04 is a generator; evaluate format validity, block "
+            "compatibility, executable test cases and teacher approval."
+        ),
     }
 
 

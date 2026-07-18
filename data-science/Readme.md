@@ -50,7 +50,7 @@ es compatible.
 | RIA01 | Estimacion predictiva binaria sin score/success rate; incluye un modo de regla separado para datos finales. | `POST /ria01/predict` |
 | RIA02 | Retroalimentacion automatica y contexto para IA. | `POST /ria02/feedback` |
 | RIA03 | Recomendacion de actividades con seleccion agrupada entre XGBoost jerarquico y multiclase. | `POST /ria03/recommend` |
-| RIA04 | Ajuste adaptativo de dificultad. | `POST /ria04/difficulty` |
+| RIA04 | Generacion inteligente de retos de programacion. | `POST /ria04/generate` |
 | RIA08 | Deteccion de anomalias. | `POST /ria08/anomaly` |
 | RIA10 | Recomendacion pedagogica. | `POST /ria10/pedagogical` |
 | RIA11 | Clasificacion de tiempo. | `POST /ria11/time` |

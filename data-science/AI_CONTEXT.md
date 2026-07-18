@@ -30,7 +30,7 @@ proyecto.
 | RIA01 | `ria01_desempeño.py` | Regla exacta con score/success rate o estimacion ML binaria sin esas variables. |
 | RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion y arma contexto para IA. |
 | RIA03 | `ria03_recomendador.py` | Compara XGBoost jerarquico/multiclase para recomendar basic, intermediate o advanced. |
-| RIA04 | `ria04_dificultad.py` | Ajusta dificultad: low, medium, high. |
+| RIA04 | `ria04_generador.py` | Genera borradores de retos con un sistema experto y reglas procedurales. |
 | RIA08 | `ria08_anomalias.py` | Detecta comportamiento normal o anomalous. |
 | RIA10 | `ria10_pedagogica.py` | Recomienda intervencion pedagogica. |
 | RIA11 | `ria11_tiempo.py` | Clasifica tiempo: short, medium, long. |
@@ -62,12 +62,23 @@ proyecto.
 - FastAPI exige logical_level, inactive_days, ai_interactions y attempts. Acepta opcionalmente errors, help_requested, promedios historicos y previous_performance.
 - `previous_performance` y los promedios historicos deben haberse calculado antes de la actividad actual; nunca se derivan del resultado que se intenta predecir.
 
+### RIA04: generacion de retos
+
+- No usa datos historicos ni entrenamiento supervisado.
+- Recibe tema, objetivo pedagogico, dificultad indicada por el docente,
+  bloques permitidos, restricciones y cantidad de retos.
+- Usa un sistema experto con plantillas y generacion procedural controlada.
+- Devuelve borradores estructurados, casos de prueba y validacion de bloques.
+- Todo reto requiere revision docente antes de publicarse.
+- No reportar `accuracy` ni `precision`; medir validez de formato,
+  compatibilidad de bloques, ejecucion de casos de prueba y aprobacion docente.
+
 ## Endpoints principales
 
 - `POST /ria01/predict`
 - `POST /ria02/feedback`
 - `POST /ria03/recommend`
-- `POST /ria04/difficulty`
+- `POST /ria04/generate`
 - `POST /ria08/anomaly`
 - `POST /ria10/pedagogical`
 - `POST /ria11/time`

@@ -36,14 +36,13 @@ class RIA03Input(BaseModel):
 
 
 class RIA04Input(BaseModel):
-    score: float
-    success_rate: float
-    errors: int
-    attempts: int
-    help_requested: int
-    completed_activities: int
-    inactive_days: int
-    logical_level: str
+    topic: str
+    learning_objective: str
+    difficulty: str = "basic"
+    allowed_blocks: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(default_factory=list)
+    quantity: int = Field(default=1, ge=1, le=5)
+    seed: Optional[int] = None
 
 
 class RIA08Input(BaseModel):

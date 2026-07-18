@@ -197,6 +197,16 @@ class AppResultados:
             if importancias:
                 self.crear_grafico_importancia(center_frame, importancias)
 
+        elif data.get("metricas_operativas"):
+            box_metricas = tk.LabelFrame(
+                center_frame,
+                text="Metricas operativas",
+                font=("Arial", 11, "bold"),
+            )
+            box_metricas.pack(pady=10, fill="x")
+            metricas_texto = self.formatear_detalle(data["metricas_operativas"])
+            self.crear_texto_lectura(box_metricas, metricas_texto)
+
         else:
             # =========================
             #  MÉTRICAS

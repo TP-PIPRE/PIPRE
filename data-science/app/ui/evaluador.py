@@ -1,51 +1,9 @@
 from app.application.metrics import round_metric
 
-
-DIFFICULTY_LABELS = {
-    "low": "dificultad baja",
-    "medium": "dificultad media",
-    "high": "dificultad alta",
-}
-
-DIFFICULTY_RECOMMENDATIONS = {
-    "low": "Bajar dificultad y reforzar bases.",
-    "medium": "Mantener dificultad actual.",
-    "high": "Subir dificultad con mayor reto.",
-}
-
-REASON_LABELS = {
-    "strong_results": "Buen rendimiento.",
-    "high_error_ratio": "Errores altos.",
-    "high_frustration": "Frustracion elevada.",
-    "strong_recent_progress": "Buen progreso reciente.",
-    "unstable_performance": "Desempeno inestable.",
-    "balanced_performance": "Desempeno equilibrado.",
-    "mixed_adaptation_signals": "Senales mixtas.",
-}
-
 RIA2_RESULT_LABELS = {
     "needs_guidance": "Requiere retroalimentacion",
     "on_track": "En buen camino",
 }
-
-
-def traducir_detalle_dificultad(detalle):
-    difficulty_level = detalle.get("difficulty_level")
-
-    return {
-        "nivel_dificultad": DIFFICULTY_LABELS.get(
-            difficulty_level,
-            difficulty_level
-        ),
-        "recomendacion": DIFFICULTY_RECOMMENDATIONS.get(
-            difficulty_level,
-            "Ajustar dificultad segun desempeno."
-        ),
-        "razones": [
-            REASON_LABELS.get(reason, reason)
-            for reason in detalle.get("reasons", [])
-        ],
-    }
 
 
 def obtener_importancias_modelo(modelo):
@@ -73,8 +31,16 @@ def obtener_importancias_modelo(modelo):
 def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
 
     data = df.sample(1)
-    ria4_resultado = ria4.predict(data)
-    ria4_detalle = ria4.predict_detailed(data)
+    ria4_input = {
+        "topic": "ciclos",
+        "learning_objective": "Controlar el movimiento de un robot usando repeticiones",
+        "difficulty": "basic",
+        "allowed_blocks": ["repeat", "move_forward", "turn_right"],
+        "constraints": ["usar al menos un ciclo"],
+        "quantity": 1,
+        "seed": None,
+    }
+    ria4_detalle = ria4.predict_detailed(ria4_input)
     ria2_input = construir_input_ria2(data)
     ria2_detalle = ria2.predict_detailed(ria2_input)
 
@@ -133,25 +99,14 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria11, ria12):
             ])
         },
 
-        "RIA4 - Dificultad": {
-            "resultado": DIFFICULTY_LABELS.get(ria4_resultado, ria4_resultado),
-            "detalle": traducir_detalle_dificultad(ria4_detalle),
-            "accuracy": round_metric(ria4.accuracy),
-            "precision": round_metric(ria4.precision),
-            "importancias": dict(zip(
-                ria4.feature_columns,
-                ria4.model.feature_importances_
-            )),
-            "input_data": get_input_data([
-                "puntaje",
-                "tasa_exito",
-                "errores",
-                "intentos",
-                "ayuda_solicitada",
-                "actividades_completadas",
-                "dias_inactivo",
-                "nivel_logico"
-            ])
+        "RIA4 - Generador de retos": {
+            "resultado": ria4_detalle["status"],
+            "detalle": {
+                "tecnica": ria4_detalle["technique"],
+                "retos": ria4_detalle["challenges"],
+            },
+            "metricas_operativas": ria4_detalle["operational_metrics"],
+            "input_data": ria4_input,
         },
 
         "RIA8 - Anomalías": {
