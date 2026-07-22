@@ -11,8 +11,23 @@ import {
   BsArrowRepeat,
   BsGridFill,
   BsXLg,
-  BsBraces
+  BsBraces,
+  BsLightningFill,
 } from "react-icons/bs";
+
+const CATEGORY_COLORS: Record<BlockCategory, string> = {
+  event: "#22c55e",
+  action: "#94a3b8",
+  condition: "#818cf8",
+  loop: "#f97316",
+};
+
+const CATEGORY_ICONS: Record<BlockCategory, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  event: BsPlayCircleFill,
+  action: BsArrowRight,
+  condition: BsCheckCircleFill,
+  loop: BsArrowRepeat,
+};
 
 export const Workspace = () => {
   const {
@@ -44,29 +59,10 @@ export const Workspace = () => {
     }
   };
 
-  const renderCategoryIcon = (category: BlockCategory, className?: string, style?: React.CSSProperties) => {
-    switch (category) {
-      case "event":
-        return <BsPlayCircleFill className={className} style={style} />;
-      case "action":
-        return <BsArrowRight className={className} style={style} />;
-      case "condition":
-        return <BsCheckCircleFill className={className} style={style} />;
-      case "loop":
-        return <BsArrowRepeat className={className} style={style} />;
-      default:
-        return <BsGridFill className={className} style={style} />;
-    }
-  };
-
-  const getCategoryColor = (category: BlockCategory): string => {
-    switch (category) {
-      case "event": return "#00f5d4";
-      case "action": return "#94a3b8";
-      case "condition": return "#9b5de5";
-      case "loop": return "#f97316";
-      default: return "#64748b";
-    }
+  const renderCategoryIcon = (category: BlockCategory, className?: string) => {
+    const Icon = CATEGORY_ICONS[category] || BsGridFill;
+    const color = CATEGORY_COLORS[category] || "#64748b";
+    return <Icon className={className} style={{ color }} />;
   };
 
   const getBlockDef = (type: string) => config?.blocks.find((b) => b.type === type);
@@ -108,7 +104,7 @@ export const Workspace = () => {
     const hasOptions = def?.paramOptions && Object.keys(def.paramOptions).length > 0;
     const isLoop = block.category === "loop";
     const blockNumber = parentIndex ? `${parentIndex}.${index + 1}` : `${index + 1}`;
-    const categoryColor = getCategoryColor(block.category);
+    const categoryColor = CATEGORY_COLORS[block.category] || "#64748b";
 
     if (isLoop) {
       return (
@@ -139,50 +135,61 @@ export const Workspace = () => {
           isBlockActive ? "z-10" : ""
         }`}
       >
+        {/* Puzzle notch at top */}
         <div
-          className={`flex items-center gap-2 p-2 px-3 min-w-[180px] shadow-md hover:shadow-lg transition-all duration-200 rounded-r ${
-            isBlockActive ? "ring-2 ring-[#00f5d4]/60" : ""
+          className="w-3 h-2 rounded-b-sm mx-auto -mb-px"
+          style={{ backgroundColor: categoryColor, opacity: 0.15 }}
+        />
+
+        <div
+          className={`flex items-center gap-2.5 px-3 py-2.5 min-w-[200px] transition-all duration-200 rounded-xl ${
+            isBlockActive ? "ring-2 ring-green-400/50 scale-[1.01]" : "hover:shadow-md"
           }`}
           style={{
-            backgroundColor: isBlockActive ? "rgba(0, 245, 212, 0.08)" : "var(--surface)",
+            backgroundColor: isBlockActive ? "rgba(34, 197, 94, 0.06)" : "var(--surface)",
             borderLeft: `3px solid ${categoryColor}`,
-            boxShadow: isBlockActive ? "0 0 20px rgba(0, 245, 212, 0.15)" : undefined,
+            borderTopRightRadius: "12px",
+            borderBottomRightRadius: "12px",
+            borderRadius: "0 12px 12px 0",
+            boxShadow: isBlockActive
+              ? `0 0 24px ${categoryColor}20, 0 4px 12px rgba(0,0,0,0.08)`
+              : `0 1px 3px rgba(0,0,0,0.06)`,
           }}
         >
           {/* Block Number */}
           <span
-            className="font-mono text-[9px] font-bold min-w-[24px]"
+            className="font-mono text-xs font-bold min-w-[28px] shrink-0"
             style={{ color: categoryColor }}
           >
-            {blockNumber}.
+            {blockNumber}
           </span>
 
           {/* Block Icon */}
-          {renderCategoryIcon(block.category, "text-[12px]", { color: categoryColor })}
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${categoryColor}15` }}>
+            {renderCategoryIcon(block.category, "text-sm")}
+          </div>
 
           {/* Block Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span
-                className="font-mono text-[10px] block truncate"
-                style={{ color: "var(--text)" }}
-              >
+              <span className="font-semibold text-[12px] block truncate" style={{ color: "var(--text)" }}>
                 {getBlockLabel(block.type, block.params)}
               </span>
               {ENERGY_COST[block.type] && (
-                <span className="font-mono text-[7px] px-1 py-0.5 rounded bg-accent/10 text-accent font-bold shrink-0">
-                  ⚡{ENERGY_COST[block.type]}
+                <span className="text-[10px] px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-500 font-bold shrink-0 flex items-center gap-0.5">
+                  <BsLightningFill className="text-[7px]" />
+                  {ENERGY_COST[block.type]}
                 </span>
               )}
             </div>
             {hasOptions && def?.paramOptions && (
-              <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
                 {Object.entries(def.paramOptions).map(([pName, options]) => (
                   <select
                     key={pName}
                     value={block.params[pName] || def.params?.[pName] || options[0]?.value || ""}
                     onChange={(e) => updateBlockParam(block.id, pName, e.target.value)}
-                    className="text-[8px] p-1 bg-bg border border-border text-text focus:outline-none focus:border-primary w-full rounded"
+                    className="text-[11px] p-1.5 bg-bg border border-border text-text rounded-lg focus:outline-none focus:border-primary/50 w-full transition-colors"
                   >
                     {options.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -198,99 +205,86 @@ export const Workspace = () => {
           {/* Delete Button */}
           <button
             onClick={() => removeBlock(block.id)}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-danger/20 rounded"
+            className="opacity-0 group-hover:opacity-100 transition-all p-1.5 hover:bg-red-500/15 rounded-lg shrink-0"
             style={{ color: "var(--text-muted)" }}
+            title="Eliminar bloque"
           >
-            <BsXLg className="text-[12px]" />
+            <BsXLg className="text-sm" />
           </button>
         </div>
+
+        {/* Puzzle notch at bottom */}
+        <div
+          className="w-3 h-2 rounded-t-sm mx-auto -mt-px"
+          style={{ backgroundColor: categoryColor, opacity: 0.15 }}
+        />
       </div>
     );
   };
 
   return (
-    <div
-      className="flex flex-col h-full"
-      style={{ backgroundColor: "var(--bg)" }}
-    >
-
-      {/* Workspace Content */}
+    <div className="flex flex-col h-full" style={{ backgroundColor: "var(--bg)" }}>
       <div
         className="flex-1 overflow-y-auto p-4 relative"
         onDragOver={onDragOver}
         onDrop={onDrop}
       >
-        {/* Grid Background */}
+        {/* Dotted Grid Background (like Scratch) */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-30"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(150, 150, 150, 0.3) 1px, transparent 1px)",
-            backgroundSize: "16px 16px",
+            backgroundImage: "radial-gradient(circle, var(--border) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+            opacity: 0.5,
           }}
-        ></div>
+        />
 
         {blocks.length === 0 ? (
-          /* Empty State */
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-            <div
-              className="w-full max-w-[280px] p-4 rounded-lg border border-dashed border-border"
-              style={{ backgroundColor: "var(--surface)" }}
-            >
-              {/* Icon */}
-              <div className="flex justify-center mb-3">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: "var(--bg)" }}
-                >
-                  <BsBraces className="text-2xl text-primary opacity-60" />
+            <div className="w-full max-w-[300px] p-5 rounded-2xl border-2 border-dashed border-border bg-surface/50">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-bg shadow-sm border border-border">
+                  <BsBraces className="text-2xl text-primary/50" />
                 </div>
               </div>
 
-              {/* Title */}
-              <h3 className="font-mono text-[11px] text-text text-center mb-2 font-semibold">
-                Sin bloques aún
+              <h3 className="text-sm font-bold text-text text-center mb-2">
+                Sin bloques aun
               </h3>
 
-              {/* Description */}
-              <p className="font-mono text-[9px] text-text-muted text-center mb-4 leading-relaxed">
-                Arrastra bloques desde el panel izquierdo o haz clic en los botones de abajo para comenzar.
+              <p className="text-[11px] text-text-muted text-center mb-4 leading-relaxed">
+                Arrastra bloques desde la izquierda o usa los botones de abajo para empezar a programar tu robot.
               </p>
 
-              {/* Quick Actions */}
               <div className="space-y-2">
                 <button
                   onClick={() => addBlock("inicio", "event", {})}
-                  className="w-full flex items-center gap-2 p-2 rounded border border-border hover:border-[#00f5d4] hover:bg-[#00f5d4]/10 transition-colors text-left"
-                  style={{ backgroundColor: "var(--bg)" }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-green-500/20 bg-green-500/5 hover:bg-green-500/10 hover:border-green-500/40 transition-all text-left active:scale-[0.98]"
                 >
-                  <BsPlayCircleFill className="text-[12px] text-[#00f5d4]" />
-                  <span className="font-mono text-[9px] text-text">Agregar INICIO</span>
+                  <BsPlayCircleFill className="text-sm text-green-500" />
+                  <span className="text-xs font-semibold text-text">Agregar INICIO</span>
                 </button>
 
                 <button
                   onClick={() => addBlock("repetir", "loop", { iteraciones: "3" })}
-                  className="w-full flex items-center gap-2 p-2 rounded border border-border hover:border-[#f97316] hover:bg-[#f97316]/10 transition-colors text-left"
-                  style={{ backgroundColor: "var(--bg)" }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/40 transition-all text-left active:scale-[0.98]"
                 >
-                  <BsArrowRepeat className="text-[12px] text-[#f97316]" />
-                  <span className="font-mono text-[9px] text-text">Agregar REPETIR</span>
+                  <BsArrowRepeat className="text-sm text-orange-500" />
+                  <span className="text-xs font-semibold text-text">Agregar REPETIR</span>
                 </button>
 
                 <button
                   onClick={() => addBlock("avanzar", "action", { distancia: "30" })}
-                  className="w-full flex items-center gap-2 p-2 rounded border border-border hover:border-[#94a3b8] hover:bg-[#94a3b8]/10 transition-colors text-left"
-                  style={{ backgroundColor: "var(--bg)" }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-slate-400/20 bg-slate-400/5 hover:bg-slate-400/10 hover:border-slate-400/40 transition-all text-left active:scale-[0.98]"
                 >
-                  <BsArrowRight className="text-[12px] text-[#94a3b8]" />
-                  <span className="font-mono text-[9px] text-text">Agregar AVANZAR</span>
+                  <BsArrowRight className="text-sm text-slate-400" />
+                  <span className="text-xs font-semibold text-text">Agregar AVANZAR</span>
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          /* Blocks List */
-          <div className="relative z-10 flex flex-col gap-1 items-start">
+          <div className="relative z-10 flex flex-col gap-0.5 items-start pb-20">
             {blocks.map((block, index) => renderBlock(block, index))}
           </div>
         )}

@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
 import { RaceBotBuilder } from "../shared/RaceBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
+import { createSceneWithCamera, createShadowFloor, createGrid } from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 
 export class RaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
-  private camera: THREE.OrthographicCamera;
+  private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof RaceBotBuilder.create>;
@@ -17,19 +18,32 @@ export class RaceStageEngine implements ISimulatorEngine {
   private controls!: MapControls;
   private isRunning = false;
   private checkpoints: { mesh: THREE.Mesh; passed: boolean }[] = [];
+  private cones: THREE.Mesh[] = [];
 
   constructor() {
-    this.scene = new THREE.Scene();
-    const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 35;
-    this.camera = new THREE.OrthographicCamera(
-      (frustumSize * aspect) / -2, (frustumSize * aspect) / 2,
-      frustumSize / 2, frustumSize / -2, 0.1, 1000,
-    );
-    this.camera.position.set(30, 35, 30);
-    this.camera.lookAt(0, 0, 0);
+    const setup = createSceneWithCamera({
+      fov: 55,
+      cameraPos: [25, 22, 25],
+      fogColor: "#1a1510",
+      fogNear: 35,
+      fogFar: 110,
+      bgColor: "#1a1510",
+      ambientColor: "#554433",
+      skyColor: "#665544",
+      groundColor: "#1a1510",
+      dirColor: "#ffffdd",
+      dirPos: [10, 30, 10],
+      shadowMapSize: 2048,
+      shadowCameraSize: 40,
+    });
+    this.scene = setup.scene;
+    this.camera = setup.camera;
+
     this.clock = new THREE.Clock();
-    this.setupLighting();
+
+    createShadowFloor(this.scene, 80, -0.5, "#2d3748");
+    createGrid(this.scene, 80, 80, "#f59e0b", "#4a5568", -0.49);
+
     this.botParts = RaceBotBuilder.create();
     this.botGroup = this.botParts.group;
     this.botGroup.position.set(-25, 0, 0);
@@ -38,17 +52,6 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.particles = new ParticleSystem(this.scene);
     this.createEnvironment();
-  }
-
-  private setupLighting() {
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.9);
-    dir.position.set(10, 25, 10);
-    dir.castShadow = true;
-    this.scene.add(dir);
-    const fill = new THREE.DirectionalLight(0x8888ff, 0.2);
-    fill.position.set(-10, 10, -10);
-    this.scene.add(fill);
   }
 
   private createUltrasonicCone(): THREE.Mesh {
@@ -62,19 +65,6 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Track
-    const trackMat = new THREE.MeshStandardMaterial({ color: "#2d3748", roughness: 0.9 });
-    const track = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), trackMat);
-    track.rotation.x = -Math.PI / 2;
-    track.position.y = -0.5;
-    track.receiveShadow = true;
-    this.scene.add(track);
-
-    const grid = new THREE.GridHelper(80, 80, "#f59e0b", "#4a5568");
-    grid.name = "environment_grid";
-    grid.position.y = -0.49;
-    this.scene.add(grid);
-
     // Track barriers
     const barrierMat = new THREE.MeshStandardMaterial({ color: "#f59e0b", roughness: 0.5 });
     const barriers = [
@@ -121,6 +111,7 @@ export class RaceStageEngine implements ISimulatorEngine {
       const zOff = i % 2 === 0 ? 4 : -4;
       cone.position.set(-20 + i * 4, 0, zOff);
       this.scene.add(cone);
+      this.cones.push(cone);
     }
 
     // Ramps
@@ -152,15 +143,22 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   init(canvas: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.2;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.minZoom = 0.5;
-    this.controls.maxZoom = 4;
+    this.controls.minDistance = 8;
+    this.controls.maxDistance = 60;
+    this.controls.screenSpacePanning = true;
     this.controls.maxPolarAngle = Math.PI / 2;
+    this.controls.target.set(0, 0.5, 0);
+    this.controls.update();
     this.resize(canvas.clientWidth, canvas.clientHeight);
     this.startLoop();
   }
@@ -198,6 +196,10 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.particles.emit(x, z, type);
   }
 
+  getState(): Record<string, unknown> {
+    return { checkpointsPassed: this.checkpoints.filter(cp => cp.passed).length };
+  }
+
   dispose() {
     this.isRunning = false;
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
@@ -206,12 +208,7 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   resize(width: number, height: number) {
-    const aspect = width / height;
-    const frustumSize = 35;
-    this.camera.left = (frustumSize * aspect) / -2;
-    this.camera.right = (frustumSize * aspect) / 2;
-    this.camera.top = frustumSize / 2;
-    this.camera.bottom = frustumSize / -2;
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
   }
@@ -230,6 +227,19 @@ export class RaceStageEngine implements ISimulatorEngine {
           }
         });
       }
+      const t = this.clock.getElapsedTime();
+      // Gentle cone pulsing
+      this.cones.forEach((cone) => {
+        const s = 1 + Math.sin(t * 2 + cone.position.x) * 0.06;
+        cone.scale.setScalar(s);
+      });
+      // Checkpoint animation: gates that glow when passed
+      this.checkpoints.forEach((cp) => {
+        if (cp.passed) {
+          const mat = cp.mesh.material as THREE.MeshBasicMaterial;
+          mat.opacity = 0.3 + Math.sin(t * 3) * 0.2;
+        }
+      });
       this.renderer.render(this.scene, this.camera);
     };
     animate();

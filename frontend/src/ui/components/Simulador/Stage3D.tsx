@@ -100,57 +100,53 @@ export const Stage3D = () => {
       <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-4">
         {/* Top bar */}
         <div className="flex justify-between items-start">
-          <div className="flex flex-col gap-1 bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[280px]">
-            <div className="flex items-center gap-1.5 font-bold text-[10px] text-primary uppercase tracking-wider">
-              <EnvIcon className="text-[12px] text-accent animate-pulse" />
-              <span>🎮 Mundo: {config?.name || "Aventura"}</span>
+          <div className="flex flex-col gap-1 bg-surface/90 backdrop-blur-md p-3 rounded-xl border border-border/30 shadow-lg max-w-[300px]">
+            <div className="flex items-center gap-2 font-bold text-xs text-primary tracking-wider">
+              <EnvIcon className="text-sm text-accent animate-pulse" />
+              <span>Mundo: {config?.name || "Aventura"}</span>
             </div>
-            <div className="text-[8px] text-text-muted leading-tight font-medium">
-              🖱️ Arrastra para mover la cámara • 🔄 Rueda para acercar o alejar
+            <div className="text-[11px] text-text-muted leading-tight">
+              Arrastra para mover la camara &bull; Rueda para zoom
             </div>
           </div>
 
           <div
-            className={`flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm transition-all duration-300 ${
+            className={`flex items-center gap-2 text-xs font-bold tracking-wider px-4 py-2 rounded-full border shadow-sm transition-all duration-300 ${
               isRunning
-                ? "bg-success/15 border-success text-success animate-pulse"
-                : "bg-surface/85 border-border text-text-muted"
+                ? "bg-green-500/15 border-green-500/40 text-green-500 animate-pulse"
+                : "bg-surface/90 border-border/30 text-text-muted"
             }`}
           >
             <span
-              className={`w-2 h-2 rounded-full ${
-                isRunning ? "bg-success animate-ping" : "bg-text-muted"
+              className={`w-2.5 h-2.5 rounded-full ${
+                isRunning ? "bg-green-500" : "bg-text-muted"
               }`}
             />
-            {isRunning ? "🚀 ¡Ejecutando!" : "💤 En espera..."}
+            {isRunning ? "Ejecutando!" : "En espera..."}
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="flex justify-between items-end">
-          <div className="bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md max-w-[250px]">
-            <div className="font-bold text-[9px] text-text flex items-center gap-1">
+          <div className="bg-surface/90 backdrop-blur-md p-3 rounded-xl border border-border/30 shadow-lg max-w-[280px]">
+            <div className="font-semibold text-[11px] text-text flex items-center gap-1.5">
               {isRunning ? (
-                <>
-                  <span>🔥 ¡Increíble! El robot está en movimiento...</span>
-                </>
+                <span>El robot esta en movimiento...</span>
               ) : (
-                <>
-                  <span>💡 Tip: ¡Conecta bloques y dale a 'Ejecutar'!</span>
-                </>
+                <span>Conecta bloques y dale a Ejecutar!</span>
               )}
             </div>
           </div>
-          
+
           {typeof energy === "number" && (
-          <div className="flex flex-col gap-1 items-end bg-surface/85 backdrop-blur-sm p-2 rounded-lg border border-border/50 shadow-md min-w-[180px]">
-            <div className="flex items-center justify-between w-full gap-2">
-              <span className="font-bold text-[8px] text-text-muted uppercase tracking-wider">🔋 Energía</span>
-              <span className="font-mono text-[9px] font-bold" style={{ color: energy > 30 ? "var(--success)" : energy > 10 ? "var(--accent)" : "var(--danger)" }}>
+          <div className="flex flex-col gap-1.5 bg-surface/90 backdrop-blur-md p-3 rounded-xl border border-border/30 shadow-lg min-w-[190px]">
+            <div className="flex items-center justify-between w-full gap-3">
+              <span className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Energia</span>
+              <span className="font-bold text-xs" style={{ color: energy > 30 ? "var(--success)" : energy > 10 ? "var(--accent)" : "var(--danger)" }}>
                 {Math.round(energy)}%
               </span>
             </div>
-            <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+            <div className="w-full h-2.5 bg-border/40 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{

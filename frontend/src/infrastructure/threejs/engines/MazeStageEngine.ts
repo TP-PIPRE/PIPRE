@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
 import { MazeBotBuilder } from "../shared/MazeBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
+import { createSceneWithCamera, createShadowFloor, createGrid } from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 
 export class MazeStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
-  private camera: THREE.OrthographicCamera;
+  private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof MazeBotBuilder.create>;
@@ -21,18 +22,28 @@ export class MazeStageEngine implements ISimulatorEngine {
   private beacons: THREE.Mesh[] = [];
 
   constructor() {
-    this.scene = new THREE.Scene();
-    const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 25;
-    this.camera = new THREE.OrthographicCamera(
-      (frustumSize * aspect) / -2, (frustumSize * aspect) / 2,
-      frustumSize / 2, frustumSize / -2, 0.1, 1000,
-    );
-    this.camera.position.set(20, 22, 20);
-    this.camera.lookAt(0, 0, 0);
+    const { scene, camera } = createSceneWithCamera({
+      fov: 50,
+      cameraPos: [18, 16, 18],
+      fogColor: "#0a0a1a",
+      fogNear: 25,
+      fogFar: 80,
+      bgColor: "#0a0a1a",
+      ambientColor: "#332244",
+      skyColor: "#443366",
+      groundColor: "#1a1030",
+      dirColor: "#ccbbff",
+      dirPos: [10, 22, 10],
+      shadowMapSize: 2048,
+      shadowCameraSize: 30,
+    });
+    this.scene = scene;
+    this.camera = camera;
     this.clock = new THREE.Clock();
 
-    this.setupLighting();
+    createShadowFloor(this.scene, 60, -0.5, "#1a1040");
+    createGrid(this.scene, 60, 60, "#4a2d8a", "#2a1a5a", -0.49);
+
     this.botParts = MazeBotBuilder.create();
     this.botGroup = this.botParts.group;
     this.ultrasonicCone = this.createUltrasonicCone();
@@ -47,16 +58,6 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.createEnvironment();
   }
 
-  private setupLighting() {
-    this.scene.add(new THREE.AmbientLight(0x334466, 0.3));
-    const dir = new THREE.DirectionalLight(0x8866ff, 0.5);
-    dir.position.set(5, 15, 5);
-    this.scene.add(dir);
-    const point = new THREE.PointLight(0x6644aa, 0.4, 30);
-    point.position.set(-5, 8, 5);
-    this.scene.add(point);
-  }
-
   private createUltrasonicCone(): THREE.Mesh {
     const cone = new THREE.Mesh(
       new THREE.ConeGeometry(2, 5, 16),
@@ -68,19 +69,6 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Floor
-    const floorMat = new THREE.MeshStandardMaterial({ color: "#1a1040", roughness: 0.9 });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.5;
-    this.scene.add(floor);
-
-    const grid = new THREE.GridHelper(60, 60, "#4a2d8a", "#2a1a5a");
-    grid.name = "environment_grid";
-    grid.position.y = -0.49;
-    this.scene.add(grid);
-
-    // Maze walls with arcane symbols (emissive stripes)
     const wallMat = new THREE.MeshStandardMaterial({ color: "#3d2670", roughness: 0.8, emissive: "#1a0f3a", emissiveIntensity: 0.2 });
     const runeMat = new THREE.MeshBasicMaterial({ color: "#a78bfa", transparent: true, opacity: 0.15 });
     const mazeWalls = [
@@ -95,14 +83,14 @@ export class MazeStageEngine implements ISimulatorEngine {
     mazeWalls.forEach((wall) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(wall.w, 3, wall.h), wallMat);
       mesh.position.set(wall.x, 1, wall.z);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       this.scene.add(mesh);
-      // Rune strip
       const rune = new THREE.Mesh(new THREE.BoxGeometry(wall.w - 0.5, 0.05, 0.05), runeMat);
       rune.position.set(wall.x, 2.2, wall.z);
       this.scene.add(rune);
     });
 
-    // Doors (magic barriers)
     const doorMat = new THREE.MeshStandardMaterial({
       color: "#8b6fcf", emissive: "#6b4fa3", emissiveIntensity: 0.3,
       transparent: true, opacity: 0.8,
@@ -111,11 +99,12 @@ export class MazeStageEngine implements ISimulatorEngine {
     doorPos.forEach((pos) => {
       const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 0.3), doorMat);
       door.position.set(pos.x, 0.75, pos.z);
+      door.castShadow = true;
+      door.receiveShadow = true;
       this.doors.push(door);
       this.scene.add(door);
     });
 
-    // Portal (teletransport)
     const portalRing = new THREE.Mesh(
       new THREE.TorusGeometry(1.8, 0.3, 16, 32),
       new THREE.MeshStandardMaterial({ color: "#a78bfa", emissive: "#a78bfa", emissiveIntensity: 0.6 }),
@@ -124,7 +113,6 @@ export class MazeStageEngine implements ISimulatorEngine {
     portalRing.rotation.x = Math.PI / 2;
     this.scene.add(portalRing);
 
-    // Portal inner glow
     const portalGlow = new THREE.Mesh(
       new THREE.CircleGeometry(1.5, 24),
       new THREE.MeshBasicMaterial({ color: "#c084fc", transparent: true, opacity: 0.3, side: THREE.DoubleSide }),
@@ -133,7 +121,6 @@ export class MazeStageEngine implements ISimulatorEngine {
     portalGlow.rotation.x = -Math.PI / 2;
     this.scene.add(portalGlow);
 
-    // Light beacons
     const beaconMat = new THREE.MeshStandardMaterial({
       color: "#fbbf24", emissive: "#fbbf24", emissiveIntensity: 0.5,
     });
@@ -148,7 +135,6 @@ export class MazeStageEngine implements ISimulatorEngine {
       this.scene.add(gem);
     });
 
-    // Floating particles (ambient magic)
     const ambientGeo = new THREE.BufferGeometry();
     const ambientPos = new Float32Array(50 * 3);
     for (let i = 0; i < 50; i++) {
@@ -166,15 +152,22 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   init(canvas: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.minZoom = 0.5;
-    this.controls.maxZoom = 4;
+    this.controls.minDistance = 6;
+    this.controls.maxDistance = 45;
     this.controls.maxPolarAngle = Math.PI / 2;
+    this.controls.screenSpacePanning = true;
+    this.controls.target.set(0, 0.5, 0);
+    this.controls.update();
     this.resize(canvas.clientWidth, canvas.clientHeight);
     this.startLoop();
   }
@@ -221,12 +214,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   resize(width: number, height: number) {
-    const aspect = width / height;
-    const frustumSize = 25;
-    this.camera.left = (frustumSize * aspect) / -2;
-    this.camera.right = (frustumSize * aspect) / 2;
-    this.camera.top = frustumSize / 2;
-    this.camera.bottom = frustumSize / -2;
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
   }
@@ -237,9 +225,7 @@ export class MazeStageEngine implements ISimulatorEngine {
       if (!this.isRunning) return;
       this.animationId = requestAnimationFrame(animate);
       if (this.controls) this.controls.update();
-      // Pulsing portal light
       this.portalLight.intensity = 0.5 + Math.sin(Date.now() * 0.003) * 0.5;
-      // Pulsing beacons
       this.beacons.forEach((b, i) => {
         b.scale.setScalar(1 + Math.sin(Date.now() * 0.004 + i) * 0.2);
       });

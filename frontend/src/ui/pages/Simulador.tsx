@@ -411,49 +411,49 @@ const SimuladorInner = () => {
             </div>
           }
           toolbar={
-            <div className="flex items-center gap-2 px-3 py-2 border-t border-border" style={{ backgroundColor: "var(--surface)" }}>
-              <div className="flex gap-1.5">
+            <div className="flex items-center gap-2 px-4 py-2 border-t border-border" style={{ backgroundColor: "var(--surface)" }}>
+              <div className="flex gap-2">
                 <button
                   onClick={isRunning ? stopExecution : executeProgram}
                   disabled={!isRunning && blocks.length === 0}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider transition-all rounded-md ${
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all rounded-xl ${
                     isRunning
-                      ? "bg-danger text-white hover:bg-danger/80 shadow-lg shadow-danger/20"
-                      : "bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20 disabled:opacity-40 disabled:shadow-none"
+                      ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/25"
+                      : "bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/25 disabled:opacity-40 disabled:shadow-none"
                   }`}
                 >
                   {isRunning ? (
-                    <><BsStopFill className="text-[9px]" /> Detener</>
+                    <><BsStopFill className="text-sm" /> Detener</>
                   ) : (
-                    <><BsPlayFill className="text-[9px]" /> Ejecutar</>
+                    <><BsPlayFill className="text-sm" /> Ejecutar</>
                   )}
                 </button>
                 <button
                   onClick={clearWorkspace}
                   disabled={isRunning || blocks.length === 0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/50 transition-colors rounded-md disabled:opacity-30"
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 transition-colors rounded-xl disabled:opacity-30"
                 >
-                  <BsTrashFill className="text-[9px]" /> Limpiar
+                  <BsTrashFill className="text-sm" /> Limpiar
                 </button>
                 <button
                   onClick={() => setShowMermaid(true)}
                   disabled={blocks.length === 0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/50 transition-colors rounded-md disabled:opacity-30"
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 transition-colors rounded-xl disabled:opacity-30"
                 >
-                  <BsDiagram3Fill className="text-[9px]" /> Diagrama
+                  <BsDiagram3Fill className="text-sm" /> Diagrama
                 </button>
               </div>
 
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-7 bg-border mx-1" />
 
               {navigationMode.mode === "challenge" && (
-                <div className="flex items-center gap-2 px-2 py-1 rounded bg-surface-brighter/30">
-                  <BsTrophyFill className="text-[9px] text-[#eab308]" />
-                  <span className="font-mono text-[9px] text-[#eab308] font-bold">{score}</span>
-                  <span className="font-mono text-[8px] text-text-muted/60">pts</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                  <BsTrophyFill className="text-sm text-amber-500" />
+                  <span className="font-bold text-xs text-amber-500">{score}</span>
+                  <span className="text-[10px] text-text-muted/60">pts</span>
                   {missions.filter(m => m.isCompleted).length > 0 && (
-                    <span className="font-mono text-[8px] text-accent ml-1">
-                      ⭐{missions.filter(m => m.isCompleted).length}
+                    <span className="text-[11px] text-accent ml-1 font-bold">
+                      {missions.filter(m => m.isCompleted).length}
                     </span>
                   )}
                 </div>
@@ -463,39 +463,39 @@ const SimuladorInner = () => {
 
               <div className="flex items-center gap-3">
                 {isRunning && (
-                  <span className="flex items-center gap-1.5 font-mono text-[9px] text-primary animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="flex items-center gap-1.5 text-xs text-primary font-bold animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-primary" />
                     Ejecutando...
                   </span>
                 )}
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ backgroundColor: "var(--bg)" }}>
-                  <BsCode className="text-[9px] text-text-muted" />
-                  <span className="font-mono text-[9px] text-text-muted font-semibold">{blocks.length}</span>
-                  <span className="font-mono text-[8px] text-text-muted/50">bloques</span>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ backgroundColor: "var(--bg)" }}>
+                  <BsCode className="text-xs text-text-muted" />
+                  <span className="font-bold text-xs text-text-muted">{blocks.length}</span>
+                  <span className="text-[11px] text-text-muted/50">bloques</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded" style={{ backgroundColor: "var(--bg)" }}>
-                  <BsSpeedometer2 className="text-[9px] text-text-muted" />
-                  <span className="font-mono text-[9px] text-text-muted font-semibold">{Math.round(energy)}</span>
-                  <span className="font-mono text-[8px] text-text-muted/50">energía</span>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ backgroundColor: "var(--bg)" }}>
+                  <BsSpeedometer2 className="text-xs text-text-muted" />
+                  <span className="font-bold text-xs text-text-muted">{Math.round(energy)}</span>
+                  <span className="text-[11px] text-text-muted/50">energia</span>
                 </div>
               </div>
 
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-7 bg-border mx-1" />
 
               <button
                 onClick={submitRobotSimulation}
                 disabled={simulationLoading || !getAuthState().isAuthenticated || blocks.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider border border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-colors rounded-md disabled:opacity-30"
+                className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all rounded-xl disabled:opacity-30 active:scale-95"
                 title={
                   !getAuthState().isAuthenticated
-                    ? "Inicia sesión para guardar avances"
+                    ? "Inicia sesion para guardar avances"
                     : ""
                 }
               >
                 {simulationLoading ? (
-                  <span className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                  <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                 ) : (
-                  <BsSaveFill className="text-[9px]" />
+                  <BsSaveFill className="text-sm" />
                 )}
                 {simulationLoading ? "Guardando..." : "Registrar"}
               </button>

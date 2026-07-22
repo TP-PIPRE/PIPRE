@@ -259,8 +259,8 @@ export const FloatingWorkspace: React.FC<FloatingWorkspaceProps> = ({
           onMouseDown={handleMouseDown}
         >
           <div className="flex items-center gap-1.5">
-            <BsCode className="text-[12px] text-primary" />
-            <span className="font-mono text-[9px] text-text font-semibold uppercase tracking-wider">
+            <BsCode className="text-sm text-primary" />
+            <span className="font-semibold text-xs text-text uppercase tracking-wider">
               {title}
             </span>
           </div>
@@ -286,8 +286,8 @@ export const FloatingWorkspace: React.FC<FloatingWorkspaceProps> = ({
             onMouseDown={handleMouseDown}
           >
             <div className="flex items-center gap-2">
-              <BsCode className="text-[14px] text-primary" />
-              <span className="font-mono text-[10px] text-text font-semibold uppercase tracking-wider">
+              <BsCode className="text-base text-primary" />
+              <span className="font-semibold text-xs text-text uppercase tracking-wider">
                 {title}
               </span>
             </div>

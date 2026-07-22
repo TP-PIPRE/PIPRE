@@ -2,11 +2,17 @@ import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
 import { SpaceBotBuilder } from "../shared/SpaceBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
+import {
+  createSceneWithCamera,
+  createShadowFloor,
+  createGrid,
+  createStarfield,
+} from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 
 export class SpaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
-  private camera: THREE.OrthographicCamera;
+  private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof SpaceBotBuilder.create>;
@@ -20,16 +26,28 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private sampleMeshes: THREE.Mesh[] = [];
 
   constructor() {
-    this.scene = new THREE.Scene();
-    const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 30;
-    this.camera = new THREE.OrthographicCamera(
-      (frustumSize * aspect) / -2, (frustumSize * aspect) / 2,
-      frustumSize / 2, frustumSize / -2, 0.1, 1000,
-    );
-    this.camera.position.set(28, 28, 28);
-    this.camera.lookAt(0, 0, 0);
-    this.setupLighting();
+    const { scene, camera } = createSceneWithCamera({
+      fov: 50,
+      cameraPos: [22, 18, 22],
+      fogColor: "#0a0a20",
+      fogNear: 35,
+      fogFar: 100,
+      bgColor: "#0a0a20",
+      ambientColor: "#334466",
+      skyColor: "#334488",
+      groundColor: "#1a1030",
+      dirColor: "#ccddff",
+      dirPos: [15, 30, 10],
+      shadowMapSize: 2048,
+      shadowCameraSize: 35,
+    });
+    this.scene = scene;
+    this.camera = camera;
+
+    createShadowFloor(this.scene, 80, -0.5, "#1a1a3e");
+    createGrid(this.scene, 80, 80, "#4a4a8a", "#2a1a5a", -0.49);
+    createStarfield(this.scene, 350, 80, 3, 30, "#8899ff", 0.12, 0.65);
+
     this.botParts = SpaceBotBuilder.create();
     this.botGroup = this.botParts.group;
     this.ultrasonicCone = this.createUltrasonicCone();
@@ -46,16 +64,6 @@ export class SpaceStageEngine implements ISimulatorEngine {
     return delta;
   }
 
-  private setupLighting() {
-    this.scene.add(new THREE.AmbientLight(0x222244, 0.4));
-    const dir = new THREE.DirectionalLight(0x8888ff, 0.7);
-    dir.position.set(10, 30, 10);
-    this.scene.add(dir);
-    const sun = new THREE.PointLight(0xffaa44, 0.8, 60);
-    sun.position.set(0, 25, 0);
-    this.scene.add(sun);
-  }
-
   private createUltrasonicCone(): THREE.Mesh {
     const cone = new THREE.Mesh(
       new THREE.ConeGeometry(2, 5, 16),
@@ -67,19 +75,6 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Martian terrain
-    const terrainMat = new THREE.MeshStandardMaterial({ color: "#2d1b4e", roughness: 1, metalness: 0 });
-    const terrain = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), terrainMat);
-    terrain.rotation.x = -Math.PI / 2;
-    terrain.position.y = -0.5;
-    terrain.receiveShadow = true;
-    this.scene.add(terrain);
-
-    const grid = new THREE.GridHelper(80, 80, "#6b4fa3", "#3d266b");
-    grid.name = "environment_grid";
-    grid.position.y = -0.49;
-    this.scene.add(grid);
-
     // Craters
     const craterMat = new THREE.MeshStandardMaterial({ color: "#1a0f2e", roughness: 1 });
     const craterPos = [[-10, -0.48, -14], [10, -0.48, -10], [-6, -0.48, 12], [14, -0.48, 6], [0, -0.48, -6]];
@@ -106,6 +101,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     samplePos.forEach((pos) => {
       const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), sampleMat);
       s.position.set(pos[0], pos[1], pos[2]);
+      s.userData.origY = pos[1];
       this.scene.add(s);
       this.sampleMeshes.push(s);
     });
@@ -121,31 +117,25 @@ export class SpaceStageEngine implements ISimulatorEngine {
     const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.2, 0.5, 8), beaconMat);
     beacon.position.set(12, 0.25, -16);
     this.scene.add(beacon);
-
-    // Stars background particles
-    const starsGeo = new THREE.BufferGeometry();
-    const starPos = new Float32Array(200 * 3);
-    for (let i = 0; i < 200; i++) {
-      starPos[i * 3] = (Math.random() - 0.5) * 200;
-      starPos[i * 3 + 1] = Math.random() * 50 + 5;
-      starPos[i * 3 + 2] = (Math.random() - 0.5) * 200;
-    }
-    starsGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    const starsMat = new THREE.PointsMaterial({ color: "#ffffff", size: 0.1, transparent: true, opacity: 0.6 });
-    const stars = new THREE.Points(starsGeo, starsMat);
-    this.scene.add(stars);
   }
 
   init(canvas: HTMLCanvasElement) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
-    this.controls.minZoom = 0.5;
-    this.controls.maxZoom = 4;
+    this.controls.minDistance = 8;
+    this.controls.maxDistance = 55;
+    this.controls.screenSpacePanning = true;
     this.controls.maxPolarAngle = Math.PI / 2;
+    this.controls.target.set(0, 0.5, 0);
+    this.controls.update();
     this.resize(canvas.clientWidth, canvas.clientHeight);
     this.startLoop();
   }
@@ -191,12 +181,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   resize(width: number, height: number) {
-    const aspect = width / height;
-    const frustumSize = 30;
-    this.camera.left = (frustumSize * aspect) / -2;
-    this.camera.right = (frustumSize * aspect) / 2;
-    this.camera.top = frustumSize / 2;
-    this.camera.bottom = frustumSize / -2;
+    this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
   }
@@ -215,6 +200,12 @@ export class SpaceStageEngine implements ISimulatorEngine {
           }
         });
       }
+      // Gentle sample floating animation
+      this.sampleMeshes.forEach((sample, i) => {
+        if (sample.visible) {
+          sample.position.y = (sample.userData.origY as number) + Math.sin(Date.now() * 0.002 + i) * 0.15;
+        }
+      });
       this.renderer.render(this.scene, this.camera);
     };
     animate();
@@ -344,6 +335,10 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.botGroup.rotation.set(0, 0, 0);
     this.collectedSamples = 0;
     this.sampleMeshes.forEach((s) => { s.visible = true; });
+  }
+
+  getState(): { collectedSamples: number } {
+    return { collectedSamples: this.collectedSamples };
   }
 
   private async animatePosition(distance: number, duration: number) {
