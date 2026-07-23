@@ -15,6 +15,7 @@ import { TabBar } from "../components/Simulador/TabBar";
 import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
 import { SimulatorLayout } from "../components/Simulador/SimulatorLayout";
 import { MermaidViewer } from "../components/Simulador/MermaidViewer";
+import { TutorialOverlay } from "../components/Simulador/TutorialOverlay";
 import { NavigationModeDetector } from "../../application/adapters/NavigationModeDetector";
 import { ChallengeAdapter, type AdaptedChallenge } from "../../application/adapters/ChallengeAdapter";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
@@ -54,6 +55,7 @@ const EnvironmentSelector = () => {
 
   return (
     <div
+      id="env-selector"
       className="flex gap-2 px-4 py-3 border-b border-border items-center"
       style={{ backgroundColor: "var(--surface)" }}
     >
@@ -171,6 +173,7 @@ const SimuladorInner = () => {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [showChallengeList, setShowChallengeList] = useState(false);
   const [showMermaid, setShowMermaid] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState("hardware");
   const [activeRightTab, setActiveRightTab] = useState("missions");
 
@@ -211,6 +214,22 @@ const SimuladorInner = () => {
     }
   }, [courseId]);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("pipre_player_progress");
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (!data.tutorialCompleted) {
+          setShowTutorial(true);
+        }
+      } else {
+        setShowTutorial(true);
+      }
+    } catch {
+      setShowTutorial(true);
+    }
+  }, []);
+
   const handleBackToCourses = () => {
     setFreeMode();
     navigate("/");
@@ -243,18 +262,18 @@ const SimuladorInner = () => {
   const leftPanelContent = () => {
     switch (activeLeftTab) {
       case "hardware":
-        return <HardwarePanel />;
+        return <div id="panel-hardware"><HardwarePanel /></div>;
       case "blocks":
-        return <Toolbox />;
+        return <div id="panel-toolbox"><Toolbox /></div>;
       default:
-        return <HardwarePanel />;
+        return <div id="panel-hardware"><HardwarePanel /></div>;
     }
   };
 
   const rightPanelContent = () => {
     switch (activeRightTab) {
       case "missions":
-        return <MissionsPanel />;
+        return <div id="panel-missions"><MissionsPanel /></div>;
       case "canvas":
         return <MissionMapView />;
       case "feedback":
@@ -401,7 +420,9 @@ const SimuladorInner = () => {
                       zIndex={100}
                       constrainToRef={canvasContainerRef}
                     >
-                      <Workspace />
+                      <div id="workspace-area" className="w-full h-full">
+                        <Workspace />
+                      </div>
                     </FloatingWorkspace>
                   </div>
                 </div>
@@ -420,6 +441,7 @@ const SimuladorInner = () => {
                 <button
                   onClick={isRunning ? stopExecution : executeProgram}
                   disabled={!isRunning && blocks.length === 0}
+                  id="btn-ejecutar"
                   className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all rounded-xl ${
                     isRunning
                       ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/25"
@@ -536,6 +558,19 @@ const SimuladorInner = () => {
       </main>
 
       <MermaidViewer isOpen={showMermaid} onClose={() => setShowMermaid(false)} />
+
+      {showTutorial && (
+        <TutorialOverlay
+          onComplete={() => {
+            setShowTutorial(false);
+            localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true }));
+          }}
+          onSkip={() => {
+            setShowTutorial(false);
+            localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true }));
+          }}
+        />
+      )}
     </div>
   );
 };

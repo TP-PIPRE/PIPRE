@@ -155,10 +155,12 @@ export const Toolbox = () => {
                     const params = getBlockParams(bd);
                     const label = getBlockLabel(bd);
                     const hasOptions = bd.paramOptions && Object.keys(bd.paramOptions).length > 0;
+                    const isAvanzar = bd.type === "mover_ruedas" || bd.type === "avanzar" || bd.type === "desplazarse";
 
                     return (
                       <div
                         key={bd.type}
+                        id={isAvanzar ? "block-avanzar" : undefined}
                         draggable={unlocked}
                         onDragStart={(e) => onDragStart(e, bd.type, bd.category, params)}
                         className={`group relative px-3 py-2 rounded-xl border cursor-grab transition-all duration-150 select-none ${

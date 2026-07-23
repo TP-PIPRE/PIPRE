@@ -37,6 +37,8 @@ export class BotStageEngine implements ISimulatorEngine {
   private animationEngine: MathAnimationEngine;
   private installedComponents: Map<string, RobotComponent> = new Map();
   private ghostPreview!: GhostPreview;
+  private levelObstacles: THREE.Mesh[] = [];
+  private goalBeacon: THREE.Mesh | null = null;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -459,6 +461,13 @@ export class BotStageEngine implements ISimulatorEngine {
 
       if (this.controls) this.controls.update();
       this.ghostPreview.animate(Date.now() * 0.001);
+
+      if (this.goalBeacon) {
+        const t = Date.now() * 0.001;
+        this.goalBeacon.rotation.z += 0.01;
+        this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
+      }
+
       this.composer.render();
     };
     animate();
@@ -831,6 +840,141 @@ export class BotStageEngine implements ISimulatorEngine {
         spriteMat.dispose();
         texture.dispose();
       }
-    }, 2000);
+      }, 2000);
+  }
+
+  loadLevel(obstacles: Array<{ x: number; z: number; type: string; size?: number }>, startPos: { x: number; z: number; rotation: number }, goalPos: { x: number; z: number }): void {
+    this.levelObstacles.forEach((o) => {
+      this.scene.remove(o);
+      o.geometry?.dispose();
+      if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+      else (o.material as THREE.Material)?.dispose();
+    });
+    this.levelObstacles = [];
+
+    obstacles.forEach((obs) => {
+      let mesh: THREE.Mesh;
+
+      switch (obs.type) {
+        case "enemy": {
+          const geo = new THREE.BoxGeometry(1.2, 1.5, 1.2);
+          const mat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.4, roughness: 0.4 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.75, obs.z);
+          mesh.castShadow = true;
+          mesh.name = "level_enemy";
+          break;
+        }
+        case "block": {
+          const s = obs.size || 1;
+          const geo = new THREE.BoxGeometry(s, s, s);
+          const mat = new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.6, metalness: 0.3 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, (obs.size || 1) / 2, obs.z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.name = "level_block";
+          break;
+        }
+        case "crate": {
+          const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#f59e0b", roughness: 0.5 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.4, obs.z);
+          mesh.castShadow = true;
+          mesh.name = "level_crate";
+          break;
+        }
+        case "sample": {
+          const geo = new THREE.OctahedronGeometry(0.35);
+          const mat = new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#3b82f6", emissiveIntensity: 0.5 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.4, obs.z);
+          mesh.name = "level_sample";
+          break;
+        }
+        case "door": {
+          const geo = new THREE.BoxGeometry(1.5, 2.5, 0.3);
+          const mat = new THREE.MeshStandardMaterial({ color: "#8b6fcf", emissive: "#6b4fa3", emissiveIntensity: 0.3, transparent: true, opacity: 0.8 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.75, obs.z);
+          mesh.name = "level_door";
+          break;
+        }
+        case "cone": {
+          const geo = new THREE.ConeGeometry(0.5, 1, 8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.2 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.5, obs.z);
+          mesh.name = "level_cone";
+          break;
+        }
+        case "wall": {
+          const s = obs.size || 8;
+          const geo = new THREE.BoxGeometry(s, 3, 0.8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#475569", roughness: 0.7, emissive: "#1a1a2e", emissiveIntensity: 0.1 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 1, obs.z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.name = "level_wall";
+          break;
+        }
+        default: {
+          const geo = new THREE.BoxGeometry(1, 1, 1);
+          const mat = new THREE.MeshStandardMaterial({ color: "#94a3b8" });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.5, obs.z);
+          break;
+        }
+      }
+
+      this.scene.add(mesh);
+      this.levelObstacles.push(mesh);
+    });
+
+    this.botGroup.position.set(startPos.x, 0, startPos.z);
+    this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = startPos.rotation;
+
+    this.showGoalBeacon(goalPos.x, goalPos.z);
+  }
+
+  showGoalBeacon(x: number, z: number): void {
+    if (this.goalBeacon) {
+      this.scene.remove(this.goalBeacon);
+      this.goalBeacon.geometry?.dispose();
+      (this.goalBeacon.material as THREE.Material)?.dispose();
+    }
+
+    const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: "#fbbf24",
+      emissive: "#fbbf24",
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, 0.3, z);
+    ring.name = "goal_beacon";
+    this.scene.add(ring);
+
+    const dotGeo = new THREE.SphereGeometry(0.2, 16, 16);
+    const dot = new THREE.Mesh(dotGeo, ringMat.clone());
+    dot.position.set(x, 0.8, z);
+    dot.name = "goal_beacon_dot";
+    this.scene.add(dot);
+
+    this.goalBeacon = ring;
+  }
+
+  checkGoalReached(x: number, z: number): boolean {
+    if (!this.goalBeacon) return false;
+    const dx = x - this.goalBeacon.position.x;
+    const dz = z - this.goalBeacon.position.z;
+    return Math.sqrt(dx * dx + dz * dz) < 2;
   }
 }

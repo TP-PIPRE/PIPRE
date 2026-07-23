@@ -3,7 +3,7 @@ import { MapControls } from "three/addons/controls/MapControls.js";
 import { EffectComposer } from "postprocessing";
 import { BattleBotBuilder } from "../shared/BattleBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
-import { createSceneWithCamera, createShadowFloor, createGrid, createStarfield } from "../shared/SceneUtils";
+import { createSceneWithCamera, createShadowFloor, createStarfield } from "../shared/SceneUtils";
 import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
 import { soundManager } from "../shared/SoundManager";
 import { GhostPreview } from "../shared/GhostPreview";
@@ -25,15 +25,19 @@ export class BattleStageEngine implements ISimulatorEngine {
   private enemies: THREE.Mesh[] = [];
   private score = 0;
   private ghostPreview!: GhostPreview;
+  private levelObstacles: THREE.Mesh[] = [];
+  private goalBeacon: THREE.Mesh | null = null;
+  private ambientEmbers: THREE.Points | null = null;
+  private lavaRivers: THREE.Mesh[] = [];
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
       fov: 50,
       cameraPos: [20, 16, 20],
-      fogColor: "#1a0a0a",
-      fogNear: 30,
-      fogFar: 90,
-      bgColor: "#1a0a0a",
+      fogColor: "#2a0a05",
+      fogNear: 25,
+      fogFar: 65,
+      bgColor: "#2a0a05",
       ambientColor: "#443333",
       ambientIntensity: 0.35,
       skyColor: "#883333",
@@ -50,9 +54,8 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.camera = camera;
     this.clock = new THREE.Clock();
 
-    createShadowFloor(this.scene, 80, -0.5, "#1a1020");
-    createGrid(this.scene, 80, 80, "#e94560", "#1a1020", -0.49);
-    createStarfield(this.scene, 200, 70, 3, 25, "#ff6666", 0.1, 0.4);
+    createShadowFloor(this.scene, 80, -0.5, "#0d0812");
+    createStarfield(this.scene, 300, 60, 3, 25, "#ff8866", 0.1, 0.3);
 
     // Battle arena spotlight
     const spotLight = new THREE.SpotLight("#e94560", 2, 40, Math.PI / 6, 0.3, 1);
@@ -71,6 +74,17 @@ export class BattleStageEngine implements ISimulatorEngine {
     ];
     cornerLights.forEach(({ pos, color }) => {
       const light = new THREE.PointLight(color, 0.6, 20);
+      light.position.set(pos[0], pos[1], pos[2]);
+      this.scene.add(light);
+    });
+
+    // Lava glow point lights
+    const lavaLights = [
+      { pos: [-15, 0.3, -20], color: "#ff4400", intensity: 0.8, distance: 15 },
+      { pos: [15, 0.3, 20], color: "#ff4400", intensity: 0.8, distance: 15 },
+    ];
+    lavaLights.forEach(({ pos, color, intensity, distance }) => {
+      const light = new THREE.PointLight(color, intensity, distance);
       light.position.set(pos[0], pos[1], pos[2]);
       this.scene.add(light);
     });
@@ -102,108 +116,201 @@ export class BattleStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Arena walls with neon trim
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: "#16213e",
-      roughness: 0.5,
-      metalness: 0.4,
-      emissive: "#0a0f1e",
-      emissiveIntensity: 0.2,
+    // Coliseum floor - dark metal with glowing grid
+    const floorGeo = new THREE.PlaneGeometry(80, 80, 20, 20);
+    // Deform floor slightly for uneven terrain
+    const posAttr = floorGeo.getAttribute("position");
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i);
+      const z = posAttr.getY(i);
+      posAttr.setZ(i, (Math.sin(x * 0.3) * Math.cos(z * 0.3)) * 0.15);
+    }
+    floorGeo.computeVertexNormals();
+    const floorMat = new THREE.MeshStandardMaterial({
+      color: "#1a1a2e",
+      roughness: 0.7,
+      metalness: 0.8,
+      emissive: "#0a0a14",
+      emissiveIntensity: 0.1,
     });
-    const neonMat = new THREE.MeshStandardMaterial({
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.6;
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    // Glowing hexagonal floor pattern overlay
+    const patternGeo = new THREE.PlaneGeometry(76, 76);
+    const patternMat = new THREE.MeshBasicMaterial({
       color: "#e94560",
-      emissive: "#e94560",
-      emissiveIntensity: 0.8,
+      transparent: true,
+      opacity: 0.06,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const pattern = new THREE.Mesh(patternGeo, patternMat);
+    pattern.rotation.x = -Math.PI / 2;
+    pattern.position.y = -0.59;
+    this.scene.add(pattern);
+
+    // Grid lines (hex-style) - thin glowing red grid
+    const gridHelper = new THREE.GridHelper(80, 40, "#e94560", "#1a1020");
+    gridHelper.position.y = -0.58;
+    gridHelper.material.opacity = 0.15;
+    gridHelper.material.transparent = true;
+    this.scene.add(gridHelper);
+
+    // Lava rivers on the sides
+    const lavaMat = new THREE.MeshStandardMaterial({
+      color: "#ff4400",
+      emissive: "#ff4400",
+      emissiveIntensity: 1.5,
       roughness: 0.2,
+      metalness: 0.1,
+    });
+    const lavaRivers = [
+      { x: -18, z: 0, w: 2, d: 60 },
+      { x: 18, z: 0, w: 2, d: 60 },
+    ];
+    lavaRivers.forEach((r) => {
+      const lavaGeo = new THREE.PlaneGeometry(r.w, r.d);
+      const lava = new THREE.Mesh(lavaGeo, lavaMat.clone());
+      lava.rotation.x = -Math.PI / 2;
+      lava.position.set(r.x, -0.55, r.z);
+      this.scene.add(lava);
+      this.lavaRivers.push(lava);
+    });
+
+    // Arena walls - tall imposing walls with neon edges
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: "#1a1a30",
+      roughness: 0.5,
+      metalness: 0.9,
+      emissive: "#0a0810",
+      emissiveIntensity: 0.1,
     });
     const wallConfigs = [
-      { pos: [0, 2.5, -22], size: [50, 5, 1] },
-      { pos: [0, 2.5, 22], size: [50, 5, 1] },
-      { pos: [-25, 2.5, 0], size: [1, 5, 44] },
-      { pos: [25, 2.5, 0], size: [1, 5, 44] },
+      { pos: [0, 3.5, -22], size: [48, 7, 1.5] },
+      { pos: [0, 3.5, 22], size: [48, 7, 1.5] },
+      { pos: [-24, 3.5, 0], size: [1.5, 7, 44] },
+      { pos: [24, 3.5, 0], size: [1.5, 7, 44] },
     ];
     wallConfigs.forEach((w) => {
-      const wall = new THREE.Mesh(
-        new THREE.BoxGeometry(w.size[0], w.size[1], w.size[2]),
-        wallMat,
-      );
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w.size[0], w.size[1], w.size[2]), wallMat);
       wall.position.set(w.pos[0], w.pos[1], w.pos[2]);
       wall.castShadow = true;
       wall.receiveShadow = true;
       this.scene.add(wall);
-
-      const strip = new THREE.Mesh(
-        new THREE.BoxGeometry(w.size[0] - 1, 0.06, 0.12),
-        neonMat,
-      );
-      strip.position.set(w.pos[0], w.pos[1] + 2.5, w.pos[2]);
-      this.scene.add(strip);
     });
 
-    // High-ground platforms
-    const platMat = new THREE.MeshStandardMaterial({
-      color: "#533483",
-      roughness: 0.6,
-      metalness: 0.3,
-      emissive: "#2a1a4a",
-      emissiveIntensity: 0.15,
+    // Turrets on wall corners
+    const turretMat = new THREE.MeshStandardMaterial({
+      color: "#e94560",
+      emissive: "#e94560",
+      emissiveIntensity: 0.6,
+      roughness: 0.3,
+      metalness: 0.7,
     });
-    const platPositions = [
-      [-8, 0, -10],
-      [8, 0, -8],
-      [-5, 0, 8],
-      [10, 0, 5],
+    const turretPositions = [
+      [-22, 3.5, -20], [22, 3.5, -20],
+      [-22, 3.5, 20], [22, 3.5, 20],
     ];
+    turretPositions.forEach((pos) => {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2, 16), turretMat);
+      base.position.set(pos[0], pos[1] - 4, pos[2]);
+      base.castShadow = true;
+      this.scene.add(base);
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 2, 8), turretMat);
+      barrel.position.set(pos[0], pos[1] - 3, pos[2]);
+      barrel.rotation.x = Math.PI / 2;
+      this.scene.add(barrel);
+    });
+
+    // High platforms with glow edges
+    const platMat = new THREE.MeshStandardMaterial({
+      color: "#2a1a40",
+      roughness: 0.5,
+      metalness: 0.6,
+      emissive: "#1a0a25",
+      emissiveIntensity: 0.2,
+    });
+    const platPositions = [[-8, 0.3, -10], [8, 0.3, -8], [-5, 0.3, 8], [10, 0.3, 5]];
     platPositions.forEach((pos) => {
       const plat = new THREE.Mesh(new THREE.BoxGeometry(4, 0.6, 4), platMat);
       plat.position.set(pos[0], pos[1], pos[2]);
       plat.castShadow = true;
       plat.receiveShadow = true;
       this.scene.add(plat);
+      // Glow edge
+      const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(4, 0.6, 4));
+      const edgeLine = new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({ color: "#e94560", transparent: true, opacity: 0.3 }));
+      edgeLine.position.copy(plat.position);
+      this.scene.add(edgeLine);
     });
 
-    // Enemies - now with more geometry detail
-    const enemyMat = new THREE.MeshStandardMaterial({
+    // Enemies - intimidating combat bots
+    const enemyBodyMat = new THREE.MeshStandardMaterial({
       color: "#ff3333",
       emissive: "#ff3333",
-      emissiveIntensity: 0.4,
-      roughness: 0.4,
-      metalness: 0.5,
+      emissiveIntensity: 0.5,
+      roughness: 0.3,
+      metalness: 0.6,
     });
-    const eyeMat = new THREE.MeshStandardMaterial({
-      color: "#ffffff",
-      emissive: "#ffffff",
-      emissiveIntensity: 1,
-    });
-
     for (let i = 0; i < 4; i++) {
-      const enemyBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.5, 1.2), enemyMat);
-      enemyBody.position.set(-12 + i * 7, 0.75, -12);
-      enemyBody.castShadow = true;
-      this.scene.add(enemyBody);
+      // Body
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 1.4, 2, 2, 2), enemyBodyMat);
+      body.position.set(-12 + i * 7, 0.9, -14);
+      body.castShadow = true;
+      this.scene.add(body);
 
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), eyeMat);
-      eye.position.set(-12 + i * 7, 1.1, -11.4);
+      // Canon arm
+      const armGeo = new THREE.CylinderGeometry(0.15, 0.2, 1, 8);
+      const arm = new THREE.Mesh(armGeo, turretMat);
+      arm.rotation.x = Math.PI / 2;
+      arm.position.set(-12 + i * 7, 0.7, -13);
+      this.scene.add(arm);
+
+      // Eyes
+      const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
+      const eyeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 2 });
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(-12 + i * 7, 1.4, -13.6);
       this.scene.add(eye);
 
-      this.enemies.push(enemyBody);
+      this.enemies.push(body);
     }
 
-    // Cover obstacles
-    const crateMat = new THREE.MeshStandardMaterial({
-      color: "#e94560",
-      roughness: 0.4,
-      metalness: 0.5,
-      emissive: "#4a1020",
-      emissiveIntensity: 0.15,
-    });
-    for (let i = 0; i < 6; i++) {
-      const crate = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), crateMat);
-      crate.position.set(-6 + i * 2.5, 0.4, -4 + (i % 2 === 0 ? 3 : -3));
+    // Crates with glow
+    for (let i = 0; i < 8; i++) {
+      const crate = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, 0.7, 0.7),
+        new THREE.MeshStandardMaterial({ color: "#e94560", roughness: 0.4, emissive: "#e94560", emissiveIntensity: 0.2 })
+      );
+      crate.position.set(-7 + i * 2.2, 0.35, -3 + (i % 3 - 1) * 3);
       crate.castShadow = true;
-      crate.receiveShadow = true;
       this.scene.add(crate);
     }
+
+    // Ambient floating embers
+    const emberCount = 80;
+    const emberGeo = new THREE.BufferGeometry();
+    const emberPositions = new Float32Array(emberCount * 3);
+    for (let i = 0; i < emberCount; i++) {
+      emberPositions[i * 3] = (Math.random() - 0.5) * 40;
+      emberPositions[i * 3 + 1] = Math.random() * 10;
+      emberPositions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+    }
+    emberGeo.setAttribute("position", new THREE.BufferAttribute(emberPositions, 3));
+    const emberMat = new THREE.PointsMaterial({
+      color: "#ff8844",
+      size: 0.15,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.ambientEmbers = new THREE.Points(emberGeo, emberMat);
+    this.scene.add(this.ambientEmbers);
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -317,6 +424,31 @@ export class BattleStageEngine implements ISimulatorEngine {
       });
 
       this.ghostPreview.animate(Date.now() * 0.001);
+
+      if (this.goalBeacon) {
+        const t = Date.now() * 0.001;
+        this.goalBeacon.rotation.z += 0.01;
+        this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
+      }
+
+      // Animate lava glow
+      const lavaTime = Date.now() * 0.001;
+      this.lavaRivers.forEach((l, i) => {
+        const mat = l.material as THREE.MeshStandardMaterial;
+        mat.emissiveIntensity = 1.2 + Math.sin(lavaTime * 3 + i) * 0.4;
+      });
+
+      // Animate embers rising
+      if (this.ambientEmbers) {
+        const pos = this.ambientEmbers.geometry.attributes.position.array as Float32Array;
+        for (let i = 0; i < pos.length; i += 3) {
+          pos[i + 1] += 0.02;
+          if (pos[i + 1] > 10) pos[i + 1] = 0;
+          pos[i] += (Math.sin(lavaTime + i) * 0.01);
+        }
+        this.ambientEmbers.geometry.attributes.position.needsUpdate = true;
+      }
+
       this.composer.render();
     };
     animate();
@@ -536,5 +668,140 @@ export class BattleStageEngine implements ISimulatorEngine {
 
   clearPreview(): void {
     this.ghostPreview.clear();
+  }
+
+  loadLevel(obstacles: Array<{ x: number; z: number; type: string; size?: number }>, startPos: { x: number; z: number; rotation: number }, goalPos: { x: number; z: number }): void {
+    this.levelObstacles.forEach((o) => {
+      this.scene.remove(o);
+      o.geometry?.dispose();
+      if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+      else (o.material as THREE.Material)?.dispose();
+    });
+    this.levelObstacles = [];
+
+    obstacles.forEach((obs) => {
+      let mesh: THREE.Mesh;
+
+      switch (obs.type) {
+        case "enemy": {
+          const geo = new THREE.BoxGeometry(1.2, 1.5, 1.2);
+          const mat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.4, roughness: 0.4 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.75, obs.z);
+          mesh.castShadow = true;
+          mesh.name = "level_enemy";
+          break;
+        }
+        case "block": {
+          const s = obs.size || 1;
+          const geo = new THREE.BoxGeometry(s, s, s);
+          const mat = new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.6, metalness: 0.3 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, (obs.size || 1) / 2, obs.z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.name = "level_block";
+          break;
+        }
+        case "crate": {
+          const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#f59e0b", roughness: 0.5 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.4, obs.z);
+          mesh.castShadow = true;
+          mesh.name = "level_crate";
+          break;
+        }
+        case "sample": {
+          const geo = new THREE.OctahedronGeometry(0.35);
+          const mat = new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#3b82f6", emissiveIntensity: 0.5 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.4, obs.z);
+          mesh.name = "level_sample";
+          break;
+        }
+        case "door": {
+          const geo = new THREE.BoxGeometry(1.5, 2.5, 0.3);
+          const mat = new THREE.MeshStandardMaterial({ color: "#8b6fcf", emissive: "#6b4fa3", emissiveIntensity: 0.3, transparent: true, opacity: 0.8 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.75, obs.z);
+          mesh.name = "level_door";
+          break;
+        }
+        case "cone": {
+          const geo = new THREE.ConeGeometry(0.5, 1, 8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.2 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.5, obs.z);
+          mesh.name = "level_cone";
+          break;
+        }
+        case "wall": {
+          const s = obs.size || 8;
+          const geo = new THREE.BoxGeometry(s, 3, 0.8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#475569", roughness: 0.7, emissive: "#1a1a2e", emissiveIntensity: 0.1 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 1, obs.z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.name = "level_wall";
+          break;
+        }
+        default: {
+          const geo = new THREE.BoxGeometry(1, 1, 1);
+          const mat = new THREE.MeshStandardMaterial({ color: "#94a3b8" });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.5, obs.z);
+          break;
+        }
+      }
+
+      this.scene.add(mesh);
+      this.levelObstacles.push(mesh);
+    });
+
+    this.botGroup.position.set(startPos.x, 0, startPos.z);
+    this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = startPos.rotation;
+
+    this.showGoalBeacon(goalPos.x, goalPos.z);
+  }
+
+  showGoalBeacon(x: number, z: number): void {
+    if (this.goalBeacon) {
+      this.scene.remove(this.goalBeacon);
+      this.goalBeacon.geometry?.dispose();
+      (this.goalBeacon.material as THREE.Material)?.dispose();
+    }
+
+    const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: "#fbbf24",
+      emissive: "#fbbf24",
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, 0.3, z);
+    ring.name = "goal_beacon";
+    this.scene.add(ring);
+
+    const dotGeo = new THREE.SphereGeometry(0.2, 16, 16);
+    const dot = new THREE.Mesh(dotGeo, ringMat.clone());
+    dot.position.set(x, 0.8, z);
+    dot.name = "goal_beacon_dot";
+    this.scene.add(dot);
+
+    this.goalBeacon = ring;
+  }
+
+  checkGoalReached(x: number, z: number): boolean {
+    if (!this.goalBeacon) return false;
+    const dx = x - this.goalBeacon.position.x;
+    const dz = z - this.goalBeacon.position.z;
+    return Math.sqrt(dx * dx + dz * dz) < 2;
   }
 }

@@ -34,6 +34,9 @@ export interface ISimulatorEngine {
   showMarkerPreview?(x: number, z: number, color?: string): void;
   clearPreview?(): void;
   showCounter?(value: number): void;
+  loadLevel?(obstacles: Array<{ x: number; z: number; type: string; size?: number }>, startPos: { x: number; z: number; rotation: number }, goalPos: { x: number; z: number }): void;
+  showGoalBeacon?(x: number, z: number): void;
+  checkGoalReached?(x: number, z: number): boolean;
 
   // Acciones específicas por entorno (opcionales)
   attack?(power: number, duration: number): Promise<void>;

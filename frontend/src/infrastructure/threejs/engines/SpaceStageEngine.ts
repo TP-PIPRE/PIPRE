@@ -4,9 +4,6 @@ import { SpaceBotBuilder } from "../shared/SpaceBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
 import {
   createSceneWithCamera,
-  createShadowFloor,
-  createGrid,
-  createStarfield,
 } from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 import { EffectComposer } from "postprocessing";
@@ -30,29 +27,56 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private collectedSamples = 0;
   private sampleMeshes: THREE.Mesh[] = [];
   private ghostPreview!: GhostPreview;
+  private levelObstacles: THREE.Mesh[] = [];
+  private goalBeacon: THREE.Mesh | null = null;
+  private ambientDust: THREE.Points | null = null;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
       fov: 50,
       cameraPos: [22, 18, 22],
-      fogColor: "#0a0a20",
-      fogNear: 35,
-      fogFar: 100,
-      bgColor: "#0a0a20",
+      fogColor: "#0a0820",
+      fogNear: 28,
+      fogFar: 75,
+      bgColor: "#0a0820",
       ambientColor: "#334466",
-      skyColor: "#334488",
+      skyColor: "#2244aa",
       groundColor: "#1a1030",
-      dirColor: "#ccddff",
-      dirPos: [15, 30, 10],
+      hemiIntensity: 0.55,
+      dirColor: "#8899ff",
+      dirPos: [12, 28, 8],
       shadowMapSize: 2048,
       shadowCameraSize: 35,
     });
     this.scene = scene;
     this.camera = camera;
 
-    createShadowFloor(this.scene, 80, -0.5, "#1a1a3e");
-    createGrid(this.scene, 80, 80, "#4a4a8a", "#2a1a5a", -0.49);
-    createStarfield(this.scene, 350, 80, 3, 30, "#8899ff", 0.12, 0.65);
+    // Large starfield with varying brightness
+    const starCount = 500;
+    const starGeo = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(starCount * 3);
+    const starSizes = new Float32Array(starCount);
+    for (let i = 0; i < starCount; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = 65 + Math.random() * 20;
+      starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = Math.abs(r * Math.cos(phi)) * 0.6 + 8;
+      starPositions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+      starSizes[i] = 0.05 + Math.random() * 0.25;
+    }
+    starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+    starGeo.setAttribute("size", new THREE.BufferAttribute(starSizes, 1));
+    const starMat = new THREE.PointsMaterial({
+      color: "#ffffff",
+      size: 0.15,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    this.scene.add(stars);
 
     this.botParts = SpaceBotBuilder.create();
     this.botGroup = this.botParts.group;
@@ -82,48 +106,181 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Craters
-    const craterMat = new THREE.MeshStandardMaterial({ color: "#1a0f2e", roughness: 1 });
-    const craterPos = [[-10, -0.48, -14], [10, -0.48, -10], [-6, -0.48, 12], [14, -0.48, 6], [0, -0.48, -6]];
-    craterPos.forEach((pos) => {
-      const c = new THREE.Mesh(new THREE.CircleGeometry(2 + Math.random() * 2, 24), craterMat);
-      c.rotation.x = -Math.PI / 2;
-      c.position.set(pos[0], pos[1], pos[2]);
-      this.scene.add(c);
+    // Alien terrain - deformed surface
+    const terrainGeo = new THREE.PlaneGeometry(80, 80, 30, 30);
+    const posAttr = terrainGeo.getAttribute("position");
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i);
+      const z = posAttr.getY(i);
+      const noise = Math.sin(x * 0.4) * Math.cos(z * 0.35) * 0.5 + Math.sin(x * 0.9 + z * 0.7) * 0.3;
+      posAttr.setZ(i, noise);
+    }
+    terrainGeo.computeVertexNormals();
+    const terrainMat = new THREE.MeshStandardMaterial({
+      color: "#3d266b",
+      roughness: 0.9,
+      metalness: 0.15,
+      emissive: "#1a0f2e",
+      emissiveIntensity: 0.15,
+    });
+    const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.position.y = -0.8;
+    terrain.receiveShadow = true;
+    this.scene.add(terrain);
+
+    // Craters with depth
+    const craterPositions = [
+      [-10, -14], [10, -10], [-6, 12], [14, 6], [0, -6], [-14, 3]
+    ];
+    craterPositions.forEach(([cx, cz]) => {
+      const craterGeo = new THREE.CylinderGeometry(1.5 + Math.random() * 2, 2 + Math.random() * 2, 0.5, 24);
+      const craterMat = new THREE.MeshStandardMaterial({
+        color: "#1a0f2e",
+        roughness: 1,
+        emissive: "#0a0520",
+        emissiveIntensity: 0.1,
+      });
+      const crater = new THREE.Mesh(craterGeo, craterMat);
+      crater.position.set(cx, -0.5, cz);
+      this.scene.add(crater);
+
+      // Crater rim glow
+      const rimGeo = new THREE.TorusGeometry(1.5 + Math.random(), 0.1, 8, 24);
+      const rimMat = new THREE.MeshBasicMaterial({
+        color: "#6b4fa3",
+        transparent: true,
+        opacity: 0.2,
+        depthWrite: false,
+      });
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(cx, -0.24, cz);
+      this.scene.add(rim);
     });
 
-    // Rocks
-    const rockMat = new THREE.MeshStandardMaterial({ color: "#6b4fa3", roughness: 0.9 });
-    for (let i = 0; i < 8; i++) {
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.6), rockMat);
-      rock.position.set(-14 + i * 4, 0, -6 + (i % 2 === 0 ? 2 : -2));
+    // Glowing crystal formations
+    const crystalClusterPositions = [
+      [-4, -5], [8, -3], [-2, 8], [12, 2], [-9, 4]
+    ];
+    crystalClusterPositions.forEach(([cx, cz]) => {
+      const clusterGroup = new THREE.Group();
+      for (let j = 0; j < 4; j++) {
+        const height = 0.8 + Math.random() * 1.5;
+        const crystalGeo = new THREE.ConeGeometry(0.15, height, 6);
+        const crystalMat = new THREE.MeshStandardMaterial({
+          color: "#3b82f6",
+          emissive: "#3b82f6",
+          emissiveIntensity: 0.6,
+          roughness: 0.1,
+          metalness: 0.3,
+          transparent: true,
+          opacity: 0.85,
+        });
+        const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+        crystal.position.set(
+          (Math.random() - 0.5) * 0.6,
+          height / 2 - 0.5,
+          (Math.random() - 0.5) * 0.6
+        );
+        crystal.rotation.set(Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3);
+        clusterGroup.add(crystal);
+      }
+      // Light on cluster
+      const ptLight = new THREE.PointLight("#3b82f6", 0.4, 4);
+      ptLight.position.set(cx, 0, cz);
+      this.scene.add(ptLight);
+      clusterGroup.position.set(cx, 0, cz);
+      this.scene.add(clusterGroup);
+    });
+
+    // Rock formations
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: "#5a4a80",
+      roughness: 0.85,
+      metalness: 0.2,
+    });
+    for (let i = 0; i < 10; i++) {
+      const rockGeo = new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.7, 1);
+      const rock = new THREE.Mesh(rockGeo, rockMat);
+      rock.position.set(
+        -14 + Math.random() * 28,
+        0,
+        -14 + Math.random() * 28
+      );
       rock.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
       rock.castShadow = true;
+      rock.scale.set(1, 0.6 + Math.random() * 0.8, 1);
       this.scene.add(rock);
     }
 
-    // Collectable samples (glowing crystals)
-    const sampleMat = new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#3b82f6", emissiveIntensity: 0.5 });
-    const samplePos = [[-5, 0, -8], [7, 0, -12], [-3, 0, 5], [12, 0, 0], [-8, 0, 10]];
-    samplePos.forEach((pos) => {
-      const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), sampleMat);
-      s.position.set(pos[0], pos[1], pos[2]);
-      s.userData.origY = pos[1];
+    // Collectable samples - glowing floating crystals
+    const sampleMat = new THREE.MeshStandardMaterial({
+      color: "#00f5d4",
+      emissive: "#00f5d4",
+      emissiveIntensity: 0.7,
+      roughness: 0.1,
+      metalness: 0.2,
+    });
+    const samplePositions = [[-5, -8], [7, -12], [-3, 5], [12, 0], [-8, 10]];
+    samplePositions.forEach((pos) => {
+      const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), sampleMat);
+      s.position.set(pos[0], 0.5, pos[1]);
+      s.name = "sample";
       this.scene.add(s);
       this.sampleMeshes.push(s);
     });
 
-    // Landing pad
-    const padMat = new THREE.MeshBasicMaterial({ color: "#38bdf8", transparent: true, opacity: 0.3, side: THREE.DoubleSide });
-    const pad = new THREE.Mesh(new THREE.RingGeometry(2.5, 3.5, 32), padMat);
+    // Landing pad with beacon
+    const padGeo = new THREE.RingGeometry(2, 3, 32);
+    const padMat = new THREE.MeshBasicMaterial({
+      color: "#38bdf8",
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+    });
+    const pad = new THREE.Mesh(padGeo, padMat);
     pad.rotation.x = -Math.PI / 2;
-    pad.position.set(12, -0.48, -16);
+    pad.position.set(12, -0.25, -16);
     this.scene.add(pad);
-    // Landing beacon
-    const beaconMat = new THREE.MeshStandardMaterial({ color: "#38bdf8", emissive: "#38bdf8", emissiveIntensity: 0.5 });
-    const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.2, 0.5, 8), beaconMat);
-    beacon.position.set(12, 0.25, -16);
-    this.scene.add(beacon);
+
+    // Beacon pillar
+    const beaconBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.25, 1.5, 8),
+      new THREE.MeshStandardMaterial({ color: "#334466", roughness: 0.5, metalness: 0.5 })
+    );
+    beaconBase.position.set(12, 0.25, -16);
+    this.scene.add(beaconBase);
+    const beaconLight = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 8, 8),
+      new THREE.MeshStandardMaterial({ color: "#38bdf8", emissive: "#38bdf8", emissiveIntensity: 0.8 })
+    );
+    beaconLight.position.set(12, 1.1, -16);
+    this.scene.add(beaconLight);
+    const beaconGlow = new THREE.PointLight("#38bdf8", 0.6, 6);
+    beaconGlow.position.copy(beaconLight.position);
+    this.scene.add(beaconGlow);
+
+    // Ambient floating dust
+    const dustCount = 120;
+    const dustGeo = new THREE.BufferGeometry();
+    const dustPositions = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount; i++) {
+      dustPositions[i * 3] = (Math.random() - 0.5) * 60;
+      dustPositions[i * 3 + 1] = Math.random() * 8;
+      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 60;
+    }
+    dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+    const dustMat = new THREE.PointsMaterial({
+      color: "#8899cc",
+      size: 0.08,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    this.ambientDust = new THREE.Points(dustGeo, dustMat);
+    this.scene.add(this.ambientDust);
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -211,13 +368,30 @@ export class SpaceStageEngine implements ISimulatorEngine {
           }
         });
       }
-      // Gentle sample floating animation
-      this.sampleMeshes.forEach((sample, i) => {
-        if (sample.visible) {
-          sample.position.y = (sample.userData.origY as number) + Math.sin(Date.now() * 0.002 + i) * 0.15;
+      // Animate floating dust
+      if (this.ambientDust) {
+        const pos = this.ambientDust.geometry.attributes.position.array as Float32Array;
+        const t = Date.now() * 0.001;
+        for (let i = 0; i < pos.length; i += 3) {
+          pos[i + 1] += Math.sin(t + i * 0.1) * 0.003;
+          if (pos[i + 1] > 8) pos[i + 1] = 0;
+          if (pos[i + 1] < 0) pos[i + 1] = 8;
         }
+        this.ambientDust.geometry.attributes.position.needsUpdate = true;
+      }
+      // Pulse samples on terrain
+      this.sampleMeshes.forEach((s, i) => {
+        s.position.y = 0.5 + Math.sin(Date.now() * 0.003 + i) * 0.3;
+        s.rotation.y += 0.01;
       });
       this.ghostPreview.animate(Date.now() * 0.001);
+
+      if (this.goalBeacon) {
+        const t = Date.now() * 0.001;
+        this.goalBeacon.rotation.z += 0.01;
+        this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
+      }
+
       this.composer.render();
     };
     animate();
@@ -423,5 +597,140 @@ export class SpaceStageEngine implements ISimulatorEngine {
 
   clearPreview(): void {
     this.ghostPreview.clear();
+  }
+
+  loadLevel(obstacles: Array<{ x: number; z: number; type: string; size?: number }>, startPos: { x: number; z: number; rotation: number }, goalPos: { x: number; z: number }): void {
+    this.levelObstacles.forEach((o) => {
+      this.scene.remove(o);
+      o.geometry?.dispose();
+      if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+      else (o.material as THREE.Material)?.dispose();
+    });
+    this.levelObstacles = [];
+
+    obstacles.forEach((obs) => {
+      let mesh: THREE.Mesh;
+
+      switch (obs.type) {
+        case "enemy": {
+          const geo = new THREE.BoxGeometry(1.2, 1.5, 1.2);
+          const mat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.4, roughness: 0.4 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.75, obs.z);
+          mesh.castShadow = true;
+          mesh.name = "level_enemy";
+          break;
+        }
+        case "block": {
+          const s = obs.size || 1;
+          const geo = new THREE.BoxGeometry(s, s, s);
+          const mat = new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.6, metalness: 0.3 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, (obs.size || 1) / 2, obs.z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.name = "level_block";
+          break;
+        }
+        case "crate": {
+          const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#f59e0b", roughness: 0.5 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.4, obs.z);
+          mesh.castShadow = true;
+          mesh.name = "level_crate";
+          break;
+        }
+        case "sample": {
+          const geo = new THREE.OctahedronGeometry(0.35);
+          const mat = new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#3b82f6", emissiveIntensity: 0.5 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.4, obs.z);
+          mesh.name = "level_sample";
+          break;
+        }
+        case "door": {
+          const geo = new THREE.BoxGeometry(1.5, 2.5, 0.3);
+          const mat = new THREE.MeshStandardMaterial({ color: "#8b6fcf", emissive: "#6b4fa3", emissiveIntensity: 0.3, transparent: true, opacity: 0.8 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.75, obs.z);
+          mesh.name = "level_door";
+          break;
+        }
+        case "cone": {
+          const geo = new THREE.ConeGeometry(0.5, 1, 8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.2 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.5, obs.z);
+          mesh.name = "level_cone";
+          break;
+        }
+        case "wall": {
+          const s = obs.size || 8;
+          const geo = new THREE.BoxGeometry(s, 3, 0.8);
+          const mat = new THREE.MeshStandardMaterial({ color: "#475569", roughness: 0.7, emissive: "#1a1a2e", emissiveIntensity: 0.1 });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 1, obs.z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.name = "level_wall";
+          break;
+        }
+        default: {
+          const geo = new THREE.BoxGeometry(1, 1, 1);
+          const mat = new THREE.MeshStandardMaterial({ color: "#94a3b8" });
+          mesh = new THREE.Mesh(geo, mat);
+          mesh.position.set(obs.x, 0.5, obs.z);
+          break;
+        }
+      }
+
+      this.scene.add(mesh);
+      this.levelObstacles.push(mesh);
+    });
+
+    this.botGroup.position.set(startPos.x, 0, startPos.z);
+    this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = startPos.rotation;
+
+    this.showGoalBeacon(goalPos.x, goalPos.z);
+  }
+
+  showGoalBeacon(x: number, z: number): void {
+    if (this.goalBeacon) {
+      this.scene.remove(this.goalBeacon);
+      this.goalBeacon.geometry?.dispose();
+      (this.goalBeacon.material as THREE.Material)?.dispose();
+    }
+
+    const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: "#fbbf24",
+      emissive: "#fbbf24",
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, 0.3, z);
+    ring.name = "goal_beacon";
+    this.scene.add(ring);
+
+    const dotGeo = new THREE.SphereGeometry(0.2, 16, 16);
+    const dot = new THREE.Mesh(dotGeo, ringMat.clone());
+    dot.position.set(x, 0.8, z);
+    dot.name = "goal_beacon_dot";
+    this.scene.add(dot);
+
+    this.goalBeacon = ring;
+  }
+
+  checkGoalReached(x: number, z: number): boolean {
+    if (!this.goalBeacon) return false;
+    const dx = x - this.goalBeacon.position.x;
+    const dz = z - this.goalBeacon.position.z;
+    return Math.sqrt(dx * dx + dz * dz) < 2;
   }
 }

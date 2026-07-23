@@ -95,7 +95,7 @@ export const Stage3D = () => {
   }, [currentTheme]);
 
   return (
-    <div className="relative w-full h-full bg-bg overflow-hidden border border-border panel-border rounded-lg">
+    <div className="relative w-full h-full bg-bg overflow-hidden border border-border panel-border rounded-lg" id="stage-3d">
       {/* Kid-friendly HUD */}
       <div className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-4">
         {/* Top bar */}
