@@ -28,7 +28,7 @@ proyecto.
 | RIA | Archivo principal | Funcion |
 | --- | --- | --- |
 | RIA01 | `ria01_desempeño.py` | Regla exacta con score/success rate o estimacion ML binaria sin esas variables. |
-| RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion y arma contexto para IA. |
+| RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion con reglas calibradas y devuelve riesgo, razones, evidencia, pistas y contexto para IA. |
 | RIA03 | `ria03_recomendador.py` | Compara XGBoost jerarquico/multiclase para recomendar basic, intermediate o advanced. |
 | RIA04 | `ria04_generador.py` | Genera borradores de retos con un sistema experto y reglas procedurales. |
 | RIA08 | `ria08_riesgo_anomalias.py` | Unifica riesgo y anomalias sin historial temporal individual, usando cohorte de referencia. |

@@ -48,7 +48,7 @@ es compatible.
 | RIA | Funcion | Endpoint |
 | --- | --- | --- |
 | RIA01 | Estimacion predictiva binaria sin score/success rate; incluye un modo de regla separado para datos finales. | `POST /ria01/predict` |
-| RIA02 | Retroalimentacion automatica y contexto para IA. | `POST /ria02/feedback` |
+| RIA02 | Retroalimentacion automatica explicable con riesgo, razones, evidencia, pistas y contexto para IA. | `POST /ria02/feedback` |
 | RIA03 | Recomendacion de actividades con seleccion agrupada entre XGBoost jerarquico y multiclase. | `POST /ria03/recommend` |
 | RIA04 | Generacion inteligente de retos de programacion. | `POST /ria04/generate` |
 | RIA08 | Riesgo y anomalias sin historial temporal individual, usando una cohorte de referencia y alertas explicables. | `POST /ria08/early-warning` y `/ria08/early-warning/batch` |

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class RIA01Input(BaseModel):
@@ -11,15 +11,97 @@ class RIA01Input(BaseModel):
 
 
 class RIA02Input(BaseModel):
-    code: str
-    language: str = "python"
-    errors: list[str] = Field(default_factory=list)
-    attempts: int
-    score: Optional[float] = None
-    success_rate: Optional[float] = None
-    previous_errors: list[str] = Field(default_factory=list)
-    logical_level: str
-    activity_objective: str = ""
+    code: str = Field(max_length=20_000)
+    language: str = Field(default="python", min_length=1, max_length=30)
+    errors: list[str] = Field(default_factory=list, max_length=100)
+    attempts: int = Field(ge=0, le=1_000)
+    score: Optional[float] = Field(default=None, ge=0, le=100)
+    success_rate: Optional[float] = Field(default=None, ge=0, le=1)
+    previous_errors: list[str] = Field(default_factory=list, max_length=100)
+    logical_level: str = Field(min_length=1, max_length=20)
+    activity_objective: str = Field(default="", max_length=1_000)
+
+    @field_validator("language")
+    @classmethod
+    def normalize_language(cls, value: str) -> str:
+        return value.strip().lower()
+
+    @field_validator("logical_level")
+    @classmethod
+    def normalize_logical_level(cls, value: str) -> str:
+        aliases = {
+            "low": "bajo",
+            "basic": "bajo",
+            "basico": "bajo",
+            "básico": "bajo",
+            "medium": "medio",
+            "intermediate": "medio",
+            "intermedio": "medio",
+            "high": "alto",
+            "advanced": "alto",
+            "avanzado": "alto",
+        }
+        normalized = value.strip().lower()
+        normalized = aliases.get(normalized, normalized)
+        if normalized not in {"bajo", "medio", "alto"}:
+            raise ValueError("logical_level must be bajo, medio or alto")
+        return normalized
+
+    @field_validator("success_rate", mode="before")
+    @classmethod
+    def normalize_success_rate(cls, value):
+        if value is None or value == "":
+            return None
+        number = float(value)
+        if 1 < number <= 100:
+            return number / 100
+        return number
+
+    @field_validator("errors", "previous_errors")
+    @classmethod
+    def clean_error_messages(cls, values: list[str]) -> list[str]:
+        cleaned = []
+        for value in values:
+            message = str(value).strip()
+            if not message:
+                continue
+            if len(message) > 500:
+                raise ValueError("each error message must contain at most 500 characters")
+            cleaned.append(message)
+        return cleaned
+
+
+class RIA02Evidence(BaseModel):
+    errors_count: int
+    attempts: float
+    error_threshold: float
+    attempt_threshold: float
+    recurrent_errors_count: int
+    final_score_used_for_decision: bool
+
+
+class RIA02Details(BaseModel):
+    needs_feedback: bool
+    feedback_type: str
+    priority: str
+    risk_score: int
+    risk_cutoff: int
+    reasons: list[str]
+    recurrent_errors: list[str]
+    code_complexity: str
+    suggestions: list[str]
+    evidence: RIA02Evidence
+    input_warnings: list[str]
+    llm_context: dict[str, object]
+
+
+class RIA02Response(BaseModel):
+    result: str
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    f1: Optional[float] = None
+    details: RIA02Details
 
 
 class RIA03Input(BaseModel):

@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from app.adapters.api.schemas import (
     RIA01Input,
     RIA02Input,
+    RIA02Response,
     RIA03Input,
     RIA04Input,
     RIA08BatchInput,
@@ -577,7 +578,7 @@ def predict_ria01(data: RIA01Input):
     return ria01_service.predict(to_ria01_model_input(data))
 
 
-@app.post("/ria02/feedback")
+@app.post("/ria02/feedback", response_model=RIA02Response)
 def feedback_ria02(data: RIA02Input):
     return ria02_service.predict(to_ria02_model_input(data))
 
