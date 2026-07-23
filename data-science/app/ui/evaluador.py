@@ -64,6 +64,15 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria10, ria11, ria12):
     ria2_input = construir_input_ria2(data)
     ria2_detalle = ria2.predict_detailed(ria2_input)
     ria10_detalle = ria10.predict_detailed(data)
+    ria8_detalle = ria8.predict_detailed(data)
+    ria8_estudiantes = ria8.predict_batch(df, sort_by_risk=True)
+    ria8_resumen = {
+        "total": len(ria8_estudiantes),
+        "normal": sum(row["risk_level"] == "low" for row in ria8_estudiantes),
+        "atencion": sum(row["risk_level"] == "medium" for row in ria8_estudiantes),
+        "critico": sum(row["risk_level"] == "high" for row in ria8_estudiantes),
+        "anomalias": sum(row["anomaly"] for row in ria8_estudiantes),
+    }
 
     def get_input_data(columns):
         available_columns = [col for col in columns if col in data.columns]
@@ -130,16 +139,29 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria10, ria11, ria12):
             "input_data": ria4_input,
         },
 
-        "RIA8 - Anomalías": {
-            "resultado": ria8.predict(data),
-            "interpretacion": ria8.predict_detailed(data),
-            "anomalias": f"{ria8.anomaly_ratio:.2%} del dataset detectado como anómalo",
-            "importancias": ria8.calcular_importancia(df),
+        "RIA8 - Riesgo y anomalías": {
+            "resultado": ria8_detalle["risk_label"],
+            "detalle": {
+                "puntaje_riesgo": ria8_detalle["risk_score"],
+                "anomalia": ria8_detalle["anomaly"],
+                "puntaje_anomalia": ria8_detalle["anomaly_score"],
+                "razones": ria8_detalle["reasons"],
+                "recomendacion_docente": ria8_detalle["teacher_recommendation"],
+                "usa_historial_del_estudiante": ria8_detalle["student_history_used"],
+                "usa_cohorte_de_referencia": ria8_detalle["reference_cohort_used"],
+            },
+            "resumen_docente": ria8_resumen,
+            "tabla_docente": ria8_estudiantes,
+            "anomalias": f"{ria8.reference_anomaly_ratio:.2%} de la cohorte de referencia marcada como anómala (no es calidad del modelo)",
+            "pesos_riesgo": ria8.obtener_pesos_riesgo()["weights"],
             "input_data": get_input_data([
                 "intentos",
                 "errores",
                 "puntaje",
-                "dias_inactivo"
+                "dias_inactivo",
+                "actividades_completadas",
+                "tasa_exito",
+                "ayuda_solicitada",
             ])
         },
 

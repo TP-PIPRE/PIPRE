@@ -2,7 +2,7 @@ from app.adapters.ml_models.ria01_desempeño import ClasificadorDesempeno
 from app.adapters.ml_models.ria02_feedback import RetroalimentacionAutomatica
 from app.adapters.ml_models.ria03_recomendador import RecomendadorActividades
 from app.adapters.ml_models.ria04_generador import GeneradorRetosProgramacion
-from app.adapters.ml_models.ria08_anomalias import DetectorAnomalias
+from app.adapters.ml_models.ria08_riesgo_anomalias import DetectorRiesgoAnomalias
 from app.adapters.ml_models.ria10_pedagogica import RecomendadorPedagogico
 from app.adapters.ml_models.ria11_tiempo import ClasificadorTiempo
 from app.adapters.ml_models.ria12_codigo import EvaluadorCodigo
@@ -95,7 +95,7 @@ def create_ria04_service():
 
 
 def create_ria08_service():
-    return RIA08Service(DetectorAnomalias())
+    return RIA08Service(DetectorRiesgoAnomalias())
 
 
 def create_ria10_service():
@@ -112,7 +112,7 @@ def create_pipeline():
         ria2=RetroalimentacionAutomatica(),
         ria3=RecomendadorActividades(),
         ria4=GeneradorRetosProgramacion(),
-        ria8=DetectorAnomalias(),
+        ria8=DetectorRiesgoAnomalias(),
         ria10=RecomendadorPedagogico(),
         ria11=ClasificadorTiempo(),
         ria12=EvaluadorCodigo(),

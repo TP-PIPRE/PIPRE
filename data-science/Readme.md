@@ -51,7 +51,7 @@ es compatible.
 | RIA02 | Retroalimentacion automatica y contexto para IA. | `POST /ria02/feedback` |
 | RIA03 | Recomendacion de actividades con seleccion agrupada entre XGBoost jerarquico y multiclase. | `POST /ria03/recommend` |
 | RIA04 | Generacion inteligente de retos de programacion. | `POST /ria04/generate` |
-| RIA08 | Deteccion de anomalias. | `POST /ria08/anomaly` |
+| RIA08 | Riesgo y anomalias sin historial temporal individual, usando una cohorte de referencia y alertas explicables. | `POST /ria08/early-warning` y `/ria08/early-warning/batch` |
 | RIA10 | Recomendacion pedagogica. | `POST /ria10/pedagogical` |
 | RIA11 | Clasificacion de tiempo. | `POST /ria11/time` |
 | RIA12 | Evaluacion de codigo en UI local. | Sin endpoint directo actual. |
@@ -100,3 +100,7 @@ Pruebas y demostracion de RIA01:
 data-science\venv\Scripts\python.exe -B -m unittest tests.test_ria01 -v
 data-science\venv\Scripts\python.exe -B scripts/demo_ria01.py
 ```
+
+Guia funcional y contrato de RIA08:
+
+- `RIA08_RIESGO_ANOMALIAS_GUIA.md`

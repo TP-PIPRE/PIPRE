@@ -8,6 +8,7 @@ from app.adapters.api.schemas import (
     RIA02Input,
     RIA03Input,
     RIA04Input,
+    RIA08BatchInput,
     RIA08Input,
     RIA10Input,
     RIA10Response,
@@ -128,6 +129,12 @@ RIA08_FEATURE_NAME_MAP = {
     "errores": "errors",
     "puntaje": "score",
     "dias_inactivo": "inactive_days",
+    "actividades_completadas": "completed_activities",
+    "tasa_exito": "success_rate",
+    "ayuda_solicitada": "help_requested",
+    "errores_por_intento": "errors_per_attempt",
+    "ayuda_por_intento": "help_per_attempt",
+    "brecha_rendimiento": "performance_gap",
 }
 
 RIA10_FEATURE_NAME_MAP = {
@@ -222,10 +229,15 @@ def to_ria04_model_input(data: RIA04Input):
 
 def to_ria08_model_input(data: RIA08Input):
     return {
+        "student_id": data.student_id,
+        "student_name": data.student_name,
         "intentos": data.attempts,
         "errores": data.errors,
         "puntaje": data.score,
         "dias_inactivo": data.inactive_days,
+        "actividades_completadas": data.completed_activities,
+        "tasa_exito": data.success_rate,
+        "ayuda_solicitada": data.help_requested,
     }
 
 
@@ -585,6 +597,19 @@ def detect_ria08(data: RIA08Input):
     return ria08_service.predict(to_ria08_model_input(data))
 
 
+@app.post("/ria08/early-warning")
+def early_warning_ria08(data: RIA08Input):
+    return ria08_service.predict(to_ria08_model_input(data))
+
+
+@app.post("/ria08/early-warning/batch")
+def early_warning_batch_ria08(data: RIA08BatchInput):
+    return ria08_service.predict_batch([
+        to_ria08_model_input(student)
+        for student in data.students
+    ])
+
+
 @app.post("/ria10/pedagogical", response_model=RIA10Response)
 def recommend_ria10(data: RIA10Input):
     return ria10_service.predict(to_ria10_model_input(data))
@@ -678,12 +703,42 @@ def info_ria04():
 def info_ria08():
     return {
         "trained": ria08_service._trained,
+        "model": "RIA08 - Riesgo y anomalias",
+        "version": ria08_service.MODEL_VERSION,
+        "configuration_version": ria08_service.model.configuration_version,
+        "historical_data_used": False,
+        "student_history_used": False,
+        "reference_cohort_used": True,
+        "risk_score_note": (
+            "Indice de atencion de 0 a 100; no es una probabilidad de abandono."
+        ),
+        "anomaly_score_note": (
+            "Percentil de rareza en la cohorte; no es una probabilidad ni una "
+            "metrica de calidad."
+        ),
         "features": [
             RIA08_FEATURE_NAME_MAP.get(feature, feature)
             for feature in ria08_service.model.feature_columns
         ] if ria08_service._trained else [],
+        "model_features": [
+            RIA08_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria08_service.model.model_feature_columns
+        ],
+        "reference_anomaly_ratio": ria08_service.model.reference_anomaly_ratio,
         "dataset_anomaly_ratio": ria08_service.model.anomaly_ratio,
+        "anomaly_ratio_note": (
+            "Proporcion de la cohorte de referencia marcada como anomala; "
+            "no mide accuracy, precision ni calidad."
+        ),
         "thresholds": getattr(ria08_service.model, "thresholds", {}),
+        "risk_thresholds": ria08_service.model.risk_thresholds,
+        "risk_weights": ria08_service.model.obtener_pesos_riesgo(),
+        "training_warnings": ria08_service.model.training_warnings,
+        "constant_reference_features": (
+            ria08_service.model.constant_reference_features
+        ),
+        "constant_model_features": ria08_service.model.constant_model_features,
+        "correlation_report": ria08_service.model.correlation_report,
     }
 
 

@@ -31,7 +31,7 @@ proyecto.
 | RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion y arma contexto para IA. |
 | RIA03 | `ria03_recomendador.py` | Compara XGBoost jerarquico/multiclase para recomendar basic, intermediate o advanced. |
 | RIA04 | `ria04_generador.py` | Genera borradores de retos con un sistema experto y reglas procedurales. |
-| RIA08 | `ria08_anomalias.py` | Detecta comportamiento normal o anomalous. |
+| RIA08 | `ria08_riesgo_anomalias.py` | Unifica riesgo y anomalias sin historial temporal individual, usando cohorte de referencia. |
 | RIA10 | `ria10_pedagogica.py` | Recomienda intervencion pedagogica. |
 | RIA11 | `ria11_tiempo.py` | Clasifica tiempo: short, medium, long. |
 | RIA12 | `ria12_codigo.py` | Evalua codigo en la UI local. No tiene endpoint FastAPI directo actualmente. |
@@ -92,10 +92,24 @@ proyecto.
 - `POST /ria03/recommend`
 - `POST /ria04/generate`
 - `POST /ria08/anomaly`
+- `POST /ria08/early-warning`
+- `POST /ria08/early-warning/batch`
 - `POST /ria10/pedagogical`
 - `POST /ria11/time`
 - `GET /riaXX/info`
 - `GET /health`
+
+### RIA08: primera version sin historial temporal individual
+
+- No usa una secuencia temporal individual, pero si una cohorte de referencia.
+- El `risk_score` es un indice de atencion de 0 a 100, no una probabilidad de abandono.
+- `anomaly_score` es rareza relativa, no probabilidad ni calidad.
+- Isolation Forest detecta rareza y los percentiles adversos explican el riesgo.
+- Variables constantes aportan cero; las entradas invalidas generan errores descriptivos.
+- La salida incluye nivel, razones, evidencia y recomendacion docente.
+- El modelo conserva el orden del lote; el servicio solicita orden por riesgo para la tabla.
+- `student_history_used=false` y `reference_cohort_used=true` aclaran la procedencia.
+- La guia completa esta en `RIA08_RIESGO_ANOMALIAS_GUIA.md`.
 
 ## Contrato de respuesta recomendado
 

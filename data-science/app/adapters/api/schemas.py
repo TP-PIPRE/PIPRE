@@ -46,10 +46,19 @@ class RIA04Input(BaseModel):
 
 
 class RIA08Input(BaseModel):
-    attempts: int
-    errors: int
-    score: float
-    inactive_days: int
+    student_id: Optional[str] = None
+    student_name: Optional[str] = None
+    attempts: int = Field(ge=0)
+    errors: int = Field(ge=0)
+    score: float = Field(ge=0, le=100)
+    inactive_days: int = Field(ge=0)
+    completed_activities: int = Field(ge=0)
+    success_rate: Optional[float] = Field(default=None, ge=0, le=1)
+    help_requested: int = Field(ge=0)
+
+
+class RIA08BatchInput(BaseModel):
+    students: list[RIA08Input] = Field(min_length=1, max_length=500)
 
 
 class RIA10Input(BaseModel):
