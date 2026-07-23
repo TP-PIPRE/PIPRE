@@ -9,6 +9,10 @@ from app.adapters.api.schemas import (
     RIA02Response,
     RIA03Input,
     RIA04Input,
+    RIA07BatchInput,
+    RIA07BatchResponse,
+    RIA07Input,
+    RIA07Response,
     RIA08BatchInput,
     RIA08Input,
     RIA10Input,
@@ -26,6 +30,8 @@ from app.infrastructure.container import (
     create_ria03_service,
     create_ria04_model_repository,
     create_ria04_service,
+    create_ria07_model_repository,
+    create_ria07_service,
     create_ria08_model_repository,
     create_ria08_service,
     create_ria10_model_repository,
@@ -40,6 +46,7 @@ ria01_model_repository = create_ria01_model_repository()
 ria02_model_repository = create_ria02_model_repository()
 ria03_model_repository = create_ria03_model_repository()
 ria04_model_repository = create_ria04_model_repository()
+ria07_model_repository = create_ria07_model_repository()
 ria08_model_repository = create_ria08_model_repository()
 ria10_model_repository = create_ria10_model_repository()
 ria11_model_repository = create_ria11_model_repository()
@@ -47,6 +54,7 @@ ria01_service = create_ria01_service()
 ria02_service = create_ria02_service()
 ria03_service = create_ria03_service()
 ria04_service = create_ria04_service()
+ria07_service = create_ria07_service()
 ria08_service = create_ria08_service()
 ria10_service = create_ria10_service()
 ria11_service = create_ria11_service()
@@ -56,6 +64,7 @@ ML_SERVICES = {
     "ria02": ria02_service,
     "ria03": ria03_service,
     "ria04": ria04_service,
+    "ria07": ria07_service,
     "ria08": ria08_service,
     "ria10": ria10_service,
     "ria11": ria11_service,
@@ -123,6 +132,12 @@ RIA04_FEATURE_NAME_MAP = {
     "constraints": "constraints",
     "quantity": "quantity",
     "seed": "seed",
+}
+
+RIA07_FEATURE_NAME_MAP = {
+    "frecuencia_actividad": "activity_frequency",
+    "duracion_promedio_min": "average_session_minutes",
+    "dias_inactivo": "inactive_days",
 }
 
 RIA08_FEATURE_NAME_MAP = {
@@ -228,6 +243,16 @@ def to_ria04_model_input(data: RIA04Input):
     }
 
 
+def to_ria07_model_input(data: RIA07Input):
+    return {
+        "student_id": data.student_id,
+        "student_name": data.student_name,
+        "frecuencia_actividad": data.activity_frequency,
+        "duracion_promedio_min": data.average_session_minutes,
+        "dias_inactivo": data.inactive_days,
+    }
+
+
 def to_ria08_model_input(data: RIA08Input):
     return {
         "student_id": data.student_id,
@@ -309,6 +334,17 @@ def train_and_save_ria04(reason: str):
     ria04_model_repository.save(ria04_service.model)
 
     print("RIA04 generator initialized and saved")
+
+
+def train_and_save_ria07(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria07_service.train(df)
+    ria07_model_repository.save(ria07_service.model)
+
+    print("RIA07 model trained and saved")
 
 
 def train_and_save_ria08(reason: str):
@@ -448,6 +484,45 @@ def load_or_train_ria04():
         train_and_save_ria04("Training RIA04 model from scratch...")
 
 
+def load_or_train_ria07():
+    if ria07_model_repository.exists():
+        print("Loading existing RIA07 model...")
+
+        try:
+            loaded_model = ria07_model_repository.load()
+            expected_features = ria07_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_version = ria07_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+            expected_schema = ria07_service.model.FEATURE_SCHEMA_VERSION
+            loaded_schema = getattr(
+                loaded_model,
+                "feature_schema_version",
+                None,
+            )
+
+            if (
+                loaded_features != expected_features
+                or loaded_version != expected_version
+                or loaded_schema != expected_schema
+            ):
+                train_and_save_ria07(
+                    "Existing RIA07 model is incompatible. Retraining model..."
+                )
+            else:
+                ria07_service.set_model(loaded_model)
+                print("RIA07 model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria07(
+                "Could not load existing RIA07 model "
+                f"({type(exc).__name__}: {exc}). Retraining model..."
+            )
+
+    else:
+        train_and_save_ria07("Training RIA07 model from scratch...")
+
+
 def load_or_train_ria08():
     if ria08_model_repository.exists():
         print("Loading existing RIA08 model...")
@@ -536,6 +611,7 @@ async def lifespan(app: FastAPI):
     load_or_train_ria02()
     load_or_train_ria03()
     load_or_train_ria04()
+    load_or_train_ria07()
     load_or_train_ria08()
     load_or_train_ria10()
     load_or_train_ria11()
@@ -591,6 +667,19 @@ def recommend_ria03(data: RIA03Input):
 @app.post("/ria04/generate")
 def generate_ria04(data: RIA04Input):
     return ria04_service.predict(to_ria04_model_input(data))
+
+
+@app.post("/ria07/patterns", response_model=RIA07Response)
+def analyze_ria07(data: RIA07Input):
+    return ria07_service.predict(to_ria07_model_input(data))
+
+
+@app.post("/ria07/patterns/batch", response_model=RIA07BatchResponse)
+def analyze_batch_ria07(data: RIA07BatchInput):
+    return ria07_service.predict_batch([
+        to_ria07_model_input(student)
+        for student in data.students
+    ])
 
 
 @app.post("/ria08/anomaly")
@@ -696,6 +785,45 @@ def info_ria04():
         "metrics_note": (
             "RIA04 is a generator; evaluate format validity, block "
             "compatibility, executable test cases and teacher approval."
+        ),
+    }
+
+
+@app.get("/ria07/info")
+def info_ria07():
+    return {
+        "trained": ria07_service._trained,
+        "model": "RIA07 - Analisis de patrones",
+        "version": ria07_service.MODEL_VERSION,
+        "traceability": "CU-AN-03",
+        "technique": ria07_service.model.TECHNIQUE,
+        "features": [
+            RIA07_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria07_service.model.feature_columns
+        ] if ria07_service._trained else [],
+        "reference_cohort_used": True,
+        "individual_history_required": False,
+        "quality": ria07_service.model.quality_summary(),
+        "segments": (
+            list(ria07_service.model.segment_profiles.values())
+            if ria07_service._trained
+            else []
+        ),
+        "candidate_report": (
+            ria07_service.model.candidate_report
+            if ria07_service._trained
+            else []
+        ),
+        "training_warnings": ria07_service.model.training_warnings,
+        "training_diagnostics": ria07_service.model.training_diagnostics,
+        "training_period": ria07_service.model.training_period,
+        "model_run_id": ria07_service.model.model_run_id,
+        "trained_at": ria07_service.model.trained_at,
+        "feature_schema_version": (
+            ria07_service.model.feature_schema_version
+        ),
+        "training_only_code_usage": (
+            ria07_service.model.training_code_usage_summary
         ),
     }
 

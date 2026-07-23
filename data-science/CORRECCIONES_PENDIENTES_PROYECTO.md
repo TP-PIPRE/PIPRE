@@ -27,7 +27,7 @@ Escala de prioridad:
 | Frontend | Cypress E2E | No ejecutado; requiere aplicación y APIs disponibles. |
 | Backend | Lectura de `pom.xml` | XML válido, Java 21, 32 archivos de pruebas. |
 | Backend | Compilación/pruebas Maven | No ejecutadas: no hay JDK/`JAVA_HOME` disponible y `mvnw.cmd` falla antes de iniciar Maven. |
-| Data-science | `pytest` | 104/104 pruebas aprobadas, con 5 advertencias controladas de validación RIA01. |
+| Data-science | `pytest` | 144/144 pruebas aprobadas, con 5 advertencias controladas de validación RIA01. |
 | Data-science | `pip check` | Correcto, sin requisitos rotos. |
 | Data-science | Auditoría CVE | No disponible: `pip-audit` no está instalado. |
 | Docker Compose | Configuración base, local y base+override | Las tres combinaciones pasan `docker compose config --quiet`. |

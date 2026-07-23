@@ -51,6 +51,7 @@ es compatible.
 | RIA02 | Retroalimentacion automatica explicable con riesgo, razones, evidencia, pistas y contexto para IA. | `POST /ria02/feedback` |
 | RIA03 | Recomendacion de actividades con seleccion agrupada entre XGBoost jerarquico y multiclase. | `POST /ria03/recommend` |
 | RIA04 | Generacion inteligente de retos de programacion. | `POST /ria04/generate` |
+| RIA07 | Segmentacion explicable de frecuencia, duracion y continuidad mediante K-means. | `POST /ria07/patterns` y `/ria07/patterns/batch` |
 | RIA08 | Riesgo y anomalias sin historial temporal individual, usando una cohorte de referencia y alertas explicables. | `POST /ria08/early-warning` y `/ria08/early-warning/batch` |
 | RIA10 | Recomendacion pedagogica. | `POST /ria10/pedagogical` |
 | RIA11 | Clasificacion de tiempo. | `POST /ria11/time` |
@@ -104,3 +105,7 @@ data-science\venv\Scripts\python.exe -B scripts/demo_ria01.py
 Guia funcional y contrato de RIA08:
 
 - `RIA08_RIESGO_ANOMALIAS_GUIA.md`
+
+Guia funcional, contrato y vista docente de RIA07:
+
+- `RIA07_ANALISIS_PATRONES_GUIA.md`

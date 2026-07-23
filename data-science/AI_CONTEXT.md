@@ -31,6 +31,7 @@ proyecto.
 | RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion con reglas calibradas y devuelve riesgo, razones, evidencia, pistas y contexto para IA. |
 | RIA03 | `ria03_recomendador.py` | Compara XGBoost jerarquico/multiclase para recomendar basic, intermediate o advanced. |
 | RIA04 | `ria04_generador.py` | Genera borradores de retos con un sistema experto y reglas procedurales. |
+| RIA07 | `ria07_patrones.py` | Segmenta frecuencia, duracion y continuidad con K-means; bloques y codigo no se usan para asignar segmentos. |
 | RIA08 | `ria08_riesgo_anomalias.py` | Unifica riesgo y anomalias sin historial temporal individual, usando cohorte de referencia. |
 | RIA10 | `ria10_pedagogica.py` | Recomienda intervencion pedagogica. |
 | RIA11 | `ria11_tiempo.py` | Clasifica tiempo: short, medium, long. |
@@ -91,6 +92,8 @@ proyecto.
 - `POST /ria02/feedback`
 - `POST /ria03/recommend`
 - `POST /ria04/generate`
+- `POST /ria07/patterns`
+- `POST /ria07/patterns/batch`
 - `POST /ria08/anomaly`
 - `POST /ria08/early-warning`
 - `POST /ria08/early-warning/batch`

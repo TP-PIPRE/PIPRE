@@ -218,6 +218,18 @@ class AppResultados:
             metricas_texto = self.formatear_detalle(data["metricas_operativas"])
             self.crear_texto_lectura(box_metricas, metricas_texto)
 
+        elif data.get("calidad_clustering"):
+            box_calidad = tk.LabelFrame(
+                center_frame,
+                text="Qué tan claros son los grupos",
+                font=("Arial", 11, "bold"),
+            )
+            box_calidad.pack(pady=10, fill="x")
+            calidad_texto = self.formatear_detalle(
+                data["calidad_clustering"]
+            )
+            self.crear_texto_lectura(box_calidad, calidad_texto)
+
         else:
             # =========================
             #  MÉTRICAS

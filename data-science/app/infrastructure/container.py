@@ -2,6 +2,7 @@ from app.adapters.ml_models.ria01_desempeño import ClasificadorDesempeno
 from app.adapters.ml_models.ria02_feedback import RetroalimentacionAutomatica
 from app.adapters.ml_models.ria03_recomendador import RecomendadorActividades
 from app.adapters.ml_models.ria04_generador import GeneradorRetosProgramacion
+from app.adapters.ml_models.ria07_patrones import AnalizadorPatronesEstudiantiles
 from app.adapters.ml_models.ria08_riesgo_anomalias import DetectorRiesgoAnomalias
 from app.adapters.ml_models.ria10_pedagogica import RecomendadorPedagogico
 from app.adapters.ml_models.ria11_tiempo import ClasificadorTiempo
@@ -13,6 +14,7 @@ from app.application.services.ria01_service import RIA01Service
 from app.application.services.ria02_service import RIA02Service
 from app.application.services.ria03_service import RIA03Service
 from app.application.services.ria04_service import RIA04Service
+from app.application.services.ria07_service import RIA07Service
 from app.application.services.ria08_service import RIA08Service
 from app.application.services.ria10_service import RIA10Service
 from app.application.services.ria11_service import RIA11Service
@@ -22,6 +24,7 @@ from app.infrastructure.settings import (
     RIA02_MODEL_PATH,
     RIA03_MODEL_PATH,
     RIA04_MODEL_PATH,
+    RIA07_MODEL_PATH,
     RIA08_MODEL_PATH,
     RIA10_MODEL_PATH,
     RIA11_MODEL_PATH,
@@ -49,6 +52,10 @@ def create_ria04_model_repository():
     return JoblibModelRepository(RIA04_MODEL_PATH)
 
 
+def create_ria07_model_repository():
+    return JoblibModelRepository(RIA07_MODEL_PATH)
+
+
 def create_ria08_model_repository():
     return JoblibModelRepository(RIA08_MODEL_PATH)
 
@@ -71,6 +78,7 @@ def create_ui_model_repositories():
         "ria2": create_ria02_model_repository(),
         "ria3": create_ria03_model_repository(),
         "ria4": create_ria04_model_repository(),
+        "ria7": create_ria07_model_repository(),
         "ria8": create_ria08_model_repository(),
         "ria10": create_ria10_model_repository(),
         "ria11": create_ria11_model_repository(),
@@ -94,6 +102,10 @@ def create_ria04_service():
     return RIA04Service(GeneradorRetosProgramacion())
 
 
+def create_ria07_service():
+    return RIA07Service(AnalizadorPatronesEstudiantiles())
+
+
 def create_ria08_service():
     return RIA08Service(DetectorRiesgoAnomalias())
 
@@ -112,6 +124,7 @@ def create_pipeline():
         ria2=RetroalimentacionAutomatica(),
         ria3=RecomendadorActividades(),
         ria4=GeneradorRetosProgramacion(),
+        ria7=AnalizadorPatronesEstudiantiles(),
         ria8=DetectorRiesgoAnomalias(),
         ria10=RecomendadorPedagogico(),
         ria11=ClasificadorTiempo(),

@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 from app.application.metrics import round_metric
 
 RIA2_RESULT_LABELS = {
@@ -48,7 +51,18 @@ def obtener_importancias_modelo(modelo):
     return {}
 
 
-def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria10, ria11, ria12):
+def generar_resultados(
+    df,
+    ria1,
+    ria2,
+    ria3,
+    ria4,
+    ria7,
+    ria8,
+    ria10,
+    ria11,
+    ria12,
+):
 
     data = df.sample(1)
     ria4_input = {
@@ -63,6 +77,17 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria10, ria11, ria12):
     ria4_detalle = ria4.predict_detailed(ria4_input)
     ria2_input = construir_input_ria2(data)
     ria2_detalle = ria2.predict_detailed(ria2_input)
+    ria7_input = construir_input_ria7(data)
+    ria7_detalle = ria7.predict_detailed(ria7_input)
+    ria7_calidad = ria7.quality_summary()
+    ria7_estudiantes = predecir_lote_ria7(ria7, df)
+    ria7_segment_counts = {
+        segment_id: sum(
+            row["segment_id"] == segment_id
+            for row in ria7_estudiantes
+        )
+        for segment_id in ria7.segment_profiles
+    }
     ria10_detalle = ria10.predict_detailed(data)
     ria8_detalle = ria8.predict_detailed(data)
     ria8_estudiantes = ria8.predict_batch(df, sort_by_risk=True)
@@ -137,6 +162,52 @@ def generar_resultados(df, ria1, ria2, ria3, ria4, ria8, ria10, ria11, ria12):
             },
             "metricas_operativas": ria4_detalle["operational_metrics"],
             "input_data": ria4_input,
+        },
+
+        "RIA7 - Análisis de patrones": {
+            "resultado": ria7_detalle["segment_name"],
+            "detalle": {
+                "Resumen": ria7_detalle["teacher_summary"],
+                "Motivos principales": ria7_detalle["reasons"],
+                "Acción recomendada": {
+                    "Prioridad": {
+                        "high": "Alta",
+                        "medium": "Media",
+                        "low": "Baja",
+                    }.get(
+                        ria7_detalle["teacher_suggestion"]["priority"],
+                        ria7_detalle["teacher_suggestion"]["priority"],
+                    ),
+                    "Acción principal": (
+                        ria7_detalle["teacher_suggestion"]["title"]
+                    ),
+                    "Pasos sugeridos": (
+                        ria7_detalle["teacher_suggestion"]["actions"]
+                    ),
+                },
+                "Aviso": ria7_detalle["details"]["teacher_notice"],
+            },
+            "calidad_clustering": {
+                "Calidad de los grupos": ria7_calidad["quality_label"],
+                "Uso recomendado": ria7_calidad["recommended_use"],
+                "Grupos encontrados": ria7_calidad["selected_clusters"],
+            },
+            "resumen_segmentos": {
+                "conteos": ria7_segment_counts,
+                "perfiles": list(ria7.segment_profiles.values()),
+            },
+            "input_data": {
+                "Estudiante": ria7_detalle.get("student_id") or "Sin identificador",
+                "Actividades completadas": (
+                    ria7_detalle["feature_values"]["frecuencia_actividad"]
+                ),
+                "Duración promedio de sesión": (
+                    f"{ria7_detalle['feature_values']['duracion_promedio_min']:.1f} minutos"
+                ),
+                "Días sin actividad": (
+                    f"{ria7_detalle['feature_values']['dias_inactivo']:.1f}"
+                ),
+            },
         },
 
         "RIA8 - Riesgo y anomalías": {
@@ -319,3 +390,75 @@ def construir_input_ria2(data):
         "logical_level": logical_level,
         "activity_objective": "Resolver la actividad de programacion con pasos claros",
     }])
+
+
+def construir_input_ria7(data):
+    """
+    Adapta el resumen heredado de la UI al contrato canónico de RIA07.
+
+    La conversión queda en la frontera de integración para que el modelo no
+    confunda automáticamente conteos o sesiones individuales con agregados.
+    El repositorio de la UI garantiza que estas columnas son resúmenes por
+    estudiante dentro de la misma cohorte.
+    """
+    mappings = {
+        "frecuencia_actividad": "actividades_completadas",
+        "duracion_promedio_min": "tiempo_sesion_min",
+        "dias_inactivo": "dias_inactivo",
+    }
+    result = pd.DataFrame(index=data.index)
+
+    for canonical, legacy in mappings.items():
+        canonical_available = canonical in data.columns
+        legacy_available = legacy in data.columns
+        if not canonical_available and not legacy_available:
+            raise ValueError(
+                "La UI no puede construir la entrada RIA07. Falta "
+                f"'{canonical}' o su columna de resumen '{legacy}'."
+            )
+        if canonical_available and legacy_available and canonical != legacy:
+            canonical_values = pd.to_numeric(data[canonical], errors="coerce")
+            legacy_values = pd.to_numeric(data[legacy], errors="coerce")
+            comparable = canonical_values.notna() & legacy_values.notna()
+            contradictory = comparable & ~np.isclose(
+                canonical_values,
+                legacy_values,
+                rtol=1e-9,
+                atol=1e-9,
+            )
+            if contradictory.any():
+                rows = (
+                    np.flatnonzero(contradictory.to_numpy()) + 1
+                ).tolist()
+                raise ValueError(
+                    f"La UI recibió valores contradictorios entre '{canonical}' "
+                    f"y '{legacy}' en filas {rows}."
+                )
+        source_column = canonical if canonical_available else legacy
+        result[canonical] = data[source_column].to_numpy()
+
+    optional_identifiers = {
+        "student_id": ("student_id", "id_estudiante"),
+        "student_name": ("student_name", "nombre_estudiante"),
+    }
+    for output, candidates in optional_identifiers.items():
+        source_column = next(
+            (column for column in candidates if column in data.columns),
+            None,
+        )
+        if source_column is not None:
+            result[output] = data[source_column].to_numpy()
+
+    return result.reset_index(drop=True)
+
+
+def predecir_lote_ria7(ria7, data):
+    """Procesa cohortes de UI mayores al límite seguro de un solo lote."""
+    canonical = construir_input_ria7(data)
+    batch_size = ria7.max_batch_size
+    results = []
+    for start in range(0, len(canonical), batch_size):
+        results.extend(
+            ria7.predict_batch(canonical.iloc[start : start + batch_size])
+        )
+    return results

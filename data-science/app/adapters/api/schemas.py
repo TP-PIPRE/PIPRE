@@ -127,6 +127,119 @@ class RIA04Input(BaseModel):
     seed: Optional[int] = None
 
 
+class RIA07Input(BaseModel):
+    student_id: Optional[str] = Field(default=None, max_length=100)
+    student_name: Optional[str] = Field(default=None, max_length=200)
+    activity_frequency: float = Field(ge=0, le=10_000)
+    average_session_minutes: float = Field(ge=0, le=1_440)
+    inactive_days: float = Field(ge=0, le=365)
+
+
+class RIA07BatchInput(BaseModel):
+    students: list[RIA07Input] = Field(min_length=1, max_length=500)
+
+
+class RIA07ModelQuality(BaseModel):
+    quality_status: str
+    quality_label: str
+    quality_explanation: str
+    recommended_use: str
+    selected_clusters: int
+    silhouette: Optional[float] = None
+    davies_bouldin: Optional[float] = None
+    calinski_harabasz: Optional[float] = None
+    stability_ari: Optional[float] = None
+    stability_std: Optional[float] = None
+    stability_valid_iterations: int = 0
+    stability_method: str
+    active_features: list[str]
+    excluded_features: list[str]
+    model_run_id: Optional[str] = None
+    model_version: str
+    feature_schema_version: str
+    trained_at: Optional[str] = None
+    accuracy: Optional[float] = None
+    metrics_note: str
+
+
+class RIA07SegmentComparison(BaseModel):
+    metric_label: str
+    student_value: float
+    segment_center: float
+    difference: float
+    status: str
+    status_label: str
+    student_display: str
+    segment_display: str
+    message: str
+
+
+class RIA07AssignmentInterpretation(BaseModel):
+    level: str
+    label: str
+    explanation: str
+    technical_note: str
+
+
+class RIA07TeacherSuggestion(BaseModel):
+    priority: str
+    title: str
+    actions: list[str]
+
+
+class RIA07StudentResult(BaseModel):
+    student_id: Optional[str] = None
+    student_name: Optional[str] = None
+    model_run_id: str
+    model_version: str
+    feature_schema_version: str
+    trained_at: str
+    raw_cluster: int
+    profile_key: str
+    segment_id: str
+    segment_uid: str
+    segment_name: str
+    segment_description: str
+    assignment_typicality: float
+    assignment_margin: float
+    assignment_ambiguous: bool
+    nearest_cluster_distance: float
+    second_cluster_distance: float
+    segment_sample_size: int
+    typicality_reference_size: int
+    typicality_method: str
+    typicality_small_sample_warning: bool
+    out_of_distribution: bool
+    review_reasons: list[str]
+    assignment_interpretation: RIA07AssignmentInterpretation
+    requires_review: bool
+    teacher_summary: str
+    reasons: list[str]
+    feature_values: dict[str, float]
+    segment_comparison: dict[str, RIA07SegmentComparison]
+    teacher_suggestion: RIA07TeacherSuggestion
+    model_quality: RIA07ModelQuality
+    training_period: dict[str, object]
+    technical_details: dict[str, object]
+    details: dict[str, object]
+
+
+class RIA07Response(RIA07StudentResult):
+    result: str
+
+
+class RIA07BatchSummary(BaseModel):
+    total_students: int
+    segment_counts: dict[str, int]
+    segments: list[dict[str, object]]
+    model_quality: RIA07ModelQuality
+
+
+class RIA07BatchResponse(BaseModel):
+    summary: RIA07BatchSummary
+    students: list[RIA07StudentResult]
+
+
 class RIA08Input(BaseModel):
     student_id: Optional[str] = None
     student_name: Optional[str] = None
