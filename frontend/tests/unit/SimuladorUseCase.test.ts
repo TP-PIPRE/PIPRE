@@ -3,9 +3,14 @@ import { SimuladorUseCase } from "../../src/application/usecases/SimuladorUseCas
 
 vi.mock("../../src/infrastructure/api/apiService", () => ({
   apiService: {
-    simulations: {
-      getByUser: vi.fn(),
-      postResult: vi.fn(),
+    modules: {
+      getByCourse: vi.fn(),
+    },
+    lessons: {
+      getByModule: vi.fn(),
+    },
+    activities: {
+      getByLesson: vi.fn(),
     },
     results: {
       postResult: vi.fn(),
@@ -13,12 +18,7 @@ vi.mock("../../src/infrastructure/api/apiService", () => ({
   },
 }));
 
-vi.mock("../../src/infrastructure/store/authStore", () => ({
-  getAuthState: vi.fn(),
-}));
-
 const { apiService } = await import("../../src/infrastructure/api/apiService");
-const { getAuthState } = await import("../../src/infrastructure/store/authStore");
 
 describe("SimuladorUseCase", () => {
   let useCase: SimuladorUseCase;
@@ -30,44 +30,39 @@ describe("SimuladorUseCase", () => {
   });
 
   describe("loadChallengesByCourse()", () => {
-    it("usa userId desde getAuthState y deduplica por id_activity", async () => {
-      vi.mocked(getAuthState).mockReturnValue({
-        user: { id: "user-123", name: "Test", email: "test@test.com", role: "student" },
-        token: "token",
-      });
-
-      vi.mocked(apiService.simulations.getByUser).mockResolvedValue([
-        { id_simulation: "S1", result: JSON.stringify({ id_activity: "A1", title: "Reto 1", courseId: "C1", type: "challenge" }) },
-        { id_simulation: "S2", result: JSON.stringify({ id_activity: "A1", title: "Reto 1 actualizado", courseId: "C1", type: "challenge" }) },
-        { id_simulation: "S3", result: JSON.stringify({ id_activity: "A2", title: "Reto 2", courseId: "C1", type: "challenge" }) },
+    it("carga módulos, lecciones y actividades de robótica del curso", async () => {
+      vi.mocked(apiService.modules.getByCourse).mockResolvedValue([
+        { idModule: "M1", name: "Módulo 1", idCourse: "C1" },
+      ]);
+      vi.mocked(apiService.lessons.getByModule).mockResolvedValue([
+        { idLesson: "L1", name: "Lección 1", idModule: "M1" },
+      ]);
+      vi.mocked(apiService.activities.getByLesson).mockResolvedValue([
+        { idActivity: "A1", name: "Reto 1", idLesson: "L1", type: "robotics", difficulty: "EASY", environment: "battle" },
+        { idActivity: "A2", name: "Reto 2", idLesson: "L1", type: "robotics", difficulty: "MEDIUM", environment: "maze" },
+        { idActivity: "A3", name: "Lectura", idLesson: "L1", type: "reading" },
       ]);
 
       const challenges = await useCase.loadChallengesByCourse("C1");
 
-      expect(apiService.simulations.getByUser).toHaveBeenCalledWith("user-123");
-      // Should deduplicate by id_activity, keeping latest (S2 for A1)
+      expect(apiService.modules.getByCourse).toHaveBeenCalledWith("C1");
+      expect(apiService.lessons.getByModule).toHaveBeenCalledWith("M1");
+      expect(apiService.activities.getByLesson).toHaveBeenCalledWith("L1");
       expect(challenges).toHaveLength(2);
       const a1Challenge = challenges.find((c) => c.id === "A1");
       expect(a1Challenge).toBeDefined();
-      expect(a1Challenge?.id).toBe("A1");
+      expect(a1Challenge?.idCourse).toBe("C1");
     });
 
-    it("retorna array vacío si no hay simulaciones", async () => {
-      vi.mocked(getAuthState).mockReturnValue({
-        user: { id: "user-123", name: "Test", email: "t@t.com", role: "student" },
-        token: "t",
-      });
-      vi.mocked(apiService.simulations.getByUser).mockResolvedValue([]);
+    it("retorna array vacío si no hay módulos", async () => {
+      vi.mocked(apiService.modules.getByCourse).mockResolvedValue([]);
 
       const challenges = await useCase.loadChallengesByCourse("C1");
       expect(challenges).toEqual([]);
     });
 
-    it("retorna array vacío si el usuario no tiene ID", async () => {
-      vi.mocked(getAuthState).mockReturnValue({
-        user: null,
-        token: "",
-      });
+    it("retorna array vacío si la API falla", async () => {
+      vi.mocked(apiService.modules.getByCourse).mockRejectedValue(new Error("API caída"));
 
       const challenges = await useCase.loadChallengesByCourse("C1");
       expect(challenges).toEqual([]);
