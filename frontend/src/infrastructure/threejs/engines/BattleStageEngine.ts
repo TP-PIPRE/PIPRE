@@ -1,14 +1,19 @@
 import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
+import { EffectComposer } from "postprocessing";
 import { BattleBotBuilder } from "../shared/BattleBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
 import { createSceneWithCamera, createShadowFloor, createGrid, createStarfield } from "../shared/SceneUtils";
+import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
+import { soundManager } from "../shared/SoundManager";
+import { GhostPreview } from "../shared/GhostPreview";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 
 export class BattleStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
+  private composer!: EffectComposer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof BattleBotBuilder.create>;
   private ultrasonicCone: THREE.Mesh;
@@ -19,6 +24,7 @@ export class BattleStageEngine implements ISimulatorEngine {
   private isRunning = false;
   private enemies: THREE.Mesh[] = [];
   private score = 0;
+  private ghostPreview!: GhostPreview;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -75,6 +81,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
     this.particles = new ParticleSystem(this.scene);
+    this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
   }
 
@@ -213,6 +220,8 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
 
+    this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.battle);
+
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
@@ -274,6 +283,8 @@ export class BattleStageEngine implements ISimulatorEngine {
   dispose() {
     this.isRunning = false;
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
+    this.composer.dispose();
+    this.ghostPreview.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -282,6 +293,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.composer.setSize(width, height);
   }
 
   private startLoop() {
@@ -301,22 +313,27 @@ export class BattleStageEngine implements ISimulatorEngine {
       // Enemy hover animation
       this.enemies.forEach((e, i) => {
         e.position.y = 0.75 + Math.sin(Date.now() * 0.003 + i) * 0.1;
+        e.rotation.y += 0.01 * Math.sin(Date.now() * 0.002 + i);
       });
 
-      this.renderer.render(this.scene, this.camera);
+      this.ghostPreview.animate(Date.now() * 0.001);
+      this.composer.render();
     };
     animate();
   }
 
   async moveForward(distance: number, duration: number): Promise<void> {
+    soundManager.play("move");
     return this.animatePosition(distance, duration, false);
   }
 
   async rotateCore(degrees: number, duration: number): Promise<void> {
+    soundManager.play("rotate");
     return this.animateRotation(degrees, duration);
   }
 
   async triggerUltrasonicSensor(duration: number): Promise<number> {
+    soundManager.play("scan");
     return new Promise((resolve) => {
       let elapsed = 0;
       const animate = (delta: number) => {
@@ -337,6 +354,7 @@ export class BattleStageEngine implements ISimulatorEngine {
   }
 
   async attack(_power: number, duration: number): Promise<void> {
+    soundManager.play("attack");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "attack");
     if (this.botParts.cannon.visible) {
       const tip = this.botParts.cannon.children[2];
@@ -355,8 +373,13 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.triggerParticles(enemy.position.x, enemy.position.z, "collision");
         (enemy.material as THREE.MeshStandardMaterial).transparent = true;
         (enemy.material as THREE.MeshStandardMaterial).opacity = 0.5;
+        const origEmissive = (enemy.material as THREE.MeshStandardMaterial).emissive.getHex();
         (enemy.material as THREE.MeshStandardMaterial).emissive.set("#ffffff");
-        (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 1;
+        (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5;
+        setTimeout(() => {
+          (enemy.material as THREE.MeshStandardMaterial).emissive.setHex(origEmissive);
+          (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.4;
+        }, 150);
         this.score += 100;
       }
     }
@@ -364,6 +387,7 @@ export class BattleStageEngine implements ISimulatorEngine {
   }
 
   async activateShield(duration: number): Promise<void> {
+    soundManager.play("shield");
     const shield = new THREE.Mesh(
       new THREE.SphereGeometry(2.2, 20, 20),
       new THREE.MeshBasicMaterial({
@@ -388,6 +412,7 @@ export class BattleStageEngine implements ISimulatorEngine {
   }
 
   async scan(duration: number): Promise<number> {
+    soundManager.play("scan");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "scan");
     const count = this.enemies.filter((e) => {
       const mat = e.material as THREE.MeshStandardMaterial;
@@ -397,6 +422,7 @@ export class BattleStageEngine implements ISimulatorEngine {
   }
 
   async strike(duration: number): Promise<void> {
+    soundManager.play("attack");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "attack");
     if (this.botParts.hacha.visible) {
       const blade = this.botParts.hacha.children[1] as THREE.Mesh;
@@ -411,6 +437,13 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.triggerParticles(enemy.position.x, enemy.position.z, "collision");
         (enemy.material as THREE.MeshStandardMaterial).transparent = true;
         (enemy.material as THREE.MeshStandardMaterial).opacity = 0.5;
+        const origEmissive = (enemy.material as THREE.MeshStandardMaterial).emissive.getHex();
+        (enemy.material as THREE.MeshStandardMaterial).emissive.set("#ffffff");
+        (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5;
+        setTimeout(() => {
+          (enemy.material as THREE.MeshStandardMaterial).emissive.setHex(origEmissive);
+          (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.4;
+        }, 150);
         this.score += 150;
       }
     }
@@ -478,5 +511,30 @@ export class BattleStageEngine implements ISimulatorEngine {
       this.clock.getDelta();
       animate(0);
     });
+  }
+
+  getBotPosition(): { x: number; z: number; rotation: number } {
+    return {
+      x: this.botGroup.position.x,
+      z: this.botGroup.position.z,
+      rotation: this.botGroup.rotation.y,
+    };
+  }
+
+  showPathPreview(waypoints: Array<{ x: number; z: number; y?: number }>): void {
+    this.ghostPreview.showPath(waypoints);
+  }
+
+  showRotationPreview(angle: number): void {
+    const pos = this.botGroup.position;
+    this.ghostPreview.showRotationArc(pos, this.botGroup.rotation.y, angle);
+  }
+
+  showMarkerPreview(x: number, z: number, color?: string): void {
+    this.ghostPreview.showSingleMarker(x, z, color);
+  }
+
+  clearPreview(): void {
+    this.ghostPreview.clear();
   }
 }

@@ -205,6 +205,12 @@ h4 { font-size: 1.125rem; }
   50% { transform: translateY(-3px); }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-4px); }
+  30%, 70% { transform: translateX(4px); }
+}
+
 .animate-fade-in-soft {
   animation: fade-in-soft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -215,6 +221,10 @@ h4 { font-size: 1.125rem; }
 
 .animate-bounce-soft {
   animation: bounce-soft 2s infinite ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @theme inline {

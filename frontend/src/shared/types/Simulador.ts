@@ -1,4 +1,4 @@
-export type BlockCategory = 'event' | 'action' | 'condition' | 'loop';
+export type BlockCategory = 'event' | 'action' | 'condition' | 'loop' | 'variable';
 
 export type EnvironmentType = 'battle' | 'space' | 'maze' | 'obstacle';
 

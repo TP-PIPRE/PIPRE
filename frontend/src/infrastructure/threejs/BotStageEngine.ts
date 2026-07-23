@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
+import { EffectComposer } from "postprocessing";
 import type { ISimulatorEngine } from "../ports/ISimulatorEngine";
 import { MathAnimationEngine } from "./animations/MathAnimationEngine";
 import { robotComponentFactory, type RobotComponent } from "./factories/RobotComponentFactory";
@@ -10,6 +11,9 @@ import {
   createStarfield,
   createGlowRing,
 } from "./shared/SceneUtils";
+import { createEffectComposer, BLOOM_PRESETS } from "./shared/EffectComposerSetup";
+import { soundManager } from "./shared/SoundManager";
+import { GhostPreview } from "./shared/GhostPreview";
 
 export class BotStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -18,6 +22,11 @@ export class BotStageEngine implements ISimulatorEngine {
   private botGroup: THREE.Group;
   private ultrasonicCone: THREE.Mesh;
   private coreGlow!: THREE.Mesh;
+  private composer!: EffectComposer;
+  private visor!: THREE.Mesh;
+  private antenna!: THREE.Mesh;
+  private antennaBall!: THREE.Mesh;
+  private wheels: THREE.Mesh[] = [];
 
   private animationId: number | null = null;
   private clock: THREE.Clock;
@@ -27,6 +36,7 @@ export class BotStageEngine implements ISimulatorEngine {
   private isRunning: boolean = false;
   private animationEngine: MathAnimationEngine;
   private installedComponents: Map<string, RobotComponent> = new Map();
+  private ghostPreview!: GhostPreview;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -62,6 +72,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.ultrasonicCone = this.createUltrasonicCone();
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
+    this.ghostPreview = new GhostPreview(this.scene);
   }
 
   private createEnvironmentDecorations(): void {
@@ -183,6 +194,7 @@ export class BotStageEngine implements ISimulatorEngine {
         wheel.position.set(side * 1.35, -0.1, zOff * 1.1);
         wheel.castShadow = true;
         group.add(wheel);
+        this.wheels.push(wheel);
 
         const hubGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.22, 8);
         const hubMat = new THREE.MeshStandardMaterial({
@@ -218,9 +230,9 @@ export class BotStageEngine implements ISimulatorEngine {
       emissive: "#00f5d4",
       emissiveIntensity: 0.7,
     });
-    const visor = new THREE.Mesh(visorGeo, visorMat);
-    visor.position.set(0, 1.15, -0.93);
-    group.add(visor);
+    this.visor = new THREE.Mesh(visorGeo, visorMat);
+    this.visor.position.set(0, 1.15, -0.93);
+    group.add(this.visor);
 
     // Antenna
     const antennaGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6);
@@ -229,14 +241,14 @@ export class BotStageEngine implements ISimulatorEngine {
       roughness: 0.3,
       metalness: 0.5,
     });
-    const antenna = new THREE.Mesh(antennaGeo, antennaMat);
-    antenna.position.set(0.25, 1.55, -0.6);
-    group.add(antenna);
+    this.antenna = new THREE.Mesh(antennaGeo, antennaMat);
+    this.antenna.position.set(0.25, 1.55, -0.6);
+    group.add(this.antenna);
 
     const antennaBallGeo = new THREE.SphereGeometry(0.07, 8, 8);
-    const antennaBall = new THREE.Mesh(antennaBallGeo, visorMat.clone());
-    antennaBall.position.set(0.25, 1.82, -0.6);
-    group.add(antennaBall);
+    this.antennaBall = new THREE.Mesh(antennaBallGeo, visorMat.clone());
+    this.antennaBall.position.set(0.25, 1.82, -0.6);
+    group.add(this.antennaBall);
 
     // Power core on chest
     const coreGeo = new THREE.CylinderGeometry(0.3, 0.35, 0.18, 16);
@@ -299,6 +311,8 @@ export class BotStageEngine implements ISimulatorEngine {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
+
+    this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.default);
 
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -390,6 +404,8 @@ export class BotStageEngine implements ISimulatorEngine {
       cancelAnimationFrame(this.animationId);
     }
     this.animationEngine.dispose();
+    this.composer.dispose();
+    this.ghostPreview.dispose();
     this.renderer.dispose();
   }
 
@@ -397,6 +413,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.composer.setSize(width, height);
   }
 
   private startLoop(): void {
@@ -418,6 +435,16 @@ export class BotStageEngine implements ISimulatorEngine {
         // Subtle core pulse
         const pulse = 0.5 + Math.sin(idleTime * 2.5) * 0.15;
         (this.coreGlow.material as THREE.MeshStandardMaterial).emissiveIntensity = pulse;
+
+        // Oscillate antenna ball
+        if (this.antennaBall) {
+          this.antennaBall.scale.setScalar(0.8 + Math.sin(idleTime * 3) * 0.2);
+        }
+
+        // Idle wheel rotation
+        for (const wheel of this.wheels) {
+          wheel.rotation.x += 0.002;
+        }
       }
 
       // Rotate center crystal
@@ -431,12 +458,15 @@ export class BotStageEngine implements ISimulatorEngine {
       this.starfield.rotation.y += 0.0003;
 
       if (this.controls) this.controls.update();
-      this.renderer.render(this.scene, this.camera);
+      this.ghostPreview.animate(Date.now() * 0.001);
+      this.composer.render();
     };
     animate();
   }
 
   public async moveForward(distance: number, duration: number): Promise<void> {
+    soundManager.play("move");
+    this.updateVisorExpression("excited");
     return new Promise((resolve) => {
       const startPos = this.botGroup.position.clone();
       const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
@@ -467,6 +497,7 @@ export class BotStageEngine implements ISimulatorEngine {
         },
         () => {
           clearInterval(spinInterval);
+          this.updateVisorExpression("idle");
           resolve();
         }
       );
@@ -474,6 +505,7 @@ export class BotStageEngine implements ISimulatorEngine {
   }
 
   public async rotateCore(degrees: number, duration: number): Promise<void> {
+    soundManager.play("rotate");
     return new Promise((resolve) => {
       const startRot = this.botGroup.rotation.y;
       const endRot = startRot + (degrees * Math.PI) / 180;
@@ -493,6 +525,7 @@ export class BotStageEngine implements ISimulatorEngine {
   }
 
   public async triggerUltrasonicSensor(duration: number): Promise<number> {
+    soundManager.play("scan");
     return new Promise((resolve) => {
       let elapsed = 0;
 
@@ -609,13 +642,28 @@ export class BotStageEngine implements ISimulatorEngine {
     animateParticles();
   }
 
+  private updateVisorExpression(expression: "idle" | "happy" | "angry" | "sad" | "excited") {
+    if (!this.visor) return;
+    const colors: Record<string, string> = {
+      idle: "#00f5d4", happy: "#22c55e", angry: "#ef4444", sad: "#f97316", excited: "#818cf8"
+    };
+    const color = colors[expression] || colors.idle;
+    const mat = this.visor.material as THREE.MeshStandardMaterial;
+    mat.color.set(color);
+    mat.emissive.set(color);
+    mat.emissiveIntensity = expression === "idle" ? 0.7 : 1.2;
+  }
+
   public reset(): void {
     this.botGroup.position.set(0, 0, 0);
     this.botGroup.rotation.set(0, 0, 0);
     this.animationEngine.cancelAll();
+    this.updateVisorExpression("idle");
   }
 
   public async attack(_power: number, duration: number): Promise<void> {
+    soundManager.play("attack");
+    this.updateVisorExpression("angry");
     return new Promise((resolve) => {
       const mat = this.coreGlow.material as THREE.MeshStandardMaterial;
       const originalIntensity = mat.emissiveIntensity;
@@ -627,12 +675,14 @@ export class BotStageEngine implements ISimulatorEngine {
         mat.emissiveIntensity = originalIntensity;
         mat.color.set("#00f5d4");
         mat.emissive.set("#00f5d4");
+        this.updateVisorExpression("idle");
         resolve();
       }, duration);
     });
   }
 
   public async activateShield(duration: number): Promise<void> {
+    soundManager.play("shield");
     return new Promise((resolve) => {
       const shieldGeo = new THREE.SphereGeometry(2.2, 24, 24);
       const shieldMat = new THREE.MeshBasicMaterial({
@@ -667,6 +717,7 @@ export class BotStageEngine implements ISimulatorEngine {
   }
 
   public async takeOff(altitude: number, duration: number): Promise<void> {
+    soundManager.play("takeoff");
     return new Promise((resolve) => {
       const startPos = this.botGroup.position.clone();
       const endPos = new THREE.Vector3(startPos.x, altitude / 10, startPos.z);
@@ -683,6 +734,7 @@ export class BotStageEngine implements ISimulatorEngine {
   }
 
   public async land(duration: number): Promise<void> {
+    soundManager.play("land");
     return new Promise((resolve) => {
       const startPos = this.botGroup.position.clone();
       const endPos = new THREE.Vector3(startPos.x, 0, startPos.z);
@@ -699,14 +751,86 @@ export class BotStageEngine implements ISimulatorEngine {
   }
 
   public async collect(duration: number): Promise<void> {
+    soundManager.play("collect");
+    this.updateVisorExpression("happy");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "success");
     return new Promise((resolve) => setTimeout(resolve, duration));
   }
 
   public async scan(duration: number): Promise<number> {
+    soundManager.play("scan");
     return new Promise((resolve) => {
       this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "scan");
       setTimeout(() => resolve(Math.floor(Math.random() * 100)), duration);
     });
+  }
+
+  getBotPosition(): { x: number; z: number; rotation: number } {
+    return {
+      x: this.botGroup.position.x,
+      z: this.botGroup.position.z,
+      rotation: this.botGroup.rotation.y,
+    };
+  }
+
+  showPathPreview(waypoints: Array<{ x: number; z: number; y?: number }>): void {
+    this.ghostPreview.showPath(waypoints);
+  }
+
+  showRotationPreview(angle: number): void {
+    const pos = this.botGroup.position;
+    this.ghostPreview.showRotationArc(pos, this.botGroup.rotation.y, angle);
+  }
+
+  showMarkerPreview(x: number, z: number, color?: string): void {
+    this.ghostPreview.showSingleMarker(x, z, color);
+  }
+
+  clearPreview(): void {
+    this.ghostPreview.clear();
+  }
+
+  showCounter(value: number): void {
+    if (!this.scene) return;
+    const existingLabel = this.scene.getObjectByName("counter_label");
+    if (existingLabel) {
+      this.scene.remove(existingLabel);
+    }
+
+    if (value === 0) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 64;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.fillStyle = "#00f5d4";
+    ctx.font = "bold 40px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(value.toString(), 64, 44);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.copy(this.botGroup.position);
+    sprite.position.y += 2.5;
+    sprite.scale.set(1.5, 0.75, 1);
+    sprite.name = "counter_label";
+    this.scene.add(sprite);
+
+    setTimeout(() => {
+      if (sprite.parent) {
+        this.scene.remove(sprite);
+        spriteMat.dispose();
+        texture.dispose();
+      }
+    }, 2000);
   }
 }

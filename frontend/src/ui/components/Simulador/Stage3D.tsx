@@ -32,7 +32,7 @@ const ENV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 export const Stage3D = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineInstanceRef = useRef<ISimulatorEngine | null>(null);
-  const { engineRef, isRunning, installedHardware, currentTheme, environment, energy } =
+  const { engineRef, isRunning, installedHardware, currentTheme, environment, energy, missions, currentMissionIndex } =
     useSimulador();
 
   const config = ENVIRONMENT_CONFIGS[environment];
@@ -105,6 +105,11 @@ export const Stage3D = () => {
               <EnvIcon className="text-sm text-accent animate-pulse" />
               <span>Mundo: {config?.name || "Aventura"}</span>
             </div>
+            {missions.length > 0 && (
+              <div className="text-[10px] text-text-muted mt-1 font-medium">
+                Mision {currentMissionIndex + 1}/{missions.length}: {missions[currentMissionIndex]?.title || ""}
+              </div>
+            )}
             <div className="text-[11px] text-text-muted leading-tight">
               Arrastra para mover la camara &bull; Rueda para zoom
             </div>

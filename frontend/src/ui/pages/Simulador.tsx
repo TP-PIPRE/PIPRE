@@ -163,6 +163,10 @@ const SimuladorInner = () => {
     missions,
     score,
     energy,
+    executionSpeed,
+    setExecutionSpeed,
+    isStepMode,
+    setStepMode,
   } = useSimulador();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [showChallengeList, setShowChallengeList] = useState(false);
@@ -441,6 +445,33 @@ const SimuladorInner = () => {
                   className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 transition-colors rounded-xl disabled:opacity-30"
                 >
                   <BsDiagram3Fill className="text-sm" /> Diagrama
+                </button>
+              </div>
+
+              {/* Speed control */}
+              <div className="w-px h-7 bg-border mx-1" />
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-text-muted font-bold whitespace-nowrap">Velocidad</span>
+                <input
+                  type="range"
+                  min="50"
+                  max="800"
+                  step="50"
+                  value={executionSpeed}
+                  onChange={(e) => setExecutionSpeed(parseInt(e.target.value))}
+                  className="w-20 h-1.5 accent-primary cursor-pointer"
+                  disabled={isRunning}
+                />
+                <button
+                  onClick={() => setStepMode(!isStepMode)}
+                  disabled={isRunning && !isStepMode}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all ${
+                    isStepMode
+                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/25"
+                      : "border border-border text-text-muted hover:border-primary/40"
+                  } disabled:opacity-30`}
+                >
+                  Paso a paso
                 </button>
               </div>
 

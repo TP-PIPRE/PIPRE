@@ -9,11 +9,16 @@ import {
   createStarfield,
 } from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
+import { EffectComposer } from "postprocessing";
+import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
+import { soundManager } from "../shared/SoundManager";
+import { GhostPreview } from "../shared/GhostPreview";
 
 export class SpaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
+  private composer!: EffectComposer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof SpaceBotBuilder.create>;
   private ultrasonicCone: THREE.Mesh;
@@ -24,6 +29,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private isRunning = false;
   private collectedSamples = 0;
   private sampleMeshes: THREE.Mesh[] = [];
+  private ghostPreview!: GhostPreview;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -54,6 +60,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
     this.particles = new ParticleSystem(this.scene);
+    this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
   }
 
@@ -125,6 +132,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.space);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
@@ -176,6 +184,8 @@ export class SpaceStageEngine implements ISimulatorEngine {
   dispose() {
     this.isRunning = false;
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
+    this.composer.dispose();
+    this.ghostPreview.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -184,6 +194,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.composer.setSize(width, height);
   }
 
   private startLoop() {
@@ -206,20 +217,24 @@ export class SpaceStageEngine implements ISimulatorEngine {
           sample.position.y = (sample.userData.origY as number) + Math.sin(Date.now() * 0.002 + i) * 0.15;
         }
       });
-      this.renderer.render(this.scene, this.camera);
+      this.ghostPreview.animate(Date.now() * 0.001);
+      this.composer.render();
     };
     animate();
   }
 
   async moveForward(distance: number, duration: number): Promise<void> {
+    soundManager.play("move");
     return this.animatePosition(distance, duration);
   }
 
   async rotateCore(degrees: number, duration: number): Promise<void> {
+    soundManager.play("rotate");
     return this.animateRotation(degrees, duration);
   }
 
   async triggerUltrasonicSensor(duration: number): Promise<number> {
+    soundManager.play("scan");
     return new Promise((resolve) => {
       let elapsed = 0;
       const animate = (delta: number) => {
@@ -239,6 +254,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   async takeOff(altitude: number, duration: number): Promise<void> {
+    soundManager.play("takeoff");
     return new Promise((resolve) => {
       const startY = this.botGroup.position.y;
       const endY = startY + altitude / 15;
@@ -261,6 +277,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   async land(duration: number): Promise<void> {
+    soundManager.play("land");
     return new Promise((resolve) => {
       const startY = this.botGroup.position.y;
       const endY = 0;
@@ -283,6 +300,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   async collect(duration: number): Promise<void> {
+    soundManager.play("collect");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "success");
     // Check for nearby samples
     for (const sample of this.sampleMeshes) {
@@ -299,6 +317,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   async analyze(duration: number): Promise<string> {
+    soundManager.play("scan");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "scan");
     const compositions = ["Rocoso (Basalto)", "Arenoso (Regolito)", "Helado (H2O)", "Metálico (Fe-Ni)", "Orgánico (Carbono)"];
     return new Promise((resolve) => {
@@ -307,6 +326,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   async drill(duration: number): Promise<void> {
+    soundManager.play("attack");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "attack");
     if (this.botParts.drill.visible) {
       const bit = this.botParts.drill.children[1] as THREE.Mesh;
@@ -378,5 +398,30 @@ export class SpaceStageEngine implements ISimulatorEngine {
       this.getDelta();
       animate(0);
     });
+  }
+
+  getBotPosition(): { x: number; z: number; rotation: number } {
+    return {
+      x: this.botGroup.position.x,
+      z: this.botGroup.position.z,
+      rotation: this.botGroup.rotation.y,
+    };
+  }
+
+  showPathPreview(waypoints: Array<{ x: number; z: number; y?: number }>): void {
+    this.ghostPreview.showPath(waypoints);
+  }
+
+  showRotationPreview(angle: number): void {
+    const pos = this.botGroup.position;
+    this.ghostPreview.showRotationArc(pos, this.botGroup.rotation.y, angle);
+  }
+
+  showMarkerPreview(x: number, z: number, color?: string): void {
+    this.ghostPreview.showSingleMarker(x, z, color);
+  }
+
+  clearPreview(): void {
+    this.ghostPreview.clear();
   }
 }

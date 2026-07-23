@@ -27,6 +27,14 @@ export interface ISimulatorEngine {
   stop(): void;
   reset(): void;
 
+  // Ghost preview (for workspace hover feedback)
+  getBotPosition?(): { x: number; z: number; rotation: number };
+  showPathPreview?(waypoints: Array<{ x: number; z: number; y?: number }>): void;
+  showRotationPreview?(angle: number): void;
+  showMarkerPreview?(x: number, z: number, color?: string): void;
+  clearPreview?(): void;
+  showCounter?(value: number): void;
+
   // Acciones específicas por entorno (opcionales)
   attack?(power: number, duration: number): Promise<void>;
   activateShield?(duration: number): Promise<void>;

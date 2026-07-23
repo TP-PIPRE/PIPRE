@@ -47,6 +47,9 @@ importers:
       mermaid:
         specifier: ^11.15.0
         version: 11.15.0
+      postprocessing:
+        specifier: ^6.39.3
+        version: 6.39.3(three@0.184.0)
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -3136,6 +3139,11 @@ packages:
 
   postprocessing@6.39.2:
     resolution: {integrity: sha512-AxPY+xFyVOsz+8bbHSyQBoOK4AUqSQspTXXIsNcKhmGJRm/afHRAwZ8bKC02AeSPII0PW6lbCN84SgAoWFsKKA==}
+    peerDependencies:
+      three: '>= 0.168.0 < 0.186.0'
+
+  postprocessing@6.39.3:
+    resolution: {integrity: sha512-h5H1iuN96aRkU06CzJ8d/FqFe3Qs2bI7LiGHTzOI5T5mQqjzovi2t1EkRHb8qkHgoD9cTJDb4uA30AkSxsFB7A==}
     peerDependencies:
       three: '>= 0.168.0 < 0.186.0'
 
@@ -7060,6 +7068,10 @@ snapshots:
       source-map-js: 1.2.1
 
   postprocessing@6.39.2(three@0.184.0):
+    dependencies:
+      three: 0.184.0
+
+  postprocessing@6.39.3(three@0.184.0):
     dependencies:
       three: 0.184.0
 

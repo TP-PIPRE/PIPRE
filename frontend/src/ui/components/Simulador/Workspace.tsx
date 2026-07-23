@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useSimulador } from "../../../application/context/SimuladorProvider";
 import type { Block, BlockCategory } from "../../../shared/types/Simulador";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
@@ -13,6 +13,8 @@ import {
   BsXLg,
   BsBraces,
   BsLightningFill,
+  BsExclamationTriangleFill,
+  BsHash,
 } from "react-icons/bs";
 
 const CATEGORY_COLORS: Record<BlockCategory, string> = {
@@ -20,6 +22,7 @@ const CATEGORY_COLORS: Record<BlockCategory, string> = {
   action: "#94a3b8",
   condition: "#818cf8",
   loop: "#f97316",
+  variable: "#22c55e",
 };
 
 const CATEGORY_ICONS: Record<BlockCategory, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -27,6 +30,7 @@ const CATEGORY_ICONS: Record<BlockCategory, React.ComponentType<{ className?: st
   action: BsArrowRight,
   condition: BsCheckCircleFill,
   loop: BsArrowRepeat,
+  variable: BsHash,
 };
 
 export const Workspace = () => {
@@ -39,8 +43,76 @@ export const Workspace = () => {
     addChildBlock,
     removeChildBlock,
     currentBlockId,
+    blockError,
+    clearBlockError,
+    installedHardware,
+    engineRef,
   } = useSimulador();
   const config = ENVIRONMENT_CONFIGS[environment];
+
+  const calculatePathPreview = useCallback(
+    (hoveredBlock: Block): Array<{ x: number; z: number; y?: number }> => {
+      const engine = engineRef.current;
+      if (!engine?.getBotPosition) return [];
+
+      const { x, z, rotation } = engine.getBotPosition();
+      const waypoints: Array<{ x: number; z: number; y?: number }> = [{ x, z }];
+
+      let currentX = x;
+      let currentZ = z;
+      let currentRot = rotation;
+
+      for (const block of blocks) {
+        if (
+          block.type === "mover_ruedas" ||
+          block.type === "avanzar" ||
+          block.type === "desplazarse"
+        ) {
+          const dist = parseFloat(block.params.distancia || "30") / 10;
+          currentX += Math.sin(currentRot) * dist;
+          currentZ -= Math.cos(currentRot) * dist;
+          waypoints.push({ x: currentX, z: currentZ });
+        }
+
+        if (block.type === "rotar_nucleo" || block.type === "girar") {
+          const angle = parseFloat(block.params.grados || "90");
+          currentRot += (angle * Math.PI) / 180;
+        }
+
+        if (block === hoveredBlock) break;
+      }
+
+      return waypoints;
+    },
+    [blocks, engineRef]
+  );
+
+  const handleBlockHover = useCallback(
+    (block: Block, isEnter: boolean) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+
+      if (!isEnter) {
+        engine.clearPreview?.();
+        return;
+      }
+
+      if (
+        block.type === "mover_ruedas" ||
+        block.type === "avanzar" ||
+        block.type === "desplazarse"
+      ) {
+        const waypoints = calculatePathPreview(block);
+        if (waypoints.length >= 2) {
+          engine.showPathPreview?.(waypoints);
+        }
+      } else if (block.type === "rotar_nucleo" || block.type === "girar") {
+        const angle = parseFloat(block.params.grados || "90");
+        engine.showRotationPreview?.(angle);
+      }
+    },
+    [calculatePathPreview, engineRef]
+  );
 
   const onDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -105,6 +177,11 @@ export const Workspace = () => {
     const isLoop = block.category === "loop";
     const blockNumber = parentIndex ? `${parentIndex}.${index + 1}` : `${index + 1}`;
     const categoryColor = CATEGORY_COLORS[block.category] || "#64748b";
+    const hasHardwareError = blockError?.blockId === block.id;
+
+    // Check if this block's hardware is missing
+    const hardwareMissing = def?.hardwareRequired && !installedHardware.includes(def.hardwareRequired);
+    const showHardwareWarning = hardwareMissing && !isLoop;
 
     if (isLoop) {
       return (
@@ -133,39 +210,65 @@ export const Workspace = () => {
         key={block.id}
         className={`group relative transition-all duration-200 ${
           isBlockActive ? "z-10" : ""
-        }`}
+        } ${hasHardwareError ? "animate-shake" : ""}`}
+        onClick={() => hasHardwareError && clearBlockError()}
+        onMouseEnter={() => handleBlockHover(block, true)}
+        onMouseLeave={() => handleBlockHover(block, false)}
       >
-        {/* Puzzle notch at top */}
-        <div
-          className="w-3 h-2 rounded-b-sm mx-auto -mb-px"
-          style={{ backgroundColor: categoryColor, opacity: 0.15 }}
-        />
+        {/* Puzzle tab at top - visible connection point */}
+        <div className="flex justify-center -mb-px">
+          <div
+            className="w-4 h-1.5 rounded-b-sm"
+            style={{
+              backgroundColor: isBlockActive ? categoryColor : `${categoryColor}30`,
+              opacity: isBlockActive ? 1 : 0.4,
+            }}
+          />
+        </div>
 
         <div
           className={`flex items-center gap-2.5 px-3 py-2.5 min-w-[200px] transition-all duration-200 rounded-xl ${
-            isBlockActive ? "ring-2 ring-green-400/50 scale-[1.01]" : "hover:shadow-md"
+            isBlockActive
+              ? "ring-2 ring-green-400/50 scale-[1.01] shadow-lg shadow-green-400/10"
+              : showHardwareWarning
+              ? "ring-1 ring-amber-500/40 bg-amber-500/5 hover:shadow-md"
+              : "hover:shadow-md"
           }`}
           style={{
-            backgroundColor: isBlockActive ? "rgba(34, 197, 94, 0.06)" : "var(--surface)",
-            borderLeft: `3px solid ${categoryColor}`,
+            backgroundColor: isBlockActive
+              ? "rgba(34, 197, 94, 0.06)"
+              : showHardwareWarning
+              ? undefined
+              : "var(--surface)",
+            borderLeft: `3px solid ${showHardwareWarning ? "#f59e0b" : isBlockActive ? categoryColor : `${categoryColor}60`}`,
             borderTopRightRadius: "12px",
             borderBottomRightRadius: "12px",
             borderRadius: "0 12px 12px 0",
             boxShadow: isBlockActive
               ? `0 0 24px ${categoryColor}20, 0 4px 12px rgba(0,0,0,0.08)`
-              : `0 1px 3px rgba(0,0,0,0.06)`,
+              : "0 1px 3px rgba(0,0,0,0.06)",
           }}
         >
+          {/* Hardware missing warning icon */}
+          {showHardwareWarning && (
+            <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center shadow-sm" title={`Requiere: ${def?.hardwareRequired}`}>
+              <BsExclamationTriangleFill className="text-[9px]" />
+            </div>
+          )}
+
           {/* Block Number */}
           <span
-            className="font-mono text-xs font-bold min-w-[28px] shrink-0"
-            style={{ color: categoryColor }}
+            className="font-mono text-xs font-bold min-w-[28px] shrink-0 text-center"
+            style={{ color: showHardwareWarning ? "#f59e0b" : categoryColor }}
           >
             {blockNumber}
           </span>
 
           {/* Block Icon */}
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${categoryColor}15` }}>
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: `${showHardwareWarning ? "#f59e0b" : categoryColor}15` }}
+          >
             {renderCategoryIcon(block.category, "text-sm")}
           </div>
 
@@ -182,6 +285,13 @@ export const Workspace = () => {
                 </span>
               )}
             </div>
+
+            {showHardwareWarning && def?.hardwareRequired && (
+              <p className="text-[10px] text-amber-500/80 mt-1 font-medium">
+                Necesita: {def.hardwareRequired}
+              </p>
+            )}
+
             {hasOptions && def?.paramOptions && (
               <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
                 {Object.entries(def.paramOptions).map(([pName, options]) => (
@@ -213,11 +323,16 @@ export const Workspace = () => {
           </button>
         </div>
 
-        {/* Puzzle notch at bottom */}
-        <div
-          className="w-3 h-2 rounded-t-sm mx-auto -mt-px"
-          style={{ backgroundColor: categoryColor, opacity: 0.15 }}
-        />
+        {/* Puzzle socket at bottom */}
+        <div className="flex justify-center -mt-px">
+          <div
+            className="w-4 h-1.5 rounded-t-sm"
+            style={{
+              backgroundColor: isBlockActive ? categoryColor : `${categoryColor}30`,
+              opacity: isBlockActive ? 1 : 0.4,
+            }}
+          />
+        </div>
       </div>
     );
   };
@@ -238,6 +353,13 @@ export const Workspace = () => {
             opacity: 0.5,
           }}
         />
+
+        {blockError && blockError.blockId.startsWith("new_") && (
+          <div className="relative z-20 mb-3 mx-auto max-w-[280px] p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-center animate-shake">
+            <BsExclamationTriangleFill className="text-sm text-red-400 mx-auto mb-1" />
+            <p className="text-[11px] text-red-400 font-semibold">{blockError.message}</p>
+          </div>
+        )}
 
         {blocks.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
@@ -284,7 +406,7 @@ export const Workspace = () => {
             </div>
           </div>
         ) : (
-          <div className="relative z-10 flex flex-col gap-0.5 items-start pb-20">
+          <div className="relative z-10 flex flex-col gap-0 items-start pb-20">
             {blocks.map((block, index) => renderBlock(block, index))}
           </div>
         )}

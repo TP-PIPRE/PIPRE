@@ -17,9 +17,10 @@ const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{
   action: { label: "Acciones", icon: BsArrowRightCircleFill, color: "#94a3b8", bgClass: "bg-slate-400/10" },
   condition: { label: "Condiciones", icon: BsQuestionCircleFill, color: "#818cf8", bgClass: "bg-indigo-400/10" },
   loop: { label: "Bucles", icon: BsArrowRepeat, color: "#f97316", bgClass: "bg-orange-500/10" },
+  variable: { label: "Variables", icon: BsArrowRepeat, color: "#22c55e", bgClass: "bg-green-500/10" },
 };
 
-const CATEGORY_ORDER = ["event", "action", "condition", "loop"] as BlockCategory[];
+const CATEGORY_ORDER = ["event", "action", "condition", "loop", "variable"] as BlockCategory[];
 
 export const Toolbox = () => {
   const { installedHardware, environment } = useSimulador();

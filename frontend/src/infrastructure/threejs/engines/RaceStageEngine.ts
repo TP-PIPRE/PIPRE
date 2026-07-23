@@ -4,11 +4,16 @@ import { RaceBotBuilder } from "../shared/RaceBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
 import { createSceneWithCamera, createShadowFloor, createGrid } from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
+import { EffectComposer } from "postprocessing";
+import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
+import { soundManager } from "../shared/SoundManager";
+import { GhostPreview } from "../shared/GhostPreview";
 
 export class RaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
+  private composer!: EffectComposer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof RaceBotBuilder.create>;
   private ultrasonicCone: THREE.Mesh;
@@ -19,6 +24,7 @@ export class RaceStageEngine implements ISimulatorEngine {
   private isRunning = false;
   private checkpoints: { mesh: THREE.Mesh; passed: boolean }[] = [];
   private cones: THREE.Mesh[] = [];
+  private ghostPreview!: GhostPreview;
 
   constructor() {
     const setup = createSceneWithCamera({
@@ -51,6 +57,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
     this.particles = new ParticleSystem(this.scene);
+    this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
   }
 
@@ -148,6 +155,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.obstacle);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
@@ -203,6 +211,8 @@ export class RaceStageEngine implements ISimulatorEngine {
   dispose() {
     this.isRunning = false;
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
+    this.composer.dispose();
+    this.ghostPreview.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -211,6 +221,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.composer.setSize(width, height);
   }
 
   private startLoop() {
@@ -240,20 +251,24 @@ export class RaceStageEngine implements ISimulatorEngine {
           mat.opacity = 0.3 + Math.sin(t * 3) * 0.2;
         }
       });
-      this.renderer.render(this.scene, this.camera);
+      this.ghostPreview.animate(Date.now() * 0.001);
+      this.composer.render();
     };
     animate();
   }
 
   async moveForward(distance: number, duration: number): Promise<void> {
+    soundManager.play("move");
     return this.animatePosition(distance, duration);
   }
 
   async rotateCore(degrees: number, duration: number): Promise<void> {
+    soundManager.play("rotate");
     return this.animateRotation(degrees, duration);
   }
 
   async triggerUltrasonicSensor(duration: number): Promise<number> {
+    soundManager.play("scan");
     return new Promise((resolve) => {
       let elapsed = 0;
       const animate = (delta: number) => {
@@ -273,6 +288,7 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   async boost(speed: number, duration: number): Promise<void> {
+    soundManager.play("boost");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "move");
     // Animate exhaust flames brighter
     if (this.botParts.turbo.visible) {
@@ -299,10 +315,12 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   async brake(duration: number): Promise<void> {
+    soundManager.play("move");
     return new Promise((resolve) => setTimeout(resolve, duration));
   }
 
   async jump(duration: number): Promise<void> {
+    soundManager.play("takeoff");
     return new Promise((resolve) => {
       const startY = this.botGroup.position.y;
       const peakY = 4;
@@ -329,6 +347,7 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   async dodge(duration: number): Promise<void> {
+    soundManager.play("move");
     const orig = this.botGroup.position.clone();
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.botGroup.quaternion);
     const dodgePos = orig.clone().add(right.multiplyScalar(3));
@@ -356,6 +375,7 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   async emergencyBrake(duration: number): Promise<void> {
+    soundManager.play("error");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "collision");
     if (this.botParts.parachute.visible) {
       const chute = this.botParts.parachute.children[0] as THREE.Mesh;
@@ -412,5 +432,30 @@ export class RaceStageEngine implements ISimulatorEngine {
       this.clock.getDelta();
       animate(0);
     });
+  }
+
+  getBotPosition(): { x: number; z: number; rotation: number } {
+    return {
+      x: this.botGroup.position.x,
+      z: this.botGroup.position.z,
+      rotation: this.botGroup.rotation.y,
+    };
+  }
+
+  showPathPreview(waypoints: Array<{ x: number; z: number; y?: number }>): void {
+    this.ghostPreview.showPath(waypoints);
+  }
+
+  showRotationPreview(angle: number): void {
+    const pos = this.botGroup.position;
+    this.ghostPreview.showRotationArc(pos, this.botGroup.rotation.y, angle);
+  }
+
+  showMarkerPreview(x: number, z: number, color?: string): void {
+    this.ghostPreview.showSingleMarker(x, z, color);
+  }
+
+  clearPreview(): void {
+    this.ghostPreview.clear();
   }
 }

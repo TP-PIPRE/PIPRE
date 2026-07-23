@@ -204,6 +204,21 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         icon: "dynamic_feed",
         description: "Itera sobre una colección de elementos",
       },
+      {
+        type: "contador",
+        label: "CONTADOR +1",
+        category: "variable",
+        params: { operacion: "incrementar" },
+        paramOptions: {
+          operacion: [
+            { label: "+1 (incrementar)", value: "incrementar" },
+            { label: "Reiniciar a 0", value: "reiniciar" },
+          ],
+        },
+        color: "#22c55e",
+        icon: "tag",
+        description: "Lleva la cuenta de algo. Usalo para contar enemigos derrotados.",
+      },
     ],
     hardware: [
       {
@@ -433,6 +448,21 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         color: "#06b6d4",
         icon: "dynamic_feed",
         description: "Itera sobre una colección de elementos",
+      },
+      {
+        type: "contador",
+        label: "CONTADOR +1",
+        category: "variable",
+        params: { operacion: "incrementar" },
+        paramOptions: {
+          operacion: [
+            { label: "+1 (incrementar)", value: "incrementar" },
+            { label: "Reiniciar a 0", value: "reiniciar" },
+          ],
+        },
+        color: "#22c55e",
+        icon: "tag",
+        description: "Lleva la cuenta de algo. Usalo para contar items recolectados.",
       },
     ],
     hardware: [
@@ -665,6 +695,21 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         color: "#d946ef",
         icon: "dynamic_feed",
         description: "Itera sobre una colección de elementos",
+      },
+      {
+        type: "contador",
+        label: "CONTADOR +1",
+        category: "variable",
+        params: { operacion: "incrementar" },
+        paramOptions: {
+          operacion: [
+            { label: "+1 (incrementar)", value: "incrementar" },
+            { label: "Reiniciar a 0", value: "reiniciar" },
+          ],
+        },
+        color: "#22c55e",
+        icon: "tag",
+        description: "Lleva la cuenta de algo. Usalo para contar items recolectados.",
       },
     ],
     hardware: [
@@ -908,6 +953,21 @@ export const ENVIRONMENT_CONFIGS: Record<string, EnvironmentConfig> = {
         color: "#22c55e",
         icon: "dynamic_feed",
         description: "Itera sobre una colección de elementos",
+      },
+      {
+        type: "contador",
+        label: "CONTADOR +1",
+        category: "variable",
+        params: { operacion: "incrementar" },
+        paramOptions: {
+          operacion: [
+            { label: "+1 (incrementar)", value: "incrementar" },
+            { label: "Reiniciar a 0", value: "reiniciar" },
+          ],
+        },
+        color: "#22c55e",
+        icon: "tag",
+        description: "Lleva la cuenta de algo. Usalo para contar items recolectados.",
       },
     ],
     hardware: [

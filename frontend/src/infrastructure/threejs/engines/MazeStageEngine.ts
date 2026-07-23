@@ -4,11 +4,16 @@ import { MazeBotBuilder } from "../shared/MazeBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
 import { createSceneWithCamera, createShadowFloor, createGrid } from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
+import { EffectComposer } from "postprocessing";
+import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
+import { soundManager } from "../shared/SoundManager";
+import { GhostPreview } from "../shared/GhostPreview";
 
 export class MazeStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
+  private composer!: EffectComposer;
   private botGroup: THREE.Group;
   private botParts: ReturnType<typeof MazeBotBuilder.create>;
   private ultrasonicCone: THREE.Mesh;
@@ -20,6 +25,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   private doors: THREE.Mesh[] = [];
   private portalLight: THREE.PointLight;
   private beacons: THREE.Mesh[] = [];
+  private ghostPreview!: GhostPreview;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -55,6 +61,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.scene.add(this.portalLight);
 
     this.particles = new ParticleSystem(this.scene);
+    this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
   }
 
@@ -157,6 +164,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.maze);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
@@ -209,6 +217,8 @@ export class MazeStageEngine implements ISimulatorEngine {
   dispose() {
     this.isRunning = false;
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
+    this.composer.dispose();
+    this.ghostPreview.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -217,6 +227,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.composer.setSize(width, height);
   }
 
   private startLoop() {
@@ -229,20 +240,24 @@ export class MazeStageEngine implements ISimulatorEngine {
       this.beacons.forEach((b, i) => {
         b.scale.setScalar(1 + Math.sin(Date.now() * 0.004 + i) * 0.2);
       });
-      this.renderer.render(this.scene, this.camera);
+      this.ghostPreview.animate(Date.now() * 0.001);
+      this.composer.render();
     };
     animate();
   }
 
   async moveForward(distance: number, duration: number): Promise<void> {
+    soundManager.play("move");
     return this.animatePosition(distance, duration);
   }
 
   async rotateCore(degrees: number, duration: number): Promise<void> {
+    soundManager.play("rotate");
     return this.animateRotation(degrees, duration);
   }
 
   async triggerUltrasonicSensor(duration: number): Promise<number> {
+    soundManager.play("scan");
     return new Promise((resolve) => {
       let elapsed = 0;
       const animate = (delta: number) => {
@@ -262,6 +277,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   async lightUp(duration: number): Promise<void> {
+    soundManager.play("magic");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "magic");
     const light = new THREE.PointLight(0xfbbf24, 3, 12);
     light.position.copy(this.botGroup.position);
@@ -273,6 +289,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   async openDoor(duration: number): Promise<boolean> {
+    soundManager.play("magic");
     let opened = false;
     for (const door of this.doors) {
       const dx = door.position.x - this.botGroup.position.x;
@@ -288,6 +305,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   async detectMagic(duration: number): Promise<string> {
+    soundManager.play("scan");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "scan");
     const traces = ["Débil", "Moderado", "Fuerte", "Antiguo", "Oscuro", "Divino"];
     return new Promise((resolve) => {
@@ -296,6 +314,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   async teleport(duration: number): Promise<void> {
+    soundManager.play("magic");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "magic");
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -307,6 +326,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   async freeze(duration: number): Promise<void> {
+    soundManager.play("magic");
     this.triggerParticles(this.botGroup.position.x, this.botGroup.position.z, "magic");
     const iceMat = new THREE.MeshBasicMaterial({ color: "#7dd3fc", transparent: true, opacity: 0.4, wireframe: true });
     const iceSphere = new THREE.Mesh(new THREE.SphereGeometry(2.5, 12, 12), iceMat);
@@ -368,5 +388,30 @@ export class MazeStageEngine implements ISimulatorEngine {
       this.clock.getDelta();
       animate(0);
     });
+  }
+
+  getBotPosition(): { x: number; z: number; rotation: number } {
+    return {
+      x: this.botGroup.position.x,
+      z: this.botGroup.position.z,
+      rotation: this.botGroup.rotation.y,
+    };
+  }
+
+  showPathPreview(waypoints: Array<{ x: number; z: number; y?: number }>): void {
+    this.ghostPreview.showPath(waypoints);
+  }
+
+  showRotationPreview(angle: number): void {
+    const pos = this.botGroup.position;
+    this.ghostPreview.showRotationArc(pos, this.botGroup.rotation.y, angle);
+  }
+
+  showMarkerPreview(x: number, z: number, color?: string): void {
+    this.ghostPreview.showSingleMarker(x, z, color);
+  }
+
+  clearPreview(): void {
+    this.ghostPreview.clear();
   }
 }

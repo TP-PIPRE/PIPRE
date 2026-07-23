@@ -13,6 +13,7 @@ import type { SimulationResultType } from "../../shared/types/SpecContracts";
 import { useRobotSimulations } from "../hooks/useRobotSimulations";
 import type { ActivityResponse } from "../../shared/types/SpecContracts";
 import { calculateStars, calculateCombo, calculateEfficiency, calculateXpEarned } from "../adapters/GamificationEngine";
+import { soundManager } from "../../infrastructure/threejs/shared/SoundManager";
 
 interface LogEntry {
   time: string;
@@ -68,6 +69,11 @@ interface SimuladorContextType {
   executeProgram: () => Promise<void>;
   isRunning: boolean;
   stopExecution: () => void;
+  executionSpeed: number;
+  setExecutionSpeed: (speed: number) => void;
+  isStepMode: boolean;
+  setStepMode: (step: boolean) => void;
+  nextStep: () => void;
 
   energy: number;
   score: number;
@@ -89,6 +95,8 @@ interface SimuladorContextType {
 
   currentBlockId: string | null;
   setCurrentBlockId: (id: string | null) => void;
+  blockError: { blockId: string; message: string } | null;
+  clearBlockError: () => void;
 
   submitRobotSimulation: () => Promise<void>;
   simulationLoading: boolean;
@@ -135,6 +143,13 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [selectedActivity, setSelectedActivity] = useState<ActivityResponse | null>(null);
   const [lastSimulationResult, setLastSimulationResult] = useState<SimulationResultType | null>(null);
   const startTimeRef = useRef<number>(0);
+
+  const [executionSpeed, setExecutionSpeed] = useState(300);
+  const [isStepMode, setStepMode] = useState(false);
+  const stepResolverRef = useRef<(() => void) | null>(null);
+  const [blockError, setBlockError] = useState<{ blockId: string; message: string } | null>(null);
+  const clearBlockError = () => setBlockError(null);
+  const counterRef = useRef(0);
 
   const {
     submitSimulation,
@@ -434,6 +449,19 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     category: BlockCategory,
     params: Record<string, string> = {},
   ) => {
+    const config = ENVIRONMENT_CONFIGS[environment];
+    const blockDef = config?.blocks.find((b) => b.type === type);
+
+    if (blockDef?.hardwareRequired && !installedHardware.includes(blockDef.hardwareRequired)) {
+      const hwName = blockDef.hardwareRequired;
+      setBlockError({ blockId: `new_${type}`, message: `Necesitas equipar "${hwName}" en el panel de Hardware` });
+      soundManager.play("error");
+      addLog(`Bloque "${blockDef.label}" requiere "${hwName}"`, "error");
+      setTimeout(() => clearBlockError(), 3000);
+      return;
+    }
+
+    soundManager.play("place");
     const newBlock: Block = {
       id: `block_${blockIdCounter.current++}`,
       type,
@@ -482,6 +510,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const removeBlock = (id: string) => {
+    soundManager.play("remove");
     setBlocks((prev) => prev.filter((b) => b.id !== id));
   };
 
@@ -498,17 +527,30 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     if (engineRef.current) {
       engineRef.current.reset();
     }
+    soundManager.play("remove");
     addLog("Workspace limpiado", "info");
   };
 
   const stopExecution = () => {
     stopRequested.current = true;
+    if (stepResolverRef.current) {
+      stepResolverRef.current();
+      stepResolverRef.current = null;
+    }
     if (engineRef.current) {
       engineRef.current.stop();
     }
     setIsRunning(false);
+    setStepMode(false);
     setCurrentBlockId(null);
     addLog("Ejecución detenida por el usuario", "error");
+  };
+
+  const nextStep = () => {
+    if (stepResolverRef.current) {
+      stepResolverRef.current();
+      stepResolverRef.current = null;
+    }
   };
 
   const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -516,7 +558,13 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const executeBlock = async (block: Block) => {
     if (stopRequested.current || energy <= 0) return;
     setCurrentBlockId(block.id);
-    await delay(100);
+    soundManager.play("execute");
+
+    if (isStepMode) {
+      await new Promise<void>((resolve) => { stepResolverRef.current = resolve; });
+    }
+
+    await delay(executionSpeed);
 
     switch (block.type) {
       case "al_iniciar_sistema":
@@ -713,6 +761,24 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         }
         break;
 
+      case "contador": {
+        const op = block.params.operacion || "incrementar";
+        if (op === "incrementar") {
+          counterRef.current += 1;
+          addLog(`CONTADOR: ${counterRef.current}`, "success");
+        } else if (op === "reiniciar") {
+          counterRef.current = 0;
+          addLog("CONTADOR: reiniciado a 0", "info");
+        }
+        consumeEnergy(1);
+        await delay(400);
+
+        if (engineRef.current?.showCounter) {
+          engineRef.current.showCounter(counterRef.current);
+        }
+        break;
+      }
+
       case "acelerar": {
         const speed = parseFloat(block.params.velocidad || "50");
         addLog(`Acelerando a velocidad ${speed}...`);
@@ -878,6 +944,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     setIsRunning(true);
     stopRequested.current = false;
     startTimeRef.current = Date.now();
+    counterRef.current = 0;
     addLog("Iniciando programa...", "success");
 
     if (engineRef.current) {
@@ -892,10 +959,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
           break;
         }
 
-        // Execute block using the helper function
         await executeBlock(block);
-
-        await delay(300);
+        await delay(executionSpeed);
       }
 
       if (!stopRequested.current && energy > 0) {
@@ -962,6 +1027,16 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         executeProgram,
         isRunning,
         stopExecution,
+        executionSpeed,
+        setExecutionSpeed,
+        isStepMode,
+        setStepMode: (step: boolean) => {
+          setStepMode(step);
+          if (!step && stepResolverRef.current) {
+            stepResolverRef.current();
+            stepResolverRef.current = null;
+          }
+        },
 
         logs,
         addLog,
@@ -980,11 +1055,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         currentTheme,
         currentBlockId,
         setCurrentBlockId,
+        blockError,
+        clearBlockError,
 
         submitRobotSimulation,
         simulationLoading,
         simulationError,
         lastSimulationResult,
+        nextStep,
       }}
     >
       {children}
