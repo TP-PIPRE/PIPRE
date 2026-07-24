@@ -1,9 +1,12 @@
-# Guía de implementación de RIA08: riesgo y anomalías
+# Guía de implementación de RIA07: riesgo y anomalías
 
 ## 1. Alcance correcto
 
-RIA08 unifica alertas de riesgo educativo y detección de comportamientos
+RIA07 unifica alertas de riesgo educativo y detección de comportamientos
 atípicos para apoyar al docente.
+
+> Los endpoints canónicos son `/ria07/*`; `/ria08/anomaly` y
+> `/ria08/early-warning` se conservan temporalmente como aliases legados.
 
 Esta versión no necesita una secuencia temporal individual del estudiante. Sí
 necesita una cohorte de referencia para:
@@ -52,12 +55,12 @@ infinitos, valores negativos, conteos decimales y escalas inválidas. Los
 mensajes identifican la columna y los índices afectados.
 
 La conversión de porcentajes 0-100 a tasa 0-1 debe hacerse antes de llamar a
-RIA08. El modelo no infiere escalas ambiguas.
+RIA07. El modelo no infiere escalas ambiguas.
 
 ## 4. Features
 
 El archivo principal es
-`app/adapters/ml_models/ria08_riesgo_anomalias.py`.
+`app/adapters/ml_models/ria07_riesgo_anomalias.py`.
 
 Features disponibles para validación y explicación:
 
@@ -132,7 +135,7 @@ calibrarse con docentes y casos revisados.
 
 ### Individual
 
-`POST /ria08/early-warning`
+`POST /ria07/early-warning`
 
 ```json
 {
@@ -165,11 +168,11 @@ Las banderas de procedencia son:
 usó historial temporal individual. No significa que el modelo funcione sin
 cohorte de referencia.
 
-`POST /ria08/anomaly` se mantiene como alias temporal del contrato individual.
+`POST /ria07/anomaly` ofrece el mismo contrato individual.
 
 ### Lote docente
 
-`POST /ria08/early-warning/batch`
+`POST /ria07/early-warning/batch`
 
 ```json
 {
@@ -204,7 +207,7 @@ La UI local presenta:
 | Estudiante B | Atención (65.0) | No | Errores por intento elevados | Revisar la próxima actividad |
 | Estudiante C | Normal (18.0) | No | Sin razones adversas | Seguimiento habitual |
 
-La gráfica de RIA08 se titula “Pesos heurísticos configurados del riesgo” para
+La gráfica de RIA07 se titula “Pesos heurísticos configurados del riesgo” para
 evitar presentarlos como importancia aprendida.
 
 ## 9. Entrenamiento, estado y persistencia
@@ -216,7 +219,7 @@ evitar presentarlos como importancia aprendida.
 - El entrenamiento utiliza objetos temporales para no dejar estado parcial.
 - Versión del servicio: `ria08-risk-anomaly-v3.0`.
 - Configuración interna: `ria08-risk-config-v3`.
-- Archivo: `saved_models/ria08_riesgo_anomalias_model.pkl`.
+- Archivo: `saved_models/ria07_riesgo_anomalias_model.pkl`.
 
 El repositorio `JoblibModelRepository` guarda la instancia completa, incluyendo
 Isolation Forest, scaler, orden de features, configuración de riesgo,

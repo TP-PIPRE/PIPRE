@@ -1,3 +1,5 @@
+"""RIA10: evaluación automática del código de entrenamiento."""
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score
@@ -7,6 +9,12 @@ import numpy as np
 
 
 class EvaluadorCodigo:
+    MODEL_VERSION = "ria10-code-v2"
+    RESULT_LABELS = {
+        0: "Código básico",
+        1: "Código intermedio",
+        2: "Código avanzado",
+    }
 
     def __init__(self):
         self.model = RandomForestClassifier(
@@ -40,6 +48,13 @@ class EvaluadorCodigo:
 
         self.accuracy = 0
         self.precision = 0
+        self.model_version = self.MODEL_VERSION
+        self.is_fitted = False
+        self.metrics_note = (
+            "La etiqueta de calidad se construye con una regla heurística "
+            "sobre las mismas variables de entrada. Las métricas verifican "
+            "consistencia técnica, no calidad docente externa."
+        )
 
     # =========================
     #  PREPROCESS
@@ -149,6 +164,7 @@ class EvaluadorCodigo:
         self.precision = precision_score(
             y_test, y_pred, average="weighted", zero_division=0
         )
+        self.is_fitted = True
 
     # =========================
     #  PREDICT
@@ -163,11 +179,14 @@ class EvaluadorCodigo:
 
         X = data[self.feature_columns]
 
-        pred = self.model.predict(X)[0]
+        pred = int(self.model.predict(X)[0])
+        return self.RESULT_LABELS.get(pred, "Código avanzado")
 
-        if pred == 0:
-            return "Código básico"
-        elif pred == 1:
-            return "Código intermedio"
-        else:
-            return "Código avanzado"
+    def predict_batch(self, data):
+        data = self.preprocess_data(data, is_training=False)
+        X = data[self.feature_columns]
+        predictions = self.model.predict(X)
+        return [
+            self.RESULT_LABELS.get(int(prediction), "Código avanzado")
+            for prediction in predictions
+        ]

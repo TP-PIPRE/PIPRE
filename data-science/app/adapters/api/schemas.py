@@ -127,7 +127,37 @@ class RIA04Input(BaseModel):
     seed: Optional[int] = None
 
 
-class RIA07Input(BaseModel):
+class RIA05Input(BaseModel):
+    expected_result: dict[str, object]
+    obtained_result: dict[str, object]
+    robot_position: Optional[dict[str, float] | list[float]] = None
+    sensor_states: dict[str, object] = Field(default_factory=dict)
+    instructions_used: list[str | dict[str, object]] = Field(
+        default_factory=list,
+        max_length=1_000,
+    )
+    collisions: int | list[object] = Field(default=0)
+    interruption_step: Optional[int] = Field(default=None, ge=0)
+    completion_ratio: Optional[float] = Field(default=None, ge=0, le=1)
+
+
+class RIA05Response(BaseModel):
+    result: str
+    error_type: str
+    error_label: str
+    confidence: float
+    requires_review: bool
+    reasons: list[str]
+    probabilities: dict[str, float]
+    feature_values: dict[str, float]
+    details: dict[str, object]
+
+
+class RIA05BatchInput(BaseModel):
+    executions: list[RIA05Input] = Field(min_length=1, max_length=500)
+
+
+class RIA06Input(BaseModel):
     student_id: Optional[str] = Field(default=None, max_length=100)
     student_name: Optional[str] = Field(default=None, max_length=200)
     activity_frequency: float = Field(ge=0, le=10_000)
@@ -135,11 +165,11 @@ class RIA07Input(BaseModel):
     inactive_days: float = Field(ge=0, le=365)
 
 
-class RIA07BatchInput(BaseModel):
-    students: list[RIA07Input] = Field(min_length=1, max_length=500)
+class RIA06BatchInput(BaseModel):
+    students: list[RIA06Input] = Field(min_length=1, max_length=500)
 
 
-class RIA07ModelQuality(BaseModel):
+class RIA06ModelQuality(BaseModel):
     quality_status: str
     quality_label: str
     quality_explanation: str
@@ -162,7 +192,7 @@ class RIA07ModelQuality(BaseModel):
     metrics_note: str
 
 
-class RIA07SegmentComparison(BaseModel):
+class RIA06SegmentComparison(BaseModel):
     metric_label: str
     student_value: float
     segment_center: float
@@ -174,20 +204,20 @@ class RIA07SegmentComparison(BaseModel):
     message: str
 
 
-class RIA07AssignmentInterpretation(BaseModel):
+class RIA06AssignmentInterpretation(BaseModel):
     level: str
     label: str
     explanation: str
     technical_note: str
 
 
-class RIA07TeacherSuggestion(BaseModel):
+class RIA06TeacherSuggestion(BaseModel):
     priority: str
     title: str
     actions: list[str]
 
 
-class RIA07StudentResult(BaseModel):
+class RIA06StudentResult(BaseModel):
     student_id: Optional[str] = None
     student_name: Optional[str] = None
     model_run_id: str
@@ -211,36 +241,36 @@ class RIA07StudentResult(BaseModel):
     typicality_small_sample_warning: bool
     out_of_distribution: bool
     review_reasons: list[str]
-    assignment_interpretation: RIA07AssignmentInterpretation
+    assignment_interpretation: RIA06AssignmentInterpretation
     requires_review: bool
     teacher_summary: str
     reasons: list[str]
     feature_values: dict[str, float]
-    segment_comparison: dict[str, RIA07SegmentComparison]
-    teacher_suggestion: RIA07TeacherSuggestion
-    model_quality: RIA07ModelQuality
+    segment_comparison: dict[str, RIA06SegmentComparison]
+    teacher_suggestion: RIA06TeacherSuggestion
+    model_quality: RIA06ModelQuality
     training_period: dict[str, object]
     technical_details: dict[str, object]
     details: dict[str, object]
 
 
-class RIA07Response(RIA07StudentResult):
+class RIA06Response(RIA06StudentResult):
     result: str
 
 
-class RIA07BatchSummary(BaseModel):
+class RIA06BatchSummary(BaseModel):
     total_students: int
     segment_counts: dict[str, int]
     segments: list[dict[str, object]]
-    model_quality: RIA07ModelQuality
+    model_quality: RIA06ModelQuality
 
 
-class RIA07BatchResponse(BaseModel):
-    summary: RIA07BatchSummary
-    students: list[RIA07StudentResult]
+class RIA06BatchResponse(BaseModel):
+    summary: RIA06BatchSummary
+    students: list[RIA06StudentResult]
 
 
-class RIA08Input(BaseModel):
+class RIA07Input(BaseModel):
     student_id: Optional[str] = None
     student_name: Optional[str] = None
     attempts: int = Field(ge=0)
@@ -252,11 +282,11 @@ class RIA08Input(BaseModel):
     help_requested: int = Field(ge=0)
 
 
-class RIA08BatchInput(BaseModel):
-    students: list[RIA08Input] = Field(min_length=1, max_length=500)
+class RIA07BatchInput(BaseModel):
+    students: list[RIA07Input] = Field(min_length=1, max_length=500)
 
 
-class RIA10Input(BaseModel):
+class RIA08Input(BaseModel):
     attempts: int
     errors: int
     ai_interactions: float
@@ -267,20 +297,20 @@ class RIA10Input(BaseModel):
     logical_level: str
 
 
-class RIA10MetricComparison(BaseModel):
+class RIA08MetricComparison(BaseModel):
     student_value: float
     grade_average: float
     difference: float
     status: str
 
 
-class RIA10GradeComparison(BaseModel):
+class RIA08GradeComparison(BaseModel):
     grade: int | float
     reference_scope: str
-    metrics: dict[str, RIA10MetricComparison]
+    metrics: dict[str, RIA08MetricComparison]
 
 
-class RIA10TeacherSuggestion(BaseModel):
+class RIA08TeacherSuggestion(BaseModel):
     title: str
     summary: str
     priority: str
@@ -289,23 +319,23 @@ class RIA10TeacherSuggestion(BaseModel):
     based_on_reasons: list[str]
 
 
-class RIA10Details(BaseModel):
+class RIA08Details(BaseModel):
     pedagogical_profile: str
     pedagogical_risk: str
     confidence: float
-    grade_comparison: RIA10GradeComparison
+    grade_comparison: RIA08GradeComparison
     reasons: list[str]
-    teacher_suggestion: RIA10TeacherSuggestion
+    teacher_suggestion: RIA08TeacherSuggestion
 
 
-class RIA10Response(BaseModel):
+class RIA08Response(BaseModel):
     result: str
     accuracy: Optional[float] = None
     precision: Optional[float] = None
-    details: RIA10Details
+    details: RIA08Details
 
 
-class RIA11Input(BaseModel):
+class RIA09Input(BaseModel):
     attempts: int
     errors: int
     ai_interactions: float
@@ -315,3 +345,64 @@ class RIA11Input(BaseModel):
     age: int
     grade: int
     logical_level: str
+
+
+class RIA10Input(BaseModel):
+    student_id: Optional[str] = Field(default=None, max_length=100)
+    student_name: Optional[str] = Field(default=None, max_length=200)
+    errors: int = Field(ge=0, le=100_000)
+    attempts: int = Field(ge=0, le=100_000)
+    ai_interactions: float = Field(ge=0, le=100_000)
+    help_requested: int = Field(ge=0, le=100_000)
+    completed_activities: int = Field(ge=0, le=100_000)
+    inactive_days: int = Field(ge=0, le=36_500)
+    age: int = Field(ge=5, le=100)
+    grade: int = Field(ge=1, le=20)
+    logical_level: str = Field(min_length=1, max_length=30)
+    detected_emotion: str = Field(min_length=1, max_length=50)
+
+    @field_validator("logical_level", "detected_emotion")
+    @classmethod
+    def normalize_text(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not normalized:
+            raise ValueError("value must not be empty")
+        return normalized
+
+
+class RIA10Details(BaseModel):
+    model_version: str
+    target_source: str
+    metrics_note: str
+
+
+class RIA10Response(BaseModel):
+    result: str
+    student_id: Optional[str] = None
+    student_name: Optional[str] = None
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    details: RIA10Details
+
+
+class RIA10BatchInput(BaseModel):
+    students: list[RIA10Input] = Field(min_length=1, max_length=500)
+
+
+class RIA10BatchStudentResult(BaseModel):
+    result: str
+    student_id: Optional[str] = None
+    student_name: Optional[str] = None
+
+
+class RIA10BatchSummary(BaseModel):
+    total_students: int
+    quality_counts: dict[str, int]
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    metrics_note: str
+
+
+class RIA10BatchResponse(BaseModel):
+    summary: RIA10BatchSummary
+    students: list[RIA10BatchStudentResult]

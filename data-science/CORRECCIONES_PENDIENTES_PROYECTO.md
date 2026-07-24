@@ -27,7 +27,7 @@ Escala de prioridad:
 | Frontend | Cypress E2E | No ejecutado; requiere aplicación y APIs disponibles. |
 | Backend | Lectura de `pom.xml` | XML válido, Java 21, 32 archivos de pruebas. |
 | Backend | Compilación/pruebas Maven | No ejecutadas: no hay JDK/`JAVA_HOME` disponible y `mvnw.cmd` falla antes de iniciar Maven. |
-| Data-science | `pytest` | 144/144 pruebas aprobadas, con 5 advertencias controladas de validación RIA01. |
+| Data-science | `pytest` | 151/151 pruebas aprobadas, con 5 advertencias controladas de validación RIA01. |
 | Data-science | `pip check` | Correcto, sin requisitos rotos. |
 | Data-science | Auditoría CVE | No disponible: `pip-audit` no está instalado. |
 | Docker Compose | Configuración base, local y base+override | Las tres combinaciones pasan `docker compose config --quiet`. |
@@ -39,13 +39,13 @@ Escala de prioridad:
 | ID | Prioridad | Área | Problema | Impacto |
 |---|---|---|---|---|
 | IA-INT-01 | P0 | Frontend / RIA04 | El frontend llama `/ria04/difficulty`, pero data-science expone `/ria04/generate`. | RIA04 responde 404 y la tarjeta conserva la función anterior. |
-| IA-INT-02 | P0 | Frontend / RIA08 | El frontend no envía `completed_activities` ni `help_requested`, ambos obligatorios. | RIA08 responde 422 y no presenta la alerta temprana completa. |
+| IA-INT-02 | P0 | Frontend / RIA07 | El frontend no envía `completed_activities` ni `help_requested`, ambos obligatorios. | RIA07 responde 422 y no presenta la alerta temprana completa. |
 | SEC-01 | P0 | Backend / Auth | JWT en cookie con `SameSite=None` y CSRF deshabilitado. | Riesgo de solicitudes cross-site autenticadas si la API está expuesta. |
 | SEC-02 | P0 | APIs | Backend admite cualquier origen con credenciales y ML admite CORS `*` sin autenticación. | Superficie pública excesiva y acceso directo al servicio de IA. |
 | DEP-01 | P0 | Frontend | Auditoría con 21 vulnerabilidades altas. | Riesgo conocido en Vite, Axios, React Router y dependencias transitivas. |
 | QA-BE-01 | P1 | Backend | No existe una compilación/prueba reproducible en el equipo actual ni en CI. | No puede demostrarse que los 32 archivos de pruebas estén aprobados. |
 | QA-CI-01 | P1 | Proyecto | No hay pipeline de integración continua. | Los errores de lint, contratos y seguridad pueden llegar a `develop`. |
-| ML-11-01 | P1 | Data-science / RIA11 | Precisión y exactitud reportadas alrededor de 30%, sin suite dedicada. | El resultado no es confiable para decisiones pedagógicas. |
+| ML-09-01 | P1 | Data-science / RIA09 | Precisión y exactitud reportadas alrededor de 30%, sin suite dedicada. | El resultado no es confiable para decisiones pedagógicas. |
 
 ## 1. Integración frontend y data-science
 
@@ -79,26 +79,26 @@ Escala de prioridad:
 
 **Criterio de cierre:** el docente puede generar entre 1 y 5 borradores, revisarlos y enviarlos al flujo normal de creación sin recibir 404.
 
-### IA-INT-02 - Actualizar RIA08 a riesgo y anomalías
+### IA-INT-02 - Migrar la integración de riesgo y anomalías a RIA07
 
 **Prioridad:** P0  
 **Archivos principales:**
 
 - `../frontend/src/infrastructure/api/models/aiModels.ts`
 - `../frontend/src/infrastructure/api/aiService.ts`
-- `../frontend/src/ui/components/ria-bento-grid/cards/Ria08Card.tsx`
-- `RIA08_RIESGO_ANOMALIAS_GUIA.md`
+- `../frontend/src/ui/components/ria-bento-grid/cards/Ria08Card.tsx` (nombre legado pendiente de migración)
+- `RIA07_RIESGO_ANOMALIAS_GUIA.md`
 
 **Estado actual:**
 
 - La tarjeta solo envía `attempts`, `errors`, `score` e `inactive_days`.
 - La API exige además `completed_activities` y `help_requested`; `success_rate` es opcional.
 - La vista sigue rotulada únicamente como “Anomalías”.
-- No consume `/ria08/early-warning/batch` ni presenta la tabla docente completa.
+- No consume `/ria07/early-warning/batch` ni presenta la tabla docente completa.
 
 **Corrección propuesta:**
 
-1. Hacer coincidir el DTO TypeScript con `RIA08Input` de Pydantic.
+1. Migrar el DTO TypeScript al contrato `RIA07Input` de Pydantic.
 2. Enviar los siete campos disponibles de `RiaStudentData` y los identificadores opcionales.
 3. Tipar la respuesta real: `risk_level`, `risk_label`, `risk_score`, `anomaly`, `anomaly_score`, `reasons` y `teacher_recommendation`.
 4. Renombrar la tarjeta a “Riesgo y anomalías”.
@@ -107,17 +107,17 @@ Escala de prioridad:
 
 **Criterio de cierre:** las llamadas individual y por lote responden 200 y la UI muestra nivel, puntajes, razones y recomendación docente.
 
-### IA-INT-03 - Completar la presentación de RIA10
+### IA-INT-03 - Migrar y completar la presentación de RIA08 pedagógico
 
 **Prioridad:** P1  
-**Archivo principal:** `../frontend/src/ui/components/ria-bento-grid/cards/Ria10Card.tsx`
+**Archivo principal:** `../frontend/src/ui/components/ria-bento-grid/cards/Ria10Card.tsx` (nombre legado pendiente de migración)
 
 **Estado actual:**
 
 - La API ya devuelve comparación por grado y sugerencia docente.
 - La tarjeta solo presenta perfil, riesgo y razones.
-- Intenta leer `details.recall` y `details.f1`, campos que no forman parte de `RIA10Response`.
-- El tipo `Ria10PedagogicalResponse` es genérico y no protege el contrato.
+- Intenta leer `details.recall` y `details.f1`, campos que no forman parte de `RIA08Response`.
+- El tipo legado `Ria10PedagogicalResponse` es genérico y no protege el contrato.
 
 **Corrección propuesta:**
 
@@ -127,7 +127,7 @@ Escala de prioridad:
 4. Usar `accuracy` y `precision` de la raíz o ampliar explícitamente la respuesta si se necesitan recall/F1.
 5. Añadir pruebas de renderizado con grado sin cohorte, cohorte válida y sugerencia crítica.
 
-### IA-INT-04 - Alinear tipos de RIA11 y validar el modelo
+### IA-INT-04 - Migrar los tipos de tiempo a RIA09 y validar el modelo
 
 **Prioridad:** P1
 
@@ -136,11 +136,11 @@ Escala de prioridad:
 - La API devuelve `result`, `accuracy` y `precision`.
 - El tipo TypeScript declara `clasificacion` y `tiempo_estimado`.
 - La tarjeta usa el campo real `result`, por lo que el tipo y la ejecución se contradicen.
-- No existe `test_ria11.py` y se ha reportado precisión/exactitud cercana al 30%.
+- No existe una suite dedicada a RIA09 y se ha reportado precisión/exactitud cercana al 30%.
 
 **Corrección propuesta:**
 
-1. Corregir `Ria11TimeResponse` para reflejar la respuesta real.
+1. Sustituir el tipo legado `Ria11TimeResponse` por `Ria09TimeResponse` y reflejar la respuesta real.
 2. Crear una suite dedicada para preprocesamiento, clases, valores límite y API.
 3. Separar train/test de forma estratificada y reportar matriz de confusión, macro-F1 y métricas por clase.
 4. Revisar desbalance, etiquetas, variables redundantes y calidad del dataset.
@@ -202,7 +202,7 @@ Archivos con mayor concentración:
 | `DocenteEstudiantesPage.tsx` | 2 | 0 | Tipo `any` y carga desde efecto. |
 | `PerfilPage.tsx` | 2 | 0 | Tipo `any` y estado en efecto. |
 
-También deben corregirse los efectos de las tarjetas RIA01, RIA03, RIA04, RIA08, RIA10 y RIA11, que repiten el mismo patrón de actualización síncrona.
+También deben corregirse los efectos de las tarjetas RIA01, RIA03, RIA04, RIA07, RIA08 y RIA09, que repiten el mismo patrón de actualización síncrona.
 
 ### FE-TEST-01 - Ampliar pruebas y activar E2E
 
@@ -332,16 +332,16 @@ No se ejecutó una auditoría de CVE para Maven. Incorporar OWASP Dependency-Che
 
 ## 4. Data-science
 
-### DS-TEST-01 - Completar cobertura de RIA11 y RIA12
+### DS-TEST-01 - Completar cobertura de RIA09 y RIA10
 
 **Prioridad:** P1
 
-La suite actual ya incluye 8 pruebas dedicadas a RIA02 para validación,
-calibración, recurrencia, explicabilidad y contrato del servicio. Aún no
-existen suites dedicadas para:
+La suite actual incluye pruebas dedicadas a RIA02 y RIA10 para validación,
+contrato, servicio, lotes y rutas. Aún falta completar la cobertura específica
+de:
 
-- RIA11 clasificación de tiempo.
-- RIA12 evaluación/generación de código.
+- RIA09 clasificación de tiempo.
+- RIA10 persistencia y prueba HTTP end-to-end con un servidor real.
 
 Cada suite debe cubrir preprocesamiento, valores límite, entrenamiento, persistencia, compatibilidad del modelo y endpoint HTTP.
 
@@ -476,7 +476,7 @@ Las ramas protegidas no deberían aceptar merge si falla un check P0/P1.
 
 - BE-BUILD-01 y BE-TEST-01.
 - CI-01.
-- DS-TEST-01, especialmente RIA11.
+- DS-TEST-01, especialmente RIA09.
 - Pruebas de contrato RIA.
 
 ### Fase 3 - Calidad funcional
@@ -498,7 +498,7 @@ El backlog puede considerarse cerrado cuando se cumpla todo lo siguiente:
 - `pnpm lint`, `pnpm test:run` y `pnpm build` finalizan con código 0.
 - Cypress E2E principal finaliza con código 0.
 - Backend compila y sus pruebas finalizan con código 0 en Java 21.
-- Las pruebas data-science, incluida cobertura de RIA02/RIA11/RIA12, finalizan con código 0.
+- Las pruebas data-science, incluida cobertura de RIA02/RIA09/RIA10, finalizan con código 0.
 - Los clientes RIA coinciden con OpenAPI y no producen 404/422 por contrato.
 - No quedan vulnerabilidades altas conocidas sin excepción documentada.
 - CORS, cookies, CSRF y acceso ML cumplen la arquitectura definida.

@@ -16,11 +16,12 @@ MODEL_NAMES = (
     "ria2",
     "ria3",
     "ria4",
+    "ria5",
+    "ria6",
     "ria7",
     "ria8",
+    "ria9",
     "ria10",
-    "ria11",
-    "ria12",
 )
 
 
@@ -57,11 +58,12 @@ class UIPipelineCacheTest(unittest.TestCase):
             ria2=models["ria2"],
             ria3=models["ria3"],
             ria4=models["ria4"],
+            ria5=models["ria5"],
+            ria6=models["ria6"],
             ria7=models["ria7"],
             ria8=models["ria8"],
+            ria9=models["ria9"],
             ria10=models["ria10"],
-            ria11=models["ria11"],
-            ria12=models["ria12"],
         )
 
     def test_all_compatible_models_are_loaded_without_training(self):
@@ -89,7 +91,7 @@ class UIPipelineCacheTest(unittest.TestCase):
             name: FakeRepository(FakeModel("v1")) for name in MODEL_NAMES
         }
         repositories["ria4"] = FakeRepository()
-        repositories["ria12"] = FakeRepository(FakeModel("old"))
+        repositories["ria10"] = FakeRepository(FakeModel("old"))
 
         status = pipeline.load_or_train(
             object(),
@@ -98,13 +100,13 @@ class UIPipelineCacheTest(unittest.TestCase):
         )
 
         self.assertEqual(status["ria4"], "trained")
-        self.assertEqual(status["ria12"], "trained")
+        self.assertEqual(status["ria10"], "trained")
         self.assertEqual(getattr(pipeline, "ria4").train_calls, 1)
-        self.assertEqual(getattr(pipeline, "ria12").train_calls, 1)
-        self.assertEqual(getattr(pipeline, "ria12").model_version, "v1")
+        self.assertEqual(getattr(pipeline, "ria10").train_calls, 1)
+        self.assertEqual(getattr(pipeline, "ria10").model_version, "v1")
         self.assertEqual(
             {name for name, value in status.items() if value == "loaded"},
-            set(MODEL_NAMES) - {"ria4", "ria12"},
+            set(MODEL_NAMES) - {"ria4", "ria10"},
         )
 
 

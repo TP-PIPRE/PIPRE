@@ -23,7 +23,7 @@ from sklearn.preprocessing import RobustScaler
 
 class AnalizadorPatronesEstudiantiles:
     """
-    RIA07: segmentación no supervisada de patrones de participación.
+    RIA06: segmentación no supervisada de patrones de participación.
 
     Un registro representa a un estudiante en una única ventana de observación
     común. Las unidades canónicas son:
@@ -40,8 +40,8 @@ class AnalizadorPatronesEstudiantiles:
         "KMeans + RobustScaler + selección por separación, estabilidad "
         "por submuestreo y balance"
     )
-    MODEL_VERSION = "ria07-v5-reliable"
-    FEATURE_SCHEMA_VERSION = "ria07-features-v3-continuity"
+    MODEL_VERSION = "ria06-v5-reliable"
+    FEATURE_SCHEMA_VERSION = "ria06-features-v3-continuity"
     MIN_TRAINING_SAMPLES = 20
     MAX_CLUSTERS = 5
     RANDOM_STATE = 42
@@ -159,7 +159,7 @@ class AnalizadorPatronesEstudiantiles:
         self.stability_valid_iterations = 0
         self.quality_status = "not_evaluated"
         self.metrics_note = (
-            "RIA07 es clustering no supervisado: accuracy, precision, recall "
+            "RIA06 es clustering no supervisado: accuracy, precision, recall "
             "y F1 no aplican sin segmentos de referencia validados."
         )
         self.candidate_report: list[dict[str, Any]] = []
@@ -195,7 +195,7 @@ class AnalizadorPatronesEstudiantiles:
         source = self._coerce_input(data)
         if len(source) < self.min_training_samples:
             raise ValueError(
-                "RIA07 requiere al menos "
+                "RIA06 requiere al menos "
                 f"{self.min_training_samples} registros para construir segmentos."
             )
 
@@ -215,14 +215,14 @@ class AnalizadorPatronesEstudiantiles:
         )
         if len(active_features) < 2:
             raise ValueError(
-                "RIA07 requiere al menos dos variables informativas; "
+                "RIA06 requiere al menos dos variables informativas; "
                 "las demás son constantes o casi constantes."
             )
 
         distinct_rows = len(prepared[active_features].drop_duplicates())
         if distinct_rows < 3:
             raise ValueError(
-                "RIA07 requiere al menos tres patrones de comportamiento distintos."
+                "RIA06 requiere al menos tres patrones de comportamiento distintos."
             )
 
         local_scaler = RobustScaler()
@@ -432,7 +432,7 @@ class AnalizadorPatronesEstudiantiles:
         """
         if not trusted:
             raise ValueError(
-                "RIA07 no carga artefactos Joblib no confiables. "
+                "RIA06 no carga artefactos Joblib no confiables. "
                 "Use trusted=True solo para archivos controlados por el proyecto."
             )
         warnings.warn(
@@ -533,7 +533,7 @@ class AnalizadorPatronesEstudiantiles:
         ]
         if not accepted_candidates:
             raise ValueError(
-                "RIA07 no encontró un clustering utilizable: todos los "
+                "RIA06 no encontró un clustering utilizable: todos los "
                 f"candidatos contienen segmentos menores a {minimum_size} estudiantes."
             )
         best = max(
@@ -595,7 +595,7 @@ class AnalizadorPatronesEstudiantiles:
         minimum_valid = max(3, math.ceil(self.stability_iterations * 0.60))
         if len(scores) < minimum_valid:
             raise ValueError(
-                "RIA07 no pudo obtener suficientes repeticiones válidas para "
+                "RIA06 no pudo obtener suficientes repeticiones válidas para "
                 "medir la estabilidad por submuestreo."
             )
         return {
@@ -636,7 +636,7 @@ class AnalizadorPatronesEstudiantiles:
                         np.flatnonzero(contradictory.to_numpy()) + 1
                     ).tolist()
                     raise ValueError(
-                        f"RIA07 recibió valores contradictorios entre "
+                        f"RIA06 recibió valores contradictorios entre "
                         f"'{canonical}' y su alias '{alias}' en filas {rows}."
                     )
             else:
@@ -652,7 +652,7 @@ class AnalizadorPatronesEstudiantiles:
         ]
         if missing:
             raise ValueError(
-                "Datos inválidos en RIA07. Faltan columnas canónicas o aliases "
+                "Datos inválidos en RIA06. Faltan columnas canónicas o aliases "
                 "documentados: "
                 + ", ".join(missing)
                 + "."
@@ -664,7 +664,7 @@ class AnalizadorPatronesEstudiantiles:
             if invalid.any():
                 rows = (np.flatnonzero(invalid.to_numpy()) + 1).tolist()
                 raise ValueError(
-                    f"RIA07 recibió valores no numéricos o no finitos en "
+                    f"RIA06 recibió valores no numéricos o no finitos en "
                     f"'{column}', filas {rows}."
                 )
             data[column] = numeric.astype(float)
@@ -677,17 +677,17 @@ class AnalizadorPatronesEstudiantiles:
                 rows = (np.flatnonzero(outside.to_numpy()) + 1).tolist()
                 if (data.loc[outside, column] < limits["minimum"]).any():
                     raise ValueError(
-                        f"RIA07 requiere '{column}' mayor o igual a "
+                        f"RIA06 requiere '{column}' mayor o igual a "
                         f"{limits['minimum']:g}; filas {rows}."
                     )
                 raise ValueError(
-                    f"RIA07 requiere '{column}' entre {limits['minimum']:g} y "
+                    f"RIA06 requiere '{column}' entre {limits['minimum']:g} y "
                     f"{limits['maximum']:g} {limits['unit']}; filas {rows}."
                 )
 
         if not training and len(data) > self.max_batch_size:
             raise ValueError(
-                f"RIA07 admite como máximo {self.max_batch_size} estudiantes por lote."
+                f"RIA06 admite como máximo {self.max_batch_size} estudiantes por lote."
             )
         return data.reset_index(drop=True), warnings_list
 
@@ -736,7 +736,7 @@ class AnalizadorPatronesEstudiantiles:
                 conflicting_id_count = int(conflicting.sum())
                 if conflicting_id_count:
                     raise ValueError(
-                        "RIA07 detectó estudiantes repetidos con valores "
+                        "RIA06 detectó estudiantes repetidos con valores "
                         f"contradictorios: {conflicting_id_count} identificadores."
                     )
                 warnings_list.append(
@@ -1566,7 +1566,7 @@ class AnalizadorPatronesEstudiantiles:
             ]
         if len(present) != len(required):
             raise ValueError(
-                "RIA07 requiere fecha_inicio_ventana, fecha_fin_ventana y "
+                "RIA06 requiere fecha_inicio_ventana, fecha_fin_ventana y "
                 "fecha_corte juntas para validar el periodo."
             )
         parsed = {
@@ -1574,7 +1574,7 @@ class AnalizadorPatronesEstudiantiles:
             for column in required
         }
         if any(values.isna().any() for values in parsed.values()):
-            raise ValueError("RIA07 recibió fechas temporales inválidas.")
+            raise ValueError("RIA06 recibió fechas temporales inválidas.")
         invalid = (
             (parsed["fecha_inicio_ventana"] > parsed["fecha_fin_ventana"])
             | (parsed["fecha_fin_ventana"] > parsed["fecha_corte"])
@@ -1582,7 +1582,7 @@ class AnalizadorPatronesEstudiantiles:
         if invalid.any():
             rows = (np.flatnonzero(invalid.to_numpy()) + 1).tolist()
             raise ValueError(
-                "RIA07 detectó ventanas temporales incoherentes en filas "
+                "RIA06 detectó ventanas temporales incoherentes en filas "
                 f"{rows}."
             )
         periods = (
@@ -1590,7 +1590,7 @@ class AnalizadorPatronesEstudiantiles:
         ).dt.days
         if periods.nunique() > 1:
             raise ValueError(
-                "RIA07 no permite periodos de observación incompatibles "
+                "RIA06 no permite periodos de observación incompatibles "
                 "dentro de la misma cohorte."
             )
         return {
@@ -1657,7 +1657,7 @@ class AnalizadorPatronesEstudiantiles:
         return (
             "Calidad aún no evaluada",
             "El modelo todavía no ha sido entrenado.",
-            "Entrene RIA07 antes de interpretar segmentos.",
+            "Entrene RIA06 antes de interpretar segmentos.",
         )
 
     def _candidate_for_presentation(
@@ -1709,7 +1709,7 @@ class AnalizadorPatronesEstudiantiles:
 
     def _ensure_fitted(self) -> None:
         if not self.is_fitted or self.model is None:
-            raise RuntimeError("RIA07 debe entrenarse antes de predecir.")
+            raise RuntimeError("RIA06 debe entrenarse antes de predecir.")
 
     def _coerce_input(
         self,
@@ -1721,7 +1721,7 @@ class AnalizadorPatronesEstudiantiles:
             return pd.DataFrame([data])
         if isinstance(data, list):
             return pd.DataFrame(data)
-        raise TypeError("RIA07 requiere un diccionario, una lista o un DataFrame.")
+        raise TypeError("RIA06 requiere un diccionario, una lista o un DataFrame.")
 
     def _optional_text(self, value: Any) -> str | None:
         if value is None or pd.isna(value):
@@ -1736,10 +1736,10 @@ class AnalizadorPatronesEstudiantiles:
     def _validate_loaded_artifact(cls, loaded: Any) -> None:
         if not isinstance(loaded, cls):
             raise TypeError(
-                "El artefacto RIA07 no contiene un AnalizadorPatronesEstudiantiles."
+                "El artefacto RIA06 no contiene un AnalizadorPatronesEstudiantiles."
             )
         if getattr(loaded, "model_version", None) != cls.MODEL_VERSION:
-            raise ValueError("Versión de modelo RIA07 incompatible.")
+            raise ValueError("Versión de modelo RIA06 incompatible.")
         if (
             getattr(loaded, "feature_schema_version", None)
             != cls.FEATURE_SCHEMA_VERSION
@@ -1760,7 +1760,7 @@ class AnalizadorPatronesEstudiantiles:
         missing = [name for name in required if not hasattr(loaded, name)]
         if missing or not loaded.is_fitted or loaded.model is None:
             raise ValueError(
-                "Artefacto RIA07 incompleto. Faltan: "
+                "Artefacto RIA06 incompleto. Faltan: "
                 + (", ".join(missing) if missing else "estado entrenado")
                 + "."
             )

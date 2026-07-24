@@ -132,7 +132,7 @@ class AppResultados:
         center_frame = tk.Frame(wrapper)
         center_frame.pack()
 
-        if "RIA8" in ria and data.get("tabla_docente"):
+        if "RIA7" in ria and data.get("tabla_docente"):
             self.crear_tabla_docente(
                 center_frame,
                 data["tabla_docente"],
@@ -188,9 +188,9 @@ class AppResultados:
             self.crear_texto_lectura(box_detalle, detalle_texto)
 
         # =========================
-        #  RIA8
+        #  RIA7
         # =========================
-        if "RIA8" in ria:
+        if "RIA7" in ria:
             box_anom = tk.LabelFrame(center_frame, text="Análisis de riesgo y anomalías", font=("Arial", 11, "bold"))
             box_anom.pack(pady=10)
 

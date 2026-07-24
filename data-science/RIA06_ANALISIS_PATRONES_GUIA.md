@@ -1,8 +1,11 @@
-# RIA07 - Análisis de patrones estudiantiles
+# RIA06 - Análisis de patrones estudiantiles
 
 ## Alineación con el informe
 
-El informe define RIA07 con trazabilidad `CU-AN-03`:
+El informe actualizado define RIA06 con trazabilidad `CU-AN-03`.
+
+> Los endpoints canónicos son `/ria06/*`; `/ria07/patterns` se conserva
+> temporalmente como alias legado. El módulo ML es `ria06_patrones.py`.
 
 | Elemento | Definición implementada |
 | --- | --- |
@@ -12,7 +15,7 @@ El informe define RIA07 con trazabilidad `CU-AN-03`:
 | Medidas | Frecuencia de actividades, duración promedio de sesión y continuidad. |
 
 El documento menciona “exactitud 75%”, pero accuracy no es una métrica válida
-para clustering sin segmentos reales etiquetados. RIA07 devuelve silhouette,
+para clustering sin segmentos reales etiquetados. RIA06 devuelve silhouette,
 Davies-Bouldin, Calinski-Harabasz y estabilidad ARI. Solo se podrá calcular
 accuracy externa cuando exista una clasificación de referencia validada por
 especialistas.
@@ -44,7 +47,7 @@ de observación antes de llamar al servicio. No deben compararse frecuencias
 calculadas sobre periodos diferentes.
 
 La duración y unidad exacta de esa ventana todavía es una decisión pendiente
-del proyecto. RIA07 no inventa ese periodo: registra una advertencia mientras
+del proyecto. RIA06 no inventa ese periodo: registra una advertencia mientras
 no se entreguen `fecha_inicio_ventana`, `fecha_fin_ventana` y `fecha_corte`.
 Cuando las fechas existen, comprueba que no haya eventos posteriores al corte
 y que toda la cohorte use periodos compatibles.
@@ -74,7 +77,7 @@ y que toda la cohorte use periodos compatibles.
 flowchart LR
     A["Logs de actividades"] --> B["Backend agrega una ventana común"]
     B --> C["Frecuencia, duración media y días inactivo"]
-    C --> D["POST /ria07/patterns o /batch"]
+    C --> D["POST /ria06/patterns o /batch"]
     D --> E["Validación: código no se solicita"]
     E --> F["Validación de cohorte y variables informativas"]
     F --> G["K-means y estabilidad por submuestreo"]
@@ -86,7 +89,7 @@ flowchart LR
 
 ### Analizar un estudiante
 
-`POST /ria07/patterns`
+`POST /ria06/patterns`
 
 ```json
 {
@@ -131,7 +134,7 @@ porcentajes, penalizaciones, score interno y razón de aceptación o descarte.
 
 ### Analizar un grupo
 
-`POST /ria07/patterns/batch`
+`POST /ria06/patterns/batch`
 
 ```json
 {
@@ -157,7 +160,7 @@ por estudiante.
 
 ### Información del modelo
 
-`GET /ria07/info`
+`GET /ria06/info`
 
 Expone versión, técnica, variables, calidad, perfiles, candidatos evaluados,
 `model_run_id`, periodo, diagnósticos y advertencias. También incluye
@@ -189,7 +192,7 @@ permanecen disponibles en el API para revisión técnica.
 
 ## Reentrenamiento y compatibilidad
 
-El artefacto se guarda como `saved_models/ria07_patrones_model.pkl`. La API y
+El artefacto se guarda como `saved_models/ria06_patrones_model.pkl`. La API y
 la UI local verifican `model_version` y el esquema de variables. La versión
 actual es `ria07-v5-reliable`. Un modelo ausente o incompatible se vuelve a
 entrenar con el dataset configurado.
@@ -211,5 +214,5 @@ una fuente no confiable.
   no etiquetas verdaderas.
 - Un silhouette moderado permite exploración, pero los segmentos deben
   validarse con docentes antes de usarse para decisiones automáticas.
-- RIA07 debe apoyar la observación docente y nunca sancionar o calificar por sí
+- RIA06 debe apoyar la observación docente y nunca sancionar o calificar por sí
   solo.

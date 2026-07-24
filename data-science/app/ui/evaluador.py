@@ -8,20 +8,20 @@ RIA2_RESULT_LABELS = {
     "on_track": "En buen camino",
 }
 
-RIA10_RESULT_LABELS = {
+RIA8_RESULT_LABELS = {
     "individual_support": "Requiere apoyo individual",
     "reinforce_group": "Requiere refuerzo pedagogico",
     "maintain_strategy": "Mantener estrategia actual",
     "increase_challenge": "Proponer un reto mayor",
 }
 
-RIA10_COMPARISON_LABELS = {
+RIA8_COMPARISON_LABELS = {
     "favorable": "Favorable respecto al grado",
     "near_grade_average": "Cercano al promedio del grado",
     "needs_attention": "Requiere atencion",
 }
 
-RIA10_REFERENCE_LABELS = {
+RIA8_REFERENCE_LABELS = {
     "same_grade_training_group": "Promedio del mismo grado en entrenamiento",
     "global_training_group": "Promedio global de entrenamiento",
 }
@@ -57,11 +57,12 @@ def generar_resultados(
     ria2,
     ria3,
     ria4,
+    ria5,
+    ria6,
     ria7,
     ria8,
+    ria9,
     ria10,
-    ria11,
-    ria12,
 ):
 
     data = df.sample(1)
@@ -75,28 +76,30 @@ def generar_resultados(
         "seed": None,
     }
     ria4_detalle = ria4.predict_detailed(ria4_input)
+    ria5_input = construir_input_ria5()
+    ria5_detalle = ria5.predict_detailed(ria5_input)
     ria2_input = construir_input_ria2(data)
     ria2_detalle = ria2.predict_detailed(ria2_input)
-    ria7_input = construir_input_ria7(data)
-    ria7_detalle = ria7.predict_detailed(ria7_input)
-    ria7_calidad = ria7.quality_summary()
-    ria7_estudiantes = predecir_lote_ria7(ria7, df)
-    ria7_segment_counts = {
+    ria6_input = construir_input_ria6(data)
+    ria6_detalle = ria6.predict_detailed(ria6_input)
+    ria6_calidad = ria6.quality_summary()
+    ria6_estudiantes = predecir_lote_ria6(ria6, df)
+    ria6_segment_counts = {
         segment_id: sum(
             row["segment_id"] == segment_id
-            for row in ria7_estudiantes
+            for row in ria6_estudiantes
         )
-        for segment_id in ria7.segment_profiles
+        for segment_id in ria6.segment_profiles
     }
-    ria10_detalle = ria10.predict_detailed(data)
     ria8_detalle = ria8.predict_detailed(data)
-    ria8_estudiantes = ria8.predict_batch(df, sort_by_risk=True)
-    ria8_resumen = {
-        "total": len(ria8_estudiantes),
-        "normal": sum(row["risk_level"] == "low" for row in ria8_estudiantes),
-        "atencion": sum(row["risk_level"] == "medium" for row in ria8_estudiantes),
-        "critico": sum(row["risk_level"] == "high" for row in ria8_estudiantes),
-        "anomalias": sum(row["anomaly"] for row in ria8_estudiantes),
+    ria7_detalle = ria7.predict_detailed(data)
+    ria7_estudiantes = ria7.predict_batch(df, sort_by_risk=True)
+    ria7_resumen = {
+        "total": len(ria7_estudiantes),
+        "normal": sum(row["risk_level"] == "low" for row in ria7_estudiantes),
+        "atencion": sum(row["risk_level"] == "medium" for row in ria7_estudiantes),
+        "critico": sum(row["risk_level"] == "high" for row in ria7_estudiantes),
+        "anomalias": sum(row["anomaly"] for row in ria7_estudiantes),
     }
 
     def get_input_data(columns):
@@ -164,67 +167,84 @@ def generar_resultados(
             "input_data": ria4_input,
         },
 
-        "RIA7 - Análisis de patrones": {
-            "resultado": ria7_detalle["segment_name"],
+        "RIA5 - Clasificador de errores": {
+            "resultado": ria5_detalle["error_label"],
             "detalle": {
-                "Resumen": ria7_detalle["teacher_summary"],
-                "Motivos principales": ria7_detalle["reasons"],
+                "confianza": f"{ria5_detalle['confidence']:.2%}",
+                "requiere_revision_docente": ria5_detalle["requires_review"],
+                "razones": ria5_detalle["reasons"],
+                "aviso": ria5_detalle["details"]["teacher_notice"],
+            },
+            "accuracy": round_metric(ria5.validation_accuracy),
+            "precision": round_metric(ria5.validation_precision),
+            "importancias": dict(zip(
+                ria5.feature_columns,
+                ria5.model.feature_importances_,
+            )),
+            "input_data": ria5_input,
+        },
+
+        "RIA6 - Análisis de patrones": {
+            "resultado": ria6_detalle["segment_name"],
+            "detalle": {
+                "Resumen": ria6_detalle["teacher_summary"],
+                "Motivos principales": ria6_detalle["reasons"],
                 "Acción recomendada": {
                     "Prioridad": {
                         "high": "Alta",
                         "medium": "Media",
                         "low": "Baja",
                     }.get(
-                        ria7_detalle["teacher_suggestion"]["priority"],
-                        ria7_detalle["teacher_suggestion"]["priority"],
+                        ria6_detalle["teacher_suggestion"]["priority"],
+                        ria6_detalle["teacher_suggestion"]["priority"],
                     ),
                     "Acción principal": (
-                        ria7_detalle["teacher_suggestion"]["title"]
+                        ria6_detalle["teacher_suggestion"]["title"]
                     ),
                     "Pasos sugeridos": (
-                        ria7_detalle["teacher_suggestion"]["actions"]
+                        ria6_detalle["teacher_suggestion"]["actions"]
                     ),
                 },
-                "Aviso": ria7_detalle["details"]["teacher_notice"],
+                "Aviso": ria6_detalle["details"]["teacher_notice"],
             },
             "calidad_clustering": {
-                "Calidad de los grupos": ria7_calidad["quality_label"],
-                "Uso recomendado": ria7_calidad["recommended_use"],
-                "Grupos encontrados": ria7_calidad["selected_clusters"],
+                "Calidad de los grupos": ria6_calidad["quality_label"],
+                "Uso recomendado": ria6_calidad["recommended_use"],
+                "Grupos encontrados": ria6_calidad["selected_clusters"],
             },
             "resumen_segmentos": {
-                "conteos": ria7_segment_counts,
-                "perfiles": list(ria7.segment_profiles.values()),
+                "conteos": ria6_segment_counts,
+                "perfiles": list(ria6.segment_profiles.values()),
             },
             "input_data": {
-                "Estudiante": ria7_detalle.get("student_id") or "Sin identificador",
+                "Estudiante": ria6_detalle.get("student_id") or "Sin identificador",
                 "Actividades completadas": (
-                    ria7_detalle["feature_values"]["frecuencia_actividad"]
+                    ria6_detalle["feature_values"]["frecuencia_actividad"]
                 ),
                 "Duración promedio de sesión": (
-                    f"{ria7_detalle['feature_values']['duracion_promedio_min']:.1f} minutos"
+                    f"{ria6_detalle['feature_values']['duracion_promedio_min']:.1f} minutos"
                 ),
                 "Días sin actividad": (
-                    f"{ria7_detalle['feature_values']['dias_inactivo']:.1f}"
+                    f"{ria6_detalle['feature_values']['dias_inactivo']:.1f}"
                 ),
             },
         },
 
-        "RIA8 - Riesgo y anomalías": {
-            "resultado": ria8_detalle["risk_label"],
+        "RIA7 - Riesgo y anomalías": {
+            "resultado": ria7_detalle["risk_label"],
             "detalle": {
-                "puntaje_riesgo": ria8_detalle["risk_score"],
-                "anomalia": ria8_detalle["anomaly"],
-                "puntaje_anomalia": ria8_detalle["anomaly_score"],
-                "razones": ria8_detalle["reasons"],
-                "recomendacion_docente": ria8_detalle["teacher_recommendation"],
-                "usa_historial_del_estudiante": ria8_detalle["student_history_used"],
-                "usa_cohorte_de_referencia": ria8_detalle["reference_cohort_used"],
+                "puntaje_riesgo": ria7_detalle["risk_score"],
+                "anomalia": ria7_detalle["anomaly"],
+                "puntaje_anomalia": ria7_detalle["anomaly_score"],
+                "razones": ria7_detalle["reasons"],
+                "recomendacion_docente": ria7_detalle["teacher_recommendation"],
+                "usa_historial_del_estudiante": ria7_detalle["student_history_used"],
+                "usa_cohorte_de_referencia": ria7_detalle["reference_cohort_used"],
             },
-            "resumen_docente": ria8_resumen,
-            "tabla_docente": ria8_estudiantes,
-            "anomalias": f"{ria8.reference_anomaly_ratio:.2%} de la cohorte de referencia marcada como anómala (no es calidad del modelo)",
-            "pesos_riesgo": ria8.obtener_pesos_riesgo()["weights"],
+            "resumen_docente": ria7_resumen,
+            "tabla_docente": ria7_estudiantes,
+            "anomalias": f"{ria7.reference_anomaly_ratio:.2%} de la cohorte de referencia marcada como anómala (no es calidad del modelo)",
+            "pesos_riesgo": ria7.obtener_pesos_riesgo()["weights"],
             "input_data": get_input_data([
                 "intentos",
                 "errores",
@@ -236,26 +256,26 @@ def generar_resultados(
             ])
         },
 
-        "RIA10 - Recomendacion pedagogica": {
-            "resultado": RIA10_RESULT_LABELS.get(
-                ria10_detalle["pedagogical_recommendation"],
-                ria10_detalle["pedagogical_recommendation"],
+        "RIA8 - Recomendacion pedagogica": {
+            "resultado": RIA8_RESULT_LABELS.get(
+                ria8_detalle["pedagogical_recommendation"],
+                ria8_detalle["pedagogical_recommendation"],
             ),
             "detalle": {
-                "perfil_pedagogico": ria10_detalle["pedagogical_profile"],
-                "riesgo_pedagogico": ria10_detalle["pedagogical_risk"],
-                "confianza": f"{ria10_detalle['confidence']:.2%}",
-                "comparacion_con_grado": traducir_comparacion_ria10(
-                    ria10_detalle["grade_comparison"]
+                "perfil_pedagogico": ria8_detalle["pedagogical_profile"],
+                "riesgo_pedagogico": ria8_detalle["pedagogical_risk"],
+                "confianza": f"{ria8_detalle['confidence']:.2%}",
+                "comparacion_con_grado": traducir_comparacion_ria8(
+                    ria8_detalle["grade_comparison"]
                 ),
-                "razones": ria10_detalle["reasons"],
-                "sugerencia_docente": traducir_sugerencia_ria10(
-                    ria10_detalle["teacher_suggestion"]
+                "razones": ria8_detalle["reasons"],
+                "sugerencia_docente": traducir_sugerencia_ria8(
+                    ria8_detalle["teacher_suggestion"]
                 ),
             },
-            "accuracy": round_metric(ria10.accuracy),
-            "precision": round_metric(ria10.precision),
-            "importancias": obtener_importancias_modelo(ria10),
+            "accuracy": round_metric(ria8.accuracy),
+            "precision": round_metric(ria8.precision),
+            "importancias": obtener_importancias_modelo(ria8),
             "input_data": get_input_data([
                 "intentos",
                 "errores",
@@ -268,13 +288,13 @@ def generar_resultados(
             ]),
         },
 
-        "RIA11 - Tiempo": {
-            "resultado": ria11.predict(data),
-            "accuracy": round_metric(ria11.accuracy),
-            "precision": round_metric(ria11.precision),
+        "RIA9 - Tiempo": {
+            "resultado": ria9.predict(data),
+            "accuracy": round_metric(ria9.accuracy),
+            "precision": round_metric(ria9.precision),
             "importancias": dict(zip(
-                ria11.feature_columns,
-                ria11.model.feature_importances_
+                ria9.feature_columns,
+                ria9.model.feature_importances_
             )),
             "input_data": get_input_data([
                 "intentos",
@@ -289,13 +309,13 @@ def generar_resultados(
             ])
         },
 
-        "RIA12 - Código": {
-            "resultado": ria12.predict(data),
-            "accuracy": round_metric(ria12.accuracy),
-            "precision": round_metric(ria12.precision),
+        "RIA10 - Código": {
+            "resultado": ria10.predict(data),
+            "accuracy": round_metric(ria10.accuracy),
+            "precision": round_metric(ria10.precision),
             "importancias": dict(zip(
-                ria12.feature_columns,
-                ria12.model.feature_importances_
+                ria10.feature_columns,
+                ria10.model.feature_importances_
             )),
             "input_data": get_input_data([
                 "errores",
@@ -315,7 +335,7 @@ def generar_resultados(
     return resultados
 
 
-def traducir_comparacion_ria10(comparison):
+def traducir_comparacion_ria8(comparison):
     metric_labels = {
         "errors": "errores",
         "inactive_days": "dias_inactivo",
@@ -328,7 +348,7 @@ def traducir_comparacion_ria10(comparison):
             "valor_estudiante": values["student_value"],
             "promedio_grado": values["grade_average"],
             "diferencia": values["difference"],
-            "estado": RIA10_COMPARISON_LABELS.get(
+            "estado": RIA8_COMPARISON_LABELS.get(
                 values["status"],
                 values["status"],
             ),
@@ -336,7 +356,7 @@ def traducir_comparacion_ria10(comparison):
 
     return {
         "grado": comparison["grade"],
-        "referencia": RIA10_REFERENCE_LABELS.get(
+        "referencia": RIA8_REFERENCE_LABELS.get(
             comparison["reference_scope"],
             comparison["reference_scope"],
         ),
@@ -344,7 +364,7 @@ def traducir_comparacion_ria10(comparison):
     }
 
 
-def traducir_sugerencia_ria10(suggestion):
+def traducir_sugerencia_ria8(suggestion):
     return {
         "titulo": suggestion["title"],
         "resumen": suggestion["summary"],
@@ -352,6 +372,46 @@ def traducir_sugerencia_ria10(suggestion):
         "acciones": suggestion["actions"],
         "revisar_despues_de_actividades": suggestion["review_after_activities"],
         "basada_en_razones": suggestion["based_on_reasons"],
+    }
+
+
+def construir_input_ria5():
+    """
+    Ejecución demostrativa hasta que el simulador entregue telemetría real.
+
+    La UI local no intenta inferir estas variables desde el dataset académico,
+    porque describen una ejecución concreta del robot y no el perfil histórico
+    del estudiante.
+    """
+    return {
+        "resultado_esperado": {
+            "posicion": {"x": 4, "y": 2},
+            "sensores": {"frontal": False, "derecho": True},
+            "pasos_ejecutados": 6,
+            "completion_ratio": 1.0,
+        },
+        "resultado_obtenido": {
+            "posicion": {"x": 3, "y": 2},
+            "sensores": {"frontal": True, "derecho": True},
+            "pasos_ejecutados": 4,
+            "completion_ratio": 0.67,
+        },
+        "posicion_robot": {"x": 3, "y": 2},
+        "estados_sensores": {
+            "esperado": {"frontal": False, "derecho": True},
+            "obtenido": {"frontal": True, "derecho": True},
+        },
+        "instrucciones_utilizadas": [
+            "move_forward",
+            "repeat",
+            "move_forward",
+            "turn_right",
+            "move_forward",
+            "stop",
+        ],
+        "colisiones": 1,
+        "paso_interrupcion": 4,
+        "completion_ratio": 0.67,
     }
 
 
@@ -392,9 +452,9 @@ def construir_input_ria2(data):
     }])
 
 
-def construir_input_ria7(data):
+def construir_input_ria6(data):
     """
-    Adapta el resumen heredado de la UI al contrato canónico de RIA07.
+    Adapta el resumen heredado de la UI al contrato canónico de RIA06.
 
     La conversión queda en la frontera de integración para que el modelo no
     confunda automáticamente conteos o sesiones individuales con agregados.
@@ -413,7 +473,7 @@ def construir_input_ria7(data):
         legacy_available = legacy in data.columns
         if not canonical_available and not legacy_available:
             raise ValueError(
-                "La UI no puede construir la entrada RIA07. Falta "
+                "La UI no puede construir la entrada RIA06. Falta "
                 f"'{canonical}' o su columna de resumen '{legacy}'."
             )
         if canonical_available and legacy_available and canonical != legacy:
@@ -452,13 +512,13 @@ def construir_input_ria7(data):
     return result.reset_index(drop=True)
 
 
-def predecir_lote_ria7(ria7, data):
+def predecir_lote_ria6(ria6, data):
     """Procesa cohortes de UI mayores al límite seguro de un solo lote."""
-    canonical = construir_input_ria7(data)
-    batch_size = ria7.max_batch_size
+    canonical = construir_input_ria6(data)
+    batch_size = ria6.max_batch_size
     results = []
     for start in range(0, len(canonical), batch_size):
         results.extend(
-            ria7.predict_batch(canonical.iloc[start : start + batch_size])
+            ria6.predict_batch(canonical.iloc[start : start + batch_size])
         )
     return results

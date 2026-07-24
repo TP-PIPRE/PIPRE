@@ -1,3 +1,5 @@
+"""RIA07: detección de riesgo y anomalías (renumerado desde RIA07)."""
+
 from __future__ import annotations
 
 import warnings
@@ -20,7 +22,7 @@ class DetectorRiesgoAnomalias:
     antes de utilizarse para decisiones importantes.
     """
 
-    CONFIG_VERSION = "ria08-risk-config-v3"
+    CONFIG_VERSION = "ria07-risk-config-v3"
     DEFAULT_MIN_TRAINING_SAMPLES = 20
     SMALL_REFERENCE_COHORT = 50
     DEFAULT_ANOMALY_WEIGHT = 0.15
@@ -164,10 +166,10 @@ class DetectorRiesgoAnomalias:
     def train(self, df: pd.DataFrame) -> None:
         source = self._coerce_input(df)
         if source.empty:
-            raise ValueError("RIA08 no puede entrenarse con un conjunto vacio.")
+            raise ValueError("RIA07 no puede entrenarse con un conjunto vacio.")
         if len(source) < self.min_training_samples:
             raise ValueError(
-                "RIA08 requiere al menos "
+                "RIA07 requiere al menos "
                 f"{self.min_training_samples} registros validos para entrenar "
                 "el conjunto de referencia."
             )
@@ -399,7 +401,7 @@ class DetectorRiesgoAnomalias:
         ]
         if missing_columns:
             raise ValueError(
-                "Datos invalidos en RIA08. Faltan columnas obligatorias: "
+                "Datos invalidos en RIA07. Faltan columnas obligatorias: "
                 f"{missing_columns}."
             )
 
@@ -458,7 +460,7 @@ class DetectorRiesgoAnomalias:
         inconsistent = (data["intentos"] == 0) & (data["errores"] > 0)
         if inconsistent.any():
             raise ValueError(
-                "Datos invalidos en RIA08. Las filas "
+                "Datos invalidos en RIA07. Las filas "
                 f"{self._format_rows(data.index[inconsistent])} tienen "
                 "intentos=0 y errores>0."
             )
@@ -509,7 +511,7 @@ class DetectorRiesgoAnomalias:
         features = data[self.feature_columns].astype(float)
         if not np.isfinite(features.to_numpy()).all():
             raise ValueError(
-                "Datos invalidos en RIA08. Las features derivadas contienen "
+                "Datos invalidos en RIA07. Las features derivadas contienen "
                 "valores no finitos."
             )
         return features
@@ -517,9 +519,9 @@ class DetectorRiesgoAnomalias:
     def _select_model_features(self, features: pd.DataFrame) -> pd.DataFrame:
         selected = features.loc[:, self.model_feature_columns].copy()
         if list(selected.columns) != self.model_feature_columns:
-            raise RuntimeError("Las features de RIA08 cambiaron de orden.")
+            raise RuntimeError("Las features de RIA07 cambiaron de orden.")
         if selected.columns.duplicated().any():
-            raise RuntimeError("RIA08 contiene features duplicadas.")
+            raise RuntimeError("RIA07 contiene features duplicadas.")
         return selected
 
     def _calculate_behavioral_score(
@@ -847,7 +849,7 @@ class DetectorRiesgoAnomalias:
 
     def _check_fitted(self) -> None:
         if not self.is_fitted:
-            raise RuntimeError("RIA08 debe entrenarse antes de predecir.")
+            raise RuntimeError("RIA07 debe entrenarse antes de predecir.")
 
     def _new_model(self) -> IsolationForest:
         return IsolationForest(
@@ -967,7 +969,7 @@ class DetectorRiesgoAnomalias:
             return pd.DataFrame([data])
         if isinstance(data, list):
             return pd.DataFrame(data)
-        raise TypeError("RIA08 requiere un diccionario, una lista o un DataFrame.")
+        raise TypeError("RIA07 requiere un diccionario, una lista o un DataFrame.")
 
     @staticmethod
     def _raise_invalid_rows(
@@ -976,7 +978,7 @@ class DetectorRiesgoAnomalias:
         rows: Iterable[Any],
     ) -> None:
         raise ValueError(
-            f"Datos invalidos en RIA08. La columna '{column}' {problem} "
+            f"Datos invalidos en RIA07. La columna '{column}' {problem} "
             f"en las filas: {DetectorRiesgoAnomalias._format_rows(rows)}."
         )
 

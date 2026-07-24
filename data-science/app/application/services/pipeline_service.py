@@ -3,16 +3,31 @@ from app.domain.ports.pipeline_usecase import PipelineUseCase
 
 class PipelineIA(PipelineUseCase):
 
-    def __init__(self, ria1, ria2, ria3, ria4, ria7, ria8, ria10, ria11, ria12):
+    MODEL_NAMES = tuple(f"ria{number}" for number in range(1, 11))
+
+    def __init__(
+        self,
+        ria1,
+        ria2,
+        ria3,
+        ria4,
+        ria5,
+        ria6,
+        ria7,
+        ria8,
+        ria9,
+        ria10,
+    ):
         self.ria1 = ria1
         self.ria2 = ria2
         self.ria3 = ria3
         self.ria4 = ria4
+        self.ria5 = ria5
+        self.ria6 = ria6
         self.ria7 = ria7
         self.ria8 = ria8
+        self.ria9 = ria9
         self.ria10 = ria10
-        self.ria11 = ria11
-        self.ria12 = ria12
 
         self._trained = False
         self.load_errors = {}
@@ -26,14 +41,12 @@ class PipelineIA(PipelineUseCase):
 
         self.ria4.train(df)
 
+        self.ria5.train(None)
+        self.ria6.train(df)
         self.ria7.train(df)
-
         self.ria8.train(df)
-
+        self.ria9.train(df)
         self.ria10.train(df)
-
-        self.ria11.train(df)
-        self.ria12.train(df)
 
         self._trained = True
 
@@ -43,17 +56,7 @@ class PipelineIA(PipelineUseCase):
         status = {}
         self.load_errors = {}
 
-        for name in (
-            "ria1",
-            "ria2",
-            "ria3",
-            "ria4",
-            "ria7",
-            "ria8",
-            "ria10",
-            "ria11",
-            "ria12",
-        ):
+        for name in self.MODEL_NAMES:
             current_model = getattr(self, name)
             repository = repositories[name]
             expected_version = expected_versions.get(name)
@@ -78,7 +81,8 @@ class PipelineIA(PipelineUseCase):
                 status[name] = "loaded"
             except Exception as exc:
                 self.load_errors[name] = f"{type(exc).__name__}: {exc}"
-                current_model.train(df)
+                training_data = None if name == "ria5" else df
+                current_model.train(training_data)
                 if expected_version is not None:
                     current_model.model_version = expected_version
                 repository.save(current_model)
@@ -93,9 +97,10 @@ class PipelineIA(PipelineUseCase):
             self.ria2,
             self.ria3,
             self.ria4,
+            self.ria5,
+            self.ria6,
             self.ria7,
             self.ria8,
+            self.ria9,
             self.ria10,
-            self.ria11,
-            self.ria12,
         )

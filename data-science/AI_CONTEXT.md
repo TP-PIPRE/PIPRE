@@ -22,6 +22,14 @@ proyecto.
 - `app/ui`: UI local para pruebas con el dataset.
 - `data`: dataset de entrenamiento.
 - `saved_models`: modelos `.pkl` entrenados.
+- `docs/ria`: guia funcional, endpoints y contexto recomendado para IA
+  generativa de cada RIA01-RIA10.
+
+## Guias detalladas por RIA
+
+El indice principal es [`docs/ria/README.md`](docs/ria/README.md). Cada guia
+separa las entradas del modelo, la respuesta de API y el subconjunto de datos
+que conviene enviar a una IA generativa.
 
 ## RIA implementados
 
@@ -31,11 +39,12 @@ proyecto.
 | RIA02 | `ria02_feedback.py` | Decide si requiere retroalimentacion con reglas calibradas y devuelve riesgo, razones, evidencia, pistas y contexto para IA. |
 | RIA03 | `ria03_recomendador.py` | Compara XGBoost jerarquico/multiclase para recomendar basic, intermediate o advanced. |
 | RIA04 | `ria04_generador.py` | Genera borradores de retos con un sistema experto y reglas procedurales. |
-| RIA07 | `ria07_patrones.py` | Segmenta frecuencia, duracion y continuidad con K-means; bloques y codigo no se usan para asignar segmentos. |
-| RIA08 | `ria08_riesgo_anomalias.py` | Unifica riesgo y anomalias sin historial temporal individual, usando cohorte de referencia. |
-| RIA10 | `ria10_pedagogica.py` | Recomienda intervencion pedagogica. |
-| RIA11 | `ria11_tiempo.py` | Clasifica tiempo: short, medium, long. |
-| RIA12 | `ria12_codigo.py` | Evalua codigo en la UI local. No tiene endpoint FastAPI directo actualmente. |
+| RIA05 | `ria05_errores.py` | Clasifica seis tipos de error logico con Random Forest a partir de telemetria del simulador. |
+| RIA06 | `ria06_patrones.py` | Segmenta frecuencia, duracion y continuidad con K-means; bloques y codigo no se usan para asignar segmentos. |
+| RIA07 | `ria07_riesgo_anomalias.py` | Unifica riesgo y anomalias sin historial temporal individual, usando cohorte de referencia. |
+| RIA08 | `ria08_pedagogica.py` | Recomienda intervencion pedagogica. |
+| RIA09 | `ria09_tiempo.py` | Clasifica tiempo: short, medium, long. |
+| RIA10 | `ria10_codigo.py` | Clasifica la calidad de codigo en basico, intermedio o avanzado; funciona en UI y FastAPI. |
 
 ### RIA01: modos y restricciones
 
@@ -74,7 +83,7 @@ proyecto.
 - No reportar `accuracy` ni `precision`; medir validez de formato,
   compatibilidad de bloques, ejecucion de casos de prueba y aprobacion docente.
 
-### RIA10: recomendacion pedagogica por grado
+### RIA08: recomendacion pedagogica por grado
 
 - Compara errores, dias de inactividad y actividades completadas del estudiante
   con promedios aprendidos del mismo grado en el conjunto de entrenamiento.
@@ -84,7 +93,7 @@ proyecto.
   y una sugerencia docente accionable.
 - Las acciones se construyen a partir de la categoria y de las brechas
   observadas; siempre requieren criterio final del docente.
-- RIA10 forma parte tanto de FastAPI como del pipeline de la UI local.
+- RIA08 forma parte tanto de FastAPI como del pipeline de la UI local.
 
 ## Endpoints principales
 
@@ -92,17 +101,21 @@ proyecto.
 - `POST /ria02/feedback`
 - `POST /ria03/recommend`
 - `POST /ria04/generate`
-- `POST /ria07/patterns`
-- `POST /ria07/patterns/batch`
-- `POST /ria08/anomaly`
-- `POST /ria08/early-warning`
-- `POST /ria08/early-warning/batch`
-- `POST /ria10/pedagogical`
-- `POST /ria11/time`
+- `POST /ria05/errors`
+- `POST /ria05/errors/batch`
+- `POST /ria06/patterns`
+- `POST /ria06/patterns/batch`
+- `POST /ria07/anomaly`
+- `POST /ria07/early-warning`
+- `POST /ria07/early-warning/batch`
+- `POST /ria08/pedagogical`
+- `POST /ria09/time`
+- `POST /ria10/code`
+- `POST /ria10/code/batch`
 - `GET /riaXX/info`
 - `GET /health`
 
-### RIA08: primera version sin historial temporal individual
+### RIA07: primera version sin historial temporal individual
 
 - No usa una secuencia temporal individual, pero si una cohorte de referencia.
 - El `risk_score` es un indice de atencion de 0 a 100, no una probabilidad de abandono.
@@ -112,7 +125,20 @@ proyecto.
 - La salida incluye nivel, razones, evidencia y recomendacion docente.
 - El modelo conserva el orden del lote; el servicio solicita orden por riesgo para la tabla.
 - `student_history_used=false` y `reference_cohort_used=true` aclaran la procedencia.
-- La guia completa esta en `RIA08_RIESGO_ANOMALIAS_GUIA.md`.
+- La guia completa esta en `RIA07_RIESGO_ANOMALIAS_GUIA.md`.
+
+### RIA10: clasificacion de calidad de codigo
+
+- Recibe errores, intentos, interacciones IA, ayuda, actividades, inactividad,
+  edad, grado, nivel logico y emocion detectada.
+- Devuelve `Codigo basico`, `Codigo intermedio` o `Codigo avanzado`.
+- El endpoint individual es `POST /ria10/code` y el lote admite hasta 500
+  estudiantes en `POST /ria10/code/batch`.
+- La etiqueta de entrenamiento se construye con una regla heuristica sobre las
+  mismas variables. Por ello accuracy y precision miden consistencia tecnica,
+  no acuerdo con una evaluacion externa realizada por docentes.
+- `GET /ria10/info` expone version, variables, clases y la advertencia sobre el
+  origen heuristico del target.
 
 ## Contrato de respuesta recomendado
 

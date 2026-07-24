@@ -6,688 +6,377 @@ import pandas as pd
 import pytest
 from pydantic import ValidationError
 
-from app.adapters.api.main import app, to_ria07_model_input
-from app.adapters.api.schemas import (
-    RIA07BatchResponse,
-    RIA07Input,
-    RIA07Response,
-)
-from app.adapters.ml_models.ria07_patrones import (
-    AnalizadorPatronesEstudiantiles,
-)
+from app.adapters.api.main import to_ria07_model_input
+from app.adapters.api.schemas import RIA07Input
+from app.adapters.ml_models.ria07_riesgo_anomalias import DetectorRiesgoAnomalias
 from app.application.services.ria07_service import RIA07Service
-from app.ui.evaluador import construir_input_ria7, predecir_lote_ria7
 
 
-def behavior_cohort() -> pd.DataFrame:
-    rng = np.random.default_rng(42)
-    rows = []
-    configurations = [
-        (3.0, 12.0, 8.0),
-        (11.0, 42.0, 1.0),
-        (19.0, 20.0, 4.0),
-    ]
-    for group, (frequency, duration, inactive_days) in enumerate(configurations):
-        for index in range(30):
-            rows.append({
-                "id_estudiante": f"G{group}-{index}",
-                "actividades_completadas": max(
-                    0,
-                    frequency + rng.normal(0, 0.8),
-                ),
-                "tiempo_sesion_min": max(
-                    1,
-                    duration + rng.normal(0, 2),
-                ),
-                "dias_inactivo": float(np.clip(
-                    inactive_days + rng.normal(0, 0.5),
-                    0,
-                    365,
-                )),
-            })
-    return pd.DataFrame(rows)
+def reference_dataset(size: int = 80) -> pd.DataFrame:
+    """Cohorte de referencia; no se reutiliza como métrica de calidad."""
+
+    return pd.DataFrame([
+        {
+            "id_estudiante": f"student-{index}",
+            "intentos": 2 + index % 6,
+            "errores": index % 7,
+            "puntaje": 52 + index % 45,
+            "dias_inactivo": index % 9,
+            "actividades_completadas": 2 + index % 10,
+            "tasa_exito": (50 + index % 48) / 100,
+            "ayuda_solicitada": index % 5,
+        }
+        for index in range(size)
+    ])
 
 
-@pytest.fixture
-def trained_model() -> AnalizadorPatronesEstudiantiles:
-    model = AnalizadorPatronesEstudiantiles()
-    model.train(behavior_cohort())
+def healthy_snapshot(student_id: str = "healthy-1") -> dict:
+    return {
+        "id_estudiante": student_id,
+        "intentos": 3,
+        "errores": 0,
+        "puntaje": 90,
+        "dias_inactivo": 0,
+        "actividades_completadas": 10,
+        "tasa_exito": 0.90,
+        "ayuda_solicitada": 0,
+    }
+
+
+def adverse_snapshot(student_id: str = "critical-1") -> dict:
+    return {
+        "id_estudiante": student_id,
+        "intentos": 15,
+        "errores": 14,
+        "puntaje": 20,
+        "dias_inactivo": 20,
+        "actividades_completadas": 1,
+        "tasa_exito": 0.15,
+        "ayuda_solicitada": 10,
+    }
+
+
+@pytest.fixture(scope="module")
+def trained_model() -> DetectorRiesgoAnomalias:
+    model = DetectorRiesgoAnomalias()
+    model.train(reference_dataset())
     return model
 
 
-def test_training_selects_clusters_and_reports_valid_metrics(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    quality = trained_model.quality_summary()
+def test_healthy_student_has_no_absurd_reasons(trained_model) -> None:
+    result = trained_model.predict_detailed(healthy_snapshot())
 
-    assert 2 <= quality["selected_clusters"] <= 5
-    assert quality["silhouette"] > 0.5
-    assert quality["davies_bouldin"] >= 0
-    assert 0 <= quality["stability_ari"] <= 1
-    assert quality["accuracy"] is None
-    assert "no supervisado" in quality["metrics_note"]
-    assert len(trained_model.segment_profiles) == quality["selected_clusters"]
-    assert all(
-        {
-            "stability_ari",
-            "balance_score",
-            "complexity_penalty",
-            "selection_score",
-        }.issubset(candidate)
-        for candidate in trained_model.candidate_report
-    )
+    assert result["risk_level"] == "low"
+    assert result["risk_score"] < trained_model.risk_thresholds["medium"]
+    assert result["reason_codes"] == []
+    assert result["reasons"] == []
+    assert "high_inactivity" not in result["reason_codes"]
+    assert "high_error_ratio" not in result["reason_codes"]
+    assert "high_help_dependency" not in result["reason_codes"]
 
 
-def test_code_usage_is_only_a_training_diagnostic() -> None:
-    model = AnalizadorPatronesEstudiantiles(
-        min_training_samples=6,
-        min_segment_samples=2,
-    )
-    source = pd.DataFrame({
-        "actividades_completadas": [1, 2, 3, 4, 5, 6],
-        "tiempo_sesion_min": [10, 11, 20, 21, 30, 31],
-        "dias_inactivo": [8, 7, 5, 4, 2, 1],
-        "uso_codigo": [50, 0, 75, 25, 40, 60],
-    })
+def test_constant_healthy_group_does_not_create_percentile_risk() -> None:
+    healthy = healthy_snapshot()
+    cohort = pd.DataFrame([
+        {**healthy, "id_estudiante": f"same-{index}"}
+        for index in range(20)
+    ])
+    model = DetectorRiesgoAnomalias()
+    model.train(cohort)
 
-    model.train(source)
+    result = model.predict_detailed(healthy)
 
-    assert model.feature_columns == [
-        "frecuencia_actividad",
-        "duracion_promedio_min",
-        "dias_inactivo",
-    ]
-    assert "uso_codigo" not in model.feature_columns
-    assert model.training_code_usage_summary["available"] is True
-    assert model.training_code_usage_summary["used_for_segmentation"] is False
-    assert model.training_code_usage_summary["used_for_prediction"] is False
-    assert model.training_code_usage_summary["valid_rows"] == 6
+    assert result["risk_level"] == "low"
+    assert result["risk_score"] == 0
+    assert result["reason_codes"] == []
+    assert result["anomaly_score"] == 0
+    assert set(model.constant_reference_features) == set(model.risk_feature_config)
+    assert model._percentile_from_values(np.zeros(20), 0) == 0
 
 
-def test_code_usage_cannot_change_the_trained_segments() -> None:
-    cohort = behavior_cohort()
-    low_code = cohort.assign(uso_codigo=0)
-    high_code = cohort.assign(uso_codigo=100)
-    first = AnalizadorPatronesEstudiantiles()
-    second = AnalizadorPatronesEstudiantiles()
+def test_adverse_student_has_more_risk_than_healthy(trained_model) -> None:
+    healthy = trained_model.predict_detailed(healthy_snapshot())
+    adverse = trained_model.predict_detailed(adverse_snapshot())
 
-    first.train(low_code)
-    second.train(high_code)
-
-    assert first.selected_clusters == second.selected_clusters
-    assert first.candidate_report == second.candidate_report
-    first_profiles = {
-        key: {name: value for name, value in profile.items() if name != "segment_uid"}
-        for key, profile in first.segment_profiles.items()
-    }
-    second_profiles = {
-        key: {name: value for name, value in profile.items() if name != "segment_uid"}
-        for key, profile in second.segment_profiles.items()
-    }
-    assert first_profiles == second_profiles
-    assert first.training_code_usage_summary["mean_percentage"] == 0
-    assert second.training_code_usage_summary["mean_percentage"] == 100
+    assert adverse["risk_score"] > healthy["risk_score"]
+    assert adverse["risk_level"] == "high"
+    assert adverse["reason_codes"]
+    assert len(adverse["reason_codes"]) <= trained_model.MAX_REASONS
+    assert len(adverse["reason_codes"]) == len(set(adverse["reason_codes"]))
+    assert len(adverse["reason_codes"]) == len(adverse["reasons"])
 
 
-def test_prediction_is_explainable_and_does_not_claim_accuracy(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    result = trained_model.predict_detailed({
-        "student_id": "ALUM-TEST",
-        "frecuencia_actividad": 2,
-        "duracion_promedio_min": 10,
-        "dias_inactivo": 8,
-    })
-
-    assert result["student_id"] == "ALUM-TEST"
-    assert result["segment_id"] in trained_model.segment_profiles
-    assert 0 <= result["assignment_typicality"] <= 1
-    assert result["segment_name"] in result["teacher_summary"]
-    assert result["assignment_interpretation"]["label"]
-    assert "no es una probabilidad" in (
-        result["assignment_interpretation"]["technical_note"]
-    )
-    assert result["reasons"]
-    assert len(result["reasons"]) <= 3
-    assert any(
-        "frecuencia de actividades" in reason
-        for reason in result["reasons"]
-    )
-    assert set(result["segment_comparison"]) == set(
-        trained_model.feature_columns
-    )
-    assert all(
-        comparison["message"]
-        for comparison in result["segment_comparison"].values()
-    )
-    assert result["teacher_suggestion"]["actions"]
-    assert result["details"]["accuracy_applicable"] is False
-    assert "No es una calificación" in result["details"]["teacher_notice"]
-    assert result["model_quality"]["quality_explanation"]
-
-
-def test_very_distant_student_requires_individual_review(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    result = trained_model.predict_detailed({
-        "student_id": "OUTLIER",
-        "frecuencia_actividad": 500,
-        "duracion_promedio_min": 1_000,
-        "dias_inactivo": 365,
-    })
-
-    assert result["requires_review"] is True
-    assert result["assignment_interpretation"]["level"] == "review_required"
-    assert result["teacher_suggestion"]["priority"] == "high"
-    assert "Revisar el caso" in result["teacher_suggestion"]["title"]
-
-
-def test_invalid_behavior_values_are_rejected(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    with pytest.raises(ValueError, match="mayor o igual a 0"):
-        trained_model.predict_detailed({
-            "frecuencia_actividad": -1,
-            "duracion_promedio_min": 10,
-            "dias_inactivo": 5,
-        })
-
-    with pytest.raises(ValueError, match="entre 0 y 365"):
-        trained_model.predict_detailed({
-            "frecuencia_actividad": 1,
-            "duracion_promedio_min": 10,
-            "dias_inactivo": 366,
-        })
-
-
-def test_service_single_and_batch_contracts(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    service = RIA07Service(trained_model)
-    service.set_model(trained_model)
-    rows = [
-        {
-            "student_id": "A",
-            "frecuencia_actividad": 3,
-            "duracion_promedio_min": 12,
-            "dias_inactivo": 8,
-        },
-        {
-            "student_id": "B",
-            "frecuencia_actividad": 18,
-            "duracion_promedio_min": 20,
-            "dias_inactivo": 2,
-        },
-    ]
-
-    single = service.predict(rows[0])
-    batch = service.predict_batch(rows)
-
-    RIA07Response.model_validate(single)
-    RIA07BatchResponse.model_validate(batch)
-    assert single["result"] == single["segment_id"]
-    assert batch["summary"]["total_students"] == 2
-    assert sum(batch["summary"]["segment_counts"].values()) == 2
-
-
-def test_persisted_model_remains_predictable(
-    trained_model: AnalizadorPatronesEstudiantiles,
-    tmp_path,
-) -> None:
-    path = tmp_path / "ria07.pkl"
-    joblib.dump(trained_model, path)
-    loaded = joblib.load(path)
-    service = RIA07Service(AnalizadorPatronesEstudiantiles())
-
-    service.set_model(loaded)
-    result = service.predict({
-        "frecuencia_actividad": 10,
-        "duracion_promedio_min": 40,
-        "dias_inactivo": 1,
-    })
-
-    assert result["segment_id"] in loaded.segment_profiles
-
-
-def test_api_schema_and_converter_use_public_field_names() -> None:
-    payload = RIA07Input(
-        student_id="A-1",
-        activity_frequency=8,
-        average_session_minutes=30,
-        inactive_days=4,
-    )
-
-    internal = to_ria07_model_input(payload)
-
-    assert internal == {
-        "student_id": "A-1",
-        "student_name": None,
-        "frecuencia_actividad": 8,
-        "duracion_promedio_min": 30,
-        "dias_inactivo": 4,
+def test_positive_anomaly_does_not_raise_educational_risk(trained_model) -> None:
+    exceptional = {
+        "intentos": 1,
+        "errores": 0,
+        "puntaje": 100,
+        "dias_inactivo": 0,
+        "actividades_completadas": 20,
+        "tasa_exito": 1.0,
+        "ayuda_solicitada": 0,
     }
 
+    result = trained_model.predict_detailed(exceptional)
 
-def test_api_schema_rejects_out_of_range_inactive_days() -> None:
-    with pytest.raises(ValidationError):
-        RIA07Input(
-            activity_frequency=8,
-            average_session_minutes=30,
-            inactive_days=366,
-        )
+    assert result["anomaly"] is True
+    assert result["risk_level"] == "low"
+    assert result["anomaly_boost"] == 0
+    assert result["reason_codes"] == []
 
 
-def test_api_exposes_single_batch_and_info_routes() -> None:
-    paths = {route.path for route in app.routes}
+def test_negative_anomaly_can_moderately_increase_risk(trained_model) -> None:
+    result = trained_model.predict_detailed(adverse_snapshot())
 
-    assert "/ria07/patterns" in paths
-    assert "/ria07/patterns/batch" in paths
-    assert "/ria07/info" in paths
-
-
-def test_training_rejects_too_few_records() -> None:
-    model = AnalizadorPatronesEstudiantiles()
-
-    with pytest.raises(ValueError, match="al menos 20"):
-        model.train(behavior_cohort().head(19))
+    assert result["anomaly"] is True
+    assert result["behavioral_score"] >= trained_model.min_adverse_score_for_boost
+    assert result["anomaly_boost"] > 0
+    assert result["risk_score"] > result["behavioral_score"]
+    assert result["risk_score"] <= 100
 
 
-def test_training_rejects_less_than_three_distinct_patterns() -> None:
-    rows = pd.DataFrame({
-        "frecuencia_actividad": [1] * 10 + [2] * 10,
-        "duracion_promedio_min": [10] * 10 + [20] * 10,
-        "dias_inactivo": [3] * 20,
-    })
-    model = AnalizadorPatronesEstudiantiles(min_segment_samples=2)
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ({"intentos": "tres"}, "no numericos"),
+        ({"errores": np.inf}, "no finitos"),
+        ({"dias_inactivo": -1}, "valores negativos"),
+        ({"actividades_completadas": 2.7}, "debe contener enteros"),
+        ({"puntaje": 120}, "debe estar entre 0 y 100"),
+        ({"tasa_exito": 80}, "debe estar en escala 0-1"),
+        ({"intentos": 0, "errores": 1}, "intentos=0 y errores>0"),
+    ],
+)
+def test_invalid_values_are_rejected(trained_model, mutation, message) -> None:
+    payload = {**healthy_snapshot(), **mutation}
 
-    with pytest.raises(ValueError, match="tres patrones"):
-        model.train(rows)
-
-
-@pytest.mark.parametrize("invalid", ["texto", np.nan, np.inf])
-def test_training_rejects_non_numeric_nan_and_infinite_values(invalid) -> None:
-    rows = behavior_cohort().rename(columns={
-        "actividades_completadas": "frecuencia_actividad",
-        "tiempo_sesion_min": "duracion_promedio_min",
-    })
-    rows["frecuencia_actividad"] = rows["frecuencia_actividad"].astype(object)
-    rows.loc[0, "frecuencia_actividad"] = invalid
-
-    with pytest.raises(ValueError, match="no numéricos o no finitos"):
-        AnalizadorPatronesEstudiantiles().train(rows)
+    with pytest.raises(ValueError, match=message):
+        trained_model.predict_detailed(payload)
 
 
-def test_constant_feature_is_excluded_without_creating_reasons() -> None:
-    rows = behavior_cohort().assign(dias_inactivo=4)
-    model = AnalizadorPatronesEstudiantiles()
+def test_missing_required_column_is_rejected(trained_model) -> None:
+    payload = healthy_snapshot()
+    payload.pop("intentos")
 
-    model.train(rows)
-    result = model.predict_detailed({
-        "frecuencia_actividad": 10,
-        "duracion_promedio_min": 20,
-        "dias_inactivo": 4,
-    })
+    with pytest.raises(ValueError, match="Faltan columnas obligatorias.*intentos"):
+        trained_model.predict_detailed(payload)
 
-    assert model.excluded_feature_columns == ["dias_inactivo"]
-    assert "dias_inactivo" not in result["segment_comparison"]
-    assert all(
-        "días de inactividad" not in reason
-        for reason in result["reasons"]
+
+def test_error_reports_invalid_dataframe_rows(trained_model) -> None:
+    rows = pd.DataFrame(
+        [healthy_snapshot("a"), healthy_snapshot("b"), healthy_snapshot("c")],
+        index=[2, 7, 9],
     )
+    rows["intentos"] = rows["intentos"].astype(object)
+    rows.loc[[2, 7], "intentos"] = "texto"
 
-
-def test_nearly_constant_feature_is_excluded() -> None:
-    rows = behavior_cohort().assign(dias_inactivo=4.0)
-    rows.loc[0, "dias_inactivo"] = 4.1
-    model = AnalizadorPatronesEstudiantiles()
-
-    model.train(rows)
-
-    assert "dias_inactivo" in model.excluded_feature_columns
-    assert any(
-        "casi constante" in warning
-        for warning in model.training_warnings
-    )
-
-
-def test_training_warns_about_duplicate_patterns() -> None:
-    rows = behavior_cohort()
-    duplicate = rows.iloc[[0]].copy()
-    duplicate["id_estudiante"] = "OTRO-ID"
-    model = AnalizadorPatronesEstudiantiles()
-
-    model.train(pd.concat([rows, duplicate], ignore_index=True))
-
-    assert model.training_diagnostics["duplicate_pattern_rows"] >= 2
-    assert any(
-        "patrones completamente duplicados" in warning
-        for warning in model.training_warnings
-    )
-
-
-def test_training_rejects_duplicate_student_with_conflicting_values() -> None:
-    rows = behavior_cohort()
-    conflicting = rows.iloc[[0]].copy()
-    conflicting["actividades_completadas"] += 10
-
-    with pytest.raises(ValueError, match="estudiantes repetidos"):
-        AnalizadorPatronesEstudiantiles().train(
-            pd.concat([rows, conflicting], ignore_index=True)
-        )
-
-
-def test_training_rejects_candidates_with_too_small_clusters() -> None:
-    model = AnalizadorPatronesEstudiantiles(
-        max_clusters=3,
-        min_segment_samples=46,
-    )
-
-    with pytest.raises(ValueError, match="segmentos menores"):
-        model.train(behavior_cohort())
-
-
-def test_quality_levels_do_not_use_supervised_metrics() -> None:
-    model = AnalizadorPatronesEstudiantiles()
-
-    assert model._quality_status(0.60, 0.90) == "strong"
-    assert model._quality_status(0.30, 0.70) == "moderate"
-    assert model._quality_status(0.20, 0.90) == "weak_review_required"
-    assert model.quality_summary()["accuracy"] is None
-
-
-def test_weak_quality_forces_review_and_safe_suggestion(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    trained_model.quality_status = "weak_review_required"
-
-    result = trained_model.predict_detailed({
-        "frecuencia_actividad": 3,
-        "duracion_promedio_min": 12,
-        "dias_inactivo": 8,
-    })
-
-    assert result["requires_review"] is True
-    assert any("calidad global" in reason for reason in result["review_reasons"])
-    assert "Patrón más cercano" in result["teacher_summary"]
-    assert "reentrenar" in result["teacher_suggestion"]["title"]
-
-
-def test_midpoint_between_closest_centroids_is_ambiguous(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    centers = trained_model.model.cluster_centers_
-    pairs = [
-        (left, right, np.linalg.norm(centers[left] - centers[right]))
-        for left in range(len(centers))
-        for right in range(left + 1, len(centers))
-    ]
-    left, right, _ = min(pairs, key=lambda item: item[2])
-    midpoint = (centers[left] + centers[right]) / 2
-    raw = trained_model.scaler.inverse_transform([midpoint])[0]
-    payload = dict(zip(trained_model.active_feature_columns, raw))
-
-    result = trained_model.predict_detailed(payload)
-
-    assert result["assignment_ambiguous"] is True
-    assert result["assignment_margin"] < trained_model.assignment_margin_threshold
-    assert result["requires_review"] is True
-    assert any("dos patrones" in reason for reason in result["review_reasons"])
-
-
-def test_prediction_before_training_is_rejected() -> None:
-    model = AnalizadorPatronesEstudiantiles()
-
-    with pytest.raises(RuntimeError, match="entrenarse"):
-        model.predict_detailed({
-            "frecuencia_actividad": 1,
-            "duracion_promedio_min": 10,
-            "dias_inactivo": 1,
-        })
-
-
-def test_individual_prediction_rejects_multiple_rows(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    rows = behavior_cohort().head(2).rename(columns={
-        "actividades_completadas": "frecuencia_actividad",
-        "tiempo_sesion_min": "duracion_promedio_min",
-    })
-
-    with pytest.raises(ValueError, match="exactamente un estudiante"):
-        trained_model.predict_detailed(rows)
-
-
-def test_batch_rejects_empty_and_oversized_inputs(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    with pytest.raises(ValueError, match="al menos un estudiante"):
-        trained_model.predict_batch([])
-
-    rows = [
-        {
-            "frecuencia_actividad": 3,
-            "duracion_promedio_min": 12,
-            "dias_inactivo": 8,
-        }
-    ] * (trained_model.max_batch_size + 1)
-    with pytest.raises(ValueError, match="máximo"):
+    with pytest.raises(ValueError, match=r"filas: \[2, 7\]"):
         trained_model.predict_batch(rows)
 
 
-def test_vectorized_batch_matches_individual_predictions(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    rows = [
+def test_missing_success_rate_is_derived_explicitly(trained_model) -> None:
+    payload = healthy_snapshot()
+    payload.pop("tasa_exito")
+
+    result = trained_model.predict_detailed(payload)
+
+    assert result["evidence"]["success_rate"] == 0.9
+    assert result["evidence"]["success_rate_derived"] is True
+
+
+def test_empty_and_insufficient_training_sets_are_rejected() -> None:
+    model = DetectorRiesgoAnomalias()
+
+    with pytest.raises(ValueError, match="conjunto vacio"):
+        model.train(pd.DataFrame())
+    with pytest.raises(ValueError, match="al menos 20 registros"):
+        model.train(reference_dataset(19))
+
+
+def test_prediction_before_training_is_rejected() -> None:
+    model = DetectorRiesgoAnomalias()
+
+    with pytest.raises(RuntimeError, match="entrenarse antes de predecir"):
+        model.predict_detailed(healthy_snapshot())
+
+
+def test_predict_detailed_rejects_zero_or_multiple_rows(trained_model) -> None:
+    empty = pd.DataFrame(columns=trained_model.input_feature_columns)
+    multiple = pd.DataFrame([healthy_snapshot(), adverse_snapshot()])
+
+    with pytest.raises(ValueError, match="exactamente un estudiante"):
+        trained_model.predict_detailed(empty)
+    with pytest.raises(ValueError, match="Use predict_batch"):
+        trained_model.predict_detailed(multiple)
+
+
+def test_batch_preserves_source_order_by_default(trained_model) -> None:
+    rows = pd.DataFrame(
+        [healthy_snapshot(), adverse_snapshot()],
+        index=[10, 20],
+    )
+
+    results = trained_model.predict_batch(rows)
+
+    assert [row["student_id"] for row in results] == ["healthy-1", "critical-1"]
+    assert [row["source_index"] for row in results] == [10, 20]
+
+
+def test_batch_can_sort_explicitly_for_teacher_table(trained_model) -> None:
+    rows = trained_model.predict_batch(
+        [healthy_snapshot(), adverse_snapshot()],
+        sort_by_risk=True,
+    )
+
+    assert rows[0]["student_id"] == "critical-1"
+    assert rows[0]["risk_score"] >= rows[1]["risk_score"]
+
+
+def test_results_are_reproducible_with_fixed_random_state() -> None:
+    first = DetectorRiesgoAnomalias(random_state=42)
+    second = DetectorRiesgoAnomalias(random_state=42)
+    cohort = reference_dataset()
+    first.train(cohort)
+    second.train(cohort)
+
+    assert first.predict_detailed(adverse_snapshot()) == second.predict_detailed(
+        adverse_snapshot()
+    )
+
+
+def test_basic_adverse_progression_is_monotonic(trained_model) -> None:
+    progression = [
+        healthy_snapshot(),
         {
-            "student_id": "A",
-            "frecuencia_actividad": 3,
-            "duracion_promedio_min": 12,
-            "dias_inactivo": 8,
+            "intentos": 5,
+            "errores": 2,
+            "puntaje": 70,
+            "dias_inactivo": 4,
+            "actividades_completadas": 6,
+            "tasa_exito": 0.70,
+            "ayuda_solicitada": 1,
         },
         {
-            "student_id": "B",
-            "frecuencia_actividad": 18,
-            "duracion_promedio_min": 20,
-            "dias_inactivo": 2,
+            "intentos": 10,
+            "errores": 8,
+            "puntaje": 45,
+            "dias_inactivo": 10,
+            "actividades_completadas": 2,
+            "tasa_exito": 0.40,
+            "ayuda_solicitada": 5,
         },
-        {
-            "student_id": "C",
-            "frecuencia_actividad": 11,
-            "duracion_promedio_min": 42,
-            "dias_inactivo": 1,
-        },
+        adverse_snapshot(),
     ]
 
-    batch = trained_model.predict_batch(rows)
-    individual = [
-        trained_model.predict_detailed(row)
-        for row in rows
+    scores = [
+        trained_model.predict_detailed(snapshot)["risk_score"]
+        for snapshot in progression
     ]
 
-    assert batch == individual
+    assert scores == sorted(scores)
 
 
-def test_failed_retraining_preserves_previous_model(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    previous_run_id = trained_model.model_run_id
-    previous_model = trained_model.model
-    previous_result = trained_model.predict({
-        "frecuencia_actividad": 3,
-        "duracion_promedio_min": 12,
-        "dias_inactivo": 8,
-    })
+def test_training_and_prediction_use_same_features(trained_model) -> None:
+    prepared = trained_model.preprocess(pd.DataFrame([healthy_snapshot()]))
+    selected = trained_model._select_model_features(prepared)
+
+    assert list(selected.columns) == trained_model.model_feature_columns
+    assert list(trained_model.scaler.feature_names_in_) == (
+        trained_model.model_feature_columns
+    )
+    assert list(trained_model.model.feature_names_in_) == (
+        trained_model.model_feature_columns
+    )
+    assert not selected.columns.duplicated().any()
+
+
+def test_failed_retraining_does_not_corrupt_fitted_state(trained_model) -> None:
+    before = trained_model.predict_detailed(healthy_snapshot())
 
     with pytest.raises(ValueError):
-        trained_model.train(behavior_cohort().head(2))
+        trained_model.train(pd.DataFrame())
 
-    assert trained_model.model_run_id == previous_run_id
-    assert trained_model.model is previous_model
-    assert trained_model.predict({
-        "frecuencia_actividad": 3,
-        "duracion_promedio_min": 12,
-        "dias_inactivo": 8,
-    }) == previous_result
+    after = trained_model.predict_detailed(healthy_snapshot())
+    assert trained_model.is_fitted is True
+    assert before == after
 
 
-def test_safe_save_and_load_validate_trust_and_version(
-    trained_model: AnalizadorPatronesEstudiantiles,
-    tmp_path,
-) -> None:
-    path = tmp_path / "ria07-safe.pkl"
-    trained_model.save(path)
+def test_persistence_keeps_complete_fitted_state(trained_model, tmp_path) -> None:
+    path = tmp_path / "ria07.joblib"
+    joblib.dump(trained_model, path)
+    loaded = joblib.load(path)
 
-    with pytest.raises(ValueError, match="no confiables"):
-        AnalizadorPatronesEstudiantiles.load(path)
-    with pytest.warns(UserWarning, match="puede ejecutar código"):
-        loaded = AnalizadorPatronesEstudiantiles.load(path, trusted=True)
-    assert loaded.model_run_id == trained_model.model_run_id
-
-    loaded.model_version = "incompatible"
-    joblib.dump(loaded, path)
-    with pytest.warns(UserWarning):
-        with pytest.raises(ValueError, match="Versión"):
-            AnalizadorPatronesEstudiantiles.load(path, trusted=True)
-
-
-def test_same_random_state_is_reproducible() -> None:
-    first = AnalizadorPatronesEstudiantiles(random_state=77)
-    second = AnalizadorPatronesEstudiantiles(random_state=77)
-
-    first.train(behavior_cohort())
-    second.train(behavior_cohort())
-
-    assert first.candidate_report == second.candidate_report
-    assert np.allclose(
-        first.model.cluster_centers_,
-        second.model.cluster_centers_,
+    assert loaded.is_fitted is True
+    assert loaded.model_feature_columns == trained_model.model_feature_columns
+    assert loaded.risk_feature_config == trained_model.risk_feature_config
+    assert loaded.thresholds == trained_model.thresholds
+    assert loaded.predict_detailed(adverse_snapshot()) == (
+        trained_model.predict_detailed(adverse_snapshot())
     )
-    assert first._cluster_to_segment == second._cluster_to_segment
 
 
-def test_contradictory_alias_is_rejected() -> None:
-    rows = behavior_cohort().rename(columns={
-        "actividades_completadas": "frecuencia_actividad",
-        "tiempo_sesion_min": "duracion_promedio_min",
-    })
-    rows["actividades_completadas"] = rows["frecuencia_actividad"]
-    rows.loc[0, "actividades_completadas"] += 1
+def test_weights_are_identified_as_manual_not_model_importance(trained_model) -> None:
+    report = trained_model.obtener_pesos_riesgo()
 
-    with pytest.raises(ValueError, match="contradictorios"):
-        AnalizadorPatronesEstudiantiles().train(rows)
+    assert report["type"] == "configured_heuristic_weights"
+    assert "no son importancias aprendidas" in report["description"]
+    assert sum(report["weights"].values()) == pytest.approx(1.0)
+    with pytest.warns(DeprecationWarning):
+        assert trained_model.calcular_importancia() == report["weights"]
 
 
-def test_temporal_window_is_validated_and_recorded() -> None:
-    rows = behavior_cohort().assign(
-        fecha_inicio_ventana="2026-01-01",
-        fecha_fin_ventana="2026-01-08",
-        fecha_corte="2026-01-08",
+@pytest.mark.parametrize("contamination", [0, -0.1, 0.51, 1])
+def test_invalid_contamination_is_rejected(contamination) -> None:
+    with pytest.raises(ValueError, match="contamination"):
+        DetectorRiesgoAnomalias(contamination=contamination)
+
+
+def test_service_keeps_flat_contract_and_sorts_teacher_batch(trained_model) -> None:
+    service = RIA07Service(trained_model)
+    service._trained = True
+
+    result = service.predict(adverse_snapshot())
+    batch = service.predict_batch([healthy_snapshot(), adverse_snapshot()])
+
+    assert result["risk_level"] == "high"
+    assert result["details"]["student_history_used"] is False
+    assert result["details"]["reference_cohort_used"] is True
+    assert "metrica de calidad" in result["details"]["anomaly_ratio_note"]
+    assert batch["students"][0]["student_id"] == "critical-1"
+    assert batch["summary"]["total_students"] == 2
+
+
+def test_api_mapper_keeps_snapshot_fields_and_identity() -> None:
+    payload = RIA07Input(
+        student_id="42",
+        student_name="Ada",
+        attempts=4,
+        errors=3,
+        score=70,
+        inactive_days=5,
+        completed_activities=6,
+        success_rate=0.7,
+        help_requested=2,
     )
-    model = AnalizadorPatronesEstudiantiles()
 
-    model.train(rows)
-
-    assert model.training_period["available"] is True
-    assert model.training_period["period_days"] == 7
-
-
-def test_temporal_leakage_or_incomplete_metadata_is_rejected() -> None:
-    incomplete = behavior_cohort().assign(fecha_corte="2026-01-08")
-    with pytest.raises(ValueError, match="juntas"):
-        AnalizadorPatronesEstudiantiles().train(incomplete)
-
-    future = behavior_cohort().assign(
-        fecha_inicio_ventana="2026-01-01",
-        fecha_fin_ventana="2026-01-10",
-        fecha_corte="2026-01-08",
-    )
-    with pytest.raises(ValueError, match="incoherentes"):
-        AnalizadorPatronesEstudiantiles().train(future)
-
-
-def test_candidate_report_contains_unrounded_selection_and_balance_data(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    required = {
-        "cluster_sizes",
-        "cluster_percentages",
-        "minimum_cluster_size",
-        "maximum_cluster_size",
-        "balance_entropy",
-        "balance_penalty",
-        "selection_score_raw",
-        "decision_reason",
-        "accepted",
+    assert to_ria07_model_input(payload) == {
+        "student_id": "42",
+        "student_name": "Ada",
+        "intentos": 4,
+        "errores": 3,
+        "puntaje": 70,
+        "dias_inactivo": 5,
+        "actividades_completadas": 6,
+        "tasa_exito": 0.7,
+        "ayuda_solicitada": 2,
     }
 
-    assert all(
-        required.issubset(candidate)
-        for candidate in trained_model.candidate_report
-    )
 
-
-def test_profile_names_and_segment_uids_are_unique(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    names = [
-        profile["name"]
-        for profile in trained_model.segment_profiles.values()
-    ]
-    identifiers = [
-        profile["segment_uid"]
-        for profile in trained_model.segment_profiles.values()
-    ]
-
-    assert len(names) == len(set(names))
-    assert len(identifiers) == len(set(identifiers))
-    assert all(trained_model.model_run_id in value for value in identifiers)
-
-
-def test_constructor_validates_statistical_configuration() -> None:
-    with pytest.raises(ValueError, match="al menos 10"):
-        AnalizadorPatronesEstudiantiles(stability_iterations=9)
-    with pytest.raises(ValueError, match="0.70 y 0.90"):
-        AnalizadorPatronesEstudiantiles(stability_sample_fraction=0.5)
-
-
-def test_ui_adapter_builds_canonical_single_and_batch_inputs(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    raw = behavior_cohort().head(3)
-
-    adapted = construir_input_ria7(raw)
-    results = trained_model.predict_batch(adapted)
-
-    assert list(adapted.columns) == [
-        "frecuencia_actividad",
-        "duracion_promedio_min",
-        "dias_inactivo",
-        "student_id",
-    ]
-    assert len(results) == 3
-    assert [result["student_id"] for result in results] == (
-        raw["id_estudiante"].tolist()
-    )
-
-
-def test_ui_adapter_rejects_contradictory_canonical_values() -> None:
-    raw = behavior_cohort().head(2).copy()
-    raw["frecuencia_actividad"] = raw["actividades_completadas"]
-    raw.loc[0, "frecuencia_actividad"] += 1
-
-    with pytest.raises(ValueError, match="contradictorios"):
-        construir_input_ria7(raw)
-
-
-def test_ui_adapter_splits_cohorts_larger_than_model_batch_limit(
-    trained_model: AnalizadorPatronesEstudiantiles,
-) -> None:
-    trained_model.max_batch_size = 2
-    raw = behavior_cohort().head(5)
-
-    results = predecir_lote_ria7(trained_model, raw)
-
-    assert len(results) == 5
-    assert [result["student_id"] for result in results] == (
-        raw["id_estudiante"].tolist()
-    )
+def test_api_requires_completed_activities_and_help_requested() -> None:
+    with pytest.raises(ValidationError):
+        RIA07Input(
+            attempts=4,
+            errors=1,
+            score=80,
+            inactive_days=1,
+        )

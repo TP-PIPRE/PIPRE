@@ -9,15 +9,22 @@ from app.adapters.api.schemas import (
     RIA02Response,
     RIA03Input,
     RIA04Input,
+    RIA05BatchInput,
+    RIA05Input,
+    RIA05Response,
+    RIA06BatchInput,
+    RIA06BatchResponse,
+    RIA06Input,
+    RIA06Response,
     RIA07BatchInput,
-    RIA07BatchResponse,
     RIA07Input,
-    RIA07Response,
-    RIA08BatchInput,
     RIA08Input,
+    RIA08Response,
+    RIA09Input,
+    RIA10BatchInput,
+    RIA10BatchResponse,
     RIA10Input,
     RIA10Response,
-    RIA11Input,
 )
 from app.application.metrics import round_metric
 from app.infrastructure.container import (
@@ -30,14 +37,18 @@ from app.infrastructure.container import (
     create_ria03_service,
     create_ria04_model_repository,
     create_ria04_service,
+    create_ria05_model_repository,
+    create_ria05_service,
+    create_ria06_model_repository,
+    create_ria06_service,
     create_ria07_model_repository,
     create_ria07_service,
     create_ria08_model_repository,
     create_ria08_service,
+    create_ria09_model_repository,
+    create_ria09_service,
     create_ria10_model_repository,
     create_ria10_service,
-    create_ria11_model_repository,
-    create_ria11_service,
 )
 
 
@@ -46,28 +57,34 @@ ria01_model_repository = create_ria01_model_repository()
 ria02_model_repository = create_ria02_model_repository()
 ria03_model_repository = create_ria03_model_repository()
 ria04_model_repository = create_ria04_model_repository()
+ria05_model_repository = create_ria05_model_repository()
+ria06_model_repository = create_ria06_model_repository()
 ria07_model_repository = create_ria07_model_repository()
 ria08_model_repository = create_ria08_model_repository()
+ria09_model_repository = create_ria09_model_repository()
 ria10_model_repository = create_ria10_model_repository()
-ria11_model_repository = create_ria11_model_repository()
 ria01_service = create_ria01_service()
 ria02_service = create_ria02_service()
 ria03_service = create_ria03_service()
 ria04_service = create_ria04_service()
+ria05_service = create_ria05_service()
+ria06_service = create_ria06_service()
 ria07_service = create_ria07_service()
 ria08_service = create_ria08_service()
+ria09_service = create_ria09_service()
 ria10_service = create_ria10_service()
-ria11_service = create_ria11_service()
 
 ML_SERVICES = {
     "ria01": ria01_service,
     "ria02": ria02_service,
     "ria03": ria03_service,
     "ria04": ria04_service,
+    "ria05": ria05_service,
+    "ria06": ria06_service,
     "ria07": ria07_service,
     "ria08": ria08_service,
+    "ria09": ria09_service,
     "ria10": ria10_service,
-    "ria11": ria11_service,
 }
 
 RIA01_FEATURE_NAME_MAP = {
@@ -134,13 +151,13 @@ RIA04_FEATURE_NAME_MAP = {
     "seed": "seed",
 }
 
-RIA07_FEATURE_NAME_MAP = {
+RIA06_FEATURE_NAME_MAP = {
     "frecuencia_actividad": "activity_frequency",
     "duracion_promedio_min": "average_session_minutes",
     "dias_inactivo": "inactive_days",
 }
 
-RIA08_FEATURE_NAME_MAP = {
+RIA07_FEATURE_NAME_MAP = {
     "intentos": "attempts",
     "errores": "errors",
     "puntaje": "score",
@@ -153,7 +170,7 @@ RIA08_FEATURE_NAME_MAP = {
     "brecha_rendimiento": "performance_gap",
 }
 
-RIA10_FEATURE_NAME_MAP = {
+RIA08_FEATURE_NAME_MAP = {
     "errores": "errors",
     "intentos": "attempts",
     "dias_inactivo": "inactive_days",
@@ -174,7 +191,7 @@ RIA10_FEATURE_NAME_MAP = {
     "nivel_logico": "logical_level",
 }
 
-RIA11_FEATURE_NAME_MAP = {
+RIA09_FEATURE_NAME_MAP = {
     "intentos": "attempts",
     "errores": "errors",
     "interacciones_ia": "ai_interactions",
@@ -190,6 +207,24 @@ RIA11_FEATURE_NAME_MAP = {
     "actividad_por_inactividad": "activity_per_inactivity",
     "complejidad": "complexity",
     "nivel_logico": "logical_level",
+}
+
+RIA10_FEATURE_NAME_MAP = {
+    "errores": "errors",
+    "intentos": "attempts",
+    "interacciones_ia": "ai_interactions",
+    "ayuda_solicitada": "help_requested",
+    "actividades_completadas": "completed_activities",
+    "dias_inactivo": "inactive_days",
+    "edad": "age",
+    "grado": "grade",
+    "ratio_error": "error_ratio",
+    "intentos_normalizados": "normalized_attempts",
+    "ia_por_error": "ai_per_error",
+    "ayuda_por_error": "help_per_error",
+    "actividad_por_inactividad": "activity_per_inactivity",
+    "nivel_logico": "logical_level",
+    "emocion_detectada": "detected_emotion",
 }
 
 
@@ -243,7 +278,11 @@ def to_ria04_model_input(data: RIA04Input):
     }
 
 
-def to_ria07_model_input(data: RIA07Input):
+def to_ria05_model_input(data: RIA05Input):
+    return data.model_dump(exclude_none=True)
+
+
+def to_ria06_model_input(data: RIA06Input):
     return {
         "student_id": data.student_id,
         "student_name": data.student_name,
@@ -253,7 +292,7 @@ def to_ria07_model_input(data: RIA07Input):
     }
 
 
-def to_ria08_model_input(data: RIA08Input):
+def to_ria07_model_input(data: RIA07Input):
     return {
         "student_id": data.student_id,
         "student_name": data.student_name,
@@ -267,7 +306,7 @@ def to_ria08_model_input(data: RIA08Input):
     }
 
 
-def to_ria10_model_input(data: RIA10Input):
+def to_ria08_model_input(data: RIA08Input):
     return {
         "intentos": data.attempts,
         "errores": data.errors,
@@ -280,7 +319,7 @@ def to_ria10_model_input(data: RIA10Input):
     }
 
 
-def to_ria11_model_input(data: RIA11Input):
+def to_ria09_model_input(data: RIA09Input):
     return {
         "intentos": data.attempts,
         "errores": data.errors,
@@ -291,6 +330,23 @@ def to_ria11_model_input(data: RIA11Input):
         "edad": data.age,
         "grado": data.grade,
         "nivel_logico": data.logical_level,
+    }
+
+
+def to_ria10_model_input(data: RIA10Input):
+    return {
+        "student_id": data.student_id,
+        "student_name": data.student_name,
+        "errores": data.errors,
+        "intentos": data.attempts,
+        "interacciones_ia": data.ai_interactions,
+        "ayuda_solicitada": data.help_requested,
+        "actividades_completadas": data.completed_activities,
+        "dias_inactivo": data.inactive_days,
+        "edad": data.age,
+        "grado": data.grade,
+        "nivel_logico": data.logical_level,
+        "emocion_detectada": data.detected_emotion,
     }
 
 
@@ -336,6 +392,24 @@ def train_and_save_ria04(reason: str):
     print("RIA04 generator initialized and saved")
 
 
+def train_and_save_ria05(reason: str):
+    print(reason)
+    ria05_service.train()
+    ria05_model_repository.save(ria05_service.model)
+    print("RIA05 model trained and saved")
+
+
+def train_and_save_ria06(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria06_service.train(df)
+    ria06_model_repository.save(ria06_service.model)
+
+    print("RIA06 model trained and saved")
+
+
 def train_and_save_ria07(reason: str):
     print(reason)
 
@@ -358,26 +432,23 @@ def train_and_save_ria08(reason: str):
     print("RIA08 model trained and saved")
 
 
+def train_and_save_ria09(reason: str):
+    print(reason)
+
+    df = dataset_repository.load()
+
+    ria09_service.train(df)
+    ria09_model_repository.save(ria09_service.model)
+
+    print("RIA09 model trained and saved")
+
+
 def train_and_save_ria10(reason: str):
     print(reason)
-
     df = dataset_repository.load()
-
     ria10_service.train(df)
     ria10_model_repository.save(ria10_service.model)
-
     print("RIA10 model trained and saved")
-
-
-def train_and_save_ria11(reason: str):
-    print(reason)
-
-    df = dataset_repository.load()
-
-    ria11_service.train(df)
-    ria11_model_repository.save(ria11_service.model)
-
-    print("RIA11 model trained and saved")
 
 
 def load_or_train_ria01():
@@ -484,17 +555,40 @@ def load_or_train_ria04():
         train_and_save_ria04("Training RIA04 model from scratch...")
 
 
-def load_or_train_ria07():
-    if ria07_model_repository.exists():
-        print("Loading existing RIA07 model...")
+def load_or_train_ria05():
+    if ria05_model_repository.exists():
+        print("Loading existing RIA05 model...")
+        try:
+            loaded_model = ria05_model_repository.load()
+            expected_version = ria05_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+            if loaded_version != expected_version:
+                train_and_save_ria05(
+                    "Existing RIA05 model is incompatible. Retraining model..."
+                )
+            else:
+                ria05_service.set_model(loaded_model)
+                print("RIA05 model loaded successfully")
+        except Exception as exc:
+            train_and_save_ria05(
+                "Could not load existing RIA05 model "
+                f"({type(exc).__name__}: {exc}). Retraining model..."
+            )
+    else:
+        train_and_save_ria05("Training RIA05 model from scratch...")
+
+
+def load_or_train_ria06():
+    if ria06_model_repository.exists():
+        print("Loading existing RIA06 model...")
 
         try:
-            loaded_model = ria07_model_repository.load()
-            expected_features = ria07_service.model.feature_columns
+            loaded_model = ria06_model_repository.load()
+            expected_features = ria06_service.model.feature_columns
             loaded_features = getattr(loaded_model, "feature_columns", None)
-            expected_version = ria07_service.MODEL_VERSION
+            expected_version = ria06_service.MODEL_VERSION
             loaded_version = getattr(loaded_model, "model_version", None)
-            expected_schema = ria07_service.model.FEATURE_SCHEMA_VERSION
+            expected_schema = ria06_service.model.FEATURE_SCHEMA_VERSION
             loaded_schema = getattr(
                 loaded_model,
                 "feature_schema_version",
@@ -506,17 +600,43 @@ def load_or_train_ria07():
                 or loaded_version != expected_version
                 or loaded_schema != expected_schema
             ):
-                train_and_save_ria07(
-                    "Existing RIA07 model is incompatible. Retraining model..."
+                train_and_save_ria06(
+                    "Existing RIA06 model is incompatible. Retraining model..."
                 )
+            else:
+                ria06_service.set_model(loaded_model)
+                print("RIA06 model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria06(
+                "Could not load existing RIA06 model "
+                f"({type(exc).__name__}: {exc}). Retraining model..."
+            )
+
+    else:
+        train_and_save_ria06("Training RIA06 model from scratch...")
+
+
+def load_or_train_ria07():
+    if ria07_model_repository.exists():
+        print("Loading existing RIA07 model...")
+
+        try:
+            loaded_model = ria07_model_repository.load()
+            expected_features = ria07_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_version = ria07_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+
+            if loaded_features != expected_features or loaded_version != expected_version:
+                train_and_save_ria07("Existing RIA07 model is incompatible. Retraining model...")
             else:
                 ria07_service.set_model(loaded_model)
                 print("RIA07 model loaded successfully")
 
         except Exception as exc:
             train_and_save_ria07(
-                "Could not load existing RIA07 model "
-                f"({type(exc).__name__}: {exc}). Retraining model..."
+                f"Could not load existing RIA07 model ({type(exc).__name__}: {exc}). Retraining model..."
             )
 
     else:
@@ -549,10 +669,35 @@ def load_or_train_ria08():
         train_and_save_ria08("Training RIA08 model from scratch...")
 
 
+def load_or_train_ria09():
+    if ria09_model_repository.exists():
+        print("Loading existing RIA09 model...")
+
+        try:
+            loaded_model = ria09_model_repository.load()
+            expected_features = ria09_service.model.feature_columns
+            loaded_features = getattr(loaded_model, "feature_columns", None)
+            expected_version = ria09_service.MODEL_VERSION
+            loaded_version = getattr(loaded_model, "model_version", None)
+
+            if loaded_features != expected_features or loaded_version != expected_version:
+                train_and_save_ria09("Existing RIA09 model is incompatible. Retraining model...")
+            else:
+                ria09_service.set_model(loaded_model)
+                print("RIA09 model loaded successfully")
+
+        except Exception as exc:
+            train_and_save_ria09(
+                f"Could not load existing RIA09 model ({type(exc).__name__}: {exc}). Retraining model..."
+            )
+
+    else:
+        train_and_save_ria09("Training RIA09 model from scratch...")
+
+
 def load_or_train_ria10():
     if ria10_model_repository.exists():
         print("Loading existing RIA10 model...")
-
         try:
             loaded_model = ria10_model_repository.load()
             expected_features = ria10_service.model.feature_columns
@@ -560,45 +705,24 @@ def load_or_train_ria10():
             expected_version = ria10_service.MODEL_VERSION
             loaded_version = getattr(loaded_model, "model_version", None)
 
-            if loaded_features != expected_features or loaded_version != expected_version:
-                train_and_save_ria10("Existing RIA10 model is incompatible. Retraining model...")
+            if (
+                loaded_features != expected_features
+                or loaded_version != expected_version
+                or not getattr(loaded_model, "is_fitted", False)
+            ):
+                train_and_save_ria10(
+                    "Existing RIA10 model is incompatible. Retraining model..."
+                )
             else:
                 ria10_service.set_model(loaded_model)
                 print("RIA10 model loaded successfully")
-
         except Exception as exc:
             train_and_save_ria10(
-                f"Could not load existing RIA10 model ({type(exc).__name__}: {exc}). Retraining model..."
+                "Could not load existing RIA10 model "
+                f"({type(exc).__name__}: {exc}). Retraining model..."
             )
-
     else:
         train_and_save_ria10("Training RIA10 model from scratch...")
-
-
-def load_or_train_ria11():
-    if ria11_model_repository.exists():
-        print("Loading existing RIA11 model...")
-
-        try:
-            loaded_model = ria11_model_repository.load()
-            expected_features = ria11_service.model.feature_columns
-            loaded_features = getattr(loaded_model, "feature_columns", None)
-            expected_version = ria11_service.MODEL_VERSION
-            loaded_version = getattr(loaded_model, "model_version", None)
-
-            if loaded_features != expected_features or loaded_version != expected_version:
-                train_and_save_ria11("Existing RIA11 model is incompatible. Retraining model...")
-            else:
-                ria11_service.set_model(loaded_model)
-                print("RIA11 model loaded successfully")
-
-        except Exception as exc:
-            train_and_save_ria11(
-                f"Could not load existing RIA11 model ({type(exc).__name__}: {exc}). Retraining model..."
-            )
-
-    else:
-        train_and_save_ria11("Training RIA11 model from scratch...")
 
 
 # =========================
@@ -611,10 +735,12 @@ async def lifespan(app: FastAPI):
     load_or_train_ria02()
     load_or_train_ria03()
     load_or_train_ria04()
+    load_or_train_ria05()
+    load_or_train_ria06()
     load_or_train_ria07()
     load_or_train_ria08()
+    load_or_train_ria09()
     load_or_train_ria10()
-    load_or_train_ria11()
 
     yield
 
@@ -669,45 +795,107 @@ def generate_ria04(data: RIA04Input):
     return ria04_service.predict(to_ria04_model_input(data))
 
 
-@app.post("/ria07/patterns", response_model=RIA07Response)
-def analyze_ria07(data: RIA07Input):
+@app.post("/ria05/errors", response_model=RIA05Response)
+def classify_ria05(data: RIA05Input):
+    return ria05_service.predict(to_ria05_model_input(data))
+
+
+@app.post("/ria05/errors/batch")
+def classify_batch_ria05(data: RIA05BatchInput):
+    return ria05_service.predict_batch([
+        to_ria05_model_input(execution)
+        for execution in data.executions
+    ])
+
+
+@app.post("/ria06/patterns", response_model=RIA06Response)
+def analyze_ria06(data: RIA06Input):
+    return ria06_service.predict(to_ria06_model_input(data))
+
+
+@app.post("/ria06/patterns/batch", response_model=RIA06BatchResponse)
+def analyze_batch_ria06(data: RIA06BatchInput):
+    return ria06_service.predict_batch([
+        to_ria06_model_input(student)
+        for student in data.students
+    ])
+
+
+@app.post("/ria07/anomaly")
+def detect_ria07(data: RIA07Input):
     return ria07_service.predict(to_ria07_model_input(data))
 
 
-@app.post("/ria07/patterns/batch", response_model=RIA07BatchResponse)
-def analyze_batch_ria07(data: RIA07BatchInput):
+@app.post("/ria07/early-warning")
+def early_warning_ria07(data: RIA07Input):
+    return ria07_service.predict(to_ria07_model_input(data))
+
+
+@app.post("/ria07/early-warning/batch")
+def early_warning_batch_ria07(data: RIA07BatchInput):
     return ria07_service.predict_batch([
         to_ria07_model_input(student)
         for student in data.students
     ])
 
 
-@app.post("/ria08/anomaly")
-def detect_ria08(data: RIA08Input):
+@app.post("/ria08/pedagogical", response_model=RIA08Response)
+def recommend_ria08(data: RIA08Input):
     return ria08_service.predict(to_ria08_model_input(data))
 
 
-@app.post("/ria08/early-warning")
-def early_warning_ria08(data: RIA08Input):
-    return ria08_service.predict(to_ria08_model_input(data))
+@app.post("/ria09/time")
+def classify_ria09(data: RIA09Input):
+    return ria09_service.predict(to_ria09_model_input(data))
 
 
-@app.post("/ria08/early-warning/batch")
-def early_warning_batch_ria08(data: RIA08BatchInput):
-    return ria08_service.predict_batch([
-        to_ria08_model_input(student)
+@app.post("/ria10/code", response_model=RIA10Response)
+def evaluate_code_ria10(data: RIA10Input):
+    return ria10_service.predict(to_ria10_model_input(data))
+
+
+@app.post("/ria10/code/batch", response_model=RIA10BatchResponse)
+def evaluate_code_batch_ria10(data: RIA10BatchInput):
+    return ria10_service.predict_batch([
+        to_ria10_model_input(student)
         for student in data.students
     ])
 
 
-@app.post("/ria10/pedagogical", response_model=RIA10Response)
-def recommend_ria10(data: RIA10Input):
-    return ria10_service.predict(to_ria10_model_input(data))
+# Rutas heredadas para clientes aún no migrados a la matriz RIA01-RIA10.
+@app.post("/ria07/patterns", include_in_schema=False)
+def legacy_analyze_ria07(data: RIA06Input):
+    return analyze_ria06(data)
 
 
-@app.post("/ria11/time")
-def classify_ria11(data: RIA11Input):
-    return ria11_service.predict(to_ria11_model_input(data))
+@app.post("/ria07/patterns/batch", include_in_schema=False)
+def legacy_analyze_batch_ria07(data: RIA06BatchInput):
+    return analyze_batch_ria06(data)
+
+
+@app.post("/ria08/anomaly", include_in_schema=False)
+def legacy_detect_ria08(data: RIA07Input):
+    return detect_ria07(data)
+
+
+@app.post("/ria08/early-warning", include_in_schema=False)
+def legacy_early_warning_ria08(data: RIA07Input):
+    return early_warning_ria07(data)
+
+
+@app.post("/ria08/early-warning/batch", include_in_schema=False)
+def legacy_early_warning_batch_ria08(data: RIA07BatchInput):
+    return early_warning_batch_ria07(data)
+
+
+@app.post("/ria10/pedagogical", include_in_schema=False)
+def legacy_recommend_ria10(data: RIA08Input):
+    return recommend_ria08(data)
+
+
+@app.post("/ria11/time", include_in_schema=False)
+def legacy_classify_ria11(data: RIA09Input):
+    return classify_ria09(data)
 
 
 # =========================
@@ -789,52 +977,68 @@ def info_ria04():
     }
 
 
-@app.get("/ria07/info")
-def info_ria07():
+@app.get("/ria05/info")
+def info_ria05():
     return {
-        "trained": ria07_service._trained,
-        "model": "RIA07 - Analisis de patrones",
-        "version": ria07_service.MODEL_VERSION,
+        "trained": ria05_service._trained,
+        "model": "RIA05 - Clasificador de errores lógicos",
+        "version": ria05_service.MODEL_VERSION,
+        "technique": ria05_service.model.TECHNIQUE,
+        "error_types": ria05_service.model.ERROR_LABELS,
+        "features": ria05_service.model.feature_columns,
+        "training_source": ria05_service.model.training_source,
+        "validation_accuracy": ria05_service.model.validation_accuracy,
+        "validation_precision": ria05_service.model.validation_precision,
+        "metrics_note": ria05_service.model.metrics_note,
+    }
+
+
+@app.get("/ria06/info")
+def info_ria06():
+    return {
+        "trained": ria06_service._trained,
+        "model": "RIA06 - Analisis de patrones",
+        "version": ria06_service.MODEL_VERSION,
         "traceability": "CU-AN-03",
-        "technique": ria07_service.model.TECHNIQUE,
+        "technique": ria06_service.model.TECHNIQUE,
         "features": [
-            RIA07_FEATURE_NAME_MAP.get(feature, feature)
-            for feature in ria07_service.model.feature_columns
-        ] if ria07_service._trained else [],
+            RIA06_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria06_service.model.feature_columns
+        ] if ria06_service._trained else [],
         "reference_cohort_used": True,
         "individual_history_required": False,
-        "quality": ria07_service.model.quality_summary(),
+        "quality": ria06_service.model.quality_summary(),
         "segments": (
-            list(ria07_service.model.segment_profiles.values())
-            if ria07_service._trained
+            list(ria06_service.model.segment_profiles.values())
+            if ria06_service._trained
             else []
         ),
         "candidate_report": (
-            ria07_service.model.candidate_report
-            if ria07_service._trained
+            ria06_service.model.candidate_report
+            if ria06_service._trained
             else []
         ),
-        "training_warnings": ria07_service.model.training_warnings,
-        "training_diagnostics": ria07_service.model.training_diagnostics,
-        "training_period": ria07_service.model.training_period,
-        "model_run_id": ria07_service.model.model_run_id,
-        "trained_at": ria07_service.model.trained_at,
+        "training_warnings": ria06_service.model.training_warnings,
+        "training_diagnostics": ria06_service.model.training_diagnostics,
+        "training_period": ria06_service.model.training_period,
+        "model_run_id": ria06_service.model.model_run_id,
+        "trained_at": ria06_service.model.trained_at,
         "feature_schema_version": (
-            ria07_service.model.feature_schema_version
+            ria06_service.model.feature_schema_version
         ),
         "training_only_code_usage": (
-            ria07_service.model.training_code_usage_summary
+            ria06_service.model.training_code_usage_summary
         ),
     }
 
 
-@app.get("/ria08/info")
-def info_ria08():
+@app.get("/ria07/info")
+def info_ria07():
     return {
-        "trained": ria08_service._trained,
-        "model": "RIA08 - Riesgo y anomalias",
-        "version": ria08_service.MODEL_VERSION,
-        "configuration_version": ria08_service.model.configuration_version,
+        "trained": ria07_service._trained,
+        "model": "RIA07 - Riesgo y anomalias",
+        "version": ria07_service.MODEL_VERSION,
+        "configuration_version": ria07_service.model.configuration_version,
         "historical_data_used": False,
         "student_history_used": False,
         "reference_cohort_used": True,
@@ -846,35 +1050,35 @@ def info_ria08():
             "metrica de calidad."
         ),
         "features": [
-            RIA08_FEATURE_NAME_MAP.get(feature, feature)
-            for feature in ria08_service.model.feature_columns
-        ] if ria08_service._trained else [],
+            RIA07_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria07_service.model.feature_columns
+        ] if ria07_service._trained else [],
         "model_features": [
-            RIA08_FEATURE_NAME_MAP.get(feature, feature)
-            for feature in ria08_service.model.model_feature_columns
+            RIA07_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria07_service.model.model_feature_columns
         ],
-        "reference_anomaly_ratio": ria08_service.model.reference_anomaly_ratio,
-        "dataset_anomaly_ratio": ria08_service.model.anomaly_ratio,
+        "reference_anomaly_ratio": ria07_service.model.reference_anomaly_ratio,
+        "dataset_anomaly_ratio": ria07_service.model.anomaly_ratio,
         "anomaly_ratio_note": (
             "Proporcion de la cohorte de referencia marcada como anomala; "
             "no mide accuracy, precision ni calidad."
         ),
-        "thresholds": getattr(ria08_service.model, "thresholds", {}),
-        "risk_thresholds": ria08_service.model.risk_thresholds,
-        "risk_weights": ria08_service.model.obtener_pesos_riesgo(),
-        "training_warnings": ria08_service.model.training_warnings,
+        "thresholds": getattr(ria07_service.model, "thresholds", {}),
+        "risk_thresholds": ria07_service.model.risk_thresholds,
+        "risk_weights": ria07_service.model.obtener_pesos_riesgo(),
+        "training_warnings": ria07_service.model.training_warnings,
         "constant_reference_features": (
-            ria08_service.model.constant_reference_features
+            ria07_service.model.constant_reference_features
         ),
-        "constant_model_features": ria08_service.model.constant_model_features,
-        "correlation_report": ria08_service.model.correlation_report,
+        "constant_model_features": ria07_service.model.constant_model_features,
+        "correlation_report": ria07_service.model.correlation_report,
     }
 
 
-@app.get("/ria10/info")
-def info_ria10():
+@app.get("/ria08/info")
+def info_ria08():
     return {
-        "trained": ria10_service._trained,
+        "trained": ria08_service._trained,
         "comparison_scope": "same_grade_training_group",
         "recommendation_classes": [
             "individual_support",
@@ -887,30 +1091,54 @@ def info_ria10():
                 metric: round_metric(value)
                 for metric, value in metrics.items()
             }
-            for grade, metrics in ria10_service.model.grade_group_stats.items()
-        } if ria10_service._trained else {},
+            for grade, metrics in ria08_service.model.grade_group_stats.items()
+        } if ria08_service._trained else {},
+        "features": [
+            RIA08_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria08_service.model.feature_columns
+        ] if ria08_service._trained else [],
+        "accuracy": round_metric(getattr(ria08_service.model, "accuracy", None)),
+        "precision": round_metric(getattr(ria08_service.model, "precision", None)),
+        "recall": round_metric(getattr(ria08_service.model, "recall", None)),
+        "f1": round_metric(getattr(ria08_service.model, "f1", None)),
+    }
+
+
+@app.get("/ria09/info")
+def info_ria09():
+    return {
+        "trained": ria09_service._trained,
+        "features": [
+            RIA09_FEATURE_NAME_MAP.get(feature, feature)
+            for feature in ria09_service.model.feature_columns
+        ] if ria09_service._trained else [],
+        "accuracy": round_metric(getattr(ria09_service.model, "accuracy", None)),
+        "precision": round_metric(getattr(ria09_service.model, "precision", None)),
+        "recall": round_metric(getattr(ria09_service.model, "recall", None)),
+    }
+
+
+@app.get("/ria10/info")
+def info_ria10():
+    return {
+        "trained": ria10_service._trained,
+        "model": "RIA10 - Evaluación automática de código",
+        "version": ria10_service.MODEL_VERSION,
         "features": [
             RIA10_FEATURE_NAME_MAP.get(feature, feature)
             for feature in ria10_service.model.feature_columns
         ] if ria10_service._trained else [],
-        "accuracy": round_metric(getattr(ria10_service.model, "accuracy", None)),
-        "precision": round_metric(getattr(ria10_service.model, "precision", None)),
-        "recall": round_metric(getattr(ria10_service.model, "recall", None)),
-        "f1": round_metric(getattr(ria10_service.model, "f1", None)),
-    }
-
-
-@app.get("/ria11/info")
-def info_ria11():
-    return {
-        "trained": ria11_service._trained,
-        "features": [
-            RIA11_FEATURE_NAME_MAP.get(feature, feature)
-            for feature in ria11_service.model.feature_columns
-        ] if ria11_service._trained else [],
-        "accuracy": round_metric(getattr(ria11_service.model, "accuracy", None)),
-        "precision": round_metric(getattr(ria11_service.model, "precision", None)),
-        "recall": round_metric(getattr(ria11_service.model, "recall", None)),
+        "result_labels": list(
+            ria10_service.model.RESULT_LABELS.values()
+        ),
+        "target_source": "heuristic_rule",
+        "accuracy": round_metric(
+            getattr(ria10_service.model, "accuracy", None)
+        ),
+        "precision": round_metric(
+            getattr(ria10_service.model, "precision", None)
+        ),
+        "metrics_note": ria10_service.model.metrics_note,
     }
 
 

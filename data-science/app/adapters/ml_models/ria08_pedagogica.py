@@ -1,3 +1,5 @@
+"""RIA08: recomendación pedagógica (renumerado desde RIA10)."""
+
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
