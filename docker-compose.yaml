@@ -31,7 +31,14 @@ services:
     volumes:
       - ml-models:/app/saved_models
     networks:
+      - pipre-infra-net
       - cloud-network
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=4)" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
     logging: *default-logging
 
   backend:
@@ -47,6 +54,8 @@ services:
       - FAST_API_URL=${FAST_API_URL:-http://ml-ia:8000}
     depends_on:
       postgres:
+        condition: service_healthy
+      ml-ia:
         condition: service_healthy
     networks:
       - cloud-network

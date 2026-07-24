@@ -29,19 +29,11 @@ export class AuthAdapter implements IAuthRepository {
       const token = getCookie("jwt") || "";
 
       let role = "student";
-      try {
-        const payloadBase64 = token.split(".")[1];
-        const payload = JSON.parse(atob(payloadBase64));
-        const backendRole = payload.role || "";
-        
-        if (backendRole === "admin") role = "admin";
-        else if (backendRole === "teacher") role = "docente";
-        else if (backendRole === "student") role = "student";
-        else {
-          if (email.includes("admin")) role = "admin";
-          else if (email.includes("docente")) role = "docente";
-        }
-      } catch {
+      const backendRole = authUser.role || "";
+      if (backendRole === "admin") role = "admin";
+      else if (backendRole === "teacher") role = "docente";
+      else if (backendRole === "student") role = "student";
+      else {
         if (email.includes("admin")) role = "admin";
         else if (email.includes("docente")) role = "docente";
       }
@@ -57,7 +49,7 @@ export class AuthAdapter implements IAuthRepository {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       throw new Error(
-        err.response?.data?.message || 
+        err.response?.data?.message ||
         "Credenciales incorrectas o error en el servidor"
       );
     }
@@ -88,7 +80,7 @@ export class AuthAdapter implements IAuthRepository {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       throw new Error(
-        err.response?.data?.message || 
+        err.response?.data?.message ||
         "Error al registrar usuario: " + err.message
       );
     }

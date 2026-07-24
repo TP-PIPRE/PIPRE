@@ -132,6 +132,13 @@ class AppResultados:
         center_frame = tk.Frame(wrapper)
         center_frame.pack()
 
+        if "RIA7" in ria and data.get("tabla_docente"):
+            self.crear_tabla_docente(
+                center_frame,
+                data["tabla_docente"],
+                data.get("resumen_docente", {}),
+            )
+
         # =========================
         #  DATOS
         # =========================
@@ -181,10 +188,10 @@ class AppResultados:
             self.crear_texto_lectura(box_detalle, detalle_texto)
 
         # =========================
-        #  RIA8
+        #  RIA7
         # =========================
-        if "RIA8" in ria:
-            box_anom = tk.LabelFrame(center_frame, text="Análisis de anomalías", font=("Arial", 11, "bold"))
+        if "RIA7" in ria:
+            box_anom = tk.LabelFrame(center_frame, text="Análisis de riesgo y anomalías", font=("Arial", 11, "bold"))
             box_anom.pack(pady=10)
 
             tk.Label(
@@ -193,9 +200,35 @@ class AppResultados:
                 font=("Arial", 11)
             ).pack(padx=20, pady=10)
 
-            importancias = data.get("importancias", None)
-            if importancias:
-                self.crear_grafico_importancia(center_frame, importancias)
+            pesos_riesgo = data.get("pesos_riesgo", None)
+            if pesos_riesgo:
+                self.crear_grafico_importancia(
+                    center_frame,
+                    pesos_riesgo,
+                    titulo="Pesos heurísticos configurados del riesgo",
+                )
+
+        elif data.get("metricas_operativas"):
+            box_metricas = tk.LabelFrame(
+                center_frame,
+                text="Metricas operativas",
+                font=("Arial", 11, "bold"),
+            )
+            box_metricas.pack(pady=10, fill="x")
+            metricas_texto = self.formatear_detalle(data["metricas_operativas"])
+            self.crear_texto_lectura(box_metricas, metricas_texto)
+
+        elif data.get("calidad_clustering"):
+            box_calidad = tk.LabelFrame(
+                center_frame,
+                text="Qué tan claros son los grupos",
+                font=("Arial", 11, "bold"),
+            )
+            box_calidad.pack(pady=10, fill="x")
+            calidad_texto = self.formatear_detalle(
+                data["calidad_clustering"]
+            )
+            self.crear_texto_lectura(box_calidad, calidad_texto)
 
         else:
             # =========================
@@ -247,6 +280,86 @@ class AppResultados:
                 command=self.ejecutar_evaluacion
             ).pack()
 
+    def crear_tabla_docente(self, frame, estudiantes, resumen):
+        box = tk.LabelFrame(
+            frame,
+            text="Alertas tempranas para el docente",
+            font=("Arial", 11, "bold"),
+        )
+        box.pack(padx=16, pady=10, fill="both", expand=True)
+
+        resumen_texto = (
+            f"Total: {resumen.get('total', len(estudiantes))}   |   "
+            f"Críticos: {resumen.get('critico', 0)}   |   "
+            f"Atención: {resumen.get('atencion', 0)}   |   "
+            f"Normales: {resumen.get('normal', 0)}   |   "
+            f"Anomalías: {resumen.get('anomalias', 0)}"
+        )
+        tk.Label(
+            box,
+            text=resumen_texto,
+            font=("Arial", 10, "bold"),
+            anchor="w",
+        ).pack(fill="x", padx=12, pady=(8, 4))
+
+        table_frame = tk.Frame(box)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+
+        columns = ("student", "risk", "anomaly", "evidence", "action")
+        table = ttk.Treeview(
+            table_frame,
+            columns=columns,
+            show="headings",
+            height=16,
+        )
+        headings = {
+            "student": "Estudiante",
+            "risk": "Riesgo",
+            "anomaly": "Anomalía",
+            "evidence": "Evidencia",
+            "action": "Acción docente",
+        }
+        widths = {
+            "student": 145,
+            "risk": 105,
+            "anomaly": 75,
+            "evidence": 360,
+            "action": 430,
+        }
+        for column in columns:
+            table.heading(column, text=headings[column])
+            table.column(column, width=widths[column], anchor="w")
+
+        table.tag_configure("high", background="#ffd9d9")
+        table.tag_configure("medium", background="#fff0c2")
+        table.tag_configure("low", background="#dcf5df")
+
+        for row in estudiantes:
+            evidence = "; ".join(row.get("reasons", []))
+            risk = f"{row.get('risk_label', 'N/A')} ({row.get('risk_score', 0):.1f})"
+            table.insert(
+                "",
+                "end",
+                values=(
+                    row.get("student_name", row.get("student_id", "N/A")),
+                    risk,
+                    "Sí" if row.get("anomaly") else "No",
+                    evidence,
+                    row.get("teacher_recommendation", "Sin recomendación"),
+                ),
+                tags=(row.get("risk_level", "low"),),
+            )
+
+        y_scroll = ttk.Scrollbar(table_frame, orient="vertical", command=table.yview)
+        x_scroll = ttk.Scrollbar(table_frame, orient="horizontal", command=table.xview)
+        table.configure(yscrollcommand=y_scroll.set, xscrollcommand=x_scroll.set)
+
+        table.grid(row=0, column=0, sticky="nsew")
+        y_scroll.grid(row=0, column=1, sticky="ns")
+        x_scroll.grid(row=1, column=0, sticky="ew")
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
     # =========================
     # REEVALUAR
     # =========================
@@ -266,7 +379,12 @@ class AppResultados:
     # =========================
     # GRÁFICO
     # =========================
-    def crear_grafico_importancia(self, frame, importancias):
+    def crear_grafico_importancia(
+        self,
+        frame,
+        importancias,
+        titulo="Importancia de Variables",
+    ):
 
         fig, ax = plt.subplots(figsize=(7, 4))
 
@@ -286,7 +404,7 @@ class AppResultados:
 
         ax.barh(columnas_ordenadas, valores_ordenados)
 
-        ax.set_title("Importancia de Variables", fontsize=12, fontweight="bold")
+        ax.set_title(titulo, fontsize=12, fontweight="bold")
         ax.set_xlabel("Importancia")
 
         ax.invert_yaxis()

@@ -368,79 +368,94 @@ export const DocenteDashboard = () => {
                 className="divide-y"
                 style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
               >
-                {dashboardMetrics.retos.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
-                  >
-                    <td
-                      className="py-4 font-mono text-xs font-semibold"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {r.nombre}
-                    </td>
-                    <td className="py-4">
-                      <span
-                        className="text-xs font-mono border border-border px-2 py-0.5 rounded-md"
-                        style={{
-                          color: "var(--text-muted)",
-                          borderColor: "var(--border)",
-                        }}
-                      >
-                        {r.categoria}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <div className="flex gap-1">
-                        {[1, 2, 3].map((i) => (
-                          <div
-                            key={i}
-                            style={{
-                              width: "12px",
-                              height: "12px",
-                              borderRadius: "2px",
-                              backgroundColor:
-                                i <= r.dificultad
-                                  ? "var(--primary)"
-                                  : "var(--border)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-4 text-center">
-                      <span
-                        className={`text-xs font-mono px-2 py-1 rounded-full ${
-                          r.estado
-                            ? "bg-green-500/10 text-green-500"
-                            : "bg-yellow-500/10 text-yellow-500"
-                        }`}
-                      >
-                        {r.estado ? "Activo" : "Inactivo"}
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
-                          className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1"
-                        >
-                          <span className="material-symbols-outlined text-base">
-                            edit
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
-                          className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1"
-                        >
-                          <span className="material-symbols-outlined text-base">
-                            delete
-                          </span>
-                        </button>
+                {dashboardMetrics.retos.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={0.4}>
+                          <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                        <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                          No hay retos disponibles
+                        </span>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  dashboardMetrics.retos.map((r) => (
+                    <tr
+                      key={r.id}
+                      className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
+                    >
+                      <td
+                        className="py-4 font-mono text-xs font-semibold"
+                        style={{ color: "var(--text)" }}
+                      >
+                        {r.nombre}
+                      </td>
+                      <td className="py-4">
+                        <span
+                          className="text-xs font-mono border border-border px-2 py-0.5 rounded-md"
+                          style={{
+                            color: "var(--text-muted)",
+                            borderColor: "var(--border)",
+                          }}
+                        >
+                          {r.categoria}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <div className="flex gap-1">
+                          {[1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              style={{
+                                width: "12px",
+                                height: "12px",
+                                borderRadius: "2px",
+                                backgroundColor:
+                                  i <= r.dificultad
+                                    ? "var(--primary)"
+                                    : "var(--border)",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-4 text-center">
+                        <span
+                          className={`text-xs font-mono px-2 py-1 rounded-full ${
+                            r.estado
+                              ? "bg-green-500/10 text-green-500"
+                              : "bg-yellow-500/10 text-yellow-500"
+                          }`}
+                        >
+                          {r.estado ? "Activo" : "Inactivo"}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
+                            className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1"
+                          >
+                            <span className="material-symbols-outlined text-base">
+                              edit
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
+                            className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1"
+                          >
+                            <span className="material-symbols-outlined text-base">
+                              delete
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

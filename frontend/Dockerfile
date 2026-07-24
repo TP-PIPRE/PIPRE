@@ -8,7 +8,7 @@ ARG VITE_LOCAL_BACKEND_URL=http://localhost:8080
 ENV VITE_USE_LOCAL_BACKEND=$VITE_USE_LOCAL_BACKEND
 ENV VITE_LOCAL_BACKEND_URL=$VITE_LOCAL_BACKEND_URL
 
-# Activar pnpm (mejor que instalar global)
+# Activar la version declarada en package.json mediante Corepack.
 RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./

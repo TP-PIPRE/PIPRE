@@ -3,8 +3,8 @@ import pandas as pd
 from app.application.metrics import round_metric
 
 
-class RIA11Service:
-    MODEL_VERSION = "ria11-v2"
+class RIA09Service:
+    MODEL_VERSION = "ria09-v2"
 
     RESULT_LABELS = {
         "corto": "short",

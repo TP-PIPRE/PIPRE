@@ -4,7 +4,7 @@ from app.application.metrics import round_metric
 
 
 class RIA02Service:
-    MODEL_VERSION = "ria02-v3"
+    MODEL_VERSION = "ria02-v4"
 
     def __init__(self, model):
         self.model = model
@@ -30,12 +30,20 @@ class RIA02Service:
             "result": result["result"],
             "accuracy": round_metric(getattr(self.model, "accuracy", None)),
             "precision": round_metric(getattr(self.model, "precision", None)),
+            "recall": round_metric(getattr(self.model, "recall", None)),
+            "f1": round_metric(getattr(self.model, "f1", None)),
             "details": {
+                "needs_feedback": result["needs_feedback"],
                 "feedback_type": result["feedback_type"],
                 "priority": result["priority"],
+                "risk_score": result["risk_score"],
+                "risk_cutoff": result["risk_cutoff"],
+                "reasons": result["reasons"],
                 "recurrent_errors": result["recurrent_errors"],
                 "code_complexity": result["code_complexity"],
                 "suggestions": result["suggestions"],
+                "evidence": result["evidence"],
+                "input_warnings": result["input_warnings"],
                 "llm_context": result["llm_context"],
             },
         }

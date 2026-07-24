@@ -19,13 +19,23 @@ describe("AuthAdapter", () => {
   });
 
   describe("register()", () => {
-    it("envía firstName/lastName camelCase y guarda UUID en localStorage", async () => {
+    it("envía firstName/lastName camelCase y devuelve el usuario autenticado", async () => {
       const UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-      const JWT = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic3R1ZGVudCJ9.abc";
 
       vi.mocked(mockAxiosInstance.post)
         .mockResolvedValueOnce({ data: UUID })
-        .mockResolvedValueOnce({ data: JWT });
+        .mockResolvedValueOnce({
+          data: {
+            message: "Login exitoso",
+            user: {
+              idUser: UUID,
+              email: "juan@test.com",
+              firstName: "Juan",
+              lastName: "Pérez",
+              role: "student",
+            },
+          },
+        });
 
       const result = await adapter.register(
         "Juan", "Pérez", "juan@test.com", "pass123", 15, "9°",
@@ -39,12 +49,10 @@ describe("AuthAdapter", () => {
           lastName: "Pérez",
           email: "juan@test.com",
           passwordHash: "pass123",
-          role: "student",
+          roleIdList: [],
         }),
       );
 
-      const stored = JSON.parse(localStorage.getItem("pipre_registered_users") || "{}");
-      expect(stored["juan@test.com"]).toBe(UUID);
       expect(result.id).toBe(UUID);
       expect(result.role).toBe("student");
     });
@@ -61,21 +69,39 @@ describe("AuthAdapter", () => {
   });
 
   describe("login()", () => {
-    it("decodifica JWT para asignar role admin", async () => {
+    it("usa el rol admin devuelto por el backend", async () => {
       const UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-      const adminJWT = `header.${btoa(JSON.stringify({ role: "admin" }))}.sig`;
-      localStorage.setItem("pipre_registered_users", JSON.stringify({ "admin@test.com": UUID }));
-
-      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({ data: adminJWT });
+      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({
+        data: {
+          message: "Login exitoso",
+          user: {
+            idUser: UUID,
+            email: "admin@test.com",
+            firstName: "Admin",
+            lastName: "PIPRE",
+            role: "admin",
+          },
+        },
+      });
 
       const result = await adapter.login("admin@test.com", "pass");
       expect(result.user.role).toBe("admin");
       expect(result.user.id).toBe(UUID);
     });
 
-    it("asigna role docente por email si no hay role en JWT", async () => {
-      const jwtNoRole = `header.${btoa(JSON.stringify({}))}.sig`;
-      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({ data: jwtNoRole });
+    it("asigna role docente por email si el backend no devuelve rol", async () => {
+      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({
+        data: {
+          message: "Login exitoso",
+          user: {
+            idUser: "teacher-1",
+            email: "docente@test.com",
+            firstName: "Docente",
+            lastName: "PIPRE",
+            role: "",
+          },
+        },
+      });
 
       const result = await adapter.login("docente@test.com", "pass");
       expect(result.user.role).toBe("docente");

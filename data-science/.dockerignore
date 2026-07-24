@@ -1,0 +1,31 @@
+# Local environments and generated model artifacts
+.venv/
+venv/
+env/
+saved_models/
+
+# Python and test caches
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage*
+htmlcov/
+
+# Development-only files
+tests/
+scripts/
+*.pdf
+*_REPORT.md
+AI_CONTEXT.md
+Readme.md
+comando.txt
+
+# Editor, VCS, and OS metadata
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,8 +1,10 @@
 import pandas as pd
 
+from app.application.metrics import round_metric
+
 
 class RIA08Service:
-    MODEL_VERSION = "ria08-v1"
+    MODEL_VERSION = "ria08-v2-grade-comparison"
 
     def __init__(self, model):
         self.model = model
@@ -25,9 +27,15 @@ class RIA08Service:
         result = self.model.predict_detailed(df)
 
         return {
-            "result": result["result"],
+            "result": result["pedagogical_recommendation"],
+            "accuracy": round_metric(getattr(self.model, "accuracy", None)),
+            "precision": round_metric(getattr(self.model, "precision", None)),
             "details": {
+                "pedagogical_profile": result["pedagogical_profile"],
+                "pedagogical_risk": result["pedagogical_risk"],
+                "confidence": result["confidence"],
+                "grade_comparison": result["grade_comparison"],
                 "reasons": result["reasons"],
-                "dataset_anomaly_ratio": result["dataset_anomaly_ratio"],
+                "teacher_suggestion": result["teacher_suggestion"],
             },
         }

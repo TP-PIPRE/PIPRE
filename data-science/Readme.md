@@ -27,6 +27,7 @@ data-science/
   saved_models/         Modelos entrenados en formato .pkl.
   scripts/              Demostraciones ejecutables y diagnosticos.
   tests/                Pruebas unitarias y de integracion.
+  docs/ria/             Guias funcionales y contexto para IA por cada RIA.
   AI_CONTEXT.md         Contexto compacto para futuras IAs.
 ```
 
@@ -48,13 +49,19 @@ es compatible.
 | RIA | Funcion | Endpoint |
 | --- | --- | --- |
 | RIA01 | Estimacion predictiva binaria sin score/success rate; incluye un modo de regla separado para datos finales. | `POST /ria01/predict` |
-| RIA02 | Retroalimentacion automatica y contexto para IA. | `POST /ria02/feedback` |
+| RIA02 | Retroalimentacion automatica explicable con riesgo, razones, evidencia, pistas y contexto para IA. | `POST /ria02/feedback` |
 | RIA03 | Recomendacion de actividades con seleccion agrupada entre XGBoost jerarquico y multiclase. | `POST /ria03/recommend` |
-| RIA04 | Ajuste adaptativo de dificultad. | `POST /ria04/difficulty` |
-| RIA08 | Deteccion de anomalias. | `POST /ria08/anomaly` |
-| RIA10 | Recomendacion pedagogica. | `POST /ria10/pedagogical` |
-| RIA11 | Clasificacion de tiempo. | `POST /ria11/time` |
-| RIA12 | Evaluacion de codigo en UI local. | Sin endpoint directo actual. |
+| RIA04 | Generacion inteligente de retos de programacion. | `POST /ria04/generate` |
+| RIA05 | Clasificacion multiclase de seis tipos de error logico a partir de telemetria del simulador. | `POST /ria05/errors` y `/ria05/errors/batch` |
+| RIA06 | Segmentacion explicable de frecuencia, duracion y continuidad mediante K-means. | `POST /ria06/patterns` y `/ria06/patterns/batch` |
+| RIA07 | Riesgo y anomalias sin historial temporal individual, usando una cohorte de referencia y alertas explicables. | `POST /ria07/early-warning` y `/ria07/early-warning/batch` |
+| RIA08 | Recomendacion pedagogica y comparacion con estudiantes del mismo grado. | `POST /ria08/pedagogical` |
+| RIA09 | Clasificacion de tiempo. | `POST /ria09/time` |
+| RIA10 | Clasificacion heuristica de calidad de codigo en basico, intermedio o avanzado. | `POST /ria10/code` y `/ria10/code/batch` |
+
+Las rutas anteriores de RIA06-RIA09 siguen disponibles como aliases ocultos
+para dar tiempo a migrar clientes existentes, pero la documentacion de OpenAPI
+solo presenta la numeracion actual.
 
 ## Respuesta API recomendada
 
@@ -75,9 +82,11 @@ extendidos deben exponerse en `/riaXX/info`.
 Para que una IA entienda el contexto sin leer todo el repositorio, empezar por:
 
 1. `AI_CONTEXT.md`
-2. El servicio en `app/application/services/riaXX_service.py`
-3. El modelo en `app/adapters/ml_models/riaXX_*.py`
-4. El schema y endpoint en `app/adapters/api/`
+2. [`docs/ria/README.md`](docs/ria/README.md)
+3. La guia individual `docs/ria/RIAxx_*.md`
+4. El servicio en `app/application/services/riaXX_service.py`
+5. El modelo en `app/adapters/ml_models/riaXX_*.py`
+6. El schema y endpoint en `app/adapters/api/`
 
 `AI_CONTEXT.md` incluye las skills operativas necesarias: control de alcance,
 revision de leakage, contrato API, persistencia de modelos, smoke tests y
@@ -100,3 +109,11 @@ Pruebas y demostracion de RIA01:
 data-science\venv\Scripts\python.exe -B -m unittest tests.test_ria01 -v
 data-science\venv\Scripts\python.exe -B scripts/demo_ria01.py
 ```
+
+Guia funcional y contrato del actual RIA07:
+
+- `RIA07_RIESGO_ANOMALIAS_GUIA.md`
+
+Guia funcional, contrato y vista docente del actual RIA06:
+
+- `RIA06_ANALISIS_PATRONES_GUIA.md`
