@@ -8,6 +8,9 @@ import { EffectComposer } from "postprocessing";
 import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
 import { soundManager } from "../shared/SoundManager";
 import { GhostPreview } from "../shared/GhostPreview";
+import { RobotPersonality } from "../shared/RobotPersonality";
+import { CinematicCamera } from "../shared/CinematicCamera";
+import { BlockBar3D } from "../shared/BlockBar3D";
 
 export class RaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -28,6 +31,9 @@ export class RaceStageEngine implements ISimulatorEngine {
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
   private speedTrails: THREE.Mesh[] = [];
+  private robotPersonality!: RobotPersonality;
+  private cinematicCamera!: CinematicCamera;
+  private blockBar!: BlockBar3D;
 
   constructor() {
     const setup = createSceneWithCamera({
@@ -57,6 +63,8 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.ultrasonicCone = this.createUltrasonicCone();
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
+    this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
+    this.blockBar = new BlockBar3D(this.scene);
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
@@ -355,6 +363,9 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.controls.maxPolarAngle = Math.PI / 2;
     this.controls.target.set(0, 0.5, 0);
     this.controls.update();
+
+    this.cinematicCamera = new CinematicCamera(this.camera, this.controls);
+
     this.resize(canvas.clientWidth, canvas.clientHeight);
     this.startLoop();
   }
@@ -401,6 +412,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
     this.composer.dispose();
     this.ghostPreview.dispose();
+    this.robotPersonality.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -417,6 +429,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     const animate = () => {
       if (!this.isRunning) return;
       this.animationId = requestAnimationFrame(animate);
+      this.cinematicCamera.update(this.botGroup.position);
       if (this.controls) this.controls.update();
       // Spin wheels when visible
       if (this.botParts.wheels.visible) {
@@ -453,6 +466,8 @@ export class RaceStageEngine implements ISimulatorEngine {
         (trail.material as THREE.MeshBasicMaterial).opacity = 0.05 + Math.sin(trailT * 2 + i) * 0.04;
       });
 
+      this.robotPersonality.update(0.016);
+      this.blockBar.animate(Date.now() * 0.001);
       this.composer.render();
     };
     animate();
@@ -793,5 +808,29 @@ export class RaceStageEngine implements ISimulatorEngine {
     const dx = x - this.goalBeacon.position.x;
     const dz = z - this.goalBeacon.position.z;
     return Math.sqrt(dx * dx + dz * dz) < 2;
+  }
+
+  setRobotEmotion(emotion: string): void {
+    this.robotPersonality.setEmotion(emotion as "idle" | "thinking" | "excited" | "sad" | "celebrating" | "scared" | "angry");
+  }
+
+  robotSpeak(text: string, duration?: number): void {
+    this.robotPersonality.speak(text, duration);
+  }
+
+  enableFollowCam(enabled: boolean): void {
+    if (enabled) {
+      this.cinematicCamera.startFollow(this.botGroup.position);
+    } else {
+      this.cinematicCamera.stopFollow();
+    }
+  }
+
+  triggerCameraShake(intensity?: number): void {
+    this.cinematicCamera.triggerShake(intensity);
+  }
+
+  updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
+    this.blockBar.updateBlocks(blocks, activeBlockId);
   }
 }

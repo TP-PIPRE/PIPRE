@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useSimulador } from "../../../application/context/SimuladorProvider";
 import type { Block, BlockCategory } from "../../../shared/types/Simulador";
 import { ENVIRONMENT_CONFIGS } from "../../../shared/constants/environmentConfigs";
@@ -86,6 +86,75 @@ export const Workspace = () => {
     },
     [blocks, engineRef]
   );
+
+  const calculateFullPath = useCallback((): Array<{ x: number; z: number; y?: number }> => {
+    const engine = engineRef.current;
+    if (!engine?.getBotPosition) return [];
+
+    const { x, z, rotation } = engine.getBotPosition();
+    const waypoints: Array<{ x: number; z: number; y?: number }> = [{ x, z }];
+
+    let currentX = x;
+    let currentZ = z;
+    let currentRot = rotation;
+
+    for (const block of blocks) {
+      if (
+        block.type === "mover_ruedas" ||
+        block.type === "avanzar" ||
+        block.type === "desplazarse"
+      ) {
+        const dist = parseFloat(block.params.distancia || "30") / 10;
+        currentX += Math.sin(currentRot) * dist;
+        currentZ -= Math.cos(currentRot) * dist;
+        waypoints.push({ x: currentX, z: currentZ });
+      }
+
+      if (block.type === "rotar_nucleo" || block.type === "girar") {
+        const angle = parseFloat(block.params.grados || "90");
+        currentRot += (angle * Math.PI) / 180;
+      }
+
+      if (block.type === "repetir") {
+        const iterations = parseInt(block.params.iteraciones || "3", 10);
+        const children = block.children || [];
+        for (let r = 0; r < iterations; r++) {
+          for (const child of children) {
+            if (
+              child.type === "mover_ruedas" ||
+              child.type === "avanzar" ||
+              child.type === "desplazarse"
+            ) {
+              const d = parseFloat(child.params.distancia || "30") / 10;
+              currentX += Math.sin(currentRot) * d;
+              currentZ -= Math.cos(currentRot) * d;
+              waypoints.push({ x: currentX, z: currentZ });
+            }
+            if (child.type === "rotar_nucleo" || child.type === "girar") {
+              const a = parseFloat(child.params.grados || "90");
+              currentRot += (a * Math.PI) / 180;
+            }
+          }
+        }
+      }
+    }
+
+    return waypoints;
+  }, [blocks, engineRef]);
+
+  // Live preview: update path whenever blocks change
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine || blocks.length === 0) {
+      engine?.clearPreview?.();
+      return;
+    }
+
+    const waypoints = calculateFullPath();
+    if (waypoints.length >= 2) {
+      engine.showPathPreview?.(waypoints);
+    }
+  }, [blocks, engineRef, calculateFullPath]);
 
   const handleBlockHover = useCallback(
     (block: Block, isEnter: boolean) => {

@@ -14,6 +14,9 @@ import {
 import { createEffectComposer, BLOOM_PRESETS } from "./shared/EffectComposerSetup";
 import { soundManager } from "./shared/SoundManager";
 import { GhostPreview } from "./shared/GhostPreview";
+import { RobotPersonality } from "./shared/RobotPersonality";
+import { CinematicCamera } from "./shared/CinematicCamera";
+import { BlockBar3D } from "./shared/BlockBar3D";
 
 export class BotStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -39,6 +42,9 @@ export class BotStageEngine implements ISimulatorEngine {
   private ghostPreview!: GhostPreview;
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
+  private robotPersonality!: RobotPersonality;
+  private cinematicCamera!: CinematicCamera;
+  private blockBar!: BlockBar3D;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -74,6 +80,8 @@ export class BotStageEngine implements ISimulatorEngine {
     this.ultrasonicCone = this.createUltrasonicCone();
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
+    this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
+    this.blockBar = new BlockBar3D(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
   }
 
@@ -326,6 +334,8 @@ export class BotStageEngine implements ISimulatorEngine {
     this.controls.target.set(0, 0.5, 0);
     this.controls.update();
 
+    this.cinematicCamera = new CinematicCamera(this.camera, this.controls);
+
     this.resize(canvas.clientWidth, canvas.clientHeight);
     this.startLoop();
   }
@@ -408,6 +418,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.animationEngine.dispose();
     this.composer.dispose();
     this.ghostPreview.dispose();
+    this.robotPersonality.dispose();
     this.renderer.dispose();
   }
 
@@ -459,6 +470,7 @@ export class BotStageEngine implements ISimulatorEngine {
       // Spin starfield slowly
       this.starfield.rotation.y += 0.0003;
 
+      this.cinematicCamera.update(this.botGroup.position);
       if (this.controls) this.controls.update();
       this.ghostPreview.animate(Date.now() * 0.001);
 
@@ -468,6 +480,8 @@ export class BotStageEngine implements ISimulatorEngine {
         this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
       }
 
+      this.robotPersonality.update(0.016);
+      this.blockBar.animate(Date.now() * 0.001);
       this.composer.render();
     };
     animate();
@@ -976,5 +990,29 @@ export class BotStageEngine implements ISimulatorEngine {
     const dx = x - this.goalBeacon.position.x;
     const dz = z - this.goalBeacon.position.z;
     return Math.sqrt(dx * dx + dz * dz) < 2;
+  }
+
+  setRobotEmotion(emotion: string): void {
+    this.robotPersonality.setEmotion(emotion as "idle" | "thinking" | "excited" | "sad" | "celebrating" | "scared" | "angry");
+  }
+
+  robotSpeak(text: string, duration?: number): void {
+    this.robotPersonality.speak(text, duration);
+  }
+
+  enableFollowCam(enabled: boolean): void {
+    if (enabled) {
+      this.cinematicCamera.startFollow(this.botGroup.position);
+    } else {
+      this.cinematicCamera.stopFollow();
+    }
+  }
+
+  triggerCameraShake(intensity?: number): void {
+    this.cinematicCamera.triggerShake(intensity);
+  }
+
+  updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
+    this.blockBar.updateBlocks(blocks, activeBlockId);
   }
 }

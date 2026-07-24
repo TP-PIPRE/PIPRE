@@ -37,6 +37,11 @@ export interface ISimulatorEngine {
   loadLevel?(obstacles: Array<{ x: number; z: number; type: string; size?: number }>, startPos: { x: number; z: number; rotation: number }, goalPos: { x: number; z: number }): void;
   showGoalBeacon?(x: number, z: number): void;
   checkGoalReached?(x: number, z: number): boolean;
+  setRobotEmotion?(emotion: string): void;
+  robotSpeak?(text: string, duration?: number): void;
+  enableFollowCam?(enabled: boolean): void;
+  triggerCameraShake?(intensity?: number): void;
+  updateBlockBar?(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void;
 
   // Acciones específicas por entorno (opcionales)
   attack?(power: number, duration: number): Promise<void>;

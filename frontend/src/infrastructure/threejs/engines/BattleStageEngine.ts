@@ -7,6 +7,9 @@ import { createSceneWithCamera, createShadowFloor, createStarfield } from "../sh
 import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
 import { soundManager } from "../shared/SoundManager";
 import { GhostPreview } from "../shared/GhostPreview";
+import { RobotPersonality } from "../shared/RobotPersonality";
+import { CinematicCamera } from "../shared/CinematicCamera";
+import { BlockBar3D } from "../shared/BlockBar3D";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 
 export class BattleStageEngine implements ISimulatorEngine {
@@ -29,6 +32,9 @@ export class BattleStageEngine implements ISimulatorEngine {
   private goalBeacon: THREE.Mesh | null = null;
   private ambientEmbers: THREE.Points | null = null;
   private lavaRivers: THREE.Mesh[] = [];
+  private robotPersonality!: RobotPersonality;
+  private cinematicCamera!: CinematicCamera;
+  private blockBar!: BlockBar3D;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -94,6 +100,8 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.ultrasonicCone = this.createUltrasonicCone();
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
+    this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
+    this.blockBar = new BlockBar3D(this.scene);
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
@@ -339,6 +347,8 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.controls.target.set(0, 0.5, 0);
     this.controls.update();
 
+    this.cinematicCamera = new CinematicCamera(this.camera, this.controls);
+
     this.resize(canvas.clientWidth, canvas.clientHeight);
     this.startLoop();
   }
@@ -392,6 +402,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     if (this.animationId !== null) cancelAnimationFrame(this.animationId);
     this.composer.dispose();
     this.ghostPreview.dispose();
+    this.robotPersonality.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -408,6 +419,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     const animate = () => {
       if (!this.isRunning) return;
       this.animationId = requestAnimationFrame(animate);
+      this.cinematicCamera.update(this.botGroup.position);
       if (this.controls) this.controls.update();
 
       if (this.botParts.radar.visible) {
@@ -449,6 +461,8 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.ambientEmbers.geometry.attributes.position.needsUpdate = true;
       }
 
+      this.robotPersonality.update(0.016);
+      this.blockBar.animate(Date.now() * 0.001);
       this.composer.render();
     };
     animate();
@@ -803,5 +817,29 @@ export class BattleStageEngine implements ISimulatorEngine {
     const dx = x - this.goalBeacon.position.x;
     const dz = z - this.goalBeacon.position.z;
     return Math.sqrt(dx * dx + dz * dz) < 2;
+  }
+
+  setRobotEmotion(emotion: string): void {
+    this.robotPersonality.setEmotion(emotion as "idle" | "thinking" | "excited" | "sad" | "celebrating" | "scared" | "angry");
+  }
+
+  robotSpeak(text: string, duration?: number): void {
+    this.robotPersonality.speak(text, duration);
+  }
+
+  enableFollowCam(enabled: boolean): void {
+    if (enabled) {
+      this.cinematicCamera.startFollow(this.botGroup.position);
+    } else {
+      this.cinematicCamera.stopFollow();
+    }
+  }
+
+  triggerCameraShake(intensity?: number): void {
+    this.cinematicCamera.triggerShake(intensity);
+  }
+
+  updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
+    this.blockBar.updateBlocks(blocks, activeBlockId);
   }
 }

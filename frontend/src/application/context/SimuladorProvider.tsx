@@ -391,6 +391,13 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     addLog(`Actividad cargada: ${selectedActivity.name}`, "success");
   }, [selectedActivity]);
 
+  // Sync holographic block bar in 3D world
+  useEffect(() => {
+    if (engineRef.current?.updateBlockBar) {
+      engineRef.current.updateBlockBar(blocks, currentBlockId);
+    }
+  }, [blocks, currentBlockId, engineRef]);
+
   const submitRobotSimulation = useCallback(async () => {
     const authUser = getAuthState().user;
     const userId = authUser?.id || (import.meta.env.DEV ? "dev-mock-user" : null);
@@ -543,6 +550,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     setIsRunning(false);
     setStepMode(false);
     setCurrentBlockId(null);
+    engineRef.current?.enableFollowCam?.(false);
+    engineRef.current?.setRobotEmotion?.("idle");
     addLog("Ejecución detenida por el usuario", "error");
   };
 
@@ -559,6 +568,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     if (stopRequested.current || energy <= 0) return;
     setCurrentBlockId(block.id);
     soundManager.play("execute");
+    engineRef.current?.setRobotEmotion?.("thinking");
 
     if (isStepMode) {
       await new Promise<void>((resolve) => { stepResolverRef.current = resolve; });
@@ -617,6 +627,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       case "atacar":
         addLog("¡ATACANDO!");
         consumeEnergy(10);
+        engineRef.current?.triggerCameraShake?.(0.4);
+        engineRef.current?.setRobotEmotion?.("angry");
         if (engineRef.current?.attack) {
           await engineRef.current.attack(parseFloat(block.params.potencia || "50"), 800);
         } else {
@@ -681,6 +693,9 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       case "recolectar":
         addLog("Recolectando muestra...");
         consumeEnergy(5);
+        engineRef.current?.setRobotEmotion?.("excited");
+        engineRef.current?.robotSpeak?.("Recolectado!", 1000);
+
         if (engineRef.current?.collect) {
           await engineRef.current.collect(1000);
         } else {
@@ -945,6 +960,9 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     stopRequested.current = false;
     startTimeRef.current = Date.now();
     counterRef.current = 0;
+    engineRef.current?.enableFollowCam?.(true);
+    engineRef.current?.setRobotEmotion?.("excited");
+    engineRef.current?.robotSpeak?.("Alla vamos!", 1500);
     addLog("Iniciando programa...", "success");
 
     if (engineRef.current) {
@@ -956,6 +974,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         if (stopRequested.current) break;
         if (energy <= 0) {
           addLog("Batería agotada. Abortando misión.", "error");
+          engineRef.current?.setRobotEmotion?.("sad");
+          engineRef.current?.robotSpeak?.("Sin energia... necesito recargar.", 2000);
           break;
         }
 
@@ -968,10 +988,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         // Auto-completar misión actual si hay misión activa
         const currentMission = missions[currentMissionIndex];
         if (currentMission && !currentMission.isCompleted && !isFreeMode) {
+          engineRef.current?.setRobotEmotion?.("celebrating");
+          engineRef.current?.robotSpeak?.("Mision completada!", 2500);
           completeMission();
         } else if (currentMission && !currentMission.isCompleted) {
-          // Restaurar energía si la misión no se completó (playground)
+          engineRef.current?.setRobotEmotion?.("idle");
           setEnergy(100);
+        } else {
+          engineRef.current?.setRobotEmotion?.("idle");
         }
       } else {
         // Restaurar energía si la ejecución se detuvo o se agotó la batería
@@ -986,6 +1010,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
       setIsRunning(false);
       setCurrentBlockId(null);
       stopRequested.current = false;
+      engineRef.current?.enableFollowCam?.(false);
     }
   };
 
