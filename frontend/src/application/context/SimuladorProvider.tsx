@@ -595,7 +595,24 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         const dist = parseFloat(block.params.distancia || "30");
         addLog(`Avanzando ${dist} unidades...`);
         consumeEnergy(dist * 0.2);
+
         if (engineRef.current) {
+          // Check collision before moving
+          if (engineRef.current.getBotPosition && engineRef.current.checkCollision) {
+            const { x, z, rotation } = engineRef.current.getBotPosition();
+            const targetX = x + Math.sin(rotation) * (dist / 10);
+            const targetZ = z - Math.cos(rotation) * (dist / 10);
+
+            if (engineRef.current.checkCollision(targetX, targetZ)) {
+              engineRef.current?.setRobotEmotion?.("sad");
+              engineRef.current?.robotSpeak?.("Hay un obstaculo! No puedo pasar.", 2000);
+              engineRef.current?.triggerCameraShake?.(0.15);
+              soundManager.play("error");
+              addLog("Obstaculo detectado! Desvia el camino.", "error");
+              break;
+            }
+          }
+
           await engineRef.current.moveForward(dist, 1000);
         }
         break;

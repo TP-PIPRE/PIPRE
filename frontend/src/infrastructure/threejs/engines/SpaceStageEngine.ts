@@ -2,9 +2,6 @@ import * as THREE from "three";
 import { MapControls } from "three/addons/controls/MapControls.js";
 import { SpaceBotBuilder } from "../shared/SpaceBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
-import {
-  createSceneWithCamera,
-} from "../shared/SceneUtils";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 import { EffectComposer } from "postprocessing";
 import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
@@ -36,26 +33,38 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private crashedShip!: THREE.Group;
+  private planetMesh!: THREE.Mesh;
+  private dustStorm: THREE.Points | null = null;
+  private canyonWalls: THREE.Mesh[] = [];
 
   constructor() {
-    const { scene, camera } = createSceneWithCamera({
-      fov: 50,
-      cameraPos: [22, 18, 22],
-      fogColor: "#0a0820",
-      fogNear: 28,
-      fogFar: 75,
-      bgColor: "#0a0820",
-      ambientColor: "#334466",
-      skyColor: "#2244aa",
-      groundColor: "#1a1030",
-      hemiIntensity: 0.55,
-      dirColor: "#8899ff",
-      dirPos: [12, 28, 8],
-      shadowMapSize: 2048,
-      shadowCameraSize: 35,
-    });
-    this.scene = scene;
-    this.camera = camera;
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color("#050515");
+    this.scene.fog = new THREE.Fog("#050515", 25, 100);
+
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+    this.camera.position.set(24, 18, 24);
+    this.camera.lookAt(0, 0, 0);
+
+    const ambient = new THREE.AmbientLight("#333355", 0.5);
+    this.scene.add(ambient);
+
+    const hemi = new THREE.HemisphereLight("#334488", "#0a0a20", 0.5);
+    this.scene.add(hemi);
+
+    const dirLight = new THREE.DirectionalLight("#8899cc", 1.1);
+    dirLight.position.set(10, 30, 5);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 100;
+    dirLight.shadow.camera.left = -35;
+    dirLight.shadow.camera.right = 35;
+    dirLight.shadow.camera.top = 35;
+    dirLight.shadow.camera.bottom = -35;
+    this.scene.add(dirLight);
 
     // Large starfield with varying brightness
     const starCount = 500;
@@ -114,22 +123,24 @@ export class SpaceStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Alien terrain - deformed surface
-    const terrainGeo = new THREE.PlaneGeometry(80, 80, 30, 30);
-    const posAttr = terrainGeo.getAttribute("position");
+    // Noisy terrain with rolling hills and valleys
+    const terrainGeo = new THREE.PlaneGeometry(100, 100, 80, 80);
+    const posAttr = terrainGeo.attributes.position;
     for (let i = 0; i < posAttr.count; i++) {
       const x = posAttr.getX(i);
       const z = posAttr.getY(i);
-      const noise = Math.sin(x * 0.4) * Math.cos(z * 0.35) * 0.5 + Math.sin(x * 0.9 + z * 0.7) * 0.3;
+      const noise =
+        Math.sin(x * 0.15) * Math.cos(z * 0.12) * 2.5 +
+        Math.sin(x * 0.35 + z * 0.28) * 1.8 +
+        Math.cos(x * 0.52 - z * 0.44) * 1.2 +
+        Math.sin(x * 0.08) * Math.sin(z * 0.09) * 3.0;
       posAttr.setZ(i, noise);
     }
     terrainGeo.computeVertexNormals();
     const terrainMat = new THREE.MeshStandardMaterial({
-      color: "#3d266b",
-      roughness: 0.9,
-      metalness: 0.15,
-      emissive: "#1a0f2e",
-      emissiveIntensity: 0.15,
+      color: "#1a1035",
+      roughness: 0.95,
+      metalness: 0.05,
     });
     const terrain = new THREE.Mesh(terrainGeo, terrainMat);
     terrain.rotation.x = -Math.PI / 2;
@@ -137,92 +148,164 @@ export class SpaceStageEngine implements ISimulatorEngine {
     terrain.receiveShadow = true;
     this.scene.add(terrain);
 
-    // Craters with depth
-    const craterPositions = [
-      [-10, -14], [10, -10], [-6, 12], [14, 6], [0, -6], [-14, 3]
-    ];
-    craterPositions.forEach(([cx, cz]) => {
-      const craterGeo = new THREE.CylinderGeometry(1.5 + Math.random() * 2, 2 + Math.random() * 2, 0.5, 24);
-      const craterMat = new THREE.MeshStandardMaterial({
-        color: "#1a0f2e",
-        roughness: 1,
-        emissive: "#0a0520",
-        emissiveIntensity: 0.1,
-      });
-      const crater = new THREE.Mesh(craterGeo, craterMat);
-      crater.position.set(cx, -0.5, cz);
-      this.scene.add(crater);
+    // Crashed spaceship
+    this.crashedShip = new THREE.Group();
+    this.crashedShip.position.set(-12, 0, 8);
 
-      // Crater rim glow
-      const rimGeo = new THREE.TorusGeometry(1.5 + Math.random(), 0.1, 8, 24);
-      const rimMat = new THREE.MeshBasicMaterial({
-        color: "#6b4fa3",
-        transparent: true,
-        opacity: 0.2,
-        depthWrite: false,
-      });
-      const rim = new THREE.Mesh(rimGeo, rimMat);
-      rim.rotation.x = Math.PI / 2;
-      rim.position.set(cx, -0.24, cz);
-      this.scene.add(rim);
+    const fuselageGeo = new THREE.CylinderGeometry(3, 3, 18, 16);
+    const fuselageMat = new THREE.MeshStandardMaterial({
+      color: "#556677",
+      roughness: 0.4,
+      metalness: 0.8,
     });
+    const fuselage = new THREE.Mesh(fuselageGeo, fuselageMat);
+    fuselage.rotation.z = Math.PI / 2;
+    fuselage.position.y = 1;
+    fuselage.castShadow = true;
+    this.crashedShip.add(fuselage);
 
-    // Glowing crystal formations
+    const wingGeo = new THREE.BoxGeometry(8, 0.3, 3);
+    const wingMat = new THREE.MeshStandardMaterial({
+      color: "#778899",
+      roughness: 0.4,
+      metalness: 0.7,
+    });
+    const wing = new THREE.Mesh(wingGeo, wingMat);
+    wing.rotation.z = THREE.MathUtils.degToRad(30);
+    wing.position.set(-1.5, 0.5, 0);
+    wing.castShadow = true;
+    this.crashedShip.add(wing);
+
+    const smokeCount = 60;
+    const smokeGeo = new THREE.BufferGeometry();
+    const smokePositions = new Float32Array(smokeCount * 3);
+    for (let i = 0; i < smokeCount; i++) {
+      smokePositions[i * 3] = (Math.random() - 0.5) * 8;
+      smokePositions[i * 3 + 1] = Math.random() * 5 + 1;
+      smokePositions[i * 3 + 2] = (Math.random() - 0.5) * 4;
+    }
+    smokeGeo.setAttribute("position", new THREE.BufferAttribute(smokePositions, 3));
+    const smokeMat = new THREE.PointsMaterial({
+      color: "#cc8855",
+      size: 0.4,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const smoke = new THREE.Points(smokeGeo, smokeMat);
+    this.crashedShip.add(smoke);
+
+    const shipLight = new THREE.PointLight("#ff6622", 0.8, 12);
+    shipLight.position.set(0, 1.5, 0);
+    this.crashedShip.add(shipLight);
+
+    this.scene.add(this.crashedShip);
+
+    // Deep canyon at z=-6
+    const canyonZ = -6;
+    const wallMatGeo = new THREE.MeshStandardMaterial({
+      color: "#0d0718",
+      roughness: 0.9,
+      side: THREE.DoubleSide,
+    });
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(30, 6), wallMatGeo);
+    leftWall.rotation.set(0, 0, -0.4);
+    leftWall.position.set(0, -0.2, canyonZ + 2.5);
+    leftWall.receiveShadow = true;
+    this.scene.add(leftWall);
+    this.canyonWalls.push(leftWall);
+
+    const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(30, 6), wallMatGeo);
+    rightWall.rotation.set(0, 0, 0.4);
+    rightWall.position.set(0, -0.2, canyonZ - 2.5);
+    rightWall.receiveShadow = true;
+    this.scene.add(rightWall);
+    this.canyonWalls.push(rightWall);
+
+    for (let i = -12; i <= 12; i += 4) {
+      const canyonLight = new THREE.PointLight("#4a2080", 0.35, 6);
+      canyonLight.position.set(i, -1, canyonZ);
+      this.scene.add(canyonLight);
+    }
+
+    // Crystal formations (6 clusters)
     const crystalClusterPositions = [
-      [-4, -5], [8, -3], [-2, 8], [12, 2], [-9, 4]
+      [-16, -4], [14, -2], [-8, 14], [10, 10], [4, -14], [-14, 8]
     ];
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: "#3b82f6",
+      emissive: "#3b82f6",
+      emissiveIntensity: 0.6,
+      roughness: 0.1,
+      metalness: 0.2,
+      transparent: true,
+      opacity: 0.85,
+    });
     crystalClusterPositions.forEach(([cx, cz]) => {
       const clusterGroup = new THREE.Group();
-      for (let j = 0; j < 4; j++) {
-        const height = 0.8 + Math.random() * 1.5;
-        const crystalGeo = new THREE.ConeGeometry(0.15, height, 6);
-        const crystalMat = new THREE.MeshStandardMaterial({
-          color: "#3b82f6",
-          emissive: "#3b82f6",
-          emissiveIntensity: 0.6,
-          roughness: 0.1,
-          metalness: 0.3,
-          transparent: true,
-          opacity: 0.85,
-        });
+      const count = 3 + Math.floor(Math.random() * 5);
+      for (let j = 0; j < count; j++) {
+        const height = 2 + Math.random() * 3;
+        const crystalGeo = new THREE.ConeGeometry(0.25, height, 6);
         const crystal = new THREE.Mesh(crystalGeo, crystalMat);
         crystal.position.set(
-          (Math.random() - 0.5) * 0.6,
-          height / 2 - 0.5,
-          (Math.random() - 0.5) * 0.6
+          (Math.random() - 0.5) * 0.8,
+          height / 2 - 0.6,
+          (Math.random() - 0.5) * 0.8
         );
-        crystal.rotation.set(Math.random() * 0.3, Math.random() * Math.PI, Math.random() * 0.3);
+        crystal.rotation.set(Math.random() * 0.4, Math.random() * Math.PI, Math.random() * 0.4);
         clusterGroup.add(crystal);
       }
-      // Light on cluster
-      const ptLight = new THREE.PointLight("#3b82f6", 0.4, 4);
-      ptLight.position.set(cx, 0, cz);
-      this.scene.add(ptLight);
+      const ptLight = new THREE.PointLight("#3b82f6", 0.5, 5);
+      ptLight.position.set(0, 0.3, 0);
+      clusterGroup.add(ptLight);
       clusterGroup.position.set(cx, 0, cz);
       this.scene.add(clusterGroup);
     });
 
-    // Rock formations
-    const rockMat = new THREE.MeshStandardMaterial({
-      color: "#5a4a80",
-      roughness: 0.85,
-      metalness: 0.2,
-    });
-    for (let i = 0; i < 10; i++) {
-      const rockGeo = new THREE.DodecahedronGeometry(0.4 + Math.random() * 0.7, 1);
-      const rock = new THREE.Mesh(rockGeo, rockMat);
-      rock.position.set(
-        -14 + Math.random() * 28,
-        0,
-        -14 + Math.random() * 28
-      );
-      rock.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
-      rock.castShadow = true;
-      rock.scale.set(1, 0.6 + Math.random() * 0.8, 1);
-      this.scene.add(rock);
+    // Giant planet in sky
+    const planetCanvas = document.createElement("canvas");
+    planetCanvas.width = 256;
+    planetCanvas.height = 256;
+    const ctx = planetCanvas.getContext("2d")!;
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, "#4a3080");
+    grad.addColorStop(0.45, "#2a1560");
+    grad.addColorStop(0.55, "#1a0a30");
+    grad.addColorStop(1, "#0a0518");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = "rgba(40, 20, 100, 0.15)";
+    for (let i = 0; i < 14; i++) {
+      ctx.beginPath();
+      ctx.arc(40 + Math.random() * 176, 40 + Math.random() * 176, 15 + Math.random() * 25, 0, Math.PI * 2);
+      ctx.fill();
     }
+    const planetTex = new THREE.CanvasTexture(planetCanvas);
 
-    // Collectable samples - glowing floating crystals
+    this.planetMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(25, 32, 32),
+      new THREE.MeshStandardMaterial({ map: planetTex, roughness: 0.9 })
+    );
+    this.planetMesh.position.set(50, 20, 50);
+    this.scene.add(this.planetMesh);
+
+    const ringGeo = new THREE.TorusGeometry(28, 1.5, 16, 48);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: "#6b5b9a",
+      roughness: 0.5,
+      metalness: 0.3,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = THREE.MathUtils.degToRad(20);
+    ring.rotation.y = THREE.MathUtils.degToRad(15);
+    this.planetMesh.add(ring);
+
+    // Collectable samples (bigger, teal glow)
     const sampleMat = new THREE.MeshStandardMaterial({
       color: "#00f5d4",
       emissive: "#00f5d4",
@@ -232,58 +315,90 @@ export class SpaceStageEngine implements ISimulatorEngine {
     });
     const samplePositions = [[-5, -8], [7, -12], [-3, 5], [12, 0], [-8, 10]];
     samplePositions.forEach((pos) => {
-      const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), sampleMat);
-      s.position.set(pos[0], 0.5, pos[1]);
+      const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.5), sampleMat);
+      const baseY = 0.5 + Math.random() * 0.5;
+      s.position.set(pos[0], baseY, pos[1]);
+      s.userData.origY = baseY;
       s.name = "sample";
       this.scene.add(s);
       this.sampleMeshes.push(s);
     });
 
-    // Landing pad with beacon
-    const padGeo = new THREE.RingGeometry(2, 3, 32);
-    const padMat = new THREE.MeshBasicMaterial({
+    // Landing pad with details
+    const padGeo = new THREE.RingGeometry(3, 3.5, 32);
+    const padMat = new THREE.MeshStandardMaterial({
       color: "#38bdf8",
-      transparent: true,
-      opacity: 0.4,
+      emissive: "#38bdf8",
+      emissiveIntensity: 0.3,
+      roughness: 0.4,
+      metalness: 0.5,
       side: THREE.DoubleSide,
     });
     const pad = new THREE.Mesh(padGeo, padMat);
     pad.rotation.x = -Math.PI / 2;
-    pad.position.set(12, -0.25, -16);
+    pad.position.set(12, -0.15, -16);
+    pad.receiveShadow = true;
     this.scene.add(pad);
 
-    // Beacon pillar
-    const beaconBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.25, 1.5, 8),
-      new THREE.MeshStandardMaterial({ color: "#334466", roughness: 0.5, metalness: 0.5 })
+    const padCenter = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.25, 0.5, 8),
+      new THREE.MeshStandardMaterial({ color: "#64748b", roughness: 0.5, metalness: 0.6 })
     );
-    beaconBase.position.set(12, 0.25, -16);
-    this.scene.add(beaconBase);
-    const beaconLight = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2, 8, 8),
-      new THREE.MeshStandardMaterial({ color: "#38bdf8", emissive: "#38bdf8", emissiveIntensity: 0.8 })
-    );
-    beaconLight.position.set(12, 1.1, -16);
-    this.scene.add(beaconLight);
-    const beaconGlow = new THREE.PointLight("#38bdf8", 0.6, 6);
-    beaconGlow.position.copy(beaconLight.position);
-    this.scene.add(beaconGlow);
+    padCenter.position.set(12, 0.15, -16);
+    this.scene.add(padCenter);
 
-    // Ambient floating dust
-    const dustCount = 120;
+    const beaconGlowMat = new THREE.MeshStandardMaterial({
+      color: "#38bdf8",
+      emissive: "#38bdf8",
+      emissiveIntensity: 0.8,
+    });
+    const beaconOffsets = [[-3, 0], [3, 0], [0, -3], [0, 3]];
+    beaconOffsets.forEach(([dx, dz]) => {
+      const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), beaconGlowMat);
+      beacon.position.set(12 + dx, 0.3, -16 + dz);
+      this.scene.add(beacon);
+      const bl = new THREE.PointLight("#38bdf8", 0.3, 4);
+      bl.position.copy(beacon.position);
+      this.scene.add(bl);
+    });
+
+    // Rocks scattered (15-20)
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: "#4a4050",
+      roughness: 0.85,
+      metalness: 0.25,
+    });
+    const rockCount = 15 + Math.floor(Math.random() * 6);
+    for (let i = 0; i < rockCount; i++) {
+      const size = 0.3 + Math.random() * 0.9;
+      const rockGeo = new THREE.DodecahedronGeometry(size, 1);
+      const rock = new THREE.Mesh(rockGeo, rockMat);
+      rock.position.set(
+        -18 + Math.random() * 36,
+        -0.5 + size * 0.4,
+        -18 + Math.random() * 36
+      );
+      rock.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      this.scene.add(rock);
+    }
+
+    // Ambient dust (200 particles)
+    const dustCount = 200;
     const dustGeo = new THREE.BufferGeometry();
     const dustPositions = new Float32Array(dustCount * 3);
     for (let i = 0; i < dustCount; i++) {
-      dustPositions[i * 3] = (Math.random() - 0.5) * 60;
-      dustPositions[i * 3 + 1] = Math.random() * 8;
-      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 60;
+      dustPositions[i * 3] = (Math.random() - 0.5) * 80;
+      dustPositions[i * 3 + 1] = Math.random() * 10;
+      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 80;
     }
     dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
     const dustMat = new THREE.PointsMaterial({
-      color: "#8899cc",
-      size: 0.08,
+      color: "#aaccff",
+      size: 0.1,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.3,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -392,10 +507,26 @@ export class SpaceStageEngine implements ISimulatorEngine {
         }
         this.ambientDust.geometry.attributes.position.needsUpdate = true;
       }
-      // Pulse samples on terrain
+      // Animate dust storm
+      if (this.dustStorm) {
+        const dpos = this.dustStorm.geometry.attributes.position.array as Float32Array;
+        for (let i = 0; i < dpos.length; i += 3) {
+          dpos[i] += 0.01;
+          dpos[i + 1] += Math.sin(Date.now() * 0.001 + i) * 0.003;
+          if (dpos[i] > 40) dpos[i] = -40;
+        }
+        this.dustStorm.geometry.attributes.position.needsUpdate = true;
+      }
+      // Rotate planet slowly
+      if (this.planetMesh) {
+        this.planetMesh.rotation.y += 0.0002;
+      }
+      // Float samples
       this.sampleMeshes.forEach((s, i) => {
-        s.position.y = 0.5 + Math.sin(Date.now() * 0.003 + i) * 0.3;
-        s.rotation.y += 0.01;
+        const origY = (s.userData as any)?.origY || 0.5;
+        s.position.y = origY + Math.sin(Date.now() * 0.003 + i * 1.2) * 0.4;
+        s.rotation.y += 0.008;
+        s.rotation.x += 0.004;
       });
       this.ghostPreview.animate(Date.now() * 0.001);
 
@@ -771,5 +902,50 @@ export class SpaceStageEngine implements ISimulatorEngine {
 
   updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
     this.blockBar.updateBlocks(blocks, activeBlockId);
+  }
+
+  getObstacles(): Array<{ x: number; z: number; radius: number }> {
+    const obstacles: Array<{ x: number; z: number; radius: number }> = [];
+    this.scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name || "";
+        const isObstacle =
+          name.includes("wall") || name.includes("level_") ||
+          name.includes("pillar") || name.includes("barrier") ||
+          name.includes("enemy") || name.includes("block") ||
+          name.includes("tree") || name.includes("crate") ||
+          name.includes("ramp") || name.includes("cone") ||
+          name.includes("turret") || name.includes("generator");
+        if (isObstacle && child.geometry.boundingSphere) {
+          obstacles.push({
+            x: child.position.x,
+            z: child.position.z,
+            radius: child.geometry.boundingSphere.radius * 1.2,
+          });
+        }
+      }
+    });
+    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
+      if (enemy.visible) {
+        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
+      }
+    });
+    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
+      if (obs.visible) {
+        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
+      }
+    });
+    return obstacles;
+  }
+
+  checkCollision(x: number, z: number): boolean {
+    const obstacles = this.getObstacles();
+    for (const obs of obstacles) {
+      const dx = x - obs.x;
+      const dz = z - obs.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < obs.radius) return true;
+    }
+    return false;
   }
 }

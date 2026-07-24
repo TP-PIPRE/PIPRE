@@ -34,23 +34,27 @@ export class RaceStageEngine implements ISimulatorEngine {
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private circuitPath!: THREE.CatmullRomCurve3;
+  private loopRing!: THREE.Mesh;
+  private neonTunnel!: THREE.Mesh;
+  private lapDisplay!: THREE.Mesh;
+  private crowdDots: THREE.Mesh[] = [];
 
   constructor() {
     const setup = createSceneWithCamera({
-      fov: 55,
-      cameraPos: [25, 22, 25],
-      fogColor: "#1a1210",
+      fov: 60,
+      cameraPos: [28, 22, 28],
+      fogColor: "#100a05",
       fogNear: 30,
-      fogFar: 90,
-      bgColor: "#1a1210",
-      ambientColor: "#443322",
-      skyColor: "#554433",
-      groundColor: "#1a1210",
+      fogFar: 120,
+      bgColor: "#100a05",
+      ambientColor: "#332211",
+      skyColor: "#553322",
+      groundColor: "#100a05",
+      hemiIntensity: 0.55,
       dirColor: "#ffcc88",
-      dirIntensity: 1.4,
-      dirPos: [10, 25, 5],
-      shadowMapSize: 2048,
-      shadowCameraSize: 40,
+      dirIntensity: 1.6,
+      dirPos: [5, 30, 5],
     });
     this.scene = setup.scene;
     this.camera = setup.camera;
@@ -81,268 +85,311 @@ export class RaceStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Race track floor - dark asphalt
-    const trackGeo = new THREE.PlaneGeometry(80, 40);
-    const trackMat = new THREE.MeshStandardMaterial({
-      color: "#1a1a1e",
-      roughness: 0.85,
-      metalness: 0.1,
-    });
-    const track = new THREE.Mesh(trackGeo, trackMat);
-    track.rotation.x = -Math.PI / 2;
-    track.position.y = -0.5;
-    track.receiveShadow = true;
-    this.scene.add(track);
+    // 1. CIRCUIT PATH
+    const cp = [
+      new THREE.Vector3(-25, 0, 0),
+      new THREE.Vector3(-15, 0, -8),
+      new THREE.Vector3(0, 0, -12),
+      new THREE.Vector3(12, 0, -6),
+      new THREE.Vector3(22, 0, 0),
+      new THREE.Vector3(12, 0, 8),
+      new THREE.Vector3(0, 0, 12),
+      new THREE.Vector3(-12, 0, 6),
+      new THREE.Vector3(-22, 0, 0),
+      new THREE.Vector3(-18, 0, -4),
+    ];
+    this.circuitPath = new THREE.CatmullRomCurve3(cp, true);
 
-    // Neon lane lines on track
-    const laneMat = new THREE.MeshBasicMaterial({
-      color: "#f59e0b",
-      transparent: true,
-      opacity: 0.6,
-      depthWrite: false,
-    });
-    for (let z = -14; z <= 14; z += 4) {
-      const lineGeo = new THREE.PlaneGeometry(76, 0.15);
-      const line = new THREE.Mesh(lineGeo, laneMat);
-      line.rotation.x = -Math.PI / 2;
-      line.position.set(0, -0.47, z);
-      this.scene.add(line);
+    // Center line tube (emissive orange)
+    const centerTube = new THREE.Mesh(
+      new THREE.TubeGeometry(this.circuitPath, 200, 0.15, 8, true),
+      new THREE.MeshStandardMaterial({ color: "#f59e0b", emissive: "#f59e0b", emissiveIntensity: 0.8, roughness: 0.3 }),
+    );
+    centerTube.position.y = 0.01;
+    centerTube.name = "center_line";
+    this.scene.add(centerTube);
+
+    // 2. ASPHALT SURFACE PATCHES
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: "#1a1a22", roughness: 0.9, metalness: 0.05 });
+    const patchCount = 70;
+    for (let i = 0; i < patchCount; i++) {
+      const t = i / patchCount;
+      const pt = this.circuitPath.getPointAt(t);
+      const tangent = this.circuitPath.getTangentAt(t).normalize();
+      const patch = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), asphaltMat);
+      patch.rotation.x = -Math.PI / 2;
+      patch.rotation.z = Math.atan2(tangent.x, tangent.z);
+      patch.position.set(pt.x, -0.05, pt.z);
+      patch.receiveShadow = true;
+      this.scene.add(patch);
     }
 
-    // Grid (subtle)
-    const grid = new THREE.GridHelper(80, 40, "#f59e0b", "#2a2a2e");
-    grid.position.y = -0.48;
-    grid.material.opacity = 0.1;
-    grid.material.transparent = true;
-    grid.name = "environment_grid";
-    this.scene.add(grid);
+    // 3. NEON LANE LINES (±3 offset)
+    const numSamples = 120;
+    const leftPts: THREE.Vector3[] = [];
+    const rightPts: THREE.Vector3[] = [];
+    for (let i = 0; i <= numSamples; i++) {
+      const t = i / numSamples;
+      const pt = this.circuitPath.getPointAt(t);
+      const tangent = this.circuitPath.getTangentAt(t).normalize();
+      const perpRight = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+      leftPts.push(pt.clone().add(perpRight.clone().multiplyScalar(-3)));
+      rightPts.push(pt.clone().add(perpRight.clone().multiplyScalar(3)));
+    }
+    const leftCurve = new THREE.CatmullRomCurve3(leftPts, true);
+    const rightCurve = new THREE.CatmullRomCurve3(rightPts, true);
+    const neonLaneMat = new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.3, depthWrite: false });
+    this.scene.add(new THREE.Mesh(new THREE.TubeGeometry(leftCurve, 200, 0.1, 6, true), neonLaneMat));
+    this.scene.add(new THREE.Mesh(new THREE.TubeGeometry(rightCurve, 200, 0.1, 6, true), neonLaneMat));
 
-    // Neon barriers instead of boring walls
-    const barrierGlowMat = new THREE.MeshStandardMaterial({
-      color: "#f59e0b",
-      emissive: "#f59e0b",
-      emissiveIntensity: 0.5,
-      roughness: 0.2,
-      metalness: 0.3,
-    });
-    const barrierCoreMat = new THREE.MeshStandardMaterial({
-      color: "#2d3748",
-      roughness: 0.6,
-      metalness: 0.7,
-    });
+    // 4. CHECKPOINT ARCHES
+    const archParams = [0.2, 0.5, 0.8];
+    archParams.forEach((param) => {
+      const archPos = this.circuitPath.getPointAt(param);
+      const tangent = this.circuitPath.getTangentAt(param).normalize();
+      const zAxis = tangent.clone();
+      const xAxis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), zAxis).normalize();
+      const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis);
+      const rotMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
 
-    const barriers = [
-      { x: 0, z: -18, w: 80, h: 1 },
-      { x: 0, z: 18, w: 80, h: 1 },
-      { x: -38, z: 0, w: 1, h: 36 },
-      { x: 38, z: 0, w: 1, h: 36 },
-    ];
-
-    barriers.forEach((b) => {
-      // Core barrier
-      const core = new THREE.Mesh(
-        new THREE.BoxGeometry(b.w, 0.6, b.h),
-        barrierCoreMat
+      // Torus arch standing vertically
+      const torus = new THREE.Mesh(
+        new THREE.TorusGeometry(5, 0.15, 8, 24),
+        new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#3b82f6", emissiveIntensity: 0.6, roughness: 0.3 }),
       );
-      core.position.set(b.x, 0, b.z);
-      core.castShadow = true;
-      core.receiveShadow = true;
-      this.scene.add(core);
+      torus.position.copy(archPos.clone().add(new THREE.Vector3(0, 3, 0)));
+      torus.quaternion.setFromRotationMatrix(rotMatrix);
+      this.scene.add(torus);
 
-      // Glowing strip on top
-      const strip = new THREE.Mesh(
-        new THREE.BoxGeometry(b.w - 1, 0.06, 0.15),
-        barrierGlowMat
+      // Translucent plane through arch
+      const archPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(5, 10),
+        new THREE.MeshBasicMaterial({ color: "#3b82f6", transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false }),
       );
-      strip.position.set(b.x, 0.33, b.z);
-      this.scene.add(strip);
+      archPlane.position.copy(archPos.clone().add(new THREE.Vector3(0, 3, 0)));
+      archPlane.quaternion.setFromRotationMatrix(rotMatrix);
+      this.scene.add(archPlane);
+      this.checkpoints.push({ mesh: archPlane, passed: false });
+
+      const archLight = new THREE.PointLight("#3b82f6", 0.4, 8);
+      archLight.position.copy(archPos.clone().add(new THREE.Vector3(0, 3, 0)));
+      this.scene.add(archLight);
     });
 
-    // Checkered start line
-    const startLine = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 30),
-      new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, opacity: 0.25, side: THREE.DoubleSide })
+    // 5. LOOPING (vertical loop-the-loop)
+    const loopParam = 0.35;
+    const loopPos = this.circuitPath.getPointAt(loopParam);
+    const loopTangent = this.circuitPath.getTangentAt(loopParam).normalize();
+    const loopZ = loopTangent.clone();
+    const loopX = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), loopZ).normalize();
+    const loopY = new THREE.Vector3().crossVectors(loopZ, loopX);
+    const loopMatrix = new THREE.Matrix4().makeBasis(loopX, loopY, loopZ);
+
+    this.loopRing = new THREE.Mesh(
+      new THREE.TorusGeometry(4, 0.4, 16, 32),
+      new THREE.MeshStandardMaterial({ color: "#f59e0b", emissive: "#f59e0b", emissiveIntensity: 0.8, roughness: 0.2 }),
     );
-    startLine.rotation.x = -Math.PI / 2;
-    startLine.position.set(-30, -0.47, 0);
-    this.scene.add(startLine);
+    this.loopRing.position.copy(loopPos.clone().add(new THREE.Vector3(0, 4, 0)));
+    this.loopRing.quaternion.setFromRotationMatrix(loopMatrix);
+    this.scene.add(this.loopRing);
 
-    // Goal line - glowing green
-    const goalLine = new THREE.Mesh(
-      new THREE.PlaneGeometry(2, 30),
-      new THREE.MeshBasicMaterial({ color: "#22c55e", transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false })
+    const loopGlow = new THREE.PointLight("#f59e0b", 0.5, 10);
+    loopGlow.position.copy(loopPos.clone().add(new THREE.Vector3(0, 4, 0)));
+    this.scene.add(loopGlow);
+
+    // 6. NEON TUNNEL
+    const tunnelStart = 0.58;
+    const tunnelEnd = 0.72;
+    const tunnelPoints: THREE.Vector3[] = [];
+    const tunnelSamples = 30;
+    for (let i = 0; i <= tunnelSamples; i++) {
+      const t = tunnelStart + (i / tunnelSamples) * (tunnelEnd - tunnelStart);
+      tunnelPoints.push(this.circuitPath.getPointAt(t));
+    }
+    const tunnelCurve = new THREE.CatmullRomCurve3(tunnelPoints, false);
+    this.neonTunnel = new THREE.Mesh(
+      new THREE.TubeGeometry(tunnelCurve, 50, 5, 8, false),
+      new THREE.MeshBasicMaterial({ color: "#3b82f6", transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false }),
     );
-    goalLine.rotation.x = -Math.PI / 2;
-    goalLine.position.set(30, -0.47, 0);
-    this.scene.add(goalLine);
+    this.scene.add(this.neonTunnel);
 
-    // Animated goal beacon
-    const goalPillar1 = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.2, 3, 8),
-      new THREE.MeshStandardMaterial({ color: "#22c55e", emissive: "#22c55e", emissiveIntensity: 0.5 })
-    );
-    goalPillar1.position.set(28, 1, -2);
-    this.scene.add(goalPillar1);
-    const goalPillar2 = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.15, 0.2, 3, 8),
-      new THREE.MeshStandardMaterial({ color: "#22c55e", emissive: "#22c55e", emissiveIntensity: 0.5 })
-    );
-    goalPillar2.position.set(28, 1, 2);
-    this.scene.add(goalPillar2);
-    // Goal glow
-    const goalGlow = new THREE.PointLight("#22c55e", 0.6, 8);
-    goalGlow.position.set(29, 1.5, 0);
-    this.scene.add(goalGlow);
+    // 7. BARRIERS along track edges (±5 offset)
+    const barrierPostMat = new THREE.MeshStandardMaterial({ color: "#f59e0b", emissive: "#f59e0b", emissiveIntensity: 0.5, roughness: 0.3 });
+    const totalLen = this.circuitPath.getLength();
+    const postSpacing = 2;
+    const numPosts = Math.floor(totalLen / postSpacing);
+    const leftBarrierPoints: THREE.Vector3[] = [];
+    const rightBarrierPoints: THREE.Vector3[] = [];
 
-    // Checkpoints with glowing rings
-    const checkpointPositions = [{ x: 0, z: -16 }, { x: 25, z: 0 }, { x: 0, z: 16 }];
-    checkpointPositions.forEach((pos) => {
-      const ringGeo = new THREE.TorusGeometry(1, 0.08, 8, 24);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: "#3b82f6",
-        transparent: true,
-        opacity: 0.4,
-        depthWrite: false,
-      });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.set(pos.x, 0.5, pos.z);
-      ring.name = "checkpoint_ring";
-      this.scene.add(ring);
+    for (let i = 0; i < numPosts; i++) {
+      const dist = i * postSpacing;
+      const t = dist / totalLen;
+      const pt = this.circuitPath.getPointAt(t);
+      const tangent = this.circuitPath.getTangentAt(t).normalize();
+      const perpRight = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
 
-      const cpPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 24),
-        new THREE.MeshBasicMaterial({ color: "#3b82f6", transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false })
-      );
-      cpPlane.rotation.x = -Math.PI / 2;
-      cpPlane.position.set(pos.x, -0.47, pos.z);
-      this.scene.add(cpPlane);
-      this.checkpoints.push({ mesh: cpPlane, passed: false });
+      const leftPt = pt.clone().add(perpRight.clone().multiplyScalar(-5));
+      const rightPt = pt.clone().add(perpRight.clone().multiplyScalar(5));
+      leftBarrierPoints.push(leftPt);
+      rightBarrierPoints.push(rightPt);
 
-      // Ring light
-      const ringLight = new THREE.PointLight("#3b82f6", 0.3, 5);
-      ringLight.position.copy(ring.position);
-      this.scene.add(ringLight);
-    });
+      const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 8), barrierPostMat);
+      postL.position.set(leftPt.x, 0.5, leftPt.z);
+      this.scene.add(postL);
 
-    // Cones with glowing bases
-    const coneBodyMat = new THREE.MeshStandardMaterial({
-      color: "#ef4444",
-      emissive: "#ef4444",
-      emissiveIntensity: 0.15,
-      roughness: 0.5,
-    });
-    for (let i = 0; i < 12; i++) {
-      const coneHeight = 1;
-      const cone = new THREE.Mesh(
-        new THREE.ConeGeometry(0.5, coneHeight, 8),
-        coneBodyMat
-      );
-      const zOff = i % 3 === 0 ? 0 : i % 3 === 1 ? -4 : 4;
-      cone.position.set(-22 + i * 4, coneHeight / 2, zOff);
-      this.scene.add(cone);
-
-      // Glow ring at base
-      const baseRing = new THREE.Mesh(
-        new THREE.TorusGeometry(0.6, 0.05, 8, 16),
-        new THREE.MeshBasicMaterial({ color: "#ef4444", transparent: true, opacity: 0.4 })
-      );
-      baseRing.rotation.x = Math.PI / 2;
-      baseRing.position.set(-22 + i * 4, 0.15, zOff);
-      this.scene.add(baseRing);
+      const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 8), barrierPostMat);
+      postR.position.set(rightPt.x, 0.5, rightPt.z);
+      this.scene.add(postR);
     }
 
-    // Ramps with neon edges
-    const rampMat = new THREE.MeshStandardMaterial({
-      color: "#eab308",
-      roughness: 0.5,
-      emissive: "#eab308",
-      emissiveIntensity: 0.15,
-    });
-    const rampPositions = [
-      { x: -10, z: -10, rot: 0.15 },
-      { x: 10, z: 10, rot: -0.15 },
-      { x: 20, z: -12, rot: 0.12 },
-    ];
-    rampPositions.forEach((r) => {
-      const ramp = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 4), rampMat);
-      ramp.position.set(r.x, 0, r.z);
-      ramp.rotation.z = r.rot;
-      ramp.castShadow = true;
-      this.scene.add(ramp);
+    const barrierTubeMat = new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.25, depthWrite: false });
+    const leftBarrierCurve = new THREE.CatmullRomCurve3(leftBarrierPoints, true);
+    const rightBarrierCurve = new THREE.CatmullRomCurve3(rightBarrierPoints, true);
+    this.scene.add(new THREE.Mesh(new THREE.TubeGeometry(leftBarrierCurve, numPosts, 0.08, 6, true), barrierTubeMat));
+    this.scene.add(new THREE.Mesh(new THREE.TubeGeometry(rightBarrierCurve, numPosts, 0.08, 6, true), barrierTubeMat));
 
-      const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(4, 0.5, 4));
-      const edgeLine = new THREE.LineSegments(
-        edgeGeo,
-        new THREE.LineBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.5 })
-      );
-      edgeLine.position.copy(ramp.position);
-      edgeLine.rotation.copy(ramp.rotation);
-      this.scene.add(edgeLine);
-    });
-
-    // Grandstand with crowd silhouettes
-    const standMat = new THREE.MeshStandardMaterial({
-      color: "#1e2028",
-      roughness: 0.6,
-      metalness: 0.4,
-      emissive: "#0a0a0f",
-      emissiveIntensity: 0.1,
-    });
-    for (let row = 0; row < 4; row++) {
-      const standRow = new THREE.Mesh(
-        new THREE.BoxGeometry(14, 0.4, 1.2),
-        standMat
-      );
-      standRow.position.set(-28, row * 0.6 + 0.3, 14 - row * 0.3);
+    // 8. GRANDSTAND at (0, 1, -16)
+    const grandMat = new THREE.MeshStandardMaterial({ color: "#1e2028", roughness: 0.6, metalness: 0.4, emissive: "#0a0a0f", emissiveIntensity: 0.1 });
+    this.crowdDots = [];
+    const crowdColors = ["#e94560", "#f59e0b", "#3b82f6", "#22c55e", "#a855f7"];
+    for (let row = 0; row < 6; row++) {
+      const standRow = new THREE.Mesh(new THREE.BoxGeometry(30, 0.3, 1.5), grandMat);
+      standRow.position.set(0, row * 0.7 + 1.3, -16 + row * 0.4);
+      standRow.castShadow = true;
       this.scene.add(standRow);
-      // Crowd dots
-      for (let c = 0; c < 12; c++) {
-        if (Math.random() > 0.3) {
+
+      for (let c = 0; c < 33; c++) {
+        if (Math.random() > 0.25) {
           const crowd = new THREE.Mesh(
-            new THREE.SphereGeometry(0.2, 4, 4),
-            new THREE.MeshBasicMaterial({ color: ["#e94560", "#f59e0b", "#3b82f6", "#22c55e"][Math.floor(Math.random() * 4)] })
+            new THREE.SphereGeometry(0.15, 4, 4),
+            new THREE.MeshBasicMaterial({ color: crowdColors[Math.floor(Math.random() * crowdColors.length)] }),
           );
-          crowd.position.set(-28 + c * 1.2 - 6, row * 0.6 + 0.7, 14 - row * 0.3);
+          crowd.position.set(-14 + c * 0.9, row * 0.7 + 1.6, -16 + row * 0.4);
           this.scene.add(crowd);
+          this.crowdDots.push(crowd);
         }
       }
     }
 
-    // Finish arch
-    const archMat = new THREE.MeshStandardMaterial({
-      color: "#f59e0b",
-      emissive: "#f59e0b",
-      emissiveIntensity: 0.6,
-      roughness: 0.2,
-    });
-    const archPillar1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 4, 8), archMat);
-    archPillar1.position.set(29, 1.5, -5);
-    this.scene.add(archPillar1);
-    const archPillar2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 4, 8), archMat);
-    archPillar2.position.set(29, 1.5, 5);
-    this.scene.add(archPillar2);
-    const archTop = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 0.3, 10.5),
-      new THREE.MeshStandardMaterial({ color: "#22c55e", emissive: "#22c55e", emissiveIntensity: 0.8, roughness: 0.2 })
+    // Grandstand roof lights
+    for (let i = -12; i <= 12; i += 8) {
+      const roofLight = new THREE.PointLight("#ffcc88", 0.3, 10);
+      roofLight.position.set(i, 5.7, -13);
+      this.scene.add(roofLight);
+    }
+
+    // 9. GIANT SCREEN / LAP DISPLAY
+    const lapCanvas = document.createElement("canvas");
+    lapCanvas.width = 512;
+    lapCanvas.height = 256;
+    const ctx = lapCanvas.getContext("2d")!;
+    ctx.fillStyle = "#0a0a0f";
+    ctx.fillRect(0, 0, 512, 256);
+    ctx.font = "bold 40px sans-serif";
+    ctx.fillStyle = "#f59e0b";
+    ctx.textAlign = "center";
+    ctx.fillText("GRAN PREMIO", 256, 80);
+    ctx.font = "bold 32px sans-serif";
+    ctx.fillStyle = "#3b82f6";
+    ctx.fillText("VUELTA 1/3", 256, 150);
+    ctx.font = "20px sans-serif";
+    ctx.fillStyle = "#22c55e";
+    ctx.fillText("CIRCUITO RACING", 256, 200);
+    const lapTex = new THREE.CanvasTexture(lapCanvas);
+    this.lapDisplay = new THREE.Mesh(
+      new THREE.PlaneGeometry(8, 4.5),
+      new THREE.MeshBasicMaterial({ map: lapTex, transparent: true, opacity: 0.9, side: THREE.DoubleSide }),
     );
-    archTop.position.set(29, 3.5, 0);
+    this.lapDisplay.position.set(22, 6, -14);
+    this.lapDisplay.rotation.y = Math.PI / 4;
+    this.scene.add(this.lapDisplay);
+
+    const screenLight = new THREE.PointLight("#3b82f6", 0.3, 8);
+    screenLight.position.copy(this.lapDisplay.position);
+    this.scene.add(screenLight);
+
+    // 10. START/FINISH LINE at curveParam 0
+    const startT = 0;
+    const startPos = this.circuitPath.getPointAt(startT);
+    const startTangent = this.circuitPath.getTangentAt(startT).normalize();
+    const startPerp = new THREE.Vector3(-startTangent.z, 0, startTangent.x).normalize();
+
+    // Checkered strips
+    const whiteMat = new THREE.MeshBasicMaterial({ color: "#ffffff", side: THREE.DoubleSide });
+    const blackMat = new THREE.MeshBasicMaterial({ color: "#000000", side: THREE.DoubleSide });
+    for (let i = -16; i <= 16; i++) {
+      const stripMat = i % 2 === 0 ? whiteMat : blackMat;
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 10), stripMat);
+      const offsetPos = startPos.clone().add(startPerp.clone().multiplyScalar(i * 0.3));
+      strip.position.set(offsetPos.x, 0.01, offsetPos.z);
+      strip.rotation.x = -Math.PI / 2;
+      this.scene.add(strip);
+    }
+
+    // Start arch pillars + top bar
+    const startArchMat = new THREE.MeshStandardMaterial({ color: "#22c55e", emissive: "#22c55e", emissiveIntensity: 0.8, roughness: 0.2 });
+    const pillarL = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 4, 8), startArchMat);
+    pillarL.position.copy(startPos.clone().add(startPerp.clone().multiplyScalar(-5)));
+    pillarL.position.y = 2;
+    this.scene.add(pillarL);
+
+    const pillarR = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 4, 8), startArchMat);
+    pillarR.position.copy(startPos.clone().add(startPerp.clone().multiplyScalar(5)));
+    pillarR.position.y = 2;
+    this.scene.add(pillarR);
+
+    const archTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 10.5), startArchMat);
+    archTop.position.copy(startPos.clone().add(new THREE.Vector3(0, 4, 0)));
     this.scene.add(archTop);
 
-    // Speed trail glow paths (visual only)
-    const trailMat = new THREE.MeshBasicMaterial({
-      color: "#f59e0b",
-      transparent: true,
-      opacity: 0.08,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    });
-    for (let i = 0; i < 3; i++) {
-      const trail = new THREE.Mesh(new THREE.PlaneGeometry(28, 0.5), trailMat);
+    const startLight = new THREE.PointLight("#22c55e", 0.5, 6);
+    startLight.position.copy(startPos.clone().add(new THREE.Vector3(0, 2, 0)));
+    this.scene.add(startLight);
+
+    // 11. CONES distributed along circuit path
+    const coneBodyMat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.15, roughness: 0.5 });
+    this.cones = [];
+    for (let i = 0; i < 20; i++) {
+      const t = (i / 20 + Math.random() * 0.04) % 1;
+      const conePt = this.circuitPath.getPointAt(t);
+      const coneTangent = this.circuitPath.getTangentAt(t).normalize();
+      const conePerp = new THREE.Vector3(-coneTangent.z, 0, coneTangent.x).normalize();
+      const offset = (Math.random() - 0.5) * 8;
+      const pos = conePt.clone().add(conePerp.clone().multiplyScalar(offset));
+
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 8), coneBodyMat);
+      cone.position.set(pos.x, 0.5, pos.z);
+      this.scene.add(cone);
+      this.cones.push(cone);
+
+      // Glow ring at base
+      const baseRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.6, 0.05, 8, 16),
+        new THREE.MeshBasicMaterial({ color: "#ef4444", transparent: true, opacity: 0.4 }),
+      );
+      baseRing.rotation.x = Math.PI / 2;
+      baseRing.position.set(pos.x, 0.15, pos.z);
+      this.scene.add(baseRing);
+    }
+
+    // 12. SPEED TRAILS
+    const trailSections = [0.05, 0.3, 0.55, 0.8];
+    this.speedTrails = [];
+    trailSections.forEach((t) => {
+      const trailPos = this.circuitPath.getPointAt(t);
+      const trailTan = this.circuitPath.getTangentAt(t).normalize();
+      const angle = Math.atan2(trailTan.x, trailTan.z);
+
+      const trail = new THREE.Mesh(
+        new THREE.PlaneGeometry(15, 0.8),
+        new THREE.MeshBasicMaterial({ color: "#f59e0b", transparent: true, opacity: 0.06, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }),
+      );
       trail.rotation.x = -Math.PI / 2;
-      trail.position.set(-25 + i * 25, -0.46, 0);
+      trail.rotation.z = angle;
+      trail.position.set(trailPos.x, 0.02, trailPos.z);
       this.scene.add(trail);
       this.speedTrails.push(trail);
-    }
+    });
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -431,14 +478,7 @@ export class RaceStageEngine implements ISimulatorEngine {
       this.animationId = requestAnimationFrame(animate);
       this.cinematicCamera.update(this.botGroup.position);
       if (this.controls) this.controls.update();
-      // Spin wheels when visible
-      if (this.botParts.wheels.visible) {
-        this.botParts.wheels.children.forEach((c) => {
-          if (c instanceof THREE.Mesh && c.geometry.type === "TorusGeometry") {
-            c.rotation.x += 0.05;
-          }
-        });
-      }
+
       const t = this.clock.getElapsedTime();
       // Gentle cone pulsing
       this.cones.forEach((cone) => {
@@ -455,16 +495,40 @@ export class RaceStageEngine implements ISimulatorEngine {
       this.ghostPreview.animate(Date.now() * 0.001);
 
       if (this.goalBeacon) {
-        const t = Date.now() * 0.001;
+        const tBeacon = Date.now() * 0.001;
         this.goalBeacon.rotation.z += 0.01;
-        this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
+        this.goalBeacon.scale.setScalar(1 + Math.sin(tBeacon * 2) * 0.1);
       }
 
-      // Pulse speed trail opacity
+      // Pulse speed trails
       const trailT = Date.now() * 0.002;
       this.speedTrails.forEach((trail, i) => {
-        (trail.material as THREE.MeshBasicMaterial).opacity = 0.05 + Math.sin(trailT * 2 + i) * 0.04;
+        (trail.material as THREE.MeshBasicMaterial).opacity = 0.04 + Math.sin(trailT * 3 + i) * 0.03;
       });
+
+      // Update lap display
+      if (this.lapDisplay && this.lapDisplay.material instanceof THREE.MeshBasicMaterial && this.lapDisplay.material.map) {
+        this.lapDisplay.material.opacity = 0.8 + Math.sin(Date.now() * 0.003) * 0.2;
+      }
+
+      // Rotate loop ring slightly
+      if (this.loopRing) {
+        this.loopRing.rotation.z += 0.001;
+      }
+
+      // Animate crowd (slight random movement)
+      this.crowdDots.forEach((dot, i) => {
+        dot.position.y += (Math.sin(Date.now() * 0.01 + i) * 0.001);
+      });
+
+      // Spin wheels if bot has wheels
+      if (this.botParts.wheels.visible) {
+        this.botParts.wheels.children.forEach((c) => {
+          if (c instanceof THREE.Mesh && c.geometry.type === "TorusGeometry") {
+            c.rotation.x += 0.05;
+          }
+        });
+      }
 
       this.robotPersonality.update(0.016);
       this.blockBar.animate(Date.now() * 0.001);
@@ -832,5 +896,50 @@ export class RaceStageEngine implements ISimulatorEngine {
 
   updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
     this.blockBar.updateBlocks(blocks, activeBlockId);
+  }
+
+  getObstacles(): Array<{ x: number; z: number; radius: number }> {
+    const obstacles: Array<{ x: number; z: number; radius: number }> = [];
+    this.scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name || "";
+        const isObstacle =
+          name.includes("wall") || name.includes("level_") ||
+          name.includes("pillar") || name.includes("barrier") ||
+          name.includes("enemy") || name.includes("block") ||
+          name.includes("tree") || name.includes("crate") ||
+          name.includes("ramp") || name.includes("cone") ||
+          name.includes("turret") || name.includes("generator");
+        if (isObstacle && child.geometry.boundingSphere) {
+          obstacles.push({
+            x: child.position.x,
+            z: child.position.z,
+            radius: child.geometry.boundingSphere.radius * 1.2,
+          });
+        }
+      }
+    });
+    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
+      if (enemy.visible) {
+        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
+      }
+    });
+    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
+      if (obs.visible) {
+        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
+      }
+    });
+    return obstacles;
+  }
+
+  checkCollision(x: number, z: number): boolean {
+    const obstacles = this.getObstacles();
+    for (const obs of obstacles) {
+      const dx = x - obs.x;
+      const dz = z - obs.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < obs.radius) return true;
+    }
+    return false;
   }
 }

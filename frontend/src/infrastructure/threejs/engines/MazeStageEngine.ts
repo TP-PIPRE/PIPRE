@@ -26,7 +26,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   private controls!: MapControls;
   private isRunning = false;
   private doors: THREE.Mesh[] = [];
-  private portalLight: THREE.PointLight;
+  private portalLight!: THREE.PointLight;
   private beacons: THREE.Mesh[] = [];
   private fireflies: THREE.Points | null = null;
   private ghostPreview!: GhostPreview;
@@ -35,23 +35,27 @@ export class MazeStageEngine implements ISimulatorEngine {
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private templeGroup!: THREE.Group;
+  private treeTrunks: THREE.Mesh[] = [];
+  private runeMarkers: THREE.Mesh[] = [];
+  private magicalDoors: Array<{ arch: THREE.Group; veil: THREE.Mesh; position: THREE.Vector3 }> = [];
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
       fov: 50,
       cameraPos: [18, 16, 18],
-      fogColor: "#0a0515",
+      fogColor: "#050510",
       fogNear: 18,
-      fogFar: 55,
-      bgColor: "#0a0515",
+      fogFar: 60,
+      bgColor: "#0a0a1a",
       ambientColor: "#332244",
-      skyColor: "#221144",
-      groundColor: "#1a1030",
-      dirColor: "#8877cc",
+      ambientIntensity: 0.5,
+      skyColor: "#2a1a3e",
+      groundColor: "#0a0a1a",
+      hemiIntensity: 0.45,
+      dirColor: "#9988bb",
       dirIntensity: 0.7,
-      dirPos: [8, 18, 8],
-      shadowMapSize: 2048,
-      shadowCameraSize: 30,
+      dirPos: [8, 15, 8],
     });
     this.scene = scene;
     this.camera = camera;
@@ -64,10 +68,6 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
-
-    this.portalLight = new THREE.PointLight(0xa78bfa, 1, 15);
-    this.portalLight.position.set(14, 3, -14);
-    this.scene.add(this.portalLight);
 
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
@@ -85,12 +85,11 @@ export class MazeStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Dark forest floor
+    // ===== DARK SOIL FLOOR =====
     const floorGeo = new THREE.PlaneGeometry(60, 60);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: "#0d0a0f",
-      roughness: 0.95,
-      metalness: 0,
+      color: "#080808",
+      roughness: 1,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
@@ -98,234 +97,300 @@ export class MazeStageEngine implements ISimulatorEngine {
     floor.receiveShadow = true;
     this.scene.add(floor);
 
-    // Moss patches scattered on ground
+    // ===== MOSS PATCHES =====
     const mossMat = new THREE.MeshStandardMaterial({
-      color: "#1a3320",
+      color: "#0a150a",
       roughness: 1,
-      emissive: "#0a1a10",
-      emissiveIntensity: 0.05,
     });
     for (let i = 0; i < 15; i++) {
-      const mossGeo = new THREE.CircleGeometry(0.8 + Math.random() * 2, 12);
+      const mossGeo = new THREE.CircleGeometry(0.5 + Math.random() * 1.5, 12);
       const moss = new THREE.Mesh(mossGeo, mossMat);
       moss.rotation.x = -Math.PI / 2;
       moss.position.set(
-        (Math.random() - 0.5) * 45,
+        (Math.random() - 0.5) * 50,
         -0.48,
-        (Math.random() - 0.5) * 45
+        (Math.random() - 0.5) * 50
       );
       this.scene.add(moss);
     }
 
-    // Glowing grid - mystic ley lines
-    const grid = new THREE.GridHelper(60, 30, "#4a2d8a", "#1a1040");
-    grid.position.y = -0.48;
-    grid.material.opacity = 0.12;
-    grid.material.transparent = true;
+    // ===== AMBIENT GRID =====
+    const grid = new THREE.GridHelper(50, 50, "#2a1040", "#050510");
+    grid.position.y = -0.49;
+    (grid.material as THREE.Material).opacity = 0.06;
+    (grid.material as THREE.Material).transparent = true;
     grid.name = "environment_grid";
     this.scene.add(grid);
 
-    // Twisted tree walls (replace box walls)
+    // ===== PATH CORRIDOR CHECK =====
+    const isInCorridor = (x: number, z: number): boolean => {
+      // Vertical path: z from -20 to 20, x between -1.5 and 1.5
+      if (Math.abs(x) < 1.5 && z > -20 && z < 20) return true;
+      // Horizontal path: x from -12 to 12, z between -1.5 and 1.5
+      if (Math.abs(z) < 1.5 && x > -12 && x < 12) return true;
+      // Diagonal path: from (-15,-10) to (15,10), 3 units wide
+      const dx = 30;
+      const dz = 20;
+      const len = Math.sqrt(dx * dx + dz * dz);
+      const t = Math.max(0, Math.min(1, ((x - (-15)) * dx + (z - (-10)) * dz) / (len * len)));
+      const projX = -15 + t * dx;
+      const projZ = -10 + t * dz;
+      const dist = Math.sqrt((x - projX) ** 2 + (z - projZ) ** 2);
+      if (dist < 3) return true;
+      return false;
+    };
+
+    // ===== PROCEDURAL FOREST (60+ TREES) =====
     const treeTrunkMat = new THREE.MeshStandardMaterial({
-      color: "#1a1025",
+      color: "#1a0f08",
       roughness: 0.9,
-      emissive: "#0a0515",
-      emissiveIntensity: 0.1,
     });
-    const treeTopMat = new THREE.MeshStandardMaterial({
-      color: "#0a1a10",
-      roughness: 0.8,
-      emissive: "#051008",
-      emissiveIntensity: 0.05,
+    const treeCrownMat = new THREE.MeshStandardMaterial({
+      color: "#0a1a0a",
+      roughness: 0.85,
+    });
+    const treeCount = 65;
+    let placed = 0;
+    while (placed < treeCount) {
+      const tx = (Math.random() - 0.5) * 56;
+      const tz = (Math.random() - 0.5) * 56;
+      if (isInCorridor(tx, tz)) continue;
+
+      // Skip near temple center
+      if (Math.abs(tx) < 5 && Math.abs(tz) < 5) continue;
+
+      const trunkHeight = 2.5 + Math.random() * 3.5;
+      const trunkGeo = new THREE.CylinderGeometry(0.12, 0.25, trunkHeight, 8);
+      const trunk = new THREE.Mesh(trunkGeo, treeTrunkMat);
+      trunk.position.set(tx, trunkHeight / 2 - 0.5, tz);
+      trunk.rotation.z = (Math.random() - 0.5) * 0.2;
+      trunk.castShadow = true;
+      this.scene.add(trunk);
+      this.treeTrunks.push(trunk);
+
+      const crownHeight = 1.5 + Math.random() * 2;
+      const crownRadius = 0.5 + Math.random() * 0.7;
+      const crownGeo = new THREE.ConeGeometry(crownRadius, crownHeight, 8);
+      const crown = new THREE.Mesh(crownGeo, treeCrownMat);
+      crown.position.set(tx, trunkHeight - 0.3, tz);
+      crown.castShadow = true;
+      this.scene.add(crown);
+      this.treeTrunks.push(crown);
+
+      placed++;
+    }
+
+    // ===== TEMPLE AT CENTER =====
+    this.templeGroup = new THREE.Group();
+    const templeStoneMat = new THREE.MeshStandardMaterial({
+      color: "#1a1a2e",
+      roughness: 0.7,
+      metalness: 0.3,
+      emissive: "#2a1a4a",
+      emissiveIntensity: 0.15,
     });
 
-    const wallConfigs: Array<{ x: number; z: number; w: number; h: number }> = [
-      { x: -8, z: -5, w: 10, h: 1 },
-      { x: -3, z: 2, w: 1, h: 8 },
-      { x: 4, z: -8, w: 1, h: 10 },
-      { x: -6, z: 6, w: 6, h: 1 },
-      { x: 6, z: 1, w: 1, h: 8 },
-      { x: 1, z: -6, w: 5, h: 1 },
-      { x: -2, z: -2, w: 1, h: 5 },
+    // Stepped pyramid: 3 layers
+    const bottomGeo = new THREE.BoxGeometry(8, 2, 8);
+    const bottom = new THREE.Mesh(bottomGeo, templeStoneMat);
+    bottom.position.y = 0.5;
+    bottom.castShadow = true;
+    bottom.receiveShadow = true;
+    this.templeGroup.add(bottom);
+
+    const middleGeo = new THREE.BoxGeometry(6, 1.8, 6);
+    const middle = new THREE.Mesh(middleGeo, templeStoneMat);
+    middle.position.y = 1.9;
+    middle.castShadow = true;
+    middle.receiveShadow = true;
+    this.templeGroup.add(middle);
+
+    const topGeo = new THREE.BoxGeometry(4, 1.5, 4);
+    const top = new THREE.Mesh(topGeo, templeStoneMat);
+    top.position.y = 3.0;
+    top.castShadow = true;
+    top.receiveShadow = true;
+    this.templeGroup.add(top);
+
+    // 4 corner pillars
+    const cornerOffsets = [
+      [-3.5, -3.5], [3.5, -3.5], [-3.5, 3.5], [3.5, 3.5]
     ];
-
-    wallConfigs.forEach((wall) => {
-      // Create a row of twisted pillars instead of solid wall
-      const isHorizontal = wall.w > wall.h;
-      const length = Math.max(wall.w, wall.h);
-      const pillarCount = Math.floor(length / 1.5);
-
-      for (let p = 0; p < pillarCount; p++) {
-        const offset = (p - pillarCount / 2) * 1.5;
-        const twistAngle = Math.sin(p * 0.7) * 0.15;
-        const height = 2.5 + Math.random() * 1.5;
-
-        // Tree trunk
-        const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, height, 8);
-        const trunk = new THREE.Mesh(trunkGeo, treeTrunkMat);
-        const tx = isHorizontal ? wall.x + offset : wall.x;
-        const tz = isHorizontal ? wall.z : wall.z + offset;
-        trunk.position.set(tx, height / 2 - 0.5, tz);
-        trunk.rotation.z = twistAngle;
-        trunk.castShadow = true;
-        this.scene.add(trunk);
-
-        // Foliage top
-        const foliageGeo = new THREE.ConeGeometry(0.8, 1.5, 6);
-        const foliage = new THREE.Mesh(foliageGeo, treeTopMat);
-        foliage.position.set(tx, height - 0.1, tz);
-        foliage.castShadow = true;
-        this.scene.add(foliage);
-
-        // Hanging glow orb on some trees
-        if (Math.random() > 0.6) {
-          const orbGeo = new THREE.SphereGeometry(0.12, 8, 8);
-          const orbMat = new THREE.MeshStandardMaterial({
-            color: "#a78bfa",
-            emissive: "#a78bfa",
-            emissiveIntensity: 0.6,
-          });
-          const orb = new THREE.Mesh(orbGeo, orbMat);
-          orb.position.set(tx, height - 1.2, tz + 0.5);
-          this.scene.add(orb);
-          const orbLight = new THREE.PointLight("#a78bfa", 0.25, 3);
-          orbLight.position.copy(orb.position);
-          this.scene.add(orbLight);
-        }
-      }
+    cornerOffsets.forEach(([cx, cz]) => {
+      const pillarGeo = new THREE.CylinderGeometry(0.25, 0.35, 4.5, 8);
+      const pillar = new THREE.Mesh(pillarGeo, templeStoneMat);
+      pillar.position.set(cx, 2.25, cz);
+      pillar.castShadow = true;
+      this.templeGroup.add(pillar);
     });
 
-    // Magic doors - arches with shimmering veils
-    const doorPositions = [{ x: -3, z: -4 }, { x: 4, z: 4 }, { x: -2, z: 0 }];
+    // Portal on top platform
+    const portalTopY = 3.75;
+    const portalRingGeo = new THREE.TorusGeometry(1.2, 0.25, 16, 32);
+    const portalRingMat = new THREE.MeshStandardMaterial({
+      color: "#a78bfa",
+      emissive: "#a78bfa",
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      metalness: 0.1,
+    });
+    const portalRing = new THREE.Mesh(portalRingGeo, portalRingMat);
+    portalRing.position.y = portalTopY + 1.8;
+    portalRing.rotation.x = Math.PI / 2;
+    this.templeGroup.add(portalRing);
+
+    const portalInnerGeo = new THREE.CircleGeometry(1, 32);
+    const portalInnerMat = new THREE.MeshBasicMaterial({
+      color: "#a78bfa",
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const portalInner = new THREE.Mesh(portalInnerGeo, portalInnerMat);
+    portalInner.position.y = portalTopY + 1.81;
+    portalInner.rotation.x = -Math.PI / 2;
+    this.templeGroup.add(portalInner);
+
+    this.portalLight = new THREE.PointLight("#a78bfa", 1.2, 18);
+    this.portalLight.position.set(0, portalTopY + 1.8, 0);
+    this.templeGroup.add(this.portalLight);
+
+    this.scene.add(this.templeGroup);
+
+    // Temple corner point lights
+    const cornerLightOffsets = [
+      [-3.5, -3.5], [3.5, -3.5], [-3.5, 3.5], [3.5, 3.5]
+    ];
+    cornerLightOffsets.forEach(([lx, lz]) => {
+      const light = new THREE.PointLight("#a78bfa", 0.4, 12);
+      light.position.set(lx, 2.5, lz);
+      this.scene.add(light);
+    });
+
+    // ===== RUNAS ON PATHS (8 markers) =====
+    const runePositions: Array<[number, number]> = [
+      // Vertical path
+      [0, -18], [0, -10], [0, 10], [0, 18],
+      // Horizontal path
+      [-10, 0], [10, 0],
+      // Diagonal path
+      [-12, -8], [12, 8],
+    ];
+    const runeMat = new THREE.MeshBasicMaterial({
+      color: "#a78bfa",
+      transparent: true,
+      opacity: 0.3,
+    });
+    runePositions.forEach(([rx, rz]) => {
+      const runeGeo = new THREE.RingGeometry(0.35, 0.45, 16);
+      const rune = new THREE.Mesh(runeGeo, runeMat.clone());
+      rune.rotation.x = -Math.PI / 2;
+      rune.position.set(rx, -0.48, rz);
+      this.scene.add(rune);
+      this.runeMarkers.push(rune);
+
+      const runeLight = new THREE.PointLight("#a78bfa", 0.2, 3);
+      runeLight.position.set(rx, 0.1, rz);
+      this.scene.add(runeLight);
+    });
+
+    // ===== MAGIC DOORS (3 along paths) =====
+    const doorPlacements: Array<{ x: number; z: number }> = [
+      { x: -3, z: -10 },
+      { x: 4, z: 8 },
+      { x: -8, z: 4 },
+    ];
     const doorArchMat = new THREE.MeshStandardMaterial({
       color: "#3d2670",
       roughness: 0.5,
       emissive: "#1a0f3a",
       emissiveIntensity: 0.3,
     });
+    const doorVeilMat = new THREE.MeshStandardMaterial({
+      color: "#6b4fa3",
+      emissive: "#6b4fa3",
+      emissiveIntensity: 0.4,
+      transparent: true,
+      opacity: 0.5,
+    });
 
-    doorPositions.forEach((pos) => {
-      // Stone arch
-      const archPillar1 = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.3, 3, 8),
+    doorPlacements.forEach((pos) => {
+      const archGroup = new THREE.Group();
+
+      const pillar1 = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.25, 3, 8),
         doorArchMat
       );
-      archPillar1.position.set(pos.x - 0.8, 1, pos.z);
-      this.scene.add(archPillar1);
-      const archPillar2 = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.3, 3, 8),
+      pillar1.position.set(-0.8, 1.5, 0);
+      archGroup.add(pillar1);
+
+      const pillar2 = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.2, 0.25, 3, 8),
         doorArchMat
       );
-      archPillar2.position.set(pos.x + 0.8, 1, pos.z);
-      this.scene.add(archPillar2);
+      pillar2.position.set(0.8, 1.5, 0);
+      archGroup.add(pillar2);
 
-      // Magic veil (translucent door)
-      const door = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 2.5, 0.2),
-        new THREE.MeshStandardMaterial({
-          color: "#8b6fcf",
-          emissive: "#6b4fa3",
-          emissiveIntensity: 0.5,
-          transparent: true,
-          opacity: 0.6,
-        })
+      // Half-torus arch top
+      const archGeo = new THREE.TorusGeometry(0.9, 0.15, 8, 16, Math.PI);
+      const archTop = new THREE.Mesh(archGeo, doorArchMat);
+      archTop.position.set(0, 2.8, 0);
+      archGroup.add(archTop);
+
+      const veil = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 2.5, 0.15),
+        doorVeilMat
       );
-      door.position.set(pos.x, 0.75, pos.z);
-      door.name = "magic_door";
-      this.doors.push(door);
-      this.scene.add(door);
+      veil.position.set(pos.x, 0.75, pos.z);
+      this.scene.add(veil);
+
+      archGroup.position.set(pos.x, 0, pos.z);
+      this.scene.add(archGroup);
+
+      this.magicalDoors.push({
+        arch: archGroup,
+        veil,
+        position: new THREE.Vector3(pos.x, 0, pos.z),
+      });
+      this.doors.push(veil);
     });
 
-    // Portal - large glowing ring
-    const portalRing = new THREE.Mesh(
-      new THREE.TorusGeometry(2, 0.3, 16, 48),
-      new THREE.MeshStandardMaterial({
-        color: "#a78bfa",
-        emissive: "#a78bfa",
-        emissiveIntensity: 0.8,
-        roughness: 0.2,
-      })
-    );
-    portalRing.position.set(14, 1.5, -14);
-    portalRing.rotation.x = Math.PI / 2;
-    portalRing.name = "portal";
-    this.scene.add(portalRing);
-
-    // Portal inner glow
-    const portalInner = new THREE.Mesh(
-      new THREE.CircleGeometry(1.7, 32),
-      new THREE.MeshBasicMaterial({
-        color: "#c084fc",
-        transparent: true,
-        opacity: 0.4,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      })
-    );
-    portalInner.position.set(14, 0.05, -14);
-    portalInner.rotation.x = -Math.PI / 2;
-    this.scene.add(portalInner);
-
-    this.portalLight = new THREE.PointLight("#a78bfa", 1, 15);
-    this.portalLight.position.set(14, 2, -14);
-    this.scene.add(this.portalLight);
-
-    // Beacon pillars with glowing gems
-    const beaconPositions = [{ x: -7, z: -3 }, { x: 0, z: -7 }, { x: 7, z: -3 }, { x: -7, z: 7 }];
-    const beaconStoneMat = new THREE.MeshStandardMaterial({
-      color: "#2a1a3a",
-      roughness: 0.7,
-      emissive: "#1a0a20",
-      emissiveIntensity: 0.1,
-    });
-    const beaconGemMat = new THREE.MeshStandardMaterial({
-      color: "#fbbf24",
-      emissive: "#fbbf24",
-      emissiveIntensity: 0.7,
-    });
-
-    beaconPositions.forEach((pos) => {
-      const pillar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.35, 2, 8),
-        beaconStoneMat
-      );
-      pillar.position.set(pos.x, 0.5, pos.z);
-      pillar.castShadow = true;
-      this.scene.add(pillar);
-
-      const gem = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.2),
-        beaconGemMat
-      );
-      gem.position.set(pos.x, 1.6, pos.z);
-      this.beacons.push(gem);
-      this.scene.add(gem);
-
-      const gemLight = new THREE.PointLight("#fbbf24", 0.3, 4);
-      gemLight.position.copy(gem.position);
-      this.scene.add(gemLight);
-    });
-
-    // Fireflies - floating ambient particles
+    // ===== FIREFLIES (80 particles) =====
     const fireflyCount = 80;
     const fireflyGeo = new THREE.BufferGeometry();
     const fireflyPositions = new Float32Array(fireflyCount * 3);
     for (let i = 0; i < fireflyCount; i++) {
-      fireflyPositions[i * 3] = (Math.random() - 0.5) * 35;
-      fireflyPositions[i * 3 + 1] = Math.random() * 5;
-      fireflyPositions[i * 3 + 2] = (Math.random() - 0.5) * 35;
+      fireflyPositions[i * 3] = (Math.random() - 0.5) * 50;
+      fireflyPositions[i * 3 + 1] = Math.random() * 6;
+      fireflyPositions[i * 3 + 2] = (Math.random() - 0.5) * 50;
     }
     fireflyGeo.setAttribute("position", new THREE.BufferAttribute(fireflyPositions, 3));
     const fireflyMat = new THREE.PointsMaterial({
       color: "#a78bfa",
-      size: 0.12,
+      size: 0.1,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.5,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
     this.fireflies = new THREE.Points(fireflyGeo, fireflyMat);
     this.scene.add(this.fireflies);
+
+    // Path intersection lights
+    const pathLights = [
+      { x: 0, z: -7, color: "#a78bfa", intensity: 0.5 },
+      { x: 7, z: 0, color: "#c084fc", intensity: 0.5 },
+      { x: -7, z: 0, color: "#a78bfa", intensity: 0.4 },
+      { x: 0, z: 7, color: "#c084fc", intensity: 0.4 },
+      { x: -3, z: -5, color: "#a78bfa", intensity: 0.35 },
+      { x: 5, z: 3, color: "#a78bfa", intensity: 0.35 },
+    ];
+    pathLights.forEach(({ x, z, color, intensity }) => {
+      const light = new THREE.PointLight(color, intensity, 8);
+      light.position.set(x, 1.8, z);
+      this.scene.add(light);
+    });
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -336,7 +401,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.maze);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.3;
     this.controls = new MapControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
@@ -415,25 +480,48 @@ export class MazeStageEngine implements ISimulatorEngine {
       this.beacons.forEach((b, i) => {
         b.scale.setScalar(1 + Math.sin(Date.now() * 0.004 + i) * 0.2);
       });
+
+      // Pulse runes
+      this.runeMarkers.forEach((rune, i) => {
+        const mat = rune.material as THREE.MeshBasicMaterial;
+        mat.opacity = 0.15 + Math.sin(Date.now() * 0.004 + i) * 0.15;
+      });
+
+      // Wave magical door veils
+      this.magicalDoors.forEach((door, i) => {
+        if (door.veil) {
+          const mat = door.veil.material as THREE.MeshStandardMaterial;
+          mat.opacity = 0.3 + Math.sin(Date.now() * 0.003 + i) * 0.2;
+        }
+      });
+
+      // Fireflies drift
+      if (this.fireflies) {
+        const pos = this.fireflies.geometry.attributes.position.array as Float32Array;
+        const t = Date.now() * 0.001;
+        for (let i = 0; i < pos.length; i += 3) {
+          pos[i] += Math.sin(t * 2 + i * 0.5) * 0.006;
+          pos[i + 1] += Math.cos(t * 3 + i * 0.3) * 0.005;
+          pos[i + 2] += Math.cos(t * 2.5 + i * 0.4) * 0.006;
+          if (pos[i + 1] > 6) pos[i + 1] = 0;
+          if (pos[i + 1] < 0) pos[i + 1] = 6;
+        }
+        this.fireflies.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Sway tree crowns gently
+      this.treeTrunks.forEach((tree, i) => {
+        if (i % 3 === 0) {
+          tree.rotation.z += Math.sin(Date.now() * 0.001 + i) * 0.0005;
+        }
+      });
+
       this.ghostPreview.animate(Date.now() * 0.001);
 
       if (this.goalBeacon) {
         const t = Date.now() * 0.001;
         this.goalBeacon.rotation.z += 0.01;
         this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
-      }
-
-      // Animate fireflies
-      if (this.fireflies) {
-        const pos = this.fireflies.geometry.attributes.position.array as Float32Array;
-        const t = Date.now() * 0.001;
-        for (let i = 0; i < pos.length; i += 3) {
-          pos[i + 1] += Math.sin(t * 2 + i * 0.3) * 0.005;
-          pos[i] += Math.cos(t * 1.5 + i * 0.2) * 0.003;
-          if (pos[i + 1] > 5) pos[i + 1] = 0;
-          if (pos[i + 1] < 0) pos[i + 1] = 5;
-        }
-        this.fireflies.geometry.attributes.position.needsUpdate = true;
       }
 
       this.robotPersonality.update(0.016);
@@ -769,5 +857,50 @@ export class MazeStageEngine implements ISimulatorEngine {
 
   updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
     this.blockBar.updateBlocks(blocks, activeBlockId);
+  }
+
+  getObstacles(): Array<{ x: number; z: number; radius: number }> {
+    const obstacles: Array<{ x: number; z: number; radius: number }> = [];
+    this.scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name || "";
+        const isObstacle =
+          name.includes("wall") || name.includes("level_") ||
+          name.includes("pillar") || name.includes("barrier") ||
+          name.includes("enemy") || name.includes("block") ||
+          name.includes("tree") || name.includes("crate") ||
+          name.includes("ramp") || name.includes("cone") ||
+          name.includes("turret") || name.includes("generator");
+        if (isObstacle && child.geometry.boundingSphere) {
+          obstacles.push({
+            x: child.position.x,
+            z: child.position.z,
+            radius: child.geometry.boundingSphere.radius * 1.2,
+          });
+        }
+      }
+    });
+    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
+      if (enemy.visible) {
+        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
+      }
+    });
+    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
+      if (obs.visible) {
+        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
+      }
+    });
+    return obstacles;
+  }
+
+  checkCollision(x: number, z: number): boolean {
+    const obstacles = this.getObstacles();
+    for (const obs of obstacles) {
+      const dx = x - obs.x;
+      const dz = z - obs.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < obs.radius) return true;
+    }
+    return false;
   }
 }

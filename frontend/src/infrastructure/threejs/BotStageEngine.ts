@@ -1015,4 +1015,49 @@ export class BotStageEngine implements ISimulatorEngine {
   updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
     this.blockBar.updateBlocks(blocks, activeBlockId);
   }
+
+  getObstacles(): Array<{ x: number; z: number; radius: number }> {
+    const obstacles: Array<{ x: number; z: number; radius: number }> = [];
+    this.scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name || "";
+        const isObstacle =
+          name.includes("wall") || name.includes("level_") ||
+          name.includes("pillar") || name.includes("barrier") ||
+          name.includes("enemy") || name.includes("block") ||
+          name.includes("tree") || name.includes("crate") ||
+          name.includes("ramp") || name.includes("cone") ||
+          name.includes("turret") || name.includes("generator");
+        if (isObstacle && child.geometry.boundingSphere) {
+          obstacles.push({
+            x: child.position.x,
+            z: child.position.z,
+            radius: child.geometry.boundingSphere.radius * 1.2,
+          });
+        }
+      }
+    });
+    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
+      if (enemy.visible) {
+        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
+      }
+    });
+    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
+      if (obs.visible) {
+        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
+      }
+    });
+    return obstacles;
+  }
+
+  checkCollision(x: number, z: number): boolean {
+    const obstacles = this.getObstacles();
+    for (const obs of obstacles) {
+      const dx = x - obs.x;
+      const dz = z - obs.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < obs.radius) return true;
+    }
+    return false;
+  }
 }

@@ -3,7 +3,7 @@ import { MapControls } from "three/addons/controls/MapControls.js";
 import { EffectComposer } from "postprocessing";
 import { BattleBotBuilder } from "../shared/BattleBotBuilder";
 import { ParticleSystem } from "../shared/ParticleSystem";
-import { createSceneWithCamera, createShadowFloor, createStarfield } from "../shared/SceneUtils";
+import { createSceneWithCamera } from "../shared/SceneUtils";
 import { createEffectComposer, BLOOM_PRESETS } from "../shared/EffectComposerSetup";
 import { soundManager } from "../shared/SoundManager";
 import { GhostPreview } from "../shared/GhostPreview";
@@ -31,8 +31,10 @@ export class BattleStageEngine implements ISimulatorEngine {
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
   private ambientEmbers: THREE.Points | null = null;
-  private lavaRivers: THREE.Mesh[] = [];
   private robotPersonality!: RobotPersonality;
+  private torretaLasers: THREE.Line[] = [];
+  private generatorRings: THREE.Mesh[] = [];
+  private arenaFloor!: THREE.Mesh;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
 
@@ -40,18 +42,17 @@ export class BattleStageEngine implements ISimulatorEngine {
     const { scene, camera } = createSceneWithCamera({
       fov: 50,
       cameraPos: [20, 16, 20],
-      fogColor: "#2a0a05",
-      fogNear: 25,
-      fogFar: 65,
-      bgColor: "#2a0a05",
-      ambientColor: "#443333",
-      ambientIntensity: 0.35,
-      skyColor: "#883333",
-      groundColor: "#1a1020",
+      fogColor: "#0a0505",
+      fogNear: 20,
+      fogFar: 70,
+      bgColor: "#0a0505",
+      ambientColor: "#442222",
+      skyColor: "#661111",
+      groundColor: "#0a0505",
       hemiIntensity: 0.4,
-      dirColor: "#ffccaa",
-      dirIntensity: 1.3,
-      dirPos: [15, 28, 15],
+      dirColor: "#ffcc88",
+      dirIntensity: 1.5,
+      dirPos: [10, 20, 10],
       shadowMapSize: 2048,
       shadowCameraSize: 35,
     });
@@ -60,37 +61,23 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.camera = camera;
     this.clock = new THREE.Clock();
 
-    createShadowFloor(this.scene, 80, -0.5, "#0d0812");
-    createStarfield(this.scene, 300, 60, 3, 25, "#ff8866", 0.1, 0.3);
+    // Main drama light from above center
+    const mainLight = new THREE.SpotLight("#ffffff", 3, 50, Math.PI / 5, 0.3, 1);
+    mainLight.position.set(0, 20, 0);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    this.scene.add(mainLight);
 
-    // Battle arena spotlight
-    const spotLight = new THREE.SpotLight("#e94560", 2, 40, Math.PI / 6, 0.3, 1);
-    spotLight.position.set(0, 15, 0);
-    spotLight.castShadow = true;
-    spotLight.shadow.mapSize.width = 1024;
-    spotLight.shadow.mapSize.height = 1024;
-    this.scene.add(spotLight);
-
-    // Dynamic point lights for arena corners
-    const cornerLights = [
-      { pos: [-18, 4, -18], color: "#ff4444" },
-      { pos: [18, 4, -18], color: "#ff8844" },
-      { pos: [-18, 4, 18], color: "#ff4444" },
-      { pos: [18, 4, 18], color: "#ff8844" },
+    // Lava glow lights around the ring
+    const lavaRing = [
+      { pos: [0, 0.2, -18], color: "#ff3300" },
+      { pos: [0, 0.2, 18], color: "#ff3300" },
+      { pos: [-18, 0.2, 0], color: "#ff4400" },
+      { pos: [18, 0.2, 0], color: "#ff4400" },
     ];
-    cornerLights.forEach(({ pos, color }) => {
-      const light = new THREE.PointLight(color, 0.6, 20);
-      light.position.set(pos[0], pos[1], pos[2]);
-      this.scene.add(light);
-    });
-
-    // Lava glow point lights
-    const lavaLights = [
-      { pos: [-15, 0.3, -20], color: "#ff4400", intensity: 0.8, distance: 15 },
-      { pos: [15, 0.3, 20], color: "#ff4400", intensity: 0.8, distance: 15 },
-    ];
-    lavaLights.forEach(({ pos, color, intensity, distance }) => {
-      const light = new THREE.PointLight(color, intensity, distance);
+    lavaRing.forEach(({ pos, color }) => {
+      const light = new THREE.PointLight(color, 1.2, 22);
       light.position.set(pos[0], pos[1], pos[2]);
       this.scene.add(light);
     });
@@ -124,201 +111,275 @@ export class BattleStageEngine implements ISimulatorEngine {
   }
 
   private createEnvironment() {
-    // Coliseum floor - dark metal with glowing grid
-    const floorGeo = new THREE.PlaneGeometry(80, 80, 20, 20);
-    // Deform floor slightly for uneven terrain
-    const posAttr = floorGeo.getAttribute("position");
-    for (let i = 0; i < posAttr.count; i++) {
-      const x = posAttr.getX(i);
-      const z = posAttr.getY(i);
-      posAttr.setZ(i, (Math.sin(x * 0.3) * Math.cos(z * 0.3)) * 0.15);
-    }
-    floorGeo.computeVertexNormals();
+    // ===== CIRCULAR ARENA FLOOR (concave bowl) =====
+    const floorGeo = new THREE.CylinderGeometry(18, 16, 1.5, 64);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: "#1a1a2e",
-      roughness: 0.7,
-      metalness: 0.8,
-      emissive: "#0a0a14",
-      emissiveIntensity: 0.1,
+      color: "#2a2a35",
+      roughness: 0.5,
+      metalness: 0.9,
+      emissive: "#0a0a10",
+      emissiveIntensity: 0.15,
     });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.6;
-    floor.receiveShadow = true;
-    this.scene.add(floor);
+    this.arenaFloor = new THREE.Mesh(floorGeo, floorMat);
+    this.arenaFloor.position.y = -1.8;
+    this.arenaFloor.receiveShadow = true;
+    this.scene.add(this.arenaFloor);
 
-    // Glowing hexagonal floor pattern overlay
-    const patternGeo = new THREE.PlaneGeometry(76, 76);
-    const patternMat = new THREE.MeshBasicMaterial({
+    // Metal grid overlay on floor
+    const gridGeo = new THREE.RingGeometry(1, 17, 64);
+    const gridMat = new THREE.MeshBasicMaterial({
       color: "#e94560",
       transparent: true,
-      opacity: 0.06,
+      opacity: 0.08,
       side: THREE.DoubleSide,
       depthWrite: false,
     });
-    const pattern = new THREE.Mesh(patternGeo, patternMat);
-    pattern.rotation.x = -Math.PI / 2;
-    pattern.position.y = -0.59;
-    this.scene.add(pattern);
+    const grid = new THREE.Mesh(gridGeo, gridMat);
+    grid.rotation.x = -Math.PI / 2;
+    grid.position.y = -1.0;
+    this.scene.add(grid);
 
-    // Grid lines (hex-style) - thin glowing red grid
-    const gridHelper = new THREE.GridHelper(80, 40, "#e94560", "#1a1020");
-    gridHelper.position.y = -0.58;
-    gridHelper.material.opacity = 0.15;
-    gridHelper.material.transparent = true;
-    this.scene.add(gridHelper);
+    // ===== GRADAS (stepped seating around arena) =====
+    const seatMat = new THREE.MeshStandardMaterial({
+      color: "#1e2430",
+      roughness: 0.7,
+      metalness: 0.5,
+    });
+    for (let row = 1; row <= 5; row++) {
+      const radius = 18.5 + row * 1.2;
+      const stepGeo = new THREE.TorusGeometry(radius, 0.4, 8, 64);
+      const step = new THREE.Mesh(stepGeo, seatMat);
+      step.rotation.x = Math.PI / 2;
+      step.position.y = -1.5 + row * 0.7;
+      step.receiveShadow = true;
+      this.scene.add(step);
 
-    // Lava rivers on the sides
+      // Crowd dots
+      const crowdColors = ["#e94560", "#f59e0b", "#3b82f6", "#22c55e", "#a855f7"];
+      for (let c = 0; c < 30; c++) {
+        if (Math.random() > 0.25) {
+          const angle = (c / 30) * Math.PI * 2;
+          const cx = Math.cos(angle) * radius;
+          const cz = Math.sin(angle) * radius;
+          const dot = new THREE.Mesh(
+            new THREE.SphereGeometry(0.15, 4, 4),
+            new THREE.MeshBasicMaterial({ color: crowdColors[Math.floor(Math.random() * 5)] })
+          );
+          dot.position.set(cx, -1.5 + row * 0.7 + 0.35, cz);
+          this.scene.add(dot);
+        }
+      }
+    }
+
+    // ===== LAVA FOSO (ring around arena) =====
+    const lavaGeo = new THREE.TorusGeometry(19.5, 0.8, 16, 64);
     const lavaMat = new THREE.MeshStandardMaterial({
-      color: "#ff4400",
-      emissive: "#ff4400",
-      emissiveIntensity: 1.5,
-      roughness: 0.2,
-      metalness: 0.1,
+      color: "#ff3300",
+      emissive: "#ff3300",
+      emissiveIntensity: 2.0,
+      roughness: 0.1,
+      metalness: 0.05,
     });
-    const lavaRivers = [
-      { x: -18, z: 0, w: 2, d: 60 },
-      { x: 18, z: 0, w: 2, d: 60 },
-    ];
-    lavaRivers.forEach((r) => {
-      const lavaGeo = new THREE.PlaneGeometry(r.w, r.d);
-      const lava = new THREE.Mesh(lavaGeo, lavaMat.clone());
-      lava.rotation.x = -Math.PI / 2;
-      lava.position.set(r.x, -0.55, r.z);
-      this.scene.add(lava);
-      this.lavaRivers.push(lava);
+    const lava = new THREE.Mesh(lavaGeo, lavaMat);
+    lava.rotation.x = Math.PI / 2;
+    lava.position.y = -0.55;
+    lava.name = "lava_ring";
+    this.scene.add(lava);
+
+    // Lava embers
+    const emberCount = 150;
+    const emberGeo = new THREE.BufferGeometry();
+    const emberPos = new Float32Array(emberCount * 3);
+    for (let i = 0; i < emberCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 19 + Math.random() * 1.5;
+      emberPos[i * 3] = Math.cos(angle) * r;
+      emberPos[i * 3 + 1] = Math.random() * 4;
+      emberPos[i * 3 + 2] = Math.sin(angle) * r;
+    }
+    emberGeo.setAttribute("position", new THREE.BufferAttribute(emberPos, 3));
+    this.ambientEmbers = new THREE.Points(emberGeo, new THREE.PointsMaterial({
+      color: "#ff8844", size: 0.12, transparent: true, opacity: 0.6,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    }));
+    this.scene.add(this.ambientEmbers);
+
+    // ===== 4 PILARES INDUSTRIALES + PLATAFORMAS =====
+    const pillarPositions: [number, number][] = [[-10, -10], [10, -10], [-10, 10], [10, 10]];
+    const pillarMat = new THREE.MeshStandardMaterial({
+      color: "#334455", roughness: 0.5, metalness: 0.8, emissive: "#111822", emissiveIntensity: 0.1,
+    });
+    const platMat2 = new THREE.MeshStandardMaterial({
+      color: "#222a35", roughness: 0.4, metalness: 0.7, emissive: "#0a0f15", emissiveIntensity: 0.2,
     });
 
-    // Arena walls - tall imposing walls with neon edges
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: "#1a1a30",
-      roughness: 0.5,
-      metalness: 0.9,
-      emissive: "#0a0810",
-      emissiveIntensity: 0.1,
-    });
-    const wallConfigs = [
-      { pos: [0, 3.5, -22], size: [48, 7, 1.5] },
-      { pos: [0, 3.5, 22], size: [48, 7, 1.5] },
-      { pos: [-24, 3.5, 0], size: [1.5, 7, 44] },
-      { pos: [24, 3.5, 0], size: [1.5, 7, 44] },
-    ];
-    wallConfigs.forEach((w) => {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(w.size[0], w.size[1], w.size[2]), wallMat);
-      wall.position.set(w.pos[0], w.pos[1], w.pos[2]);
-      wall.castShadow = true;
-      wall.receiveShadow = true;
-      this.scene.add(wall);
-    });
+    pillarPositions.forEach(([px, pz]) => {
+      // Main pillar
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 10, 16), pillarMat);
+      pillar.position.set(px, 4, pz);
+      pillar.castShadow = true;
+      pillar.receiveShadow = true;
+      this.scene.add(pillar);
 
-    // Turrets on wall corners
-    const turretMat = new THREE.MeshStandardMaterial({
-      color: "#e94560",
-      emissive: "#e94560",
-      emissiveIntensity: 0.6,
-      roughness: 0.3,
-      metalness: 0.7,
-    });
-    const turretPositions = [
-      [-22, 3.5, -20], [22, 3.5, -20],
-      [-22, 3.5, 20], [22, 3.5, 20],
-    ];
-    turretPositions.forEach((pos) => {
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1, 2, 16), turretMat);
-      base.position.set(pos[0], pos[1] - 4, pos[2]);
-      base.castShadow = true;
-      this.scene.add(base);
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 2, 8), turretMat);
-      barrel.position.set(pos[0], pos[1] - 3, pos[2]);
-      barrel.rotation.x = Math.PI / 2;
-      this.scene.add(barrel);
-    });
+      // Top glow disc
+      const discGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.1, 16);
+      const discMat = new THREE.MeshStandardMaterial({
+        color: "#e94560", emissive: "#e94560", emissiveIntensity: 0.5, roughness: 0.2,
+      });
+      const disc = new THREE.Mesh(discGeo, discMat);
+      disc.position.set(px, 9.2, pz);
+      this.scene.add(disc);
 
-    // High platforms with glow edges
-    const platMat = new THREE.MeshStandardMaterial({
-      color: "#2a1a40",
-      roughness: 0.5,
-      metalness: 0.6,
-      emissive: "#1a0a25",
-      emissiveIntensity: 0.2,
-    });
-    const platPositions = [[-8, 0.3, -10], [8, 0.3, -8], [-5, 0.3, 8], [10, 0.3, 5]];
-    platPositions.forEach((pos) => {
-      const plat = new THREE.Mesh(new THREE.BoxGeometry(4, 0.6, 4), platMat);
-      plat.position.set(pos[0], pos[1], pos[2]);
+      // Platform at mid-height
+      const plat = new THREE.Mesh(new THREE.BoxGeometry(4, 0.3, 4), platMat2);
+      plat.position.set(px, 5.5, pz);
       plat.castShadow = true;
       plat.receiveShadow = true;
       this.scene.add(plat);
       // Glow edge
-      const edgeGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(4, 0.6, 4));
-      const edgeLine = new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({ color: "#e94560", transparent: true, opacity: 0.3 }));
-      edgeLine.position.copy(plat.position);
-      this.scene.add(edgeLine);
+      const edge = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(4, 0.3, 4)),
+        new THREE.LineBasicMaterial({ color: "#e94560", transparent: true, opacity: 0.25 })
+      );
+      edge.position.copy(plat.position);
+      this.scene.add(edge);
     });
 
-    // Enemies - intimidating combat bots
-    const enemyBodyMat = new THREE.MeshStandardMaterial({
-      color: "#ff3333",
-      emissive: "#ff3333",
-      emissiveIntensity: 0.5,
-      roughness: 0.3,
-      metalness: 0.6,
+    // ===== BRIDGES between platforms =====
+    const bridgePairs: [[number, number], [number, number]][] = [[pillarPositions[0], pillarPositions[1]], [pillarPositions[2], pillarPositions[3]]];
+    bridgePairs.forEach(([a, b]) => {
+      const midX = (a[0] + b[0]) / 2;
+      const midZ = (a[1] + b[1]) / 2;
+      const length = Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2);
+      const angle = Math.atan2(b[1]-a[1], b[0]-a[0]);
+      const bridge = new THREE.Mesh(new THREE.BoxGeometry(length, 0.15, 0.6), platMat2);
+      bridge.position.set(midX, 5.5, midZ);
+      bridge.rotation.y = angle;
+      bridge.castShadow = true;
+      this.scene.add(bridge);
     });
-    for (let i = 0; i < 4; i++) {
-      // Body
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.8, 1.4, 2, 2, 2), enemyBodyMat);
-      body.position.set(-12 + i * 7, 0.9, -14);
+
+    // ===== GENERATOR CENTRAL (metallic reactor) =====
+    const genMat = new THREE.MeshStandardMaterial({
+      color: "#667788", roughness: 0.2, metalness: 0.95, emissive: "#112233", emissiveIntensity: 0.1,
+    });
+    const core = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), genMat);
+    core.position.set(0, 1, 0);
+    core.castShadow = true;
+    this.scene.add(core);
+
+    // Rotating rings
+    for (let r = 0; r < 3; r++) {
+      const ringGeo = new THREE.TorusGeometry(2.3 + r * 0.6, 0.12, 16, 48);
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: ["#e94560", "#f59e0b", "#3b82f6"][r],
+        emissive: ["#e94560", "#f59e0b", "#3b82f6"][r],
+        emissiveIntensity: 0.6,
+        roughness: 0.2,
+        metalness: 0.5,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.set(0, 1, 0);
+      ring.rotation.x = (r * Math.PI) / 3;
+      ring.rotation.y = (r * Math.PI) / 4;
+      ring.name = `gen_ring_${r}`;
+      this.scene.add(ring);
+      this.generatorRings.push(ring);
+    }
+
+    // Core glow light
+    const coreLight = new THREE.PointLight("#e94560", 0.8, 12);
+    coreLight.position.set(0, 1, 0);
+    this.scene.add(coreLight);
+
+    // ===== TORRETAS (4 corners, above gradas) =====
+    const turretMat = new THREE.MeshStandardMaterial({
+      color: "#445566", roughness: 0.3, metalness: 0.9, emissive: "#111822", emissiveIntensity: 0.1,
+    });
+    const barrelMat = new THREE.MeshStandardMaterial({
+      color: "#e94560", emissive: "#e94560", emissiveIntensity: 0.4, roughness: 0.2, metalness: 0.4,
+    });
+    const turretBasePositions = [[-22, -22], [22, -22], [-22, 22], [22, 22]];
+
+    turretBasePositions.forEach(([tx, tz]) => {
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 3, 12), turretMat);
+      base.position.set(tx, 0.5, tz);
+      this.scene.add(base);
+
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2.5, 8), barrelMat);
+      barrel.position.set(tx, 2, tz);
+      barrel.rotation.x = Math.PI / 2;
+      barrel.lookAt(new THREE.Vector3(0, 1, 0));
+      barrel.name = `turret_barrel_${tx}_${tz}`;
+      this.scene.add(barrel);
+
+      // Laser beam (thin line to center)
+      const laserPoints = [new THREE.Vector3(tx, 2, tz), new THREE.Vector3(0, 1, 0)];
+      const laserGeo = new THREE.BufferGeometry().setFromPoints(laserPoints);
+      const laserMat = new THREE.LineDashedMaterial({
+        color: "#e94560", transparent: true, opacity: 0.3, dashSize: 0.5, gapSize: 0.3, depthWrite: false,
+      });
+      const laser = new THREE.Line(laserGeo, laserMat);
+      laser.computeLineDistances();
+      laser.name = "turret_laser";
+      this.scene.add(laser);
+      this.torretaLasers.push(laser);
+    });
+
+    // ===== ENEMIES with patrol routes =====
+    // Store enemy data for patrol
+    (this as any)._enemyData = [];
+
+    const enemyBodyMat = new THREE.MeshStandardMaterial({
+      color: "#ff3333", emissive: "#ff3333", emissiveIntensity: 0.5, roughness: 0.3, metalness: 0.6,
+    });
+    const enemyAngles = [0.3, 1.8, 3.5, 5.2];
+
+    enemyAngles.forEach((angle) => {
+      const orbitRadius = 7;
+      const ex = Math.cos(angle) * orbitRadius;
+      const ez = Math.sin(angle) * orbitRadius;
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.6, 1.4, 2, 2, 2), enemyBodyMat);
+      body.position.set(ex, 0.8, ez);
       body.castShadow = true;
       this.scene.add(body);
 
-      // Canon arm
-      const armGeo = new THREE.CylinderGeometry(0.15, 0.2, 1, 8);
-      const arm = new THREE.Mesh(armGeo, turretMat);
-      arm.rotation.x = Math.PI / 2;
-      arm.position.set(-12 + i * 7, 0.7, -13);
-      this.scene.add(arm);
+      // Cannon
+      const cannon = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.18, 1, 8),
+        barrelMat
+      );
+      cannon.rotation.x = Math.PI / 2;
+      cannon.position.set(ex, 0.7, ez - 0.8);
+      cannon.name = "enemy_cannon";
+      body.add(cannon);
 
-      // Eyes
-      const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
-      const eyeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 2 });
-      const eye = new THREE.Mesh(eyeGeo, eyeMat);
-      eye.position.set(-12 + i * 7, 1.4, -13.6);
-      this.scene.add(eye);
+      // Eye
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 8, 8),
+        new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#ffffff", emissiveIntensity: 3 })
+      );
+      eye.position.set(0, 0.3, -0.8);
+      body.add(eye);
 
       this.enemies.push(body);
-    }
-
-    // Crates with glow
-    for (let i = 0; i < 8; i++) {
-      const crate = new THREE.Mesh(
-        new THREE.BoxGeometry(0.7, 0.7, 0.7),
-        new THREE.MeshStandardMaterial({ color: "#e94560", roughness: 0.4, emissive: "#e94560", emissiveIntensity: 0.2 })
-      );
-      crate.position.set(-7 + i * 2.2, 0.35, -3 + (i % 3 - 1) * 3);
-      crate.castShadow = true;
-      this.scene.add(crate);
-    }
-
-    // Ambient floating embers
-    const emberCount = 80;
-    const emberGeo = new THREE.BufferGeometry();
-    const emberPositions = new Float32Array(emberCount * 3);
-    for (let i = 0; i < emberCount; i++) {
-      emberPositions[i * 3] = (Math.random() - 0.5) * 40;
-      emberPositions[i * 3 + 1] = Math.random() * 10;
-      emberPositions[i * 3 + 2] = (Math.random() - 0.5) * 40;
-    }
-    emberGeo.setAttribute("position", new THREE.BufferAttribute(emberPositions, 3));
-    const emberMat = new THREE.PointsMaterial({
-      color: "#ff8844",
-      size: 0.15,
-      transparent: true,
-      opacity: 0.5,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
+      (this as any)._enemyData.push({ body, cannon, angle, orbitRadius, speed: 0.002 + Math.random() * 0.003, patrolAngle: angle });
     });
-    this.ambientEmbers = new THREE.Points(emberGeo, emberMat);
-    this.scene.add(this.ambientEmbers);
+
+    // ===== DEBRIS PILES =====
+    for (let i = 0; i < 12; i++) {
+      const debris = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3 + Math.random() * 0.4, 0.2 + Math.random() * 0.3, 0.3 + Math.random() * 0.4),
+        new THREE.MeshStandardMaterial({ color: "#334455", roughness: 0.7, metalness: 0.6 })
+      );
+      const a = Math.random() * Math.PI * 2;
+      const r = 3 + Math.random() * 12;
+      debris.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r);
+      debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      debris.castShadow = true;
+      this.scene.add(debris);
+    }
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -429,36 +490,59 @@ export class BattleStageEngine implements ISimulatorEngine {
         }
       }
 
-      // Enemy hover animation
-      this.enemies.forEach((e, i) => {
-        e.position.y = 0.75 + Math.sin(Date.now() * 0.003 + i) * 0.1;
-        e.rotation.y += 0.01 * Math.sin(Date.now() * 0.002 + i);
+      // Animate lava embers rising from the ring
+      if (this.ambientEmbers) {
+        const pos = (this.ambientEmbers as THREE.Points).geometry.attributes.position.array as Float32Array;
+        for (let i = 0; i < pos.length; i += 3) {
+          pos[i + 1] += 0.03;
+          if (pos[i + 1] > 4) { pos[i + 1] = 0; }
+        }
+        (this.ambientEmbers as THREE.Points).geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Rotate generator rings
+      this.generatorRings.forEach((ring, i) => {
+        ring.rotation.x += 0.003 * (i + 1);
+        ring.rotation.y += 0.005 * (i + 1);
       });
+
+      // Update laser dash offsets
+      this.torretaLasers.forEach((laser) => {
+        if (laser.material instanceof THREE.LineDashedMaterial) {
+          laser.material.opacity = 0.2 + Math.sin(Date.now() * 0.005) * 0.1;
+        }
+      });
+
+      // Animate lava glow pulsing
+      const lavaRing = this.scene.getObjectByName("lava_ring") as THREE.Mesh;
+      if (lavaRing) {
+        const mat = lavaRing.material as THREE.MeshStandardMaterial;
+        mat.emissiveIntensity = 1.8 + Math.sin(Date.now() * 0.004) * 0.3;
+      }
+
+      // PATROL enemies in orbit around generator
+      const enemyData = (this as any)._enemyData;
+      if (enemyData) {
+        enemyData.forEach((ed: any) => {
+          ed.patrolAngle += ed.speed;
+          const ex = Math.cos(ed.patrolAngle) * ed.orbitRadius;
+          const ez = Math.sin(ed.patrolAngle) * ed.orbitRadius;
+          ed.body.position.x += (ex - ed.body.position.x) * 0.05;
+          ed.body.position.z += (ez - ed.body.position.z) * 0.05;
+          ed.body.rotation.y = Math.atan2(
+            this.botGroup.position.x - ed.body.position.x,
+            this.botGroup.position.z - ed.body.position.z
+          ) * 0.1 + ed.body.rotation.y * 0.9;
+          ed.body.position.y = 0.8 + Math.sin(Date.now() * 0.003 + ed.angle) * 0.1;
+        });
+      }
 
       this.ghostPreview.animate(Date.now() * 0.001);
 
       if (this.goalBeacon) {
-        const t = Date.now() * 0.001;
+        const time = Date.now() * 0.001;
         this.goalBeacon.rotation.z += 0.01;
-        this.goalBeacon.scale.setScalar(1 + Math.sin(t * 2) * 0.1);
-      }
-
-      // Animate lava glow
-      const lavaTime = Date.now() * 0.001;
-      this.lavaRivers.forEach((l, i) => {
-        const mat = l.material as THREE.MeshStandardMaterial;
-        mat.emissiveIntensity = 1.2 + Math.sin(lavaTime * 3 + i) * 0.4;
-      });
-
-      // Animate embers rising
-      if (this.ambientEmbers) {
-        const pos = this.ambientEmbers.geometry.attributes.position.array as Float32Array;
-        for (let i = 0; i < pos.length; i += 3) {
-          pos[i + 1] += 0.02;
-          if (pos[i + 1] > 10) pos[i + 1] = 0;
-          pos[i] += (Math.sin(lavaTime + i) * 0.01);
-        }
-        this.ambientEmbers.geometry.attributes.position.needsUpdate = true;
+        this.goalBeacon.scale.setScalar(1 + Math.sin(time * 2) * 0.1);
       }
 
       this.robotPersonality.update(0.016);
@@ -841,5 +925,50 @@ export class BattleStageEngine implements ISimulatorEngine {
 
   updateBlockBar(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void {
     this.blockBar.updateBlocks(blocks, activeBlockId);
+  }
+
+  getObstacles(): Array<{ x: number; z: number; radius: number }> {
+    const obstacles: Array<{ x: number; z: number; radius: number }> = [];
+    this.scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name || "";
+        const isObstacle =
+          name.includes("wall") || name.includes("level_") ||
+          name.includes("pillar") || name.includes("barrier") ||
+          name.includes("enemy") || name.includes("block") ||
+          name.includes("tree") || name.includes("crate") ||
+          name.includes("ramp") || name.includes("cone") ||
+          name.includes("turret") || name.includes("generator");
+        if (isObstacle && child.geometry.boundingSphere) {
+          obstacles.push({
+            x: child.position.x,
+            z: child.position.z,
+            radius: child.geometry.boundingSphere.radius * 1.2,
+          });
+        }
+      }
+    });
+    this.enemies?.forEach?.((enemy: THREE.Mesh) => {
+      if (enemy.visible) {
+        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
+      }
+    });
+    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
+      if (obs.visible) {
+        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
+      }
+    });
+    return obstacles;
+  }
+
+  checkCollision(x: number, z: number): boolean {
+    const obstacles = this.getObstacles();
+    for (const obs of obstacles) {
+      const dx = x - obs.x;
+      const dz = z - obs.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist < obs.radius) return true;
+    }
+    return false;
   }
 }

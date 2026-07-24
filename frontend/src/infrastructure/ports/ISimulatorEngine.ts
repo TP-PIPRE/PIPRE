@@ -42,6 +42,8 @@ export interface ISimulatorEngine {
   enableFollowCam?(enabled: boolean): void;
   triggerCameraShake?(intensity?: number): void;
   updateBlockBar?(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void;
+  getObstacles?(): Array<{ x: number; z: number; radius: number }>;
+  checkCollision?(x: number, z: number): boolean;
 
   // Acciones específicas por entorno (opcionales)
   attack?(power: number, duration: number): Promise<void>;
