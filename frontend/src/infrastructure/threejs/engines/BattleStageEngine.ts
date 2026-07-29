@@ -22,7 +22,7 @@ export class BattleStageEngine implements ISimulatorEngine {
   private ultrasonicCone: THREE.Mesh;
   private particles: ParticleSystem;
   private animationId: number | null = null;
-  private clock: THREE.Clock;
+  private timer: THREE.Timer;
   private controls!: MapControls;
   private isRunning = false;
   private enemies: THREE.Mesh[] = [];
@@ -59,7 +59,7 @@ export class BattleStageEngine implements ISimulatorEngine {
 
     this.scene = scene;
     this.camera = camera;
-    this.clock = new THREE.Clock();
+    this.timer = new THREE.Timer();
 
     // Main drama light from above center
     const mainLight = new THREE.SpotLight("#ffffff", 3, 50, Math.PI / 5, 0.3, 1);
@@ -123,6 +123,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.arenaFloor = new THREE.Mesh(floorGeo, floorMat);
     this.arenaFloor.position.y = -1.8;
     this.arenaFloor.receiveShadow = true;
+    this.arenaFloor.name = "arena_floor";
     this.scene.add(this.arenaFloor);
 
     // Metal grid overlay on floor
@@ -235,6 +236,7 @@ export class BattleStageEngine implements ISimulatorEngine {
       plat.position.set(px, 5.5, pz);
       plat.castShadow = true;
       plat.receiveShadow = true;
+      plat.name = "platform";
       this.scene.add(plat);
       // Glow edge
       const edge = new THREE.LineSegments(
@@ -256,6 +258,7 @@ export class BattleStageEngine implements ISimulatorEngine {
       bridge.position.set(midX, 5.5, midZ);
       bridge.rotation.y = angle;
       bridge.castShadow = true;
+      bridge.name = "bridge";
       this.scene.add(bridge);
     });
 
@@ -266,6 +269,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     const core = new THREE.Mesh(new THREE.SphereGeometry(2, 32, 32), genMat);
     core.position.set(0, 1, 0);
     core.castShadow = true;
+    core.name = "generator_core";
     this.scene.add(core);
 
     // Rotating rings
@@ -302,15 +306,16 @@ export class BattleStageEngine implements ISimulatorEngine {
     const turretBasePositions = [[-22, -22], [22, -22], [-22, 22], [22, 22]];
 
     turretBasePositions.forEach(([tx, tz]) => {
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 3, 12), turretMat);
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 3, 12), turretMat);
       base.position.set(tx, 0.5, tz);
+      base.name = "turret_base";
       this.scene.add(base);
 
       const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2.5, 8), barrelMat);
       barrel.position.set(tx, 2, tz);
       barrel.rotation.x = Math.PI / 2;
       barrel.lookAt(new THREE.Vector3(0, 1, 0));
-      barrel.name = `turret_barrel_${tx}_${tz}`;
+      barrel.name = "turret_barrel";
       this.scene.add(barrel);
 
       // Laser beam (thin line to center)
@@ -378,6 +383,7 @@ export class BattleStageEngine implements ISimulatorEngine {
       debris.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r);
       debris.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
       debris.castShadow = true;
+      debris.name = "debris";
       this.scene.add(debris);
     }
   }
@@ -392,7 +398,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
 
@@ -464,6 +470,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.composer.dispose();
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
+    this.blockBar.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -506,6 +513,14 @@ export class BattleStageEngine implements ISimulatorEngine {
         ring.rotation.y += 0.005 * (i + 1);
       });
 
+      // Generator core light pulse
+      const coreLight = this.scene.children.find(
+        (c) => c instanceof THREE.PointLight && c.position.distanceTo(new THREE.Vector3(0, 1, 0)) < 1
+      ) as THREE.PointLight;
+      if (coreLight) {
+        coreLight.intensity = 0.6 + Math.sin(Date.now() * 0.005) * 0.3;
+      }
+
       // Update laser dash offsets
       this.torretaLasers.forEach((laser) => {
         if (laser.material instanceof THREE.LineDashedMaterial) {
@@ -527,6 +542,11 @@ export class BattleStageEngine implements ISimulatorEngine {
           ed.patrolAngle += ed.speed;
           const ex = Math.cos(ed.patrolAngle) * ed.orbitRadius;
           const ez = Math.sin(ed.patrolAngle) * ed.orbitRadius;
+          const distToCenter = Math.sqrt(ex * ex + ez * ez);
+          if (distToCenter < 3.5) {
+            ed.patrolAngle += 0.1;
+            return;
+          }
           ed.body.position.x += (ex - ed.body.position.x) * 0.05;
           ed.body.position.z += (ez - ed.body.position.z) * 0.05;
           ed.body.rotation.y = Math.atan2(
@@ -572,13 +592,13 @@ export class BattleStageEngine implements ISimulatorEngine {
         (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity =
           p < 0.5 ? p * 1.6 : (1 - p) * 1.6;
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.timer.getDelta()));
         } else {
           (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity = 0;
           resolve(Math.floor(Math.random() * 12) + 4);
         }
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       animate(0);
     });
   }
@@ -603,13 +623,25 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.triggerParticles(enemy.position.x, enemy.position.z, "collision");
         (enemy.material as THREE.MeshStandardMaterial).transparent = true;
         (enemy.material as THREE.MeshStandardMaterial).opacity = 0.5;
+        // Flash white
+        const origColor = (enemy.material as THREE.MeshStandardMaterial).color.getHex();
         const origEmissive = (enemy.material as THREE.MeshStandardMaterial).emissive.getHex();
+        (enemy.material as THREE.MeshStandardMaterial).color.set("#ffffff");
         (enemy.material as THREE.MeshStandardMaterial).emissive.set("#ffffff");
         (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5;
         setTimeout(() => {
+          (enemy.material as THREE.MeshStandardMaterial).color.setHex(origColor);
           (enemy.material as THREE.MeshStandardMaterial).emissive.setHex(origEmissive);
           (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.4;
-        }, 150);
+        }, 200);
+
+        // Push back
+        const dx = enemy.position.x - this.botGroup.position.x;
+        const dz = enemy.position.z - this.botGroup.position.z;
+        const pushDist = 2;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        enemy.position.x += (dx / len) * pushDist;
+        enemy.position.z += (dz / len) * pushDist;
         this.score += 100;
       }
     }
@@ -667,13 +699,25 @@ export class BattleStageEngine implements ISimulatorEngine {
         this.triggerParticles(enemy.position.x, enemy.position.z, "collision");
         (enemy.material as THREE.MeshStandardMaterial).transparent = true;
         (enemy.material as THREE.MeshStandardMaterial).opacity = 0.5;
+        // Flash white
+        const origColor = (enemy.material as THREE.MeshStandardMaterial).color.getHex();
         const origEmissive = (enemy.material as THREE.MeshStandardMaterial).emissive.getHex();
+        (enemy.material as THREE.MeshStandardMaterial).color.set("#ffffff");
         (enemy.material as THREE.MeshStandardMaterial).emissive.set("#ffffff");
         (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5;
         setTimeout(() => {
+          (enemy.material as THREE.MeshStandardMaterial).color.setHex(origColor);
           (enemy.material as THREE.MeshStandardMaterial).emissive.setHex(origEmissive);
           (enemy.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.4;
-        }, 150);
+        }, 200);
+
+        // Push back
+        const dx = enemy.position.x - this.botGroup.position.x;
+        const dz = enemy.position.z - this.botGroup.position.z;
+        const pushDist = 2;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        enemy.position.x += (dx / len) * pushDist;
+        enemy.position.z += (dz / len) * pushDist;
         this.score += 150;
       }
     }
@@ -713,13 +757,13 @@ export class BattleStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.position.lerpVectors(start, end, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.timer.getDelta()));
         } else {
           this.triggerParticles(end.x, end.z, "move");
           resolve();
         }
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       animate(0);
     });
   }
@@ -735,10 +779,10 @@ export class BattleStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.rotation.y = THREE.MathUtils.lerp(start, end, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.timer.getDelta()));
         } else resolve();
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       animate(0);
     });
   }
@@ -871,6 +915,13 @@ export class BattleStageEngine implements ISimulatorEngine {
       this.goalBeacon.geometry?.dispose();
       (this.goalBeacon.material as THREE.Material)?.dispose();
     }
+    // Clean up old dot
+    const oldDot = (this as any)._goalBeaconDot as THREE.Mesh | undefined;
+    if (oldDot) {
+      this.scene.remove(oldDot);
+      oldDot.geometry?.dispose();
+      (oldDot.material as THREE.Material)?.dispose();
+    }
 
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
@@ -894,6 +945,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.scene.add(dot);
 
     this.goalBeacon = ring;
+    (this as any)._goalBeaconDot = dot;
   }
 
   checkGoalReached(x: number, z: number): boolean {
@@ -930,34 +982,44 @@ export class BattleStageEngine implements ISimulatorEngine {
   getObstacles(): Array<{ x: number; z: number; radius: number }> {
     const obstacles: Array<{ x: number; z: number; radius: number }> = [];
     this.scene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const name = child.name || "";
-        const isObstacle =
-          name.includes("wall") || name.includes("level_") ||
-          name.includes("pillar") || name.includes("barrier") ||
-          name.includes("enemy") || name.includes("block") ||
-          name.includes("tree") || name.includes("crate") ||
-          name.includes("ramp") || name.includes("cone") ||
-          name.includes("turret") || name.includes("generator");
-        if (isObstacle && child.geometry.boundingSphere) {
-          obstacles.push({
-            x: child.position.x,
-            z: child.position.z,
-            radius: child.geometry.boundingSphere.radius * 1.2,
-          });
+      if (!(child instanceof THREE.Mesh) || !child.name) return;
+      const wp = new THREE.Vector3();
+      child.getWorldPosition(wp);
+      const name = child.name;
+      let radius = 0;
+      if (name.includes("trunk") || name.includes("tree")) radius = 0.5;
+      else if (name.includes("temple") || name.includes("pillar")) radius = 0.7;
+      else if (name.includes("door") || name.includes("arch")) radius = 0.6;
+      else if (name.includes("crystal") || name.includes("rock")) radius = 0.7;
+      else if (name.includes("wall") || name.includes("level_wall")) radius = 1.8;
+      else if (name.includes("barrier") || name.includes("cone")) radius = 0.6;
+      else if (name.includes("ship")) radius = 3;
+      else if (name.includes("enemy")) radius = 1.5;
+      else if (name.includes("crate")) radius = 0.8;
+      else if (name.includes("level_block") || name.includes("block")) radius = 0.8;
+      else if (name.includes("level_enemy")) radius = 1.5;
+      else if (name.includes("level_crate")) radius = 0.8;
+      else if (name.includes("level_sample") || name.includes("level_door")) radius = 0.6;
+      else if (name.includes("level_cone")) radius = 0.5;
+      else if (name.includes("ramp")) radius = 1;
+      else if (name.includes("grandstand")) radius = 1;
+      else if (name.includes("turret")) radius = 0.8;
+      else if (name.includes("generator")) radius = 2.5;
+      else if (name.includes("bridge") || name.includes("debris")) radius = 0.7;
+      else if (name.includes("canyon")) radius = 1.5;
+      else if (name.includes("loop") || name.includes("tunnel")) radius = 1.2;
+      if (radius > 0) {
+        obstacles.push({ x: wp.x, z: wp.z, radius });
+      }
+    });
+    const enemies = (this as any).enemies as THREE.Mesh[] | undefined;
+    if (enemies) {
+      enemies.forEach((e: THREE.Mesh) => {
+        if (e.visible !== false) {
+          obstacles.push({ x: e.position.x, z: e.position.z, radius: 1.5 });
         }
-      }
-    });
-    this.enemies?.forEach?.((enemy: THREE.Mesh) => {
-      if (enemy.visible) {
-        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
-      }
-    });
-    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
-      if (obs.visible) {
-        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
-      }
-    });
+      });
+    }
     return obstacles;
   }
 
@@ -966,8 +1028,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     for (const obs of obstacles) {
       const dx = x - obs.x;
       const dz = z - obs.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < obs.radius) return true;
+      if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
   }

@@ -36,12 +36,11 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private crashedShip!: THREE.Group;
   private planetMesh!: THREE.Mesh;
   private dustStorm: THREE.Points | null = null;
-  private canyonWalls: THREE.Mesh[] = [];
 
   constructor() {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color("#050515");
-    this.scene.fog = new THREE.Fog("#050515", 25, 100);
+    this.scene.fog = new THREE.Fog("#050515", 25, 180);
 
     this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
     this.camera.position.set(24, 18, 24);
@@ -130,10 +129,10 @@ export class SpaceStageEngine implements ISimulatorEngine {
       const x = posAttr.getX(i);
       const z = posAttr.getY(i);
       const noise =
-        Math.sin(x * 0.15) * Math.cos(z * 0.12) * 2.5 +
-        Math.sin(x * 0.35 + z * 0.28) * 1.8 +
-        Math.cos(x * 0.52 - z * 0.44) * 1.2 +
-        Math.sin(x * 0.08) * Math.sin(z * 0.09) * 3.0;
+        Math.sin(x * 0.15) * Math.cos(z * 0.12) * 0.6 +
+        Math.sin(x * 0.35 + z * 0.28) * 0.42 +
+        Math.cos(x * 0.52 - z * 0.44) * 0.28 +
+        Math.sin(x * 0.08) * Math.sin(z * 0.09) * 0.7;
       posAttr.setZ(i, noise);
     }
     terrainGeo.computeVertexNormals();
@@ -162,7 +161,34 @@ export class SpaceStageEngine implements ISimulatorEngine {
     fuselage.rotation.z = Math.PI / 2;
     fuselage.position.y = 1;
     fuselage.castShadow = true;
+    fuselage.name = "ship_fuselage";
     this.crashedShip.add(fuselage);
+
+    const noseGeo = new THREE.ConeGeometry(3, 4, 16);
+    const noseMat = new THREE.MeshStandardMaterial({
+      color: "#8899aa",
+      roughness: 0.4,
+      metalness: 0.7,
+    });
+    const nose = new THREE.Mesh(noseGeo, noseMat);
+    nose.rotation.z = Math.PI / 2;
+    nose.position.set(9, 1, 0);
+    nose.castShadow = true;
+    nose.name = "ship_nose";
+    this.crashedShip.add(nose);
+
+    const tailGeo = new THREE.ConeGeometry(2, 3, 16);
+    const tailMat = new THREE.MeshStandardMaterial({
+      color: "#445566",
+      roughness: 0.5,
+      metalness: 0.6,
+    });
+    const tail = new THREE.Mesh(tailGeo, tailMat);
+    tail.rotation.z = -Math.PI / 2;
+    tail.position.set(-9, 1, 0);
+    tail.castShadow = true;
+    tail.name = "ship_tail";
+    this.crashedShip.add(tail);
 
     const wingGeo = new THREE.BoxGeometry(8, 0.3, 3);
     const wingMat = new THREE.MeshStandardMaterial({
@@ -174,7 +200,39 @@ export class SpaceStageEngine implements ISimulatorEngine {
     wing.rotation.z = THREE.MathUtils.degToRad(30);
     wing.position.set(-1.5, 0.5, 0);
     wing.castShadow = true;
+    wing.name = "ship_wing";
     this.crashedShip.add(wing);
+
+    const wing2 = new THREE.Mesh(wingGeo.clone(), wingMat.clone());
+    wing2.rotation.z = THREE.MathUtils.degToRad(-25);
+    wing2.position.set(1, 0.3, 0);
+    wing2.castShadow = true;
+    wing2.name = "ship_wing";
+    this.crashedShip.add(wing2);
+
+    const debrisCount = 8;
+    for (let i = 0; i < debrisCount; i++) {
+      const dGeo = new THREE.BoxGeometry(
+        0.3 + Math.random() * 0.5,
+        0.2 + Math.random() * 0.2,
+        0.3 + Math.random() * 0.5
+      );
+      const dMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color().setHSL(0.6, 0.05, 0.3 + Math.random() * 0.3),
+        roughness: 0.5,
+        metalness: 0.6,
+      });
+      const d = new THREE.Mesh(dGeo, dMat);
+      d.position.set(
+        (Math.random() - 0.5) * 16,
+        0.1 + Math.random() * 0.5,
+        (Math.random() - 0.5) * 6
+      );
+      d.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      d.castShadow = true;
+      d.name = "ship_debris";
+      this.crashedShip.add(d);
+    }
 
     const smokeCount = 60;
     const smokeGeo = new THREE.BufferGeometry();
@@ -204,24 +262,27 @@ export class SpaceStageEngine implements ISimulatorEngine {
 
     // Deep canyon at z=-6
     const canyonZ = -6;
-    const wallMatGeo = new THREE.MeshStandardMaterial({
-      color: "#0d0718",
+    const wallGeo = new THREE.BoxGeometry(30, 6, 1.5);
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: "#1a1030",
       roughness: 0.9,
-      side: THREE.DoubleSide,
+      metalness: 0.1,
+      emissive: "#0a0515",
+      emissiveIntensity: 0.05,
     });
-    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(30, 6), wallMatGeo);
+    const leftWall = new THREE.Mesh(wallGeo, wallMat);
     leftWall.rotation.set(0, 0, -0.4);
     leftWall.position.set(0, -0.2, canyonZ + 2.5);
     leftWall.receiveShadow = true;
+    leftWall.name = "canyon_wall";
     this.scene.add(leftWall);
-    this.canyonWalls.push(leftWall);
 
-    const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(30, 6), wallMatGeo);
+    const rightWall = new THREE.Mesh(wallGeo, wallMat);
     rightWall.rotation.set(0, 0, 0.4);
     rightWall.position.set(0, -0.2, canyonZ - 2.5);
     rightWall.receiveShadow = true;
+    rightWall.name = "canyon_wall";
     this.scene.add(rightWall);
-    this.canyonWalls.push(rightWall);
 
     for (let i = -12; i <= 12; i += 4) {
       const canyonLight = new THREE.PointLight("#4a2080", 0.35, 6);
@@ -233,28 +294,30 @@ export class SpaceStageEngine implements ISimulatorEngine {
     const crystalClusterPositions = [
       [-16, -4], [14, -2], [-8, 14], [10, 10], [4, -14], [-14, 8]
     ];
-    const crystalMat = new THREE.MeshStandardMaterial({
-      color: "#3b82f6",
-      emissive: "#3b82f6",
-      emissiveIntensity: 0.6,
-      roughness: 0.1,
-      metalness: 0.2,
-      transparent: true,
-      opacity: 0.85,
-    });
+    const crystalColors = ["#3b82f6", "#06b6d4", "#8b5cf6"];
     crystalClusterPositions.forEach(([cx, cz]) => {
       const clusterGroup = new THREE.Group();
       const count = 3 + Math.floor(Math.random() * 5);
       for (let j = 0; j < count; j++) {
-        const height = 2 + Math.random() * 3;
-        const crystalGeo = new THREE.ConeGeometry(0.25, height, 6);
+        const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+        const crystalMat = new THREE.MeshStandardMaterial({
+          color: crystalColor,
+          emissive: crystalColor,
+          emissiveIntensity: 0.6,
+          roughness: 0.1,
+          metalness: 0.2,
+          transparent: true,
+          opacity: 0.85,
+        });
+        const crystalGeo = new THREE.OctahedronGeometry(0.4 + Math.random() * 0.3, 0);
         const crystal = new THREE.Mesh(crystalGeo, crystalMat);
         crystal.position.set(
           (Math.random() - 0.5) * 0.8,
-          height / 2 - 0.6,
+          0.6 + Math.random() * 0.3,
           (Math.random() - 0.5) * 0.8
         );
         crystal.rotation.set(Math.random() * 0.4, Math.random() * Math.PI, Math.random() * 0.4);
+        crystal.name = "crystal";
         clusterGroup.add(crystal);
       }
       const ptLight = new THREE.PointLight("#3b82f6", 0.5, 5);
@@ -313,7 +376,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
       roughness: 0.1,
       metalness: 0.2,
     });
-    const samplePositions = [[-5, -8], [7, -12], [-3, 5], [12, 0], [-8, 10]];
+    const samplePositions = [[-5, -8], [7, -12], [-3, 5], [12, 0], [-8, 10], [15, 8], [-12, -14], [3, 14]];
     samplePositions.forEach((pos) => {
       const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.5), sampleMat);
       const baseY = 0.5 + Math.random() * 0.5;
@@ -381,6 +444,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
       rock.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
       rock.castShadow = true;
       rock.receiveShadow = true;
+      rock.name = "rock";
       this.scene.add(rock);
     }
 
@@ -404,6 +468,25 @@ export class SpaceStageEngine implements ISimulatorEngine {
     });
     this.ambientDust = new THREE.Points(dustGeo, dustMat);
     this.scene.add(this.ambientDust);
+
+    const dustStormCount = 150;
+    const dustStormGeo = new THREE.BufferGeometry();
+    const dustStormPos = new Float32Array(dustStormCount * 3);
+    for (let i = 0; i < dustStormCount; i++) {
+      dustStormPos[i * 3] = (Math.random() - 0.5) * 60;
+      dustStormPos[i * 3 + 1] = Math.random() * 4;
+      dustStormPos[i * 3 + 2] = (Math.random() - 0.5) * 40;
+    }
+    dustStormGeo.setAttribute("position", new THREE.BufferAttribute(dustStormPos, 3));
+    this.dustStorm = new THREE.Points(dustStormGeo, new THREE.PointsMaterial({
+      color: "#cc9966",
+      size: 0.35,
+      transparent: true,
+      opacity: 0.3,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }));
+    this.scene.add(this.dustStorm);
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -411,7 +494,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.space);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
@@ -470,6 +553,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.composer.dispose();
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
+    this.blockBar.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -692,6 +776,8 @@ export class SpaceStageEngine implements ISimulatorEngine {
         const p = Math.min(elapsed / (duration / 1000), 1);
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.position.lerpVectors(start, end, ease);
+        const terrainY = this.getTerrainHeight(this.botGroup.position.x, this.botGroup.position.z);
+        this.botGroup.position.y += (terrainY - this.botGroup.position.y) * 0.3;
         if (p < 1 && this.isRunning) {
           requestAnimationFrame(() => animate(this.getDelta()));
         } else resolve();
@@ -849,6 +935,13 @@ export class SpaceStageEngine implements ISimulatorEngine {
       (this.goalBeacon.material as THREE.Material)?.dispose();
     }
 
+    const oldDot = (this as any)._goalBeaconDot as THREE.Mesh | undefined;
+    if (oldDot) {
+      this.scene.remove(oldDot);
+      oldDot.geometry?.dispose();
+      (oldDot.material as THREE.Material)?.dispose();
+    }
+
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
       color: "#fbbf24",
@@ -871,6 +964,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.scene.add(dot);
 
     this.goalBeacon = ring;
+    (this as any)._goalBeaconDot = dot;
   }
 
   checkGoalReached(x: number, z: number): boolean {
@@ -907,34 +1001,44 @@ export class SpaceStageEngine implements ISimulatorEngine {
   getObstacles(): Array<{ x: number; z: number; radius: number }> {
     const obstacles: Array<{ x: number; z: number; radius: number }> = [];
     this.scene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const name = child.name || "";
-        const isObstacle =
-          name.includes("wall") || name.includes("level_") ||
-          name.includes("pillar") || name.includes("barrier") ||
-          name.includes("enemy") || name.includes("block") ||
-          name.includes("tree") || name.includes("crate") ||
-          name.includes("ramp") || name.includes("cone") ||
-          name.includes("turret") || name.includes("generator");
-        if (isObstacle && child.geometry.boundingSphere) {
-          obstacles.push({
-            x: child.position.x,
-            z: child.position.z,
-            radius: child.geometry.boundingSphere.radius * 1.2,
-          });
+      if (!(child instanceof THREE.Mesh) || !child.name) return;
+      const wp = new THREE.Vector3();
+      child.getWorldPosition(wp);
+      const name = child.name;
+      let radius = 0;
+      if (name.includes("trunk") || name.includes("tree")) radius = 0.5;
+      else if (name.includes("temple") || name.includes("pillar")) radius = 0.7;
+      else if (name.includes("door") || name.includes("arch")) radius = 0.6;
+      else if (name.includes("crystal") || name.includes("rock")) radius = 0.7;
+      else if (name.includes("wall") || name.includes("level_wall")) radius = 1.8;
+      else if (name.includes("barrier") || name.includes("cone")) radius = 0.6;
+      else if (name.includes("ship")) radius = 3;
+      else if (name.includes("enemy")) radius = 1.5;
+      else if (name.includes("crate")) radius = 0.8;
+      else if (name.includes("level_block") || name.includes("block")) radius = 0.8;
+      else if (name.includes("level_enemy")) radius = 1.5;
+      else if (name.includes("level_crate")) radius = 0.8;
+      else if (name.includes("level_sample") || name.includes("level_door")) radius = 0.6;
+      else if (name.includes("level_cone")) radius = 0.5;
+      else if (name.includes("ramp")) radius = 1;
+      else if (name.includes("grandstand")) radius = 1;
+      else if (name.includes("turret")) radius = 0.8;
+      else if (name.includes("generator")) radius = 2.5;
+      else if (name.includes("bridge") || name.includes("debris")) radius = 0.7;
+      else if (name.includes("canyon")) radius = 1.5;
+      else if (name.includes("loop") || name.includes("tunnel")) radius = 1.2;
+      if (radius > 0) {
+        obstacles.push({ x: wp.x, z: wp.z, radius });
+      }
+    });
+    const enemies = (this as any).enemies as THREE.Mesh[] | undefined;
+    if (enemies) {
+      enemies.forEach((e: THREE.Mesh) => {
+        if (e.visible !== false) {
+          obstacles.push({ x: e.position.x, z: e.position.z, radius: 1.5 });
         }
-      }
-    });
-    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
-      if (enemy.visible) {
-        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
-      }
-    });
-    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
-      if (obs.visible) {
-        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
-      }
-    });
+      });
+    }
     return obstacles;
   }
 
@@ -943,9 +1047,17 @@ export class SpaceStageEngine implements ISimulatorEngine {
     for (const obs of obstacles) {
       const dx = x - obs.x;
       const dz = z - obs.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < obs.radius) return true;
+      if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
+  }
+
+  private getTerrainHeight(x: number, z: number): number {
+    const noise =
+      Math.sin(x * 0.15) * Math.cos(z * 0.12) * 0.6 +
+      Math.sin(x * 0.35 + z * 0.28) * 0.42 +
+      Math.cos(x * 0.52 - z * 0.44) * 0.28 +
+      Math.sin(x * 0.08) * Math.sin(z * 0.09) * 0.7;
+    return noise - 0.8;
   }
 }

@@ -22,7 +22,7 @@ export function createEffectComposer(
   } = bloomConfig;
 
   const composer = new EffectComposer(renderer, {
-    frameBufferType: THREE.HalfFloatType,
+    frameBufferType: THREE.UnsignedByteType,
   });
 
   composer.addPass(new RenderPass(scene, camera));

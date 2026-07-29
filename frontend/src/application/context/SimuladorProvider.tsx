@@ -14,6 +14,9 @@ import { useRobotSimulations } from "../hooks/useRobotSimulations";
 import type { ActivityResponse } from "../../shared/types/SpecContracts";
 import { calculateStars, calculateCombo, calculateEfficiency, calculateXpEarned } from "../adapters/GamificationEngine";
 import { soundManager } from "../../infrastructure/threejs/shared/SoundManager";
+import { LEVEL_CONFIGS, type LevelConfig } from "../../infrastructure/threejs/shared/levelConfigs";
+import { saveLevelResult } from "../adapters/PlayerProgress";
+import { musicManager } from "../../infrastructure/audio/MusicManager";
 
 interface LogEntry {
   time: string;
@@ -98,6 +101,14 @@ interface SimuladorContextType {
   blockError: { blockId: string; message: string } | null;
   clearBlockError: () => void;
 
+  // Niveles
+  currentLevelId: string | null;
+  currentLevel: LevelConfig | null;
+  setLevel: (levelId: string | null) => void;
+  levelComplete: boolean;
+  levelStars: number;
+  dismissLevelComplete: () => void;
+
   submitRobotSimulation: () => Promise<void>;
   simulationLoading: boolean;
   simulationError: string | null;
@@ -127,6 +138,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [isRunning, setIsRunning] = useState(false);
 
   const [energy, setEnergy] = useState(100);
+  const energyRef = useRef(energy);
+  useEffect(() => { energyRef.current = energy; }, [energy]);
   const [score, setScore] = useState(0);
   const [missions, setMissions] = useState<Mission[]>([]);
   const [currentMissionIndex, setCurrentMissionIndex] = useState(0);
@@ -150,6 +163,12 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const [blockError, setBlockError] = useState<{ blockId: string; message: string } | null>(null);
   const clearBlockError = () => setBlockError(null);
   const counterRef = useRef(0);
+
+  const [currentLevelId, setCurrentLevelId] = useState<string | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
+  const [levelComplete, setLevelComplete] = useState(false);
+  const [levelStars, setLevelStars] = useState(0);
+  const dismissLevelComplete = () => setLevelComplete(false);
 
   const {
     submitSimulation,
@@ -194,8 +213,65 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     setScore(0);
     setCurrentMissionIndex(0);
     setMissions(getDefaultMissions(env));
+    musicManager.play(env);
 
     addLog(`Entorno cambiado a: ${ENVIRONMENT_CONFIGS[env]?.name || env}`, "info");
+  };
+
+  const setLevel = (levelId: string | null) => {
+    setLevelComplete(false);
+    setLevelStars(0);
+    setCurrentMissionIndex(0);
+    setCurrentLevelId(levelId);
+    if (!levelId) {
+      setCurrentLevel(null);
+      setBlocks([]);
+      setEnergy(100);
+      setScore(0);
+      setFreeMode();
+      return;
+    }
+
+    const level = LEVEL_CONFIGS[levelId];
+    if (!level) return;
+
+    setCurrentLevel(level);
+    setIsFreeMode(false);
+    setEnvironmentState(level.environment);
+    musicManager.play(level.environment);
+    setBlocks([]);
+    setEnergy(100);
+    setScore(0);
+    setMissions(level.availableBlocks.map((type, i) => {
+      const def = ENVIRONMENT_CONFIGS[level.environment]?.blocks.find((b) => b.type === type);
+      return {
+        id: `m_${i}`,
+        title: def?.label || type,
+        objective: level.description || "",
+        isCompleted: false,
+        maxBlocks: level.maxBlocks,
+      };
+    }));
+
+    // Auto-equip hardware
+    const assignments: Record<string, string> = {};
+    level.requiredHardware.forEach((hw, i) => {
+      assignments[`slot_${i}`] = hw;
+    });
+    setPortAssignments(assignments);
+
+    addLog(`Nivel cargado: ${level.name}`, "success");
+
+    // Load level into engine after a tick (engine needs to be init'd)
+    setTimeout(() => {
+      if (engineRef.current?.loadLevel) {
+        const obsWithType = level.obstacles.map((o) => ({
+          x: o.x, z: o.z, type: o.type, size: o.size,
+        }));
+        engineRef.current.loadLevel(obsWithType, level.startPosition, level.goalPosition);
+        engineRef.current?.showGoalBeacon?.(level.goalPosition.x, level.goalPosition.z);
+      }
+    }, 200);
   };
 
   const setFreeMode = () => {
@@ -267,6 +343,18 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const allowedHardware = getFilteredHardware();
   const installedHardware = Object.values(portAssignments).filter(Boolean);
 
+  // Auto-complete hardware-only missions (maxBlocks=0)
+  useEffect(() => {
+    const mission = missions[currentMissionIndex];
+    if (!mission || mission.isCompleted || mission.maxBlocks !== 0) return;
+    const config = ENVIRONMENT_CONFIGS[environment];
+    if (!config?.defaultHardware) return;
+    const allEquipped = config.defaultHardware.every((hw) => installedHardware.includes(hw));
+    if (allEquipped) {
+      completeMission();
+    }
+  }, [installedHardware, missions, currentMissionIndex]);
+
   const consumeEnergy = (amount: number) => {
     setEnergy((prev) => {
       const next = Math.max(0, prev - amount);
@@ -286,7 +374,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
     const efficiency = calculateEfficiency(blocks.length, mission.maxBlocks, loopsUsed);
     const starResult = calculateStars({
-      score: score || (blocks.length <= mission.maxBlocks ? 95 : 65),
+      score: score !== undefined ? score : (blocks.length <= mission.maxBlocks ? 95 : 65),
       blocksUsed: blocks.length,
       maxBlocks: mission.maxBlocks || 10,
       energyRemaining: energy,
@@ -565,7 +653,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
   const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
   const executeBlock = async (block: Block) => {
-    if (stopRequested.current || energy <= 0) return;
+    if (stopRequested.current || energyRef.current <= 0) return;
     setCurrentBlockId(block.id);
     soundManager.play("execute");
     engineRef.current?.setRobotEmotion?.("thinking");
@@ -600,8 +688,11 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
           // Check collision before moving
           if (engineRef.current.getBotPosition && engineRef.current.checkCollision) {
             const { x, z, rotation } = engineRef.current.getBotPosition();
-            const targetX = x + Math.sin(rotation) * (dist / 10);
-            const targetZ = z - Math.cos(rotation) * (dist / 10);
+            // Convert rotation to forward direction
+            const fx = Math.sin(rotation);
+            const fz = -Math.cos(rotation);
+            const targetX = x + fx * (dist / 10);
+            const targetZ = z + fz * (dist / 10);
 
             if (engineRef.current.checkCollision(targetX, targetZ)) {
               engineRef.current?.setRobotEmotion?.("sad");
@@ -633,6 +724,22 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         const backDist = parseFloat(block.params.distancia || "30");
         addLog(`Retrocediendo ${backDist} unidades...`);
         consumeEnergy(backDist * 0.2);
+
+        if (engineRef.current?.getBotPosition && engineRef.current?.checkCollision) {
+          const { x, z, rotation } = engineRef.current.getBotPosition();
+          const fx = Math.sin(rotation + Math.PI);
+          const fz = -Math.cos(rotation + Math.PI);
+          const backTargetX = x + fx * (backDist / 10 / 2);
+          const backTargetZ = z + fz * (backDist / 10 / 2);
+          if (engineRef.current.checkCollision(backTargetX, backTargetZ)) {
+            engineRef.current?.setRobotEmotion?.("sad");
+            engineRef.current?.robotSpeak?.("Hay algo detras! No puedo retroceder.", 2000);
+            soundManager.play("error");
+            addLog("Obstaculo detras! No se puede retroceder.", "error");
+            break;
+          }
+        }
+
         if (engineRef.current) {
           await engineRef.current.rotateCore(180, 500);
           await engineRef.current.moveForward(backDist, 1000);
@@ -890,14 +997,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
         for (let i = 0; i < repIterations; i++) {
           if (stopRequested.current) break;
-          if (energy <= 0) {
+          if (energyRef.current <= 0) {
             addLog("Batería agotada. Abortando bucle.", "error");
             break;
           }
 
           for (const child of repChildren) {
             if (stopRequested.current) break;
-            if (energy <= 0) break;
+            if (energyRef.current <= 0) break;
             await executeBlock(child);
             await delay(200);
           }
@@ -916,14 +1023,14 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         let iterCount = 0;
         while (iterCount < maxIter) {
           if (stopRequested.current) break;
-          if (energy <= 0) {
+          if (energyRef.current <= 0) {
             addLog("Batería agotada. Abortando bucle.", "error");
             break;
           }
 
           for (const child of whileChildren) {
             if (stopRequested.current) break;
-            if (energy <= 0) break;
+            if (energyRef.current <= 0) break;
             await executeBlock(child);
             await delay(200);
           }
@@ -937,20 +1044,20 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
       case "por_cada": {
         const forEachChildren = block.children || [];
-        const itemCount = 3;
+        const itemCount = parseInt(block.params.iteraciones || "3", 10);
         addLog(`Iniciando bucle POR_CADA (items: ${itemCount})`);
         consumeEnergy(2);
 
         for (let i = 0; i < itemCount; i++) {
           if (stopRequested.current) break;
-          if (energy <= 0) {
+          if (energyRef.current <= 0) {
             addLog("Batería agotada. Abortando bucle.", "error");
             break;
           }
 
           for (const child of forEachChildren) {
             if (stopRequested.current) break;
-            if (energy <= 0) break;
+            if (energyRef.current <= 0) break;
             await executeBlock(child);
             await delay(200);
           }
@@ -989,7 +1096,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     try {
       for (const block of blocks) {
         if (stopRequested.current) break;
-        if (energy <= 0) {
+        if (energyRef.current <= 0) {
           addLog("Batería agotada. Abortando misión.", "error");
           engineRef.current?.setRobotEmotion?.("sad");
           engineRef.current?.robotSpeak?.("Sin energia... necesito recargar.", 2000);
@@ -1000,19 +1107,52 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         await delay(executionSpeed);
       }
 
-      if (!stopRequested.current && energy > 0) {
+      if (!stopRequested.current && energyRef.current > 0) {
         addLog("Programa finalizado.", "success");
-        // Auto-completar misión actual si hay misión activa
-        const currentMission = missions[currentMissionIndex];
-        if (currentMission && !currentMission.isCompleted && !isFreeMode) {
-          engineRef.current?.setRobotEmotion?.("celebrating");
-          engineRef.current?.robotSpeak?.("Mision completada!", 2500);
-          completeMission();
-        } else if (currentMission && !currentMission.isCompleted) {
-          engineRef.current?.setRobotEmotion?.("idle");
-          setEnergy(100);
+
+        // Check goal for level mode
+        if (currentLevel && engineRef.current?.getBotPosition && engineRef.current?.checkGoalReached) {
+          const { x, z } = engineRef.current.getBotPosition();
+          if (engineRef.current.checkGoalReached(x, z)) {
+            const starsResult = calculateStars({
+              score: 100,
+              blocksUsed: blocks.length,
+              maxBlocks: currentLevel.maxBlocks || 10,
+              energyRemaining: energy,
+              loopsUsed: blocks.filter((b) => b.category === "loop").length,
+              nestedLoops: 1,
+              environmentsCompleted: [environment],
+              consecutiveCompletions,
+            });
+
+            setLevelStars(starsResult.stars);
+            setScore((prev) => prev + starsResult.stars * 500);
+            saveLevelResult(currentLevel.id!, starsResult.stars, blocks.length, Math.round(energy));
+            setConsecutiveCompletions((prev) => prev + 1);
+
+            engineRef.current?.setRobotEmotion?.("celebrating");
+            engineRef.current?.robotSpeak?.(
+              starsResult.stars === 3 ? "Increible! 3 estrellas!" : `Mision completada! ${starsResult.stars} estrellas`,
+              3000
+            );
+
+            addLog(`Nivel completado! ${starsResult.label} (${starsResult.stars}/3 estrellas)`, "success");
+            setTimeout(() => setLevelComplete(true), 500);
+          } else {
+            engineRef.current?.setRobotEmotion?.("idle");
+            engineRef.current?.robotSpeak?.("Casi! Intenta llegar al beacon dorado.", 2000);
+          }
         } else {
-          engineRef.current?.setRobotEmotion?.("idle");
+          // Free mode / old behavior
+          const currentMission = missions[currentMissionIndex];
+          if (currentMission && !currentMission.isCompleted && !isFreeMode) {
+            completeMission();
+          } else if (currentMission && !currentMission.isCompleted) {
+            engineRef.current?.setRobotEmotion?.("idle");
+            setEnergy(100);
+          } else {
+            engineRef.current?.setRobotEmotion?.("idle");
+          }
         }
       } else {
         // Restaurar energía si la ejecución se detuvo o se agotó la batería
@@ -1099,6 +1239,13 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
         setCurrentBlockId,
         blockError,
         clearBlockError,
+
+        currentLevelId,
+        currentLevel,
+        setLevel,
+        levelComplete,
+        levelStars,
+        dismissLevelComplete,
 
         submitRobotSimulation,
         simulationLoading,

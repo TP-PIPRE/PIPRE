@@ -32,7 +32,7 @@ export class BotStageEngine implements ISimulatorEngine {
   private wheels: THREE.Mesh[] = [];
 
   private animationId: number | null = null;
-  private clock: THREE.Clock;
+  private timer: THREE.Timer;
   private controls!: MapControls;
   private starfield!: THREE.Points;
 
@@ -68,7 +68,7 @@ export class BotStageEngine implements ISimulatorEngine {
 
     this.scene = scene;
     this.camera = camera;
-    this.clock = new THREE.Clock();
+    this.timer = new THREE.Timer();
     this.animationEngine = new MathAnimationEngine();
 
     createShadowFloor(this.scene, 80, -0.5, "#111827");
@@ -318,7 +318,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
 
@@ -419,6 +419,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.composer.dispose();
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
+    this.blockBar.dispose();
     this.renderer.dispose();
   }
 
@@ -566,14 +567,14 @@ export class BotStageEngine implements ISimulatorEngine {
         }
 
         if (progress < 1 && this.isRunning) {
-          requestAnimationFrame(() => animatePulse(this.clock.getDelta()));
+          requestAnimationFrame(() => animatePulse(this.timer.getDelta()));
         } else {
           (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity = 0;
           resolve(Math.floor(Math.random() * 15) + 5);
         }
       };
 
-      this.clock.getDelta();
+      this.timer.getDelta();
       animatePulse(0);
     });
   }
@@ -726,7 +727,7 @@ export class BotStageEngine implements ISimulatorEngine {
         const p = Math.min(elapsed / halfDuration, 1);
         shieldMat.opacity = p < 0.5 ? 0.6 * p * 2 : 0.6 * (1 - (p - 0.5) * 2);
         if (p < 1) {
-          requestAnimationFrame(() => fadeIn(this.clock.getDelta()));
+          requestAnimationFrame(() => fadeIn(this.timer.getDelta()));
         } else {
           this.botGroup.remove(shield);
           shieldGeo.dispose();
@@ -734,7 +735,7 @@ export class BotStageEngine implements ISimulatorEngine {
           resolve();
         }
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       fadeIn(0);
     });
   }
@@ -961,6 +962,13 @@ export class BotStageEngine implements ISimulatorEngine {
       (this.goalBeacon.material as THREE.Material)?.dispose();
     }
 
+    const oldDot = (this as any)._goalBeaconDot as THREE.Mesh | undefined;
+    if (oldDot) {
+      this.scene.remove(oldDot);
+      oldDot.geometry?.dispose();
+      (oldDot.material as THREE.Material)?.dispose();
+    }
+
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
       color: "#fbbf24",
@@ -983,6 +991,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.scene.add(dot);
 
     this.goalBeacon = ring;
+    (this as any)._goalBeaconDot = dot;
   }
 
   checkGoalReached(x: number, z: number): boolean {
@@ -1019,34 +1028,44 @@ export class BotStageEngine implements ISimulatorEngine {
   getObstacles(): Array<{ x: number; z: number; radius: number }> {
     const obstacles: Array<{ x: number; z: number; radius: number }> = [];
     this.scene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const name = child.name || "";
-        const isObstacle =
-          name.includes("wall") || name.includes("level_") ||
-          name.includes("pillar") || name.includes("barrier") ||
-          name.includes("enemy") || name.includes("block") ||
-          name.includes("tree") || name.includes("crate") ||
-          name.includes("ramp") || name.includes("cone") ||
-          name.includes("turret") || name.includes("generator");
-        if (isObstacle && child.geometry.boundingSphere) {
-          obstacles.push({
-            x: child.position.x,
-            z: child.position.z,
-            radius: child.geometry.boundingSphere.radius * 1.2,
-          });
+      if (!(child instanceof THREE.Mesh) || !child.name) return;
+      const wp = new THREE.Vector3();
+      child.getWorldPosition(wp);
+      const name = child.name;
+      let radius = 0;
+      if (name.includes("trunk") || name.includes("tree")) radius = 0.5;
+      else if (name.includes("temple") || name.includes("pillar")) radius = 0.7;
+      else if (name.includes("door") || name.includes("arch")) radius = 0.6;
+      else if (name.includes("crystal") || name.includes("rock")) radius = 0.7;
+      else if (name.includes("wall") || name.includes("level_wall")) radius = 1.8;
+      else if (name.includes("barrier") || name.includes("cone")) radius = 0.6;
+      else if (name.includes("ship")) radius = 3;
+      else if (name.includes("enemy")) radius = 1.5;
+      else if (name.includes("crate")) radius = 0.8;
+      else if (name.includes("level_block") || name.includes("block")) radius = 0.8;
+      else if (name.includes("level_enemy")) radius = 1.5;
+      else if (name.includes("level_crate")) radius = 0.8;
+      else if (name.includes("level_sample") || name.includes("level_door")) radius = 0.6;
+      else if (name.includes("level_cone")) radius = 0.5;
+      else if (name.includes("ramp")) radius = 1;
+      else if (name.includes("grandstand")) radius = 1;
+      else if (name.includes("turret")) radius = 0.8;
+      else if (name.includes("generator")) radius = 2.5;
+      else if (name.includes("bridge") || name.includes("debris")) radius = 0.7;
+      else if (name.includes("canyon")) radius = 1.5;
+      else if (name.includes("loop") || name.includes("tunnel")) radius = 1.2;
+      if (radius > 0) {
+        obstacles.push({ x: wp.x, z: wp.z, radius });
+      }
+    });
+    const enemies = (this as any).enemies as THREE.Mesh[] | undefined;
+    if (enemies) {
+      enemies.forEach((e: THREE.Mesh) => {
+        if (e.visible !== false) {
+          obstacles.push({ x: e.position.x, z: e.position.z, radius: 1.5 });
         }
-      }
-    });
-    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
-      if (enemy.visible) {
-        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
-      }
-    });
-    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
-      if (obs.visible) {
-        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
-      }
-    });
+      });
+    }
     return obstacles;
   }
 
@@ -1055,8 +1074,7 @@ export class BotStageEngine implements ISimulatorEngine {
     for (const obs of obstacles) {
       const dx = x - obs.x;
       const dz = z - obs.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < obs.radius) return true;
+      if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
   }

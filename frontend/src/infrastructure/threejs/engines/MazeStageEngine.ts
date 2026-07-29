@@ -22,7 +22,7 @@ export class MazeStageEngine implements ISimulatorEngine {
   private ultrasonicCone: THREE.Mesh;
   private particles: ParticleSystem;
   private animationId: number | null = null;
-  private clock: THREE.Clock;
+  private timer: THREE.Timer;
   private controls!: MapControls;
   private isRunning = false;
   private doors: THREE.Mesh[] = [];
@@ -49,23 +49,24 @@ export class MazeStageEngine implements ISimulatorEngine {
       fogFar: 60,
       bgColor: "#0a0a1a",
       ambientColor: "#332244",
-      ambientIntensity: 0.5,
+      ambientIntensity: 0.55,
       skyColor: "#2a1a3e",
       groundColor: "#0a0a1a",
-      hemiIntensity: 0.45,
+      hemiIntensity: 0.5,
       dirColor: "#9988bb",
       dirIntensity: 0.7,
       dirPos: [8, 15, 8],
     });
     this.scene = scene;
     this.camera = camera;
-    this.clock = new THREE.Clock();
+    this.timer = new THREE.Timer();
 
     this.botParts = MazeBotBuilder.create();
     this.botGroup = this.botParts.group;
     this.ultrasonicCone = this.createUltrasonicCone();
     this.botGroup.add(this.ultrasonicCone);
     this.scene.add(this.botGroup);
+    this.botGroup.position.set(-18, 0, 0);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
 
@@ -88,7 +89,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     // ===== DARK SOIL FLOOR =====
     const floorGeo = new THREE.PlaneGeometry(60, 60);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: "#080808",
+      color: "#10101a",
       roughness: 1,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -142,11 +143,11 @@ export class MazeStageEngine implements ISimulatorEngine {
 
     // ===== PROCEDURAL FOREST (60+ TREES) =====
     const treeTrunkMat = new THREE.MeshStandardMaterial({
-      color: "#1a0f08",
+      color: "#2d1a10",
       roughness: 0.9,
     });
     const treeCrownMat = new THREE.MeshStandardMaterial({
-      color: "#0a1a0a",
+      color: "#0d2410",
       roughness: 0.85,
     });
     const treeCount = 65;
@@ -161,8 +162,9 @@ export class MazeStageEngine implements ISimulatorEngine {
 
       const trunkHeight = 2.5 + Math.random() * 3.5;
       const trunkGeo = new THREE.CylinderGeometry(0.12, 0.25, trunkHeight, 8);
-      const trunk = new THREE.Mesh(trunkGeo, treeTrunkMat);
-      trunk.position.set(tx, trunkHeight / 2 - 0.5, tz);
+       const trunk = new THREE.Mesh(trunkGeo, treeTrunkMat);
+       trunk.name = "tree_trunk";
+       trunk.position.set(tx, trunkHeight / 2 - 0.5, tz);
       trunk.rotation.z = (Math.random() - 0.5) * 0.2;
       trunk.castShadow = true;
       this.scene.add(trunk);
@@ -171,8 +173,9 @@ export class MazeStageEngine implements ISimulatorEngine {
       const crownHeight = 1.5 + Math.random() * 2;
       const crownRadius = 0.5 + Math.random() * 0.7;
       const crownGeo = new THREE.ConeGeometry(crownRadius, crownHeight, 8);
-      const crown = new THREE.Mesh(crownGeo, treeCrownMat);
-      crown.position.set(tx, trunkHeight - 0.3, tz);
+       const crown = new THREE.Mesh(crownGeo, treeCrownMat);
+       crown.name = "tree_crown";
+       crown.position.set(tx, trunkHeight - 0.3, tz);
       crown.castShadow = true;
       this.scene.add(crown);
       this.treeTrunks.push(crown);
@@ -192,22 +195,25 @@ export class MazeStageEngine implements ISimulatorEngine {
 
     // Stepped pyramid: 3 layers
     const bottomGeo = new THREE.BoxGeometry(8, 2, 8);
-    const bottom = new THREE.Mesh(bottomGeo, templeStoneMat);
-    bottom.position.y = 0.5;
+     const bottom = new THREE.Mesh(bottomGeo, templeStoneMat);
+     bottom.name = "temple_block";
+     bottom.position.y = 0.5;
     bottom.castShadow = true;
     bottom.receiveShadow = true;
     this.templeGroup.add(bottom);
 
     const middleGeo = new THREE.BoxGeometry(6, 1.8, 6);
-    const middle = new THREE.Mesh(middleGeo, templeStoneMat);
-    middle.position.y = 1.9;
+     const middle = new THREE.Mesh(middleGeo, templeStoneMat);
+     middle.name = "temple_block";
+     middle.position.y = 1.9;
     middle.castShadow = true;
     middle.receiveShadow = true;
     this.templeGroup.add(middle);
 
     const topGeo = new THREE.BoxGeometry(4, 1.5, 4);
-    const top = new THREE.Mesh(topGeo, templeStoneMat);
-    top.position.y = 3.0;
+     const top = new THREE.Mesh(topGeo, templeStoneMat);
+     top.name = "temple_block";
+     top.position.y = 3.0;
     top.castShadow = true;
     top.receiveShadow = true;
     this.templeGroup.add(top);
@@ -218,8 +224,9 @@ export class MazeStageEngine implements ISimulatorEngine {
     ];
     cornerOffsets.forEach(([cx, cz]) => {
       const pillarGeo = new THREE.CylinderGeometry(0.25, 0.35, 4.5, 8);
-      const pillar = new THREE.Mesh(pillarGeo, templeStoneMat);
-      pillar.position.set(cx, 2.25, cz);
+       const pillar = new THREE.Mesh(pillarGeo, templeStoneMat);
+       pillar.name = "temple_pillar";
+       pillar.position.set(cx, 2.25, cz);
       pillar.castShadow = true;
       this.templeGroup.add(pillar);
     });
@@ -257,6 +264,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.templeGroup.add(this.portalLight);
 
     this.scene.add(this.templeGroup);
+    this.templeGroup.position.set(12, 0, 0);
 
     // Temple corner point lights
     const cornerLightOffsets = [
@@ -265,7 +273,8 @@ export class MazeStageEngine implements ISimulatorEngine {
     cornerLightOffsets.forEach(([lx, lz]) => {
       const light = new THREE.PointLight("#a78bfa", 0.4, 12);
       light.position.set(lx, 2.5, lz);
-      this.scene.add(light);
+      light.name = "temple_light";
+      this.templeGroup.add(light);
     });
 
     // ===== RUNAS ON PATHS (8 markers) =====
@@ -277,15 +286,16 @@ export class MazeStageEngine implements ISimulatorEngine {
       // Diagonal path
       [-12, -8], [12, 8],
     ];
-    const runeMat = new THREE.MeshBasicMaterial({
-      color: "#a78bfa",
-      transparent: true,
-      opacity: 0.3,
-    });
+     const runeMat = new THREE.MeshBasicMaterial({
+       color: "#a78bfa",
+       transparent: true,
+       opacity: 0.4,
+     });
     runePositions.forEach(([rx, rz]) => {
       const runeGeo = new THREE.RingGeometry(0.35, 0.45, 16);
-      const rune = new THREE.Mesh(runeGeo, runeMat.clone());
-      rune.rotation.x = -Math.PI / 2;
+       const rune = new THREE.Mesh(runeGeo, runeMat.clone());
+       rune.name = "rune_marker";
+       rune.rotation.x = -Math.PI / 2;
       rune.position.set(rx, -0.48, rz);
       this.scene.add(rune);
       this.runeMarkers.push(rune);
@@ -318,18 +328,20 @@ export class MazeStageEngine implements ISimulatorEngine {
     doorPlacements.forEach((pos) => {
       const archGroup = new THREE.Group();
 
-      const pillar1 = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.25, 3, 8),
-        doorArchMat
-      );
-      pillar1.position.set(-0.8, 1.5, 0);
-      archGroup.add(pillar1);
+       const pillar1 = new THREE.Mesh(
+         new THREE.CylinderGeometry(0.2, 0.25, 3, 8),
+         doorArchMat
+       );
+       pillar1.name = "door_pillar";
+       pillar1.position.set(-0.8, 1.5, 0);
+       archGroup.add(pillar1);
 
-      const pillar2 = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.25, 3, 8),
-        doorArchMat
-      );
-      pillar2.position.set(0.8, 1.5, 0);
+       const pillar2 = new THREE.Mesh(
+         new THREE.CylinderGeometry(0.2, 0.25, 3, 8),
+         doorArchMat
+       );
+       pillar2.name = "door_pillar";
+       pillar2.position.set(0.8, 1.5, 0);
       archGroup.add(pillar2);
 
       // Half-torus arch top
@@ -338,11 +350,12 @@ export class MazeStageEngine implements ISimulatorEngine {
       archTop.position.set(0, 2.8, 0);
       archGroup.add(archTop);
 
-      const veil = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5, 2.5, 0.15),
-        doorVeilMat
-      );
-      veil.position.set(pos.x, 0.75, pos.z);
+       const veil = new THREE.Mesh(
+         new THREE.BoxGeometry(1.5, 2.5, 0.15),
+         doorVeilMat
+       );
+       veil.name = "door_veil";
+       veil.position.set(pos.x, 0.75, pos.z);
       this.scene.add(veil);
 
       archGroup.position.set(pos.x, 0, pos.z);
@@ -354,6 +367,55 @@ export class MazeStageEngine implements ISimulatorEngine {
         position: new THREE.Vector3(pos.x, 0, pos.z),
       });
       this.doors.push(veil);
+    });
+
+    // ===== MAZE WALLS - forming a winding labyrinth =====
+    const mazeWallMat = new THREE.MeshStandardMaterial({
+      color: "#2a1835", roughness: 0.7, metalness: 0.2,
+      emissive: "#150a1e", emissiveIntensity: 0.1,
+    });
+
+    const wallSegments: Array<[number, number, number, boolean]> = [
+      [-2.5, -16, 5, true],
+      [2.5, -12, 4, true],
+      [-2.5, -8, 3, true],
+      [2.5, -4, 5, true],
+      [-2.5, 2, 4, true],
+      [2.5, 6, 3, true],
+      [-2.5, 10, 4, true],
+      [2.5, 14, 3, true],
+
+      [-10, -2.5, 3, false],
+      [-6, 2.5, 4, false],
+      [-2, -2.5, 3, false],
+      [2, 2.5, 4, false],
+      [6, -2.5, 3, false],
+      [10, 2.5, 2, false],
+
+      [-8, -4, 3, true],
+      [-3, 0, 2, false],
+      [2, 3, 3, true],
+      [7, 6, 2, false],
+    ];
+
+    wallSegments.forEach(([x, z, len, isHorizontal]) => {
+      const w = isHorizontal ? len : 0.5;
+      const d = isHorizontal ? 0.5 : len;
+      const geo = new THREE.BoxGeometry(w, 1.5, d);
+      const wall = new THREE.Mesh(geo, mazeWallMat);
+      wall.position.set(x, 0.25, z);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      wall.name = "maze_wall";
+      this.scene.add(wall);
+
+      const edgeGeo = new THREE.BoxGeometry(w - 0.1, 0.05, d - 0.1);
+      const edge = new THREE.Mesh(edgeGeo, new THREE.MeshBasicMaterial({
+        color: "#a78bfa", transparent: true, opacity: 0.15, depthWrite: false,
+      }));
+      edge.position.set(x, 1.0, z);
+      edge.name = "maze_wall_edge";
+      this.scene.add(edge);
     });
 
     // ===== FIREFLIES (80 particles) =====
@@ -391,6 +453,22 @@ export class MazeStageEngine implements ISimulatorEngine {
       light.position.set(x, 1.8, z);
       this.scene.add(light);
     });
+
+    const gemGeo = new THREE.OctahedronGeometry(0.2);
+    const gemMat = new THREE.MeshStandardMaterial({
+      color: "#a78bfa",
+      emissive: "#a78bfa",
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+      metalness: 0.1,
+    });
+    pathLights.forEach(({ x, z }) => {
+      const gem = new THREE.Mesh(gemGeo, gemMat);
+      gem.position.set(x, 2.4, z);
+      gem.name = "beacon_gem";
+      this.scene.add(gem);
+      this.beacons.push(gem);
+    });
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -398,7 +476,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.composer = createEffectComposer(this.renderer, this.scene, this.camera, BLOOM_PRESETS.maze);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.3;
@@ -458,6 +536,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.composer.dispose();
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
+    this.blockBar.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -484,7 +563,7 @@ export class MazeStageEngine implements ISimulatorEngine {
       // Pulse runes
       this.runeMarkers.forEach((rune, i) => {
         const mat = rune.material as THREE.MeshBasicMaterial;
-        mat.opacity = 0.15 + Math.sin(Date.now() * 0.004 + i) * 0.15;
+        mat.opacity = 0.25 + Math.sin(Date.now() * 0.004 + i) * 0.25;
       });
 
       // Wave magical door veils
@@ -511,9 +590,8 @@ export class MazeStageEngine implements ISimulatorEngine {
 
       // Sway tree crowns gently
       this.treeTrunks.forEach((tree, i) => {
-        if (i % 3 === 0) {
-          tree.rotation.z += Math.sin(Date.now() * 0.001 + i) * 0.0005;
-        }
+        tree.rotation.z = Math.sin(Date.now() * 0.0008 + i * 0.4) * 0.04;
+        tree.rotation.x = Math.cos(Date.now() * 0.0006 + i * 0.3) * 0.02;
       });
 
       this.ghostPreview.animate(Date.now() * 0.001);
@@ -550,13 +628,13 @@ export class MazeStageEngine implements ISimulatorEngine {
         const p = Math.min(elapsed / (duration / 1000), 1);
         (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity = p < 0.5 ? p * 1.6 : (1 - p) * 1.6;
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.timer.getDelta()));
         } else {
           (this.ultrasonicCone.material as THREE.MeshBasicMaterial).opacity = 0;
           resolve(Math.floor(Math.random() * 10) + 3);
         }
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       animate(0);
     });
   }
@@ -581,6 +659,8 @@ export class MazeStageEngine implements ISimulatorEngine {
       const dz = door.position.z - this.botGroup.position.z;
       if (Math.sqrt(dx * dx + dz * dz) < 4) {
         door.position.y = -10;
+        const magicDoor = this.magicalDoors.find(d => d.veil === door);
+        if (magicDoor?.arch) magicDoor.arch.visible = false;
         opened = true;
         this.triggerParticles(door.position.x, door.position.z, "magic");
         break;
@@ -631,9 +711,10 @@ export class MazeStageEngine implements ISimulatorEngine {
   stop() {}
 
   reset() {
-    this.botGroup.position.set(0, 0, 0);
+    this.botGroup.position.set(-18, 0, 0);
     this.botGroup.rotation.set(0, 0, 0);
     this.doors.forEach((door) => { door.position.y = 0.75; });
+    this.magicalDoors.forEach((door) => { if (door.arch) door.arch.visible = true; });
   }
 
   private async animatePosition(distance: number, duration: number) {
@@ -648,10 +729,10 @@ export class MazeStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.position.lerpVectors(start, end, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.timer.getDelta()));
         } else resolve();
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       animate(0);
     });
   }
@@ -667,10 +748,10 @@ export class MazeStageEngine implements ISimulatorEngine {
         const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         this.botGroup.rotation.y = THREE.MathUtils.lerp(start, end, ease);
         if (p < 1 && this.isRunning) {
-          requestAnimationFrame(() => animate(this.clock.getDelta()));
+          requestAnimationFrame(() => animate(this.timer.getDelta()));
         } else resolve();
       };
-      this.clock.getDelta();
+      this.timer.getDelta();
       animate(0);
     });
   }
@@ -804,6 +885,13 @@ export class MazeStageEngine implements ISimulatorEngine {
       (this.goalBeacon.material as THREE.Material)?.dispose();
     }
 
+    const oldDot = (this as any)._goalBeaconDot as THREE.Mesh | undefined;
+    if (oldDot) {
+      this.scene.remove(oldDot);
+      oldDot.geometry?.dispose();
+      (oldDot.material as THREE.Material)?.dispose();
+    }
+
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
       color: "#fbbf24",
@@ -826,6 +914,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.scene.add(dot);
 
     this.goalBeacon = ring;
+    (this as any)._goalBeaconDot = dot;
   }
 
   checkGoalReached(x: number, z: number): boolean {
@@ -862,34 +951,44 @@ export class MazeStageEngine implements ISimulatorEngine {
   getObstacles(): Array<{ x: number; z: number; radius: number }> {
     const obstacles: Array<{ x: number; z: number; radius: number }> = [];
     this.scene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        const name = child.name || "";
-        const isObstacle =
-          name.includes("wall") || name.includes("level_") ||
-          name.includes("pillar") || name.includes("barrier") ||
-          name.includes("enemy") || name.includes("block") ||
-          name.includes("tree") || name.includes("crate") ||
-          name.includes("ramp") || name.includes("cone") ||
-          name.includes("turret") || name.includes("generator");
-        if (isObstacle && child.geometry.boundingSphere) {
-          obstacles.push({
-            x: child.position.x,
-            z: child.position.z,
-            radius: child.geometry.boundingSphere.radius * 1.2,
-          });
+      if (!(child instanceof THREE.Mesh) || !child.name) return;
+      const wp = new THREE.Vector3();
+      child.getWorldPosition(wp);
+      const name = child.name;
+      let radius = 0;
+      if (name.includes("trunk") || name.includes("tree")) radius = 0.5;
+      else if (name.includes("temple") || name.includes("pillar")) radius = 0.7;
+      else if (name.includes("door") || name.includes("arch")) radius = 0.6;
+      else if (name.includes("crystal") || name.includes("rock")) radius = 0.7;
+      else if (name.includes("wall") || name.includes("level_wall")) radius = 1.8;
+      else if (name.includes("barrier") || name.includes("cone")) radius = 0.6;
+      else if (name.includes("ship")) radius = 3;
+      else if (name.includes("enemy")) radius = 1.5;
+      else if (name.includes("crate")) radius = 0.8;
+      else if (name.includes("level_block") || name.includes("block")) radius = 0.8;
+      else if (name.includes("level_enemy")) radius = 1.5;
+      else if (name.includes("level_crate")) radius = 0.8;
+      else if (name.includes("level_sample") || name.includes("level_door")) radius = 0.6;
+      else if (name.includes("level_cone")) radius = 0.5;
+      else if (name.includes("ramp")) radius = 1;
+      else if (name.includes("grandstand")) radius = 1;
+      else if (name.includes("turret")) radius = 0.8;
+      else if (name.includes("generator")) radius = 2.5;
+      else if (name.includes("bridge") || name.includes("debris")) radius = 0.7;
+      else if (name.includes("canyon")) radius = 1.5;
+      else if (name.includes("loop") || name.includes("tunnel")) radius = 1.2;
+      if (radius > 0) {
+        obstacles.push({ x: wp.x, z: wp.z, radius });
+      }
+    });
+    const enemies = (this as any).enemies as THREE.Mesh[] | undefined;
+    if (enemies) {
+      enemies.forEach((e: THREE.Mesh) => {
+        if (e.visible !== false) {
+          obstacles.push({ x: e.position.x, z: e.position.z, radius: 1.5 });
         }
-      }
-    });
-    (this as any).enemies?.forEach?.((enemy: THREE.Mesh) => {
-      if (enemy.visible) {
-        obstacles.push({ x: enemy.position.x, z: enemy.position.z, radius: 1.5 });
-      }
-    });
-    this.levelObstacles?.forEach?.((obs: THREE.Mesh) => {
-      if (obs.visible) {
-        obstacles.push({ x: obs.position.x, z: obs.position.z, radius: 1.2 });
-      }
-    });
+      });
+    }
     return obstacles;
   }
 
@@ -898,8 +997,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     for (const obs of obstacles) {
       const dx = x - obs.x;
       const dz = z - obs.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < obs.radius) return true;
+      if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
   }

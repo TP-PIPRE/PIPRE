@@ -18,7 +18,15 @@ export interface PlayerProgress {
 export function loadProgress(): PlayerProgress {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const data = JSON.parse(raw);
+      return {
+        completedLevels: data.completedLevels || {},
+        totalStars: data.totalStars || 0,
+        achievements: data.achievements || [],
+        tutorialCompleted: data.tutorialCompleted || false,
+      };
+    }
   } catch (e) {
     console.warn("Failed to load progress", e);
   }

@@ -16,6 +16,8 @@ import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
 import { SimulatorLayout } from "../components/Simulador/SimulatorLayout";
 import { MermaidViewer } from "../components/Simulador/MermaidViewer";
 import { TutorialOverlay } from "../components/Simulador/TutorialOverlay";
+import { VictoryOverlay } from "../components/Simulador/VictoryOverlay";
+import { LevelSelector } from "../components/Simulador/LevelSelector";
 import { NavigationModeDetector } from "../../application/adapters/NavigationModeDetector";
 import { ChallengeAdapter, type AdaptedChallenge } from "../../application/adapters/ChallengeAdapter";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
@@ -169,11 +171,18 @@ const SimuladorInner = () => {
     setExecutionSpeed,
     isStepMode,
     setStepMode,
+    currentLevel,
+    setLevel,
+    levelComplete,
+    levelStars,
+    dismissLevelComplete,
   } = useSimulador();
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [showChallengeList, setShowChallengeList] = useState(false);
   const [showMermaid, setShowMermaid] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showLevelSelector, setShowLevelSelector] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [activeLeftTab, setActiveLeftTab] = useState("hardware");
   const [activeRightTab, setActiveRightTab] = useState("missions");
 
@@ -230,6 +239,17 @@ const SimuladorInner = () => {
     }
   }, []);
 
+  // Transition effect when environment changes
+  const prevEnvRef = useRef(environment);
+  useEffect(() => {
+    if (prevEnvRef.current !== environment) {
+      setIsTransitioning(true);
+      const timer = setTimeout(() => setIsTransitioning(false), 400);
+      prevEnvRef.current = environment;
+      return () => clearTimeout(timer);
+    }
+  }, [environment]);
+
   const handleBackToCourses = () => {
     setFreeMode();
     navigate("/");
@@ -283,11 +303,57 @@ const SimuladorInner = () => {
     }
   };
 
+  const getNextLevelId = (levelId: string): string | null => {
+    const parts = levelId.split("-");
+    const env = parts[0];
+    const num = parseInt(parts[1]);
+    if (num < 3) return `${env}-${num + 1}`;
+    if (env === "battle") return "space-1";
+    if (env === "space") return "maze-1";
+    if (env === "maze") return "obstacle-1";
+    return null;
+  };
+
   return (
     <div className="flex flex-col h-screen max-h-screen overflow-hidden">
       <h1 className="sr-only">Simulador</h1>
 
-      {navigationMode.mode === "playground" && <EnvironmentSelector />}
+      {navigationMode.mode === "playground" && (
+        <div className="flex items-center gap-2 px-4 py-2 border-b border-border" style={{ backgroundColor: "var(--surface)" }}>
+          <EnvironmentSelector />
+          <div className="flex-1" />
+          <div className="flex gap-1">
+            <button
+              onClick={() => { setLevel(null); setShowLevelSelector(false); }}
+              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+                !showLevelSelector && !currentLevel
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-text-muted hover:text-text border border-border"
+              }`}
+            >
+              Modo Libre
+            </button>
+            <button
+              onClick={() => setShowLevelSelector(!showLevelSelector)}
+              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+                showLevelSelector || currentLevel
+                  ? "bg-amber-500 text-white shadow-sm"
+                  : "text-text-muted hover:text-text border border-border"
+              }`}
+            >
+              Niveles
+            </button>
+          </div>
+        </div>
+      )}
+      {showLevelSelector && navigationMode.mode === "playground" && (
+        <div className="border-b border-border bg-surface" style={{ backgroundColor: "var(--surface)" }}>
+          <LevelSelector
+            onSelectLevel={(levelId) => { setLevel(levelId); setShowLevelSelector(false); }}
+            selectedLevelId={currentLevel?.id || null}
+          />
+        </div>
+      )}
       {navigationMode.mode === "challenge" && adaptedChallenge && (
         <ChallengeInfoBar challenge={adaptedChallenge} />
       )}
@@ -559,6 +625,30 @@ const SimuladorInner = () => {
 
       <MermaidViewer isOpen={showMermaid} onClose={() => setShowMermaid(false)} />
 
+      {levelComplete && currentLevel && (
+        <VictoryOverlay
+          levelName={currentLevel.name}
+          stars={levelStars}
+          score={score}
+          blocksUsed={blocks.length}
+          maxBlocks={currentLevel.maxBlocks || 10}
+          hasNextLevel={!!getNextLevelId(currentLevel.id!)}
+          onNextLevel={() => {
+            const nextId = getNextLevelId(currentLevel.id!);
+            dismissLevelComplete();
+            if (nextId) setLevel(nextId);
+          }}
+          onRetry={() => {
+            dismissLevelComplete();
+            setLevel(currentLevel.id!);
+          }}
+          onExit={() => {
+            dismissLevelComplete();
+            setLevel(null);
+          }}
+        />
+      )}
+
       {showTutorial && (
         <TutorialOverlay
           onComplete={() => {
@@ -570,6 +660,11 @@ const SimuladorInner = () => {
             localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true }));
           }}
         />
+      )}
+
+      {/* Transition fade overlay */}
+      {isTransitioning && (
+        <div className="fixed inset-0 z-[9998] bg-black pointer-events-none animate-fade-in-soft" style={{ animationDuration: "0.4s" }} />
       )}
     </div>
   );
