@@ -207,6 +207,9 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
   const setEnvironment = (env: EnvironmentType) => {
     setEnvironmentState(env);
+    setCurrentLevel(null);
+    setCurrentLevelId(null);
+    setLevelComplete(false);
     setPortAssignments(autoAssignDefaults(env));
     setBlocks([]);
     setEnergy(100);
@@ -240,7 +243,7 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
     setEnvironmentState(level.environment);
     musicManager.play(level.environment);
     setBlocks([]);
-    setEnergy(100);
+    setEnergy(level.energyLimit || 100);
     setScore(0);
     setMissions(level.availableBlocks.map((type, i) => {
       const def = ENVIRONMENT_CONFIGS[level.environment]?.blocks.find((b) => b.type === type);
@@ -262,16 +265,22 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
 
     addLog(`Nivel cargado: ${level.name}`, "success");
 
-    // Load level into engine after a tick (engine needs to be init'd)
-    setTimeout(() => {
+    // Load level into engine after render cycle
+    requestAnimationFrame(() => {
       if (engineRef.current?.loadLevel) {
         const obsWithType = level.obstacles.map((o) => ({
           x: o.x, z: o.z, type: o.type, size: o.size,
         }));
         engineRef.current.loadLevel(obsWithType, level.startPosition, level.goalPosition);
         engineRef.current?.showGoalBeacon?.(level.goalPosition.x, level.goalPosition.z);
+        engineRef.current?.showGoalIndicator?.(level.goalPosition.x, level.goalPosition.z, level.name);
       }
-    }, 200);
+    });
+
+    // Robot dialog on level start
+    setTimeout(() => {
+      engineRef.current?.robotSpeak?.(`${level.name}. Vamos!`, 2000);
+    }, 500);
   };
 
   const setFreeMode = () => {
@@ -519,6 +528,8 @@ export const SimuladorProvider: React.FC<{ children: ReactNode }> = ({
      * await apiService.simulador.assignHardware(userId, environment, slotId, hardwareId);
      */
     setPortAssignments((prev) => ({ ...prev, [slotId]: hardwareId }));
+    engineRef.current?.robotSpeak?.(`${hardwareId} instalado!`, 1500);
+    soundManager.play("place");
     addLog(`Hardware instalado: ${hardwareId}`, "success");
   };
 

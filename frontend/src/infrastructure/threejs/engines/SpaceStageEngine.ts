@@ -10,6 +10,7 @@ import { GhostPreview } from "../shared/GhostPreview";
 import { RobotPersonality } from "../shared/RobotPersonality";
 import { CinematicCamera } from "../shared/CinematicCamera";
 import { BlockBar3D } from "../shared/BlockBar3D";
+import { WorldIndicators } from "../shared/WorldIndicators";
 
 export class SpaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -29,10 +30,14 @@ export class SpaceStageEngine implements ISimulatorEngine {
   private ghostPreview!: GhostPreview;
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
+  private levelStartPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private levelStartRot = 0;
+  private levelGoalPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private ambientDust: THREE.Points | null = null;
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private worldIndicators!: WorldIndicators;
   private crashedShip!: THREE.Group;
   private planetMesh!: THREE.Mesh;
   private dustStorm: THREE.Points | null = null;
@@ -99,6 +104,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
+    this.worldIndicators = new WorldIndicators(this.scene);
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
@@ -146,6 +152,47 @@ export class SpaceStageEngine implements ISimulatorEngine {
     terrain.position.y = -0.8;
     terrain.receiveShadow = true;
     this.scene.add(terrain);
+
+    // ZONE 1 - Landing Zone (blue-tinted flat area)
+    const zone1Geo = new THREE.CircleGeometry(6, 32);
+    const zone1Mat = new THREE.MeshStandardMaterial({ color: "#1a2a4a", roughness: 0.8, emissive: "#0a1530", emissiveIntensity: 0.1 });
+    const zone1 = new THREE.Mesh(zone1Geo, zone1Mat);
+    zone1.rotation.x = -Math.PI / 2;
+    zone1.position.set(-16, -0.25, 0);
+    zone1.name = "zone_landing";
+    zone1.receiveShadow = true;
+    this.scene.add(zone1);
+
+    // ZONE 2 - Crystal Field (purple-tinted)
+    const zone2Geo = new THREE.CircleGeometry(8, 32);
+    const zone2Mat = new THREE.MeshStandardMaterial({ color: "#2a1540", roughness: 0.85, emissive: "#150a25", emissiveIntensity: 0.1 });
+    const zone2 = new THREE.Mesh(zone2Geo, zone2Mat);
+    zone2.rotation.x = -Math.PI / 2;
+    zone2.position.set(4, -0.25, -8);
+    zone2.name = "zone_crystals";
+    this.scene.add(zone2);
+
+    // ZONE 3 - Canyon approach (dark)
+    const zone3Geo = new THREE.CircleGeometry(5, 32);
+    const zone3Mat = new THREE.MeshStandardMaterial({ color: "#0d0718", roughness: 0.9 });
+    const zone3 = new THREE.Mesh(zone3Geo, zone3Mat);
+    zone3.rotation.x = -Math.PI / 2;
+    zone3.position.set(0, -0.25, -6);
+    zone3.name = "zone_canyon";
+    this.scene.add(zone3);
+
+    // Zone boundary markers (small glowing posts)
+    const postGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.6, 6);
+    const postMat = new THREE.MeshStandardMaterial({ color: "#00f5d4", emissive: "#00f5d4", emissiveIntensity: 0.5 });
+    const zoneMarkers = [
+      [-18, 3], [-18, -3], [0, 1], [0, -1], [6, -4], [6, -12], [-2, -6], [2, -6]
+    ];
+    zoneMarkers.forEach(([mx, mz]) => {
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.set(mx, 0.1, mz);
+      post.name = "zone_marker";
+      this.scene.add(post);
+    });
 
     // Crashed spaceship
     this.crashedShip = new THREE.Group();
@@ -425,6 +472,58 @@ export class SpaceStageEngine implements ISimulatorEngine {
       this.scene.add(bl);
     });
 
+    // Cave entrance (dark hole in terrain)
+    const caveArchGeo = new THREE.TorusGeometry(2.5, 0.4, 8, 24);
+    const caveArchMat = new THREE.MeshStandardMaterial({ color: "#334466", roughness: 0.6, metalness: 0.4, emissive: "#112244", emissiveIntensity: 0.1 });
+    const caveArch = new THREE.Mesh(caveArchGeo, caveArchMat);
+    caveArch.rotation.x = Math.PI / 2.5;
+    caveArch.position.set(-18, 1.5, -14);
+    caveArch.name = "cave_entrance";
+    this.scene.add(caveArch);
+
+    // Cave darkness (black circle on ground)
+    const caveDarkGeo = new THREE.CircleGeometry(2, 24);
+    const caveDarkMat = new THREE.MeshBasicMaterial({ color: "#000011", transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const caveDark = new THREE.Mesh(caveDarkGeo, caveDarkMat);
+    caveDark.rotation.x = -Math.PI / 2;
+    caveDark.position.set(-18, -0.2, -14);
+    this.scene.add(caveDark);
+
+    // Cave glow light
+    const caveLight = new THREE.PointLight("#334488", 0.5, 8);
+    caveLight.position.set(-18, 1, -14);
+    caveLight.name = "cave_light";
+    this.scene.add(caveLight);
+
+    // Geysers - steam columns that push upward
+    const geyserPositions = [[-5, 3], [10, -14], [-8, 8]];
+    geyserPositions.forEach(([gx, gz]) => {
+      const geyserBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.5, 0.4, 8),
+        new THREE.MeshStandardMaterial({ color: "#667788", roughness: 0.3, metalness: 0.6 })
+      );
+      geyserBase.position.set(gx, 0.2, gz);
+      geyserBase.name = "geyser_base";
+      this.scene.add(geyserBase);
+
+      const steamCount = 30;
+      const steamGeo = new THREE.BufferGeometry();
+      const steamPos = new Float32Array(steamCount * 3);
+      for (let i = 0; i < steamCount; i++) {
+        steamPos[i * 3] = gx + (Math.random() - 0.5) * 0.4;
+        steamPos[i * 3 + 1] = Math.random() * 3;
+        steamPos[i * 3 + 2] = gz + (Math.random() - 0.5) * 0.4;
+      }
+      steamGeo.setAttribute("position", new THREE.BufferAttribute(steamPos, 3));
+      const steamPoints = new THREE.Points(steamGeo, new THREE.PointsMaterial({
+        color: "#aabbcc", size: 0.2, transparent: true, opacity: 0.3,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }));
+      steamPoints.position.set(gx, 0.4, gz);
+      steamPoints.name = "geyser_steam";
+      this.scene.add(steamPoints);
+    });
+
     // Rocks scattered (15-20)
     const rockMat = new THREE.MeshStandardMaterial({
       color: "#4a4050",
@@ -554,6 +653,7 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
     this.blockBar.dispose();
+    this.worldIndicators.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -622,6 +722,25 @@ export class SpaceStageEngine implements ISimulatorEngine {
 
       this.robotPersonality.update(0.016);
       this.blockBar.animate(Date.now() * 0.001);
+      this.worldIndicators.animate(Date.now() * 0.001);
+      // Animate geyser steam rising
+      this.scene.children.forEach((child) => {
+        if (child.name === "geyser_steam" && child instanceof THREE.Points) {
+          const pos = child.geometry.attributes.position.array as Float32Array;
+          for (let i = 0; i < pos.length; i += 3) {
+            pos[i + 1] += 0.02;
+            if (pos[i + 1] > 3) pos[i + 1] = 0;
+          }
+          child.geometry.attributes.position.needsUpdate = true;
+        }
+      });
+      // Pulse zone markers
+      this.scene.traverse((child) => {
+        if (child.name === "zone_marker" && child instanceof THREE.Mesh) {
+          const mat = child.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity = 0.4 + Math.sin(Date.now() * 0.004 + child.position.x) * 0.2;
+        }
+      });
       this.composer.render();
     };
     animate();
@@ -754,9 +873,13 @@ export class SpaceStageEngine implements ISimulatorEngine {
 
   stop() {}
 
-  reset() {
-    this.botGroup.position.set(0, 0, 0);
+  reset(): void {
+    this.botGroup.position.copy(this.levelStartPos);
     this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = this.levelStartRot;
+    if (this.levelGoalPos.length() > 0) {
+      this.showGoalBeacon(this.levelGoalPos.x, this.levelGoalPos.z);
+    }
     this.collectedSamples = 0;
     this.sampleMeshes.forEach((s) => { s.visible = true; });
   }
@@ -925,6 +1048,10 @@ export class SpaceStageEngine implements ISimulatorEngine {
     this.botGroup.rotation.set(0, 0, 0);
     this.botGroup.rotation.y = startPos.rotation;
 
+    this.levelStartPos.set(startPos.x, 0, startPos.z);
+    this.levelStartRot = startPos.rotation || 0;
+    this.levelGoalPos.set(goalPos.x, 0, goalPos.z);
+
     this.showGoalBeacon(goalPos.x, goalPos.z);
   }
 
@@ -941,6 +1068,8 @@ export class SpaceStageEngine implements ISimulatorEngine {
       oldDot.geometry?.dispose();
       (oldDot.material as THREE.Material)?.dispose();
     }
+
+    this.levelGoalPos.set(x, 0, z);
 
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
@@ -1050,6 +1179,10 @@ export class SpaceStageEngine implements ISimulatorEngine {
       if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
+  }
+
+  showGoalIndicator(x: number, z: number, text?: string): void {
+    this.worldIndicators.showGoalMarker(x, z, text);
   }
 
   private getTerrainHeight(x: number, z: number): number {

@@ -17,6 +17,7 @@ import { GhostPreview } from "./shared/GhostPreview";
 import { RobotPersonality } from "./shared/RobotPersonality";
 import { CinematicCamera } from "./shared/CinematicCamera";
 import { BlockBar3D } from "./shared/BlockBar3D";
+import { WorldIndicators } from "./shared/WorldIndicators";
 
 export class BotStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -42,9 +43,13 @@ export class BotStageEngine implements ISimulatorEngine {
   private ghostPreview!: GhostPreview;
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
+  private levelStartPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private levelStartRot = 0;
+  private levelGoalPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private worldIndicators!: WorldIndicators;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
@@ -82,6 +87,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
+    this.worldIndicators = new WorldIndicators(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
   }
 
@@ -420,6 +426,7 @@ export class BotStageEngine implements ISimulatorEngine {
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
     this.blockBar.dispose();
+    this.worldIndicators.dispose();
     this.renderer.dispose();
   }
 
@@ -483,6 +490,7 @@ export class BotStageEngine implements ISimulatorEngine {
 
       this.robotPersonality.update(0.016);
       this.blockBar.animate(Date.now() * 0.001);
+      this.worldIndicators.animate(Date.now() * 0.001);
       this.composer.render();
     };
     animate();
@@ -679,8 +687,12 @@ export class BotStageEngine implements ISimulatorEngine {
   }
 
   public reset(): void {
-    this.botGroup.position.set(0, 0, 0);
+    this.botGroup.position.copy(this.levelStartPos);
     this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = this.levelStartRot;
+    if (this.levelGoalPos.length() > 0) {
+      this.showGoalBeacon(this.levelGoalPos.x, this.levelGoalPos.z);
+    }
     this.animationEngine.cancelAll();
     this.updateVisorExpression("idle");
   }
@@ -952,6 +964,10 @@ export class BotStageEngine implements ISimulatorEngine {
     this.botGroup.rotation.set(0, 0, 0);
     this.botGroup.rotation.y = startPos.rotation;
 
+    this.levelStartPos.set(startPos.x, 0, startPos.z);
+    this.levelStartRot = startPos.rotation || 0;
+    this.levelGoalPos.set(goalPos.x, 0, goalPos.z);
+
     this.showGoalBeacon(goalPos.x, goalPos.z);
   }
 
@@ -968,6 +984,8 @@ export class BotStageEngine implements ISimulatorEngine {
       oldDot.geometry?.dispose();
       (oldDot.material as THREE.Material)?.dispose();
     }
+
+    this.levelGoalPos.set(x, 0, z);
 
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
@@ -1077,5 +1095,9 @@ export class BotStageEngine implements ISimulatorEngine {
       if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
+  }
+
+  showGoalIndicator(x: number, z: number, text?: string): void {
+    this.worldIndicators.showGoalMarker(x, z, text);
   }
 }

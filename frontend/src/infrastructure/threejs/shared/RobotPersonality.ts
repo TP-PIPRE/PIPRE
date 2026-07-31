@@ -80,9 +80,15 @@ export class RobotPersonality {
       mat.emissiveIntensity = config.coreIntensity;
     }
 
-    // Celebrating: spawn particles
+    // Celebrating: spawn particles and JUMP
     if (emotion === "celebrating") {
       this.spawnCelebrationParticles();
+      this.triggerJump();
+    }
+
+    // Excited: small jump
+    if (emotion === "excited") {
+      this.triggerJump();
     }
 
     // Scared: shrink briefly
@@ -245,6 +251,55 @@ export class RobotPersonality {
       this.celebrationParticles = this.celebrationParticles.filter((p) => p !== pts);
       if (this.emotion === "celebrating") this.setEmotion("idle");
     }, 4000);
+  }
+
+  private triggerJump(): void {
+    const origY = this.botGroup.position.y;
+    const jumpHeight = 1.5;
+    const duration = 600;
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const height = Math.sin(progress * Math.PI) * jumpHeight;
+      this.botGroup.position.y = origY + height;
+      this.botGroup.scale.set(1 + height * 0.1, 1 - height * 0.15, 1 + height * 0.1);
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        this.botGroup.position.y = origY;
+        this.botGroup.scale.set(1, 1, 1);
+      }
+    };
+    animate();
+  }
+
+  spawnTrail(): void {
+    const count = 8;
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const pos = this.botGroup.position;
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = pos.x + (Math.random() - 0.5) * 0.5;
+      positions[i * 3 + 1] = pos.y + 0.2;
+      positions[i * 3 + 2] = pos.z + (Math.random() - 0.5) * 0.5;
+    }
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({
+      size: 0.15, color: EMOTIONS[this.emotion].visorColor,
+      transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false,
+    });
+    const pts = new THREE.Points(geo, mat);
+    this.scene.add(pts);
+    let frame = 0;
+    const maxFrames = 20;
+    const anim = () => {
+      frame++;
+      mat.opacity *= 0.9;
+      if (frame < maxFrames) requestAnimationFrame(anim);
+      else { this.scene.remove(pts); geo.dispose(); mat.dispose(); }
+    };
+    anim();
   }
 
   private clearDialogue(): void {

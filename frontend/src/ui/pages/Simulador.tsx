@@ -1,46 +1,22 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useState, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { SimuladorProvider, useSimulador } from "../../application/context/SimuladorProvider";
 import { getAuthState } from "../../infrastructure/store/authStore";
-import { HardwarePanel } from "../components/Simulador/HardwarePanel";
 import { Toolbox } from "../components/Simulador/Toolbox";
 import { Workspace } from "../components/Simulador/Workspace";
 import { Stage3D } from "../components/Simulador/Stage3D";
-import { Console } from "../components/Simulador/Console";
 import { MissionsPanel } from "../components/Simulador/MissionsPanel";
-import { MissionMapView } from "../components/Simulador/MissionMapView";
-import { ChatbotPanel } from "../components/Simulador/ChatbotPanel";
-import { TabBar } from "../components/Simulador/TabBar";
-import { FloatingWorkspace } from "../components/Simulador/FloatingWorkspace";
-import { SimulatorLayout } from "../components/Simulador/SimulatorLayout";
 import { MermaidViewer } from "../components/Simulador/MermaidViewer";
 import { TutorialOverlay } from "../components/Simulador/TutorialOverlay";
 import { VictoryOverlay } from "../components/Simulador/VictoryOverlay";
 import { LevelSelector } from "../components/Simulador/LevelSelector";
-import { NavigationModeDetector } from "../../application/adapters/NavigationModeDetector";
-import { ChallengeAdapter, type AdaptedChallenge } from "../../application/adapters/ChallengeAdapter";
 import { ENVIRONMENT_CONFIGS } from "../../shared/constants/environmentConfigs";
 import type { EnvironmentType } from "../../shared/types/Simulador";
 import {
-  BsRocketFill,
-  BsGearFill,
-  BsCode,
-  BsMapFill,
-  BsPlayFill,
-  BsStopFill,
-  BsTrashFill,
-  BsSaveFill,
-   
-  BsTrophyFill,
-  BsStarFill,
-  BsArrowLeft,
-  BsList,
-  BsCrosshair,
-  BsGrid3X3GapFill,
-  BsSpeedometer2,
-  BsDiagram3Fill,
-  BsRobot
+  BsPlayFill, BsStopFill, BsTrashFill, BsSaveFill, BsTrophyFill,
+  BsCrosshair, BsRocketFill, BsGrid3X3GapFill, BsSpeedometer2,
+  BsDiagram3Fill, BsListUl, BsGearFill, BsXLg, BsLightbulbFill,
 } from "react-icons/bs";
 
 const ENVIRONMENTS: { id: EnvironmentType; Icon: React.ComponentType<{ className?: string }>; color: string }[] = [
@@ -50,196 +26,48 @@ const ENVIRONMENTS: { id: EnvironmentType; Icon: React.ComponentType<{ className
   { id: "obstacle", Icon: BsSpeedometer2, color: "#f97316" },
 ];
 
-const EnvironmentSelector = () => {
-  const { environment, setEnvironment, isFreeMode } = useSimulador();
-
-  if (!isFreeMode) return null;
-
-  return (
-    <div
-      id="env-selector"
-      className="flex gap-2 px-4 py-3 border-b border-border items-center"
-      style={{ backgroundColor: "var(--surface)" }}
-    >
-      <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest mr-2 self-center">
-        Mapa:
-      </span>
-      {ENVIRONMENTS.map((env) => {
-        const config = ENVIRONMENT_CONFIGS[env.id];
-        const isActive = environment === env.id;
-        const Icon = env.Icon;
-        return (
-          <button
-            key={env.id}
-            onClick={() => setEnvironment(env.id)}
-            className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider transition-all border rounded-lg ${
-              isActive
-                ? "text-white shadow-[0_0_12px_rgba(0,0,0,0.3)] scale-[1.02]"
-                : "bg-surface-brighter text-text-muted border-border hover:border-primary/30 hover:text-text"
-            }`}
-            style={{
-              backgroundColor: isActive ? env.color : undefined,
-              borderColor: isActive ? env.color : undefined,
-            }}
-          >
-            <Icon className="text-[14px]" />
-            <div className="flex flex-col items-start leading-tight">
-              <span>{config?.name || env.id}</span>
-              {config?.hardware && (
-                <span className="text-[7px] opacity-70 font-normal tracking-normal">
-                  {Object.keys(config.hardware).length} hardware
-                </span>
-              )}
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-};
-
-const ChallengeInfoBar = ({ challenge }: { challenge: AdaptedChallenge }) => {
-  return (
-    <div
-      className="flex items-center justify-between px-4 py-2 border-b border-border"
-      style={{ backgroundColor: "var(--surface-brighter)" }}
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <BsTrophyFill className="text-[12px] text-accent" />
-          <span className="font-mono text-[10px] text-text font-semibold">
-            {challenge.title}
-          </span>
-        </div>
-        <span className="text-text-muted/30">|</span>
-        <div className="flex items-center gap-2">
-          <BsStarFill className="text-[10px] text-primary" />
-          <span className="font-mono text-[9px] text-text-muted">
-            {challenge.points} pts
-          </span>
-        </div>
-        <span className="text-text-muted/30">|</span>
-        <span
-          className={`font-mono text-[9px] px-2 py-0.5 rounded-full ${
-            challenge.difficulty === "EASY"
-              ? "bg-success/20 text-success"
-              : challenge.difficulty === "MEDIUM"
-              ? "bg-accent/20 text-accent"
-              : "bg-danger/20 text-danger"
-          }`}
-        >
-          {challenge.difficulty}
-        </span>
-        <span className="text-text-muted/30">|</span>
-        <span className="font-mono text-[9px] text-text-muted">
-          Máx {challenge.maxBlocks} bloques
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-[9px] text-text-muted">
-          Entorno: {ENVIRONMENT_CONFIGS[challenge.environment]?.name || challenge.environment}
-        </span>
-      </div>
-    </div>
-  );
-};
-
+// ====== INNER COMPONENT ======
 const SimuladorInner = () => {
   const { courseId } = useParams<{ courseId?: string }>();
-  const navigate = useNavigate();
   const {
-    loadChallengeFromCourse,
-    isFreeMode,
-    setFreeMode,
-    challenges,
-    selectChallenge,
-    challengeData,
-    selectedActivity,
-    environment,
-    submitRobotSimulation,
-    simulationLoading,
-    blocks,
-    clearWorkspace,
-    isRunning,
-    executeProgram,
-    stopExecution,
-    missions,
-    score,
-    energy,
-    executionSpeed,
-    setExecutionSpeed,
-    isStepMode,
-    setStepMode,
-    currentLevel,
-    setLevel,
-    levelComplete,
-    levelStars,
-    dismissLevelComplete,
+    loadChallengeFromCourse, setFreeMode,
+    environment, setEnvironment,
+    submitRobotSimulation, simulationLoading,
+    blocks, clearWorkspace, isRunning, executeProgram, stopExecution,
+    missions, score, energy,
+    executionSpeed, setExecutionSpeed, isStepMode, setStepMode,
+    currentLevel, setLevel,
+    levelComplete, levelStars, dismissLevelComplete,
   } = useSimulador();
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
-  const [showChallengeList, setShowChallengeList] = useState(false);
+
   const [showMermaid, setShowMermaid] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showLevelSelector, setShowLevelSelector] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [activeLeftTab, setActiveLeftTab] = useState("hardware");
-  const [activeRightTab, setActiveRightTab] = useState("missions");
+  const [leftDrawerOpen, setLeftDrawerOpen] = useState(false);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [showWorkspace, setShowWorkspace] = useState(false);
+  const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
-  const navigationMode = useMemo(() => {
-    return NavigationModeDetector.detect(challengeData, selectedActivity, environment);
-  }, [challengeData, selectedActivity, environment]);
-
-  const adaptedChallenge = useMemo(() => {
-    if (challengeData) {
-      return ChallengeAdapter.adaptChallenge(challengeData);
-    }
-    if (selectedActivity) {
-      return ChallengeAdapter.adaptActivityResponse(selectedActivity, {
-        idActivity: selectedActivity.idActivity,
-        name: selectedActivity.name,
-        environment: environment,
-        difficulty: "EASY",
-        logicLevel: 1,
-        missions: [],
-      });
-    }
+  const getNextLevelId = (levelId: string): string | null => {
+    const num = parseInt(levelId.replace("n", ""), 10);
+    if (num < 15) return `n${num + 1}`;
     return null;
-  }, [challengeData, selectedActivity, environment]);
-
-  const visiblePanels = useMemo(() => {
-    return NavigationModeDetector.getVisiblePanels(navigationMode);
-  }, [navigationMode]);
-
-  const layoutConfig = useMemo(() => {
-    return NavigationModeDetector.getLayoutConfig(navigationMode);
-  }, [navigationMode]);
+  };
 
   useEffect(() => {
-    if (courseId) {
-      loadChallengeFromCourse(courseId);
-    } else {
-      setFreeMode();
-    }
+    if (courseId) { loadChallengeFromCourse(courseId); }
+    else { setFreeMode(); }
   }, [courseId]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem("pipre_player_progress");
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (!data.tutorialCompleted) {
-          setShowTutorial(true);
-        }
-      } else {
-        setShowTutorial(true);
-      }
-    } catch {
-      setShowTutorial(true);
-    }
+      if (!raw || !JSON.parse(raw)?.tutorialCompleted) setShowTutorial(true);
+    } catch { setShowTutorial(true); }
   }, []);
 
-  // Transition effect when environment changes
   const prevEnvRef = useRef(environment);
   useEffect(() => {
     if (prevEnvRef.current !== environment) {
@@ -250,419 +78,249 @@ const SimuladorInner = () => {
     }
   }, [environment]);
 
-  const handleBackToCourses = () => {
-    setFreeMode();
-    navigate("/");
-  };
-
-  const leftPanelTabs = [
-    { id: "hardware", label: "Hardware", icon: <BsGearFill className="text-[10px]" /> },
-    { id: "blocks", label: "Bloques", icon: <BsCode className="text-[10px]" /> },
-  ];
-
-  const rightPanelTabs = [
-    {
-      id: "missions",
-      label: "Misiones",
-      icon: <BsMapFill className="text-[10px]" />,
-      badge: missions.filter((m) => !m.isCompleted).length,
-    },
-    ...(visiblePanels.showCanvas ? [{
-      id: "canvas",
-      label: "Mapa",
-      icon: <BsRocketFill className="text-[10px]" />,
-    }] : []),
-    {
-      id: "feedback",
-      label: "Asistente",
-      icon: <BsRobot className="text-[10px]" />,
-    },
-  ];
-
-  const leftPanelContent = () => {
-    switch (activeLeftTab) {
-      case "hardware":
-        return <div id="panel-hardware"><HardwarePanel /></div>;
-      case "blocks":
-        return <div id="panel-toolbox"><Toolbox /></div>;
-      default:
-        return <div id="panel-hardware"><HardwarePanel /></div>;
-    }
-  };
-
-  const rightPanelContent = () => {
-    switch (activeRightTab) {
-      case "missions":
-        return <div id="panel-missions"><MissionsPanel /></div>;
-      case "canvas":
-        return <MissionMapView />;
-      case "feedback":
-        return <ChatbotPanel />;
-      default:
-        return <MissionsPanel />;
-    }
-  };
-
-  const getNextLevelId = (levelId: string): string | null => {
-    const parts = levelId.split("-");
-    const env = parts[0];
-    const num = parseInt(parts[1]);
-    if (num < 3) return `${env}-${num + 1}`;
-    if (env === "battle") return "space-1";
-    if (env === "space") return "maze-1";
-    if (env === "maze") return "obstacle-1";
-    return null;
-  };
+  const activeMission = missions.findIndex((m) => !m.isCompleted);
+  const completedMissions = missions.filter((m) => m.isCompleted).length;
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
-      <h1 className="sr-only">Simulador</h1>
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden bg-black">
+      {/* ====== MUNDO 3D FULL SCREEN ====== */}
+      <div className="flex-1 relative min-h-0">
+        <Stage3D key={environment} />
 
-      {navigationMode.mode === "playground" && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border" style={{ backgroundColor: "var(--surface)" }}>
-          <EnvironmentSelector />
-          <div className="flex-1" />
-          <div className="flex gap-1">
-            <button
-              onClick={() => { setLevel(null); setShowLevelSelector(false); }}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
-                !showLevelSelector && !currentLevel
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-text-muted hover:text-text border border-border"
-              }`}
-            >
-              Modo Libre
+        {/* ====== LEFT DRAWER - Bloques ====== */}
+        {leftDrawerOpen && (
+          <div className="absolute left-0 top-0 bottom-0 w-72 z-20 bg-surface/95 backdrop-blur-md border-r border-border shadow-2xl animate-slide-in-left overflow-auto">
+            <div className="flex items-center justify-between p-3 border-b border-border">
+              <h3 className="text-sm font-bold text-text">Bloques</h3>
+              <button onClick={() => setLeftDrawerOpen(false)} className="p-1.5 hover:bg-surface-brighter rounded-lg">
+                <BsXLg className="text-sm text-text-muted" />
+              </button>
+            </div>
+            <div className="max-h-[calc(100%-48px)] overflow-auto">
+              <Toolbox />
+            </div>
+          </div>
+        )}
+
+        {/* ====== RIGHT DRAWER - Retos ====== */}
+        {rightDrawerOpen && (
+          <div className="absolute right-0 top-0 bottom-0 w-72 z-20 bg-surface/95 backdrop-blur-md border-l border-border shadow-2xl animate-slide-in-right overflow-auto">
+            <div className="flex items-center justify-between p-3 border-b border-border">
+              <h3 className="text-sm font-bold text-text">Retos</h3>
+              <button onClick={() => setRightDrawerOpen(false)} className="p-1.5 hover:bg-surface-brighter rounded-lg">
+                <BsXLg className="text-sm text-text-muted" />
+              </button>
+            </div>
+            <MissionsPanel />
+          </div>
+        )}
+
+        {/* ====== HUD TOP BAR ====== */}
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-2">
+          <div className="flex gap-2">
+            <button onClick={() => setLeftDrawerOpen(!leftDrawerOpen)}
+              className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-sm ${
+                leftDrawerOpen ? "bg-primary text-white" : "bg-surface/80 text-text-muted hover:bg-surface"
+              }`}>
+              <BsListUl className="text-lg" />
             </button>
-            <button
-              onClick={() => setShowLevelSelector(!showLevelSelector)}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
-                showLevelSelector || currentLevel
-                  ? "bg-amber-500 text-white shadow-sm"
-                  : "text-text-muted hover:text-text border border-border"
-              }`}
-            >
-              Niveles
+            <button onClick={() => setRightDrawerOpen(!rightDrawerOpen)}
+              className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-sm ${
+                rightDrawerOpen ? "bg-amber-500 text-white" : "bg-surface/80 text-text-muted hover:bg-surface"
+              }`}>
+              <BsTrophyFill className="text-lg" />
+            </button>
+            <button onClick={() => setShowHelp(!showHelp)}
+              className={`h-10 w-10 rounded-xl flex items-center justify-center transition-all backdrop-blur-sm ${
+                showHelp ? "bg-purple-500 text-white" : "bg-surface/80 text-text-muted hover:bg-surface"
+              }`}>
+              <BsLightbulbFill className="text-lg" />
             </button>
           </div>
-        </div>
-      )}
-      {showLevelSelector && navigationMode.mode === "playground" && (
-        <div className="border-b border-border bg-surface" style={{ backgroundColor: "var(--surface)" }}>
-          <LevelSelector
-            onSelectLevel={(levelId) => { setLevel(levelId); setShowLevelSelector(false); }}
-            selectedLevelId={currentLevel?.id || null}
-          />
-        </div>
-      )}
-      {navigationMode.mode === "challenge" && adaptedChallenge && (
-        <ChallengeInfoBar challenge={adaptedChallenge} />
-      )}
 
-      {navigationMode.mode === "challenge" && !isFreeMode && (
-        <div
-          className="flex items-center justify-between px-4 py-2 border-b border-border"
-          style={{ backgroundColor: "var(--surface-brighter)" }}
-        >
-          <div className="flex items-center gap-4">
-            <button
-              onClick={handleBackToCourses}
-              className="font-mono text-[10px] text-text-muted hover:text-primary transition-colors flex items-center gap-1"
-            >
-              <BsArrowLeft className="text-[14px]" />
-              Cursos
+          <div className="flex items-center gap-1 bg-surface/80 backdrop-blur-sm rounded-xl px-2 py-1">
+            <BsGearFill className="text-xs text-text-muted" />
+            <button onClick={() => setShowEnvironmentPicker(!showEnvironmentPicker)}
+              className="text-[10px] font-bold text-text-muted uppercase tracking-wider hover:text-text">
+              {ENVIRONMENT_CONFIGS[environment]?.name || "Mundo"}
             </button>
-            <span className="text-text-muted/30">|</span>
-            <span className="font-mono text-[10px] text-text-muted uppercase tracking-widest">
-              Modo Reto
+          </div>
+
+          <div className="flex items-center gap-2 bg-surface/80 backdrop-blur-sm rounded-xl px-3 py-1.5">
+            <span className="text-[10px] font-bold text-amber-400">{score}</span>
+            <span className="text-[10px] text-text-muted/60">pts</span>
+            <span className="text-text-muted/20">|</span>
+            <span className="text-xs font-bold" style={{ color: energy > 30 ? "#22c55e" : energy > 10 ? "#f59e0b" : "#ef4444" }}>
+              {Math.round(energy)}%
             </span>
-            {challengeData && (
+            {missions.length > 0 && (
               <>
-                <span className="text-text-muted/30">|</span>
-                <span className="font-mono text-xs text-primary font-bold">
-                  {challengeData.title}
-                </span>
+                <span className="text-text-muted/20">|</span>
+                <span className="text-[10px] font-bold text-primary">{completedMissions}/{missions.length}</span>
               </>
             )}
           </div>
-
-          {challenges.length > 1 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowChallengeList(!showChallengeList)}
-                className="font-mono text-[10px] text-primary hover:underline flex items-center gap-1"
-              >
-                <BsList className="text-[14px]" />
-                Cambiar Reto
-              </button>
-              {showChallengeList && (
-                <div
-                  className="absolute right-0 top-full mt-1 z-50 border border-border rounded-lg shadow-xl"
-                  style={{
-                    backgroundColor: "var(--surface)",
-                    minWidth: "200px",
-                  }}
-                >
-                  {challenges.map((ch) => (
-                    <button
-                      key={ch.id}
-                      onClick={() => {
-                        selectChallenge(ch);
-                        setShowChallengeList(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-[9px] font-mono hover:bg-surface-brighter transition-colors border-b border-border last:border-b-0 ${
-                        challengeData?.id === ch.id
-                          ? "text-primary font-bold"
-                          : "text-text"
-                      }`}
-                    >
-                      <div>{ch.title}</div>
-                      <div className="text-[9px] text-text-muted">
-                        {ch.difficulty} • {ch.points} pts
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
-      )}
 
-      <main className="flex-1 p-2 overflow-hidden relative min-h-0">
-        <SimulatorLayout
-          leftPanel={{
-            visible: visiblePanels.showToolbox,
-            defaultWidth: layoutConfig.leftPanelWidth,
-            minWidth: 200,
-            maxWidth: 400,
-            header: "Herramientas",
-            children: (
-              <TabBar
-                tabs={leftPanelTabs}
-                activeTab={activeLeftTab}
-                onTabChange={setActiveLeftTab}
-                variant="compact"
-              >
-                <div className="h-[calc(100%-40px)] overflow-auto">
-                  {leftPanelContent()}
-                </div>
-              </TabBar>
-            ),
-          }}
-          rightPanel={{
-            visible: visiblePanels.showMissions,
-            defaultWidth: layoutConfig.rightPanelWidth,
-            minWidth: 200,
-            maxWidth: 400,
-            header: "Misiones",
-            children: (
-              <TabBar
-                tabs={rightPanelTabs}
-                activeTab={activeRightTab}
-                onTabChange={setActiveRightTab}
-                variant="compact"
-              >
-                <div className="h-[calc(100%-40px)] overflow-auto">
-                  {rightPanelContent()}
-                </div>
-              </TabBar>
-            ),
-          }}
-          centerPanel={
-            <div className="h-full flex flex-col">
-              <div className="flex-1 min-h-0 flex items-center justify-center p-2">
-                <div
-                  className="w-full h-full max-w-full max-h-full flex items-center justify-center"
-                  style={{ aspectRatio: "16/9" }}
-                >
-                  <div ref={canvasContainerRef} className="w-full h-full relative">
-                    <Stage3D />
-                    <FloatingWorkspace
-                      title="Ensamblaje Lógico"
-                      defaultPosition={{ x: 30, y: 30 }}
-                      defaultSize={{ width: 480, height: 320 }}
-                      minWidth={300}
-                      minHeight={200}
-                      zIndex={100}
-                      constrainToRef={canvasContainerRef}
-                    >
-                      <div id="workspace-area" className="w-full h-full">
-                        <Workspace />
-                      </div>
-                    </FloatingWorkspace>
-                  </div>
-                </div>
-              </div>
-              <div
-                className="shrink-0 h-24 border-t border-border"
-                style={{ backgroundColor: "var(--surface)" }}
-              >
-                <Console />
-              </div>
-            </div>
-          }
-          toolbar={
-            <div className="flex items-center gap-2 px-4 py-2 border-t border-border" style={{ backgroundColor: "var(--surface)" }}>
-              <div className="flex gap-2">
-                <button
-                  onClick={isRunning ? stopExecution : executeProgram}
-                  disabled={!isRunning && blocks.length === 0}
-                  id="btn-ejecutar"
-                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-all rounded-xl ${
-                    isRunning
-                      ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/25"
-                      : "bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/25 disabled:opacity-40 disabled:shadow-none"
+        {/* ====== ENVIRONMENT PICKER (flyout) ====== */}
+        {showEnvironmentPicker && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 bg-surface/95 backdrop-blur-md rounded-xl border border-border shadow-2xl p-3 flex gap-2 animate-scale-up-soft">
+            {ENVIRONMENTS.map((env) => {
+              const Icon = env.Icon;
+              const isActive = environment === env.id;
+              return (
+                <button key={env.id} onClick={() => { setEnvironment(env.id); setShowEnvironmentPicker(false); }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                    isActive ? "text-white shadow-lg" : "text-text-muted hover:text-text bg-surface-brighter/50"
                   }`}
-                >
-                  {isRunning ? (
-                    <><BsStopFill className="text-sm" /> Detener</>
-                  ) : (
-                    <><BsPlayFill className="text-sm" /> Ejecutar</>
-                  )}
+                  style={{ backgroundColor: isActive ? env.color : undefined }}>
+                  <Icon className="text-sm" />
+                  {ENVIRONMENT_CONFIGS[env.id]?.name || env.id}
                 </button>
-                <button
-                  onClick={clearWorkspace}
-                  disabled={isRunning || blocks.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 transition-colors rounded-xl disabled:opacity-30"
-                >
-                  <BsTrashFill className="text-sm" /> Limpiar
-                </button>
-                <button
-                  onClick={() => setShowMermaid(true)}
-                  disabled={blocks.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 transition-colors rounded-xl disabled:opacity-30"
-                >
-                  <BsDiagram3Fill className="text-sm" /> Diagrama
-                </button>
-              </div>
+              );
+            })}
+            <button onClick={() => { setShowLevelSelector(true); setShowEnvironmentPicker(false); }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-all">
+              <BsTrophyFill className="text-sm" /> Niveles
+            </button>
+          </div>
+        )}
 
-              {/* Speed control */}
-              <div className="w-px h-7 bg-border mx-1" />
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-text-muted font-bold whitespace-nowrap">Velocidad</span>
-                <input
-                  type="range"
-                  min="50"
-                  max="800"
-                  step="50"
-                  value={executionSpeed}
-                  onChange={(e) => setExecutionSpeed(parseInt(e.target.value))}
-                  className="w-20 h-1.5 accent-primary cursor-pointer"
-                  disabled={isRunning}
-                />
-                <button
-                  onClick={() => setStepMode(!isStepMode)}
-                  disabled={isRunning && !isStepMode}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all ${
-                    isStepMode
-                      ? "bg-purple-500 text-white shadow-lg shadow-purple-500/25"
-                      : "border border-border text-text-muted hover:border-primary/40"
-                  } disabled:opacity-30`}
-                >
-                  Paso a paso
-                </button>
-              </div>
-
-              <div className="w-px h-7 bg-border mx-1" />
-
-              {navigationMode.mode === "challenge" && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <BsTrophyFill className="text-sm text-amber-500" />
-                  <span className="font-bold text-xs text-amber-500">{score}</span>
-                  <span className="text-[10px] text-text-muted/60">pts</span>
-                  {missions.filter(m => m.isCompleted).length > 0 && (
-                    <span className="text-[11px] text-accent ml-1 font-bold">
-                      {missions.filter(m => m.isCompleted).length}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex-1" />
-
-              <div className="flex items-center gap-3">
-                {isRunning && (
-                  <span className="flex items-center gap-1.5 text-xs text-primary font-bold animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-primary" />
-                    Ejecutando...
-                  </span>
-                )}
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ backgroundColor: "var(--bg)" }}>
-                  <BsCode className="text-xs text-text-muted" />
-                  <span className="font-bold text-xs text-text-muted">{blocks.length}</span>
-                  <span className="text-[11px] text-text-muted/50">bloques</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ backgroundColor: "var(--bg)" }}>
-                  <BsSpeedometer2 className="text-xs text-text-muted" />
-                  <span className="font-bold text-xs text-text-muted">{Math.round(energy)}</span>
-                  <span className="text-[11px] text-text-muted/50">energia</span>
-                </div>
-              </div>
-
-              <div className="w-px h-7 bg-border mx-1" />
-
-              <button
-                onClick={submitRobotSimulation}
-                disabled={simulationLoading || !getAuthState().isAuthenticated || blocks.length === 0}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all rounded-xl disabled:opacity-30 active:scale-95"
-                title={
-                  !getAuthState().isAuthenticated
-                    ? "Inicia sesion para guardar avances"
-                    : ""
-                }
-              >
-                {simulationLoading ? (
-                  <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                ) : (
-                  <BsSaveFill className="text-sm" />
-                )}
-                {simulationLoading ? "Guardando..." : "Registrar"}
+        {/* ====== LEVEL SELECTOR FLYOUT ====== */}
+        {showLevelSelector && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 bg-surface/95 backdrop-blur-md rounded-xl border border-border shadow-2xl p-2 max-w-lg w-full animate-scale-up-soft max-h-[70vh] overflow-auto">
+            <div className="flex justify-between items-center p-2 border-b border-border mb-2">
+              <h3 className="text-sm font-bold text-text">Niveles</h3>
+              <button onClick={() => setShowLevelSelector(false)} className="p-1 hover:bg-surface-brighter rounded-lg">
+                <BsXLg className="text-sm text-text-muted" />
               </button>
             </div>
-          }
-        />
-      </main>
+            <LevelSelector
+              onSelectLevel={(levelId) => { setLevel(levelId); setShowLevelSelector(false); }}
+              selectedLevelId={currentLevel?.id || null}
+            />
+          </div>
+        )}
 
+        {/* ====== HELP TOOLTIP ====== */}
+        {showHelp && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 bg-surface/95 backdrop-blur-md rounded-xl border border-purple-500/30 shadow-2xl p-4 max-w-sm animate-scale-up-soft text-center">
+            <BsLightbulbFill className="text-2xl text-purple-400 mx-auto mb-2" />
+            <p className="text-xs text-text leading-relaxed">
+              {currentLevel?.objective || (activeMission >= 0 ? missions[activeMission]?.objective : "Intenta llegar al beacon dorado usando bloques de movimiento.")}
+            </p>
+            <button onClick={() => setShowHelp(false)} className="mt-2 text-[10px] text-text-muted hover:text-text">
+              Entendido
+            </button>
+          </div>
+        )}
+
+                {/* ====== WORKSPACE OVERLAY (semi-transparent) ====== */}
+        {showWorkspace && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/20 backdrop-blur-[2px]"
+               onClick={() => setShowWorkspace(false)}>
+            <div className="bg-surface/85 backdrop-blur-md border border-border rounded-2xl shadow-2xl w-[85vw] max-w-[900px] h-[90vh] flex flex-col p-4"
+                 onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-text">Programa ({blocks.length} bloques)</h3>
+                <button onClick={() => setShowWorkspace(false)} className="p-1.5 hover:bg-surface-brighter rounded-lg">
+                  <BsXLg className="text-sm text-text-muted" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-auto">
+                <Workspace />
+              </div>
+            </div>
+          </div>
+        )}
+        {currentLevel && (
+          <div className="absolute top-16 left-4 z-10 bg-surface/80 backdrop-blur-sm rounded-xl px-3 py-1.5 border border-border/30 max-w-[200px]">
+            <div className="text-[10px] font-bold text-amber-400">{currentLevel.name}</div>
+            <div className="text-[9px] text-text-muted/70 mt-0.5">{currentLevel.description}</div>
+          </div>
+        )}
+      </div>
+
+      {/* ====== TOOLBAR INFERIOR ====== */}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-t border-border bg-surface">
+        <div className="flex gap-2">
+          <button onClick={() => setShowWorkspace(true)}
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+              showWorkspace ? "bg-primary text-white" : blocks.length > 0 ? "border-2 border-primary/40 text-primary bg-primary/5" : "text-text-muted hover:text-text border border-border"
+            }`}>
+            📝 Bloques {blocks.length > 0 && `(${blocks.length})`}
+          </button>
+          <button onClick={isRunning ? stopExecution : executeProgram}
+            disabled={!isRunning && blocks.length === 0}
+            id="btn-ejecutar"
+            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+              isRunning ? "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/25"
+                : "bg-primary text-white hover:brightness-110 shadow-lg shadow-primary/25 disabled:opacity-40 disabled:shadow-none"
+            }`}>
+            {isRunning ? <><BsStopFill className="text-sm" /> Detener</> : <><BsPlayFill className="text-sm" /> Ejecutar</>}
+          </button>
+          <button onClick={clearWorkspace} disabled={isRunning || blocks.length === 0}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 rounded-xl disabled:opacity-30">
+            <BsTrashFill className="text-sm" /> Limpiar
+          </button>
+          <button onClick={() => setShowMermaid(true)} disabled={blocks.length === 0}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-text hover:bg-surface-brighter/60 rounded-xl disabled:opacity-30">
+            <BsDiagram3Fill className="text-sm" />
+          </button>
+        </div>
+
+        <div className="flex-1" />
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-text-muted font-bold">Vel</span>
+          <input type="range" min="50" max="800" step="50" value={executionSpeed}
+            onChange={(e) => setExecutionSpeed(parseInt(e.target.value))}
+            className="w-16 h-1.5 accent-primary cursor-pointer" disabled={isRunning} />
+          <button onClick={() => setStepMode(!isStepMode)}
+            disabled={isRunning && !isStepMode}
+            className={`px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+              isStepMode ? "bg-purple-500 text-white" : "text-text-muted hover:text-text border border-border"
+            } disabled:opacity-30`}>
+            Paso
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-bg">
+          {isRunning && <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />}
+          <span className="font-bold text-xs text-text-muted">{blocks.length}</span>
+          <span className="text-[11px] text-text-muted/50">bloques</span>
+        </div>
+
+        <button onClick={submitRobotSimulation}
+          disabled={simulationLoading || !getAuthState().isAuthenticated || blocks.length === 0}
+          className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 border-primary/30 text-primary hover:bg-primary/10 rounded-xl disabled:opacity-30 active:scale-95"
+          title={!getAuthState().isAuthenticated ? "Inicia sesion para guardar" : ""}>
+          {simulationLoading ? <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            : <BsSaveFill className="text-sm" />}
+          {simulationLoading ? "..." : "Registrar"}
+        </button>
+      </div>
+
+      {/* ====== OVERLAYS ====== */}
       <MermaidViewer isOpen={showMermaid} onClose={() => setShowMermaid(false)} />
 
       {levelComplete && currentLevel && (
-        <VictoryOverlay
-          levelName={currentLevel.name}
-          stars={levelStars}
-          score={score}
-          blocksUsed={blocks.length}
-          maxBlocks={currentLevel.maxBlocks || 10}
+        <VictoryOverlay levelName={currentLevel.name} stars={levelStars} score={score}
+          blocksUsed={blocks.length} maxBlocks={currentLevel.maxBlocks || 10}
           hasNextLevel={!!getNextLevelId(currentLevel.id!)}
-          onNextLevel={() => {
-            const nextId = getNextLevelId(currentLevel.id!);
-            dismissLevelComplete();
-            if (nextId) setLevel(nextId);
-          }}
-          onRetry={() => {
-            dismissLevelComplete();
-            setLevel(currentLevel.id!);
-          }}
-          onExit={() => {
-            dismissLevelComplete();
-            setLevel(null);
-          }}
-        />
+          onNextLevel={() => { const n = getNextLevelId(currentLevel.id!); dismissLevelComplete(); if (n) setLevel(n); }}
+          onRetry={() => { dismissLevelComplete(); setLevel(currentLevel.id!); }}
+          onExit={() => { dismissLevelComplete(); setLevel(null); }} />
       )}
 
       {showTutorial && (
         <TutorialOverlay
-          onComplete={() => {
-            setShowTutorial(false);
-            localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true }));
-          }}
-          onSkip={() => {
-            setShowTutorial(false);
-            localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true }));
-          }}
-        />
+          onComplete={() => { setShowTutorial(false); localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true })); }}
+          onSkip={() => { setShowTutorial(false); localStorage.setItem("pipre_player_progress", JSON.stringify({ ...JSON.parse(localStorage.getItem("pipre_player_progress") || "{}"), tutorialCompleted: true })); }}
+          setLeftTab={() => setLeftDrawerOpen(true)}
+          setRightTab={() => setRightDrawerOpen(true)} />
       )}
 
-      {/* Transition fade overlay */}
       {isTransitioning && (
         <div className="fixed inset-0 z-[9998] bg-black pointer-events-none animate-fade-in-soft" style={{ animationDuration: "0.4s" }} />
       )}
@@ -670,10 +328,8 @@ const SimuladorInner = () => {
   );
 };
 
-export const Simulador = () => {
-  return (
-    <SimuladorProvider>
-      <SimuladorInner />
-    </SimuladorProvider>
-  );
-};
+export const Simulador = () => (
+  <SimuladorProvider>
+    <SimuladorInner />
+  </SimuladorProvider>
+);

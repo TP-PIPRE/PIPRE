@@ -11,6 +11,7 @@ import { GhostPreview } from "../shared/GhostPreview";
 import { RobotPersonality } from "../shared/RobotPersonality";
 import { CinematicCamera } from "../shared/CinematicCamera";
 import { BlockBar3D } from "../shared/BlockBar3D";
+import { WorldIndicators } from "../shared/WorldIndicators";
 
 export class RaceStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -30,10 +31,14 @@ export class RaceStageEngine implements ISimulatorEngine {
   private ghostPreview!: GhostPreview;
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
+  private levelStartPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private levelStartRot = 0;
+  private levelGoalPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private speedTrails: THREE.Mesh[] = [];
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private worldIndicators!: WorldIndicators;
   private circuitPath!: THREE.CatmullRomCurve3;
   private loopRing!: THREE.Mesh;
   private neonTunnel!: THREE.Mesh;
@@ -69,6 +74,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
+    this.worldIndicators = new WorldIndicators(this.scene);
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
@@ -398,6 +404,75 @@ export class RaceStageEngine implements ISimulatorEngine {
       this.scene.add(trail);
       this.speedTrails.push(trail);
     });
+
+    // ===== BOOST PADS on the track =====
+    const boostMat = new THREE.MeshStandardMaterial({ color: "#22c55e", emissive: "#22c55e", emissiveIntensity: 0.6, roughness: 0.2 });
+    const boostPositions = [0.15, 0.4, 0.7];
+    boostPositions.forEach((t) => {
+      const pt = this.circuitPath.getPointAt(t);
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 3), boostMat);
+      pad.position.set(pt.x, -0.2, pt.z);
+      pad.name = "boost_pad";
+      this.scene.add(pad);
+      const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 4), boostMat);
+      arrow.rotation.x = Math.PI / 2;
+      arrow.position.set(pt.x + 0.5, 0.1, pt.z);
+      arrow.name = "boost_arrow";
+      this.scene.add(arrow);
+    });
+
+    // ===== MOVING BARRIERS (oscillating blocks) =====
+    const movingBarrierMat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.3, roughness: 0.3 });
+    for (let i = 0; i < 3; i++) {
+      const t = 0.25 + i * 0.2;
+      const pt = this.circuitPath.getPointAt(t);
+      const barrier = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 0.5), movingBarrierMat);
+      barrier.position.set(pt.x + 4, 0, pt.z + 3);
+      barrier.name = "moving_barrier";
+      barrier.userData = { baseX: pt.x + 4, baseZ: pt.z + 3, offset: i * 2, speed: 0.003 + i * 0.001 };
+      this.scene.add(barrier);
+    }
+
+    // ===== PIT STOPS (repair zones) =====
+    const pitMat = new THREE.MeshStandardMaterial({ color: "#3b82f6", emissive: "#3b82f6", emissiveIntensity: 0.3, roughness: 0.3 });
+    for (let t = 0.05; t < 1; t += 0.45) {
+      const pt = this.circuitPath.getPointAt(t);
+      const pit = new THREE.Mesh(new THREE.PlaneGeometry(3, 8), pitMat);
+      pit.rotation.x = -Math.PI / 2;
+      pit.position.set(pt.x, -0.45, pt.z + 6);
+      pit.name = "pit_stop";
+      this.scene.add(pit);
+      const wrench = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1, 6), new THREE.MeshStandardMaterial({ color: "#ffffff" }));
+      wrench.position.set(pt.x, 1, pt.z + 6);
+      wrench.name = "pit_icon";
+      this.scene.add(wrench);
+    }
+
+    // ===== FINISH LINE ARCH with countdown numbers =====
+    const finishArchMat = new THREE.MeshStandardMaterial({ color: "#f59e0b", emissive: "#f59e0b", emissiveIntensity: 0.6, roughness: 0.2 });
+    const finishPillar1 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 5, 8), finishArchMat);
+    finishPillar1.position.set(-28, 2, -6);
+    finishPillar1.name = "finish_pillar";
+    this.scene.add(finishPillar1);
+    const finishPillar2 = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 5, 8), finishArchMat);
+    finishPillar2.position.set(-28, 2, 6);
+    finishPillar2.name = "finish_pillar";
+    this.scene.add(finishPillar2);
+    const finishTop = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 12.5), finishArchMat);
+    finishTop.position.set(-28, 4.5, 0);
+    finishTop.name = "finish_top";
+    this.scene.add(finishTop);
+
+    // ===== TRACK FLOOD LIGHTS =====
+    for (let t = 0.1; t < 1; t += 0.2) {
+      const pt = this.circuitPath.getPointAt(t);
+      const floodLight = new THREE.SpotLight("#ffffff", 0.5, 20, Math.PI / 4, 0.3, 1);
+      floodLight.position.set(pt.x, 8, pt.z - 8);
+      floodLight.target.position.set(pt.x, 0, pt.z);
+      floodLight.name = "flood_light";
+      this.scene.add(floodLight);
+      this.scene.add(floodLight.target);
+    }
   }
 
   init(canvas: HTMLCanvasElement) {
@@ -469,6 +544,7 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
     this.blockBar.dispose();
+    this.worldIndicators.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -557,6 +633,23 @@ export class RaceStageEngine implements ISimulatorEngine {
 
       this.robotPersonality.update(0.016);
       this.blockBar.animate(Date.now() * 0.001);
+      this.worldIndicators.animate(Date.now() * 0.001);
+
+      // Animate moving barriers
+      this.scene.traverse((child) => {
+        if (child.name === "moving_barrier" && child instanceof THREE.Mesh && child.userData?.baseX !== undefined) {
+          child.position.x = child.userData.baseX + Math.sin(Date.now() * child.userData.speed) * 3;
+        }
+      });
+
+      // Pulse boost pads
+      this.scene.traverse((child) => {
+        if (child.name === "boost_pad" && child instanceof THREE.Mesh) {
+          const mat = child.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity = 0.4 + Math.sin(Date.now() * 0.006 + child.position.x) * 0.3;
+        }
+      });
+
       this.composer.render();
     };
     animate();
@@ -694,9 +787,13 @@ export class RaceStageEngine implements ISimulatorEngine {
 
   stop() {}
 
-  reset() {
-    this.botGroup.position.set(-30, 0, 0);
+  reset(): void {
+    this.botGroup.position.copy(this.levelStartPos);
     this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = this.levelStartRot;
+    if (this.levelGoalPos.length() > 0) {
+      this.showGoalBeacon(this.levelGoalPos.x, this.levelGoalPos.z);
+    }
     this.checkpoints.forEach((cp) => { cp.passed = false; });
   }
 
@@ -858,6 +955,10 @@ export class RaceStageEngine implements ISimulatorEngine {
     this.botGroup.rotation.set(0, 0, 0);
     this.botGroup.rotation.y = startPos.rotation;
 
+    this.levelStartPos.set(startPos.x, 0, startPos.z);
+    this.levelStartRot = startPos.rotation || 0;
+    this.levelGoalPos.set(goalPos.x, 0, goalPos.z);
+
     this.showGoalBeacon(goalPos.x, goalPos.z);
   }
 
@@ -874,6 +975,8 @@ export class RaceStageEngine implements ISimulatorEngine {
       oldDot.geometry?.dispose();
       (oldDot.material as THREE.Material)?.dispose();
     }
+
+    this.levelGoalPos.set(x, 0, z);
 
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
@@ -983,5 +1086,9 @@ export class RaceStageEngine implements ISimulatorEngine {
       if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
+  }
+
+  showGoalIndicator(x: number, z: number, text?: string): void {
+    this.worldIndicators.showGoalMarker(x, z, text);
   }
 }

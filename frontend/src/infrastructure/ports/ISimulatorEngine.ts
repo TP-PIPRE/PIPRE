@@ -44,6 +44,7 @@ export interface ISimulatorEngine {
   updateBlockBar?(blocks: Array<{ id: string; type: string; category: string; params: Record<string, string> }>, activeBlockId: string | null): void;
   getObstacles?(): Array<{ x: number; z: number; radius: number }>;
   checkCollision?(x: number, z: number): boolean;
+  showGoalIndicator?(x: number, z: number, text?: string): void;
 
   // Acciones específicas por entorno (opcionales)
   attack?(power: number, duration: number): Promise<void>;

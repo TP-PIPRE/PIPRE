@@ -11,6 +11,7 @@ import { GhostPreview } from "../shared/GhostPreview";
 import { RobotPersonality } from "../shared/RobotPersonality";
 import { CinematicCamera } from "../shared/CinematicCamera";
 import { BlockBar3D } from "../shared/BlockBar3D";
+import { WorldIndicators } from "../shared/WorldIndicators";
 
 export class MazeStageEngine implements ISimulatorEngine {
   private scene: THREE.Scene;
@@ -32,9 +33,13 @@ export class MazeStageEngine implements ISimulatorEngine {
   private ghostPreview!: GhostPreview;
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
+  private levelStartPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private levelStartRot = 0;
+  private levelGoalPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private robotPersonality!: RobotPersonality;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private worldIndicators!: WorldIndicators;
   private templeGroup!: THREE.Group;
   private treeTrunks: THREE.Mesh[] = [];
   private runeMarkers: THREE.Mesh[] = [];
@@ -69,6 +74,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.botGroup.position.set(-18, 0, 0);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
+    this.worldIndicators = new WorldIndicators(this.scene);
 
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
@@ -439,6 +445,68 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.fireflies = new THREE.Points(fireflyGeo, fireflyMat);
     this.scene.add(this.fireflies);
 
+    // ===== CHESTS (treasure chests) =====
+    const chestPositions: Array<[number, number]> = [[-6, -12], [6, 10], [-10, 6]];
+    chestPositions.forEach(([cx, cz]) => {
+      const chestGroup = new THREE.Group();
+      const chestBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.6, 0.6),
+        new THREE.MeshStandardMaterial({ color: "#5a3a1a", roughness: 0.6, metalness: 0.3 })
+      );
+      chestBody.position.y = 0.3;
+      chestBody.name = "chest_body";
+      const chestLid = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.15, 0.3),
+        new THREE.MeshStandardMaterial({ color: "#7a4a2a", roughness: 0.5, metalness: 0.4 })
+      );
+      chestLid.position.set(0, 0.65, -0.12);
+      chestLid.name = "chest_lid";
+      chestGroup.add(chestBody, chestLid);
+      chestGroup.position.set(cx, 0, cz);
+      chestGroup.name = "chest";
+      this.scene.add(chestGroup);
+      
+      const chestGlow = new THREE.PointLight("#fbbf24", 0.2, 3);
+      chestGlow.position.set(cx, 0.8, cz);
+      this.scene.add(chestGlow);
+    });
+
+    // ===== TRAPS (spikes on ground) =====
+    const trapPositions: Array<[number, number]> = [[-4, 0], [8, -4], [-2, 8], [3, -2]];
+    const trapMat = new THREE.MeshStandardMaterial({ color: "#ef4444", emissive: "#ef4444", emissiveIntensity: 0.15 });
+    trapPositions.forEach(([tx, tz]) => {
+      const trapGroup = new THREE.Group();
+      for (let s = 0; s < 4; s++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 4), trapMat);
+        spike.position.set((s % 2) * 0.3 - 0.15, 0.15, Math.floor(s / 2) * 0.3 - 0.15);
+        spike.name = "trap_spike";
+        trapGroup.add(spike);
+      }
+      trapGroup.position.set(tx, -0.3, tz);
+      trapGroup.name = "trap";
+      this.scene.add(trapGroup);
+    });
+
+    // ===== RUNE PILLARS (tall glowing markers) =====
+    const runePillarPositions: Array<[number, number]> = [[-8, -2], [2, -10], [10, 0], [-4, 4]];
+    runePillarPositions.forEach(([rx, rz]) => {
+      const pillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.25, 2.5, 8),
+        new THREE.MeshStandardMaterial({ color: "#2a1a3a", roughness: 0.6, emissive: "#1a0a20", emissiveIntensity: 0.2 })
+      );
+      pillar.position.set(rx, 0.75, rz);
+      pillar.name = "rune_pillar";
+      pillar.castShadow = true;
+      this.scene.add(pillar);
+      const topGem = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.2),
+        new THREE.MeshStandardMaterial({ color: "#a78bfa", emissive: "#a78bfa", emissiveIntensity: 0.6 })
+      );
+      topGem.position.set(rx, 2.1, rz);
+      topGem.name = "rune_pillar_gem";
+      this.scene.add(topGem);
+    });
+
     // Path intersection lights
     const pathLights = [
       { x: 0, z: -7, color: "#a78bfa", intensity: 0.5 },
@@ -537,6 +605,7 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
     this.blockBar.dispose();
+    this.worldIndicators.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -604,6 +673,31 @@ export class MazeStageEngine implements ISimulatorEngine {
 
       this.robotPersonality.update(0.016);
       this.blockBar.animate(Date.now() * 0.001);
+      this.worldIndicators.animate(Date.now() * 0.001);
+
+      // Animate chest lids (gentle bob)
+      this.scene.children.forEach((child) => {
+        if (child.name === "chest" && child instanceof THREE.Group) {
+          child.position.y = Math.sin(Date.now() * 0.002 + child.position.x) * 0.1;
+        }
+      });
+
+      // Animate trap spikes  
+      this.scene.traverse((child) => {
+        if (child.name === "trap_spike" && child instanceof THREE.Mesh) {
+          child.position.y = -0.3 + Math.abs(Math.sin(Date.now() * 0.005 + child.parent!.position.x)) * 0.4;
+        }
+      });
+
+      // Animate rune pillar gems
+      this.scene.traverse((child) => {
+        if (child.name === "rune_pillar_gem" && child instanceof THREE.Mesh) {
+          child.rotation.y += 0.01;
+          const mat = child.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity = 0.5 + Math.sin(Date.now() * 0.004 + child.position.x) * 0.2;
+        }
+      });
+
       this.composer.render();
     };
     animate();
@@ -710,9 +804,13 @@ export class MazeStageEngine implements ISimulatorEngine {
 
   stop() {}
 
-  reset() {
-    this.botGroup.position.set(-18, 0, 0);
+  reset(): void {
+    this.botGroup.position.copy(this.levelStartPos);
     this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = this.levelStartRot;
+    if (this.levelGoalPos.length() > 0) {
+      this.showGoalBeacon(this.levelGoalPos.x, this.levelGoalPos.z);
+    }
     this.doors.forEach((door) => { door.position.y = 0.75; });
     this.magicalDoors.forEach((door) => { if (door.arch) door.arch.visible = true; });
   }
@@ -875,6 +973,10 @@ export class MazeStageEngine implements ISimulatorEngine {
     this.botGroup.rotation.set(0, 0, 0);
     this.botGroup.rotation.y = startPos.rotation;
 
+    this.levelStartPos.set(startPos.x, 0, startPos.z);
+    this.levelStartRot = startPos.rotation || 0;
+    this.levelGoalPos.set(goalPos.x, 0, goalPos.z);
+
     this.showGoalBeacon(goalPos.x, goalPos.z);
   }
 
@@ -891,6 +993,8 @@ export class MazeStageEngine implements ISimulatorEngine {
       oldDot.geometry?.dispose();
       (oldDot.material as THREE.Material)?.dispose();
     }
+
+    this.levelGoalPos.set(x, 0, z);
 
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
@@ -1000,5 +1104,9 @@ export class MazeStageEngine implements ISimulatorEngine {
       if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
+  }
+
+  showGoalIndicator(x: number, z: number, text?: string): void {
+    this.worldIndicators.showGoalMarker(x, z, text);
   }
 }

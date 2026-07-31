@@ -10,6 +10,7 @@ import { GhostPreview } from "../shared/GhostPreview";
 import { RobotPersonality } from "../shared/RobotPersonality";
 import { CinematicCamera } from "../shared/CinematicCamera";
 import { BlockBar3D } from "../shared/BlockBar3D";
+import { WorldIndicators } from "../shared/WorldIndicators";
 import type { ISimulatorEngine } from "../../ports/ISimulatorEngine";
 
 export class BattleStageEngine implements ISimulatorEngine {
@@ -30,6 +31,9 @@ export class BattleStageEngine implements ISimulatorEngine {
   private ghostPreview!: GhostPreview;
   private levelObstacles: THREE.Mesh[] = [];
   private goalBeacon: THREE.Mesh | null = null;
+  private levelStartPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+  private levelStartRot = 0;
+  private levelGoalPos: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   private ambientEmbers: THREE.Points | null = null;
   private robotPersonality!: RobotPersonality;
   private torretaLasers: THREE.Line[] = [];
@@ -37,14 +41,15 @@ export class BattleStageEngine implements ISimulatorEngine {
   private arenaFloor!: THREE.Mesh;
   private cinematicCamera!: CinematicCamera;
   private blockBar!: BlockBar3D;
+  private worldIndicators!: WorldIndicators;
 
   constructor() {
     const { scene, camera } = createSceneWithCamera({
-      fov: 50,
-      cameraPos: [20, 16, 20],
+      fov: 55,
+      cameraPos: [22, 18, 22],
       fogColor: "#0a0505",
-      fogNear: 20,
-      fogFar: 70,
+      fogNear: 15,
+      fogFar: 80,
       bgColor: "#0a0505",
       ambientColor: "#442222",
       skyColor: "#661111",
@@ -89,6 +94,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.scene.add(this.botGroup);
     this.robotPersonality = new RobotPersonality(this.scene, this.botGroup);
     this.blockBar = new BlockBar3D(this.scene);
+    this.worldIndicators = new WorldIndicators(this.scene);
     this.particles = new ParticleSystem(this.scene);
     this.ghostPreview = new GhostPreview(this.scene);
     this.createEnvironment();
@@ -372,6 +378,24 @@ export class BattleStageEngine implements ISimulatorEngine {
       (this as any)._enemyData.push({ body, cannon, angle, orbitRadius, speed: 0.002 + Math.random() * 0.003, patrolAngle: angle });
     });
 
+    // Zone 2 enemies (Assembly)
+    for (let i = 0; i < 2; i++) {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 1.2), enemyBodyMat);
+      body.position.set(8 - i * 4, 0.7, -2 + i * 3);
+      body.name = "enemy";
+      this.scene.add(body);
+      this.enemies.push(body);
+    }
+
+    // Zone 3 enemies (Core - stronger)
+    for (let i = 0; i < 2; i++) {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2, 1.6), enemyBodyMat);
+      body.position.set(-4 + i * 6, 1, 8 - i * 2);
+      body.name = "enemy";
+      this.scene.add(body);
+      this.enemies.push(body);
+    }
+
     // ===== DEBRIS PILES =====
     for (let i = 0; i < 12; i++) {
       const debris = new THREE.Mesh(
@@ -385,6 +409,96 @@ export class BattleStageEngine implements ISimulatorEngine {
       debris.castShadow = true;
       debris.name = "debris";
       this.scene.add(debris);
+    }
+
+    // ===== ZONE WALLS - dividing the factory into sectors =====
+    const zoneWallMat = new THREE.MeshStandardMaterial({
+      color: "#334455", roughness: 0.4, metalness: 0.9,
+      emissive: "#111822", emissiveIntensity: 0.1,
+    });
+
+    // Zone 1 (Entrance) to Zone 2 (Assembly) wall
+    const zoneWall1 = new THREE.Mesh(new THREE.BoxGeometry(12, 3, 0.5), zoneWallMat);
+    zoneWall1.position.set(0, 1, -6);
+    zoneWall1.name = "zone_wall";
+    zoneWall1.castShadow = true;
+    zoneWall1.receiveShadow = true;
+    this.scene.add(zoneWall1);
+    // Door opening in zone wall
+    const doorGlow1 = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 2.5, 0.1),
+      new THREE.MeshStandardMaterial({ color: "#00f5d4", emissive: "#00f5d4", emissiveIntensity: 0.4, transparent: true, opacity: 0.5 })
+    );
+    doorGlow1.position.set(0, 0.5, -5.7);
+    doorGlow1.name = "zone_door";
+    this.scene.add(doorGlow1);
+
+    // Zone 2 (Assembly) to Zone 3 (Core) wall
+    const zoneWall2 = new THREE.Mesh(new THREE.BoxGeometry(10, 3, 0.5), zoneWallMat);
+    zoneWall2.position.set(4, 1, 4);
+    zoneWall2.name = "zone_wall";
+    zoneWall2.castShadow = true;
+    this.scene.add(zoneWall2);
+    const doorGlow2 = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 2.5, 0.1),
+      new THREE.MeshStandardMaterial({ color: "#fbbf24", emissive: "#fbbf24", emissiveIntensity: 0.5, transparent: true, opacity: 0.5 })
+    );
+    doorGlow2.position.set(4, 0.5, 4.3);
+    doorGlow2.name = "zone_door";
+    this.scene.add(doorGlow2);
+
+    // Factory roof supports (pillars scattered)
+    for (let px = -20; px <= 20; px += 10) {
+      for (let pz = -20; pz <= 20; pz += 10) {
+        if (Math.abs(px) < 6 && Math.abs(pz) < 6) continue; // Skip center arena
+        if (Math.random() > 0.4) continue;
+        const pillar = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.3, 0.4, 6, 8),
+          new THREE.MeshStandardMaterial({ color: "#3d4a5c", roughness: 0.5, metalness: 0.8, emissive: "#0a0f15", emissiveIntensity: 0.1 })
+        );
+        pillar.position.set(px, 2.5, pz);
+        pillar.castShadow = true;
+        pillar.receiveShadow = true;
+        pillar.name = "pillar";
+        this.scene.add(pillar);
+        // Top beam
+        const beam = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.2, 2),
+          new THREE.MeshStandardMaterial({ color: "#2d3a4c", roughness: 0.4, metalness: 0.9 })
+        );
+        beam.position.set(px, 5.3, pz);
+        beam.name = "beam";
+        this.scene.add(beam);
+      }
+    }
+
+    // Conveyor belts (visual lines on floor)
+    const conveyorMat = new THREE.MeshBasicMaterial({ color: "#445566", transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
+    for (let i = 0; i < 3; i++) {
+      const belt = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 12), conveyorMat);
+      belt.rotation.x = -Math.PI / 2;
+      belt.position.set(-10 + i * 10, -0.48, -3);
+      belt.name = "conveyor";
+      this.scene.add(belt);
+    }
+
+    // Warning lights on walls (blinking red)
+    const warningLightMat = new THREE.MeshBasicMaterial({ color: "#ff3333" });
+    for (let i = 0; i < 4; i++) {
+      const light = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), warningLightMat);
+      light.position.set(-5 + i * 3.5, 3.5, -22);
+      light.name = "warning_light";
+      this.scene.add(light);
+    }
+
+    // Steam vents (small cylinders with particles)
+    const ventMat = new THREE.MeshStandardMaterial({ color: "#667788", roughness: 0.3, metalness: 0.8 });
+    for (let i = 0; i < 6; i++) {
+      const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.5, 8), ventMat);
+      const angle = (i / 6) * Math.PI * 2;
+      vent.position.set(Math.cos(angle) * 8, 0.1, Math.sin(angle) * 8);
+      vent.name = "steam_vent";
+      this.scene.add(vent);
     }
   }
 
@@ -471,6 +585,7 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.ghostPreview.dispose();
     this.robotPersonality.dispose();
     this.blockBar.dispose();
+    this.worldIndicators.dispose();
     this.renderer.dispose();
     this.particles.dispose();
   }
@@ -567,6 +682,25 @@ export class BattleStageEngine implements ISimulatorEngine {
 
       this.robotPersonality.update(0.016);
       this.blockBar.animate(Date.now() * 0.001);
+      this.worldIndicators.animate(Date.now() * 0.001);
+
+      // Blink warning lights
+      this.scene.traverse((child) => {
+        if (child.name === "warning_light" && child instanceof THREE.Mesh) {
+          const mat = child.material as THREE.MeshBasicMaterial;
+          mat.opacity = 0.3 + Math.sin(Date.now() * 0.01 + child.position.x) * 0.4;
+          mat.transparent = true;
+        }
+      });
+
+      // Animate conveyor belt door glow
+      this.scene.traverse((child) => {
+        if (child.name === "zone_door" && child instanceof THREE.Mesh) {
+          const mat = child.material as THREE.MeshStandardMaterial;
+          mat.emissiveIntensity = 0.3 + Math.sin(Date.now() * 0.003) * 0.25;
+        }
+      });
+
       this.composer.render();
     };
     animate();
@@ -726,9 +860,13 @@ export class BattleStageEngine implements ISimulatorEngine {
 
   stop() { }
 
-  reset() {
-    this.botGroup.position.set(0, 0, 0);
+  reset(): void {
+    this.botGroup.position.copy(this.levelStartPos);
     this.botGroup.rotation.set(0, 0, 0);
+    this.botGroup.rotation.y = this.levelStartRot;
+    if (this.levelGoalPos.length() > 0) {
+      this.showGoalBeacon(this.levelGoalPos.x, this.levelGoalPos.z);
+    }
     const enemyMat = new THREE.MeshStandardMaterial({
       color: "#ff3333",
       emissive: "#ff3333",
@@ -906,6 +1044,10 @@ export class BattleStageEngine implements ISimulatorEngine {
     this.botGroup.rotation.set(0, 0, 0);
     this.botGroup.rotation.y = startPos.rotation;
 
+    this.levelStartPos.set(startPos.x, 0, startPos.z);
+    this.levelStartRot = startPos.rotation || 0;
+    this.levelGoalPos.set(goalPos.x, 0, goalPos.z);
+
     this.showGoalBeacon(goalPos.x, goalPos.z);
   }
 
@@ -922,6 +1064,8 @@ export class BattleStageEngine implements ISimulatorEngine {
       oldDot.geometry?.dispose();
       (oldDot.material as THREE.Material)?.dispose();
     }
+
+    this.levelGoalPos.set(x, 0, z);
 
     const ringGeo = new THREE.TorusGeometry(0.5, 0.1, 16, 32);
     const ringMat = new THREE.MeshStandardMaterial({
@@ -1031,5 +1175,9 @@ export class BattleStageEngine implements ISimulatorEngine {
       if (Math.sqrt(dx * dx + dz * dz) < obs.radius) return true;
     }
     return false;
+  }
+
+  showGoalIndicator(x: number, z: number, text?: string): void {
+    this.worldIndicators.showGoalMarker(x, z, text);
   }
 }
