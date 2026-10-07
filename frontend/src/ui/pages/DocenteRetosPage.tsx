@@ -118,7 +118,7 @@ export const DocenteRetosPage: React.FC = () => {
     logicLevel: 3,
     type: "robotics",
     simulatorConfig: {
-      environment: "obstacle",
+      environment: "neonflow",
       maxBlocks: 10,
       missions: [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
     },
@@ -646,7 +646,7 @@ export const DocenteRetosPage: React.FC = () => {
                           logicLevel: 3,
                           type: "robotics",
                           simulatorConfig: {
-                            environment: "obstacle",
+                            environment: "neonflow",
                             maxBlocks: 10,
                             missions: [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
                           },
@@ -719,7 +719,7 @@ export const DocenteRetosPage: React.FC = () => {
                                       logicLevel: challenge.logicLevel ?? 3,
                                       type: "robotics",
                                       simulatorConfig: {
-                                        environment: (sim as any).environment || "battle",
+                                        environment: (sim as any).environment || "tetrilogic",
                                         maxBlocks: (sim as any).maxBlocks || 10,
                                         missions: (sim as any).missions || [{ id: "m1", title: "Misión 1", objective: "", maxBlocks: 5 }],
                                         allowedHardware: (sim as any).allowedHardware || [],
@@ -1034,7 +1034,7 @@ export const DocenteRetosPage: React.FC = () => {
                       <div>
                         <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Entorno</label>
                         <select
-                          value={challengeFormData.simulatorConfig?.environment || "battle"}
+                          value={challengeFormData.simulatorConfig?.environment || "tetrilogic"}
                           onChange={(e) =>
                             setChallengeFormData({
                               ...challengeFormData,
@@ -1044,10 +1044,8 @@ export const DocenteRetosPage: React.FC = () => {
                           className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
                           style={{ borderRadius: "var(--theme-radius)" }}
                         >
-                          <option value="battle">⚔️ Batalla de Robots</option>
-                          <option value="space">🚀 Exploración Espacial</option>
-                          <option value="maze">🔮 Laberinto Mágico</option>
-                          <option value="obstacle">🏁 Carrera de Obstáculos</option>
+                          <option value="neonflow">🧭 Neon Flow (Lógica)</option>
+                          <option value="tetrilogic">🧩 TetriLogic (Patrones)</option>
                         </select>
                         {formErrors.environment && <p className="text-danger text-[9px] mt-1">{formErrors.environment}</p>}
                       </div>

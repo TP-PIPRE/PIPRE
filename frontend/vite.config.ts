@@ -18,7 +18,7 @@ export default defineConfig({
           target: (() => {
             const useLocal = process.env.VITE_USE_LOCAL_BACKEND === "true";
             const localUrl = process.env.VITE_LOCAL_BACKEND_URL ?? "http://localhost:8080";
-            return useLocal ? `${localUrl}/api/v1/` : "https://pipre-backend.yoshua-cloud.dedyn.io/";
+            return useLocal ? localUrl : "https://pipre-backend.yoshua-cloud.dedyn.io/";
           })(),
           changeOrigin: true,
           secure: false,

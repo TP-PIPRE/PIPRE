@@ -105,7 +105,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   syncTelemetry: async (attempt) => {
     try {
       const { token } = getAuthState();
-      await fetch("/api/v1/telemetry", {
+      const res = await fetch("/api/v1/telemetry", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,6 +113,9 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
         },
         body: JSON.stringify(attempt),
       });
+      if (!res.ok) {
+        throw new Error(`Telemetry HTTP ${res.status}`);
+      }
     } catch (err) {
       console.warn("Telemetry backend no disponible:", err);
     }

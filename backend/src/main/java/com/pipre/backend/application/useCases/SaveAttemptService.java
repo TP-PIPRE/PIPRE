@@ -20,6 +20,9 @@ public class SaveAttemptService implements SaveAttemptUseCase {
     private final SaveTelemetryPort saveTelemetryPort;
 
     private LocalDateTime parseCompletedAt(String completedAt) {
+        if (completedAt == null || completedAt.isBlank()) {
+            throw new BusinessException("El formato de completedAt no es válido.");
+        }
         try {
             return LocalDateTime.ofInstant(Instant.parse(completedAt), ZoneOffset.UTC);
         } catch (DateTimeParseException e) {
