@@ -10,7 +10,6 @@ import { DocenteRetosPage } from "../pages/DocenteRetosPage";
 import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
 import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
-import { BibliotecaPage } from "../pages/BibliotecaPage";
 import { PerfilPage } from "../pages/PerfilPage";
 import { getAuthState } from "../../infrastructure/store/authStore";
 
@@ -99,17 +98,6 @@ export const AppRouter = () => {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/biblioteca"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <BibliotecaPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-
       {/* Rutas para docentes */}
       <Route
         path="/docente/*"
