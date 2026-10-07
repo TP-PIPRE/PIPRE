@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Board, BoardCell, Cell, LineCountConstraint, Piece, RotationAngle } from "../../../shared/types/TetriLogic";
+import { Link } from "react-router-dom";
+import type { Board, BoardCell, Cell, LevelConfig, Piece, RotationAngle } from "../../../shared/types/TetriLogic";
 import { TETRILOGIC_LEVELS } from "../../../shared/constants/levelConfigs";
 import { validatePlacement } from "../../../application/usecases/tetrilogic/validatePlacement";
 import { useGameStore } from "../../../infrastructure/store/gameStore";
@@ -8,7 +9,7 @@ import { PieceTray } from "./PieceTray";
 import { ControlPanel } from "../common/ControlPanel";
 import { AiFeedbackToast } from "../common/AiFeedbackToast";
 
-const LEVEL = TETRILOGIC_LEVELS[0];
+const LEVELS = TETRILOGIC_LEVELS;
 const HINT_MESSAGE = "IA: Intenta rotar la pieza T (click derecho) para encajarla en la esquina superior.";
 
 const createInventory = (): Piece[] => [
@@ -18,16 +19,16 @@ const createInventory = (): Piece[] => [
   { id: "s1", type: "S", rotation: 0, position: { x: -1, y: -1 }, shape: [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }] },
 ];
 
-const createBoard = (): Board => {
-  const { rows, cols } = LEVEL.boardSize;
+const createBoard = (level: LevelConfig): Board => {
+  const { rows, cols } = level.boardSize;
   const cells: BoardCell[][] = Array.from({ length: rows }, (_, y) =>
     Array.from({ length: cols }, (_, x) => ({
       position: { x, y },
-      blocked: LEVEL.blockedCells.some((c) => c.x === x && c.y === y),
+      blocked: level.blockedCells.some((c) => c.x === x && c.y === y),
       tetriminoType: null,
     })),
   );
-  return { size: { rows, cols }, cells, blockedCells: LEVEL.blockedCells };
+  return { size: { rows, cols }, cells, blockedCells: level.blockedCells };
 };
 
 const rebuildBoard = (board: Board, placed: Piece[]): Board => {
@@ -49,11 +50,13 @@ const rotateShape = (shape: Cell[]): Cell[] =>
   shape.map(({ x, y }) => ({ x: -y, y: x }));
 
 export const TetriLogicStage: React.FC = () => {
-  const [board, setBoard] = useState<Board>(createBoard);
+  const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
+  const [board, setBoard] = useState<Board>(() => createBoard(LEVELS[0]));
   const [inventory, setInventory] = useState<Piece[]>(createInventory);
   const [placed, setPlaced] = useState<Piece[]>([]);
-  const [constraints] = useState<LineCountConstraint[]>(() => LEVEL.constraints);
   const [hint, setHint] = useState<string | null>(null);
+
+  const level = LEVELS[currentLevelIndex];
 
   const status = useGameStore((s) => s.status);
   const startGame = useGameStore((s) => s.startGame);
@@ -63,6 +66,27 @@ export const TetriLogicStage: React.FC = () => {
   useEffect(() => {
     startGame("tetrilogic");
   }, [startGame]);
+
+  const resetForLevel = (index: number) => {
+    setBoard(createBoard(LEVELS[index]));
+    setPlaced([]);
+    setInventory(createInventory());
+    setHint(null);
+  };
+
+  const handleLevelChange = (index: number) => {
+    setCurrentLevelIndex(index);
+    resetForLevel(index);
+    startGame("tetrilogic");
+  };
+
+  const handleNextLevel = () => {
+    const next = currentLevelIndex + 1;
+    if (next >= LEVELS.length) return;
+    setCurrentLevelIndex(next);
+    resetForLevel(next);
+    startGame("tetrilogic");
+  };
 
   const handlePieceDrop = (pieceId: string, cell: Cell) => {
     const piece = [...inventory, ...placed].find((p) => p.id === pieceId);
@@ -102,7 +126,7 @@ export const TetriLogicStage: React.FC = () => {
   };
 
   const checkConstraints = () => {
-    const { rows, cols } = LEVEL.boardSize;
+    const { rows, cols } = level.boardSize;
     const rowCounts = Array.from({ length: rows }, () => 0);
     const colCounts = Array.from({ length: cols }, () => 0);
 
@@ -113,7 +137,7 @@ export const TetriLogicStage: React.FC = () => {
       }
     }
 
-    return constraints.every((c) =>
+    return level.constraints.every((c) =>
       (c.orientation === "row" ? rowCounts[c.line] : colCounts[c.line]) === c.targetCount,
     );
   };
@@ -123,15 +147,23 @@ export const TetriLogicStage: React.FC = () => {
     completeGame("SUCCESS");
   };
 
-  const handleLocalReset = () => {
-    setBoard(createBoard());
-    setPlaced([]);
-    setInventory(createInventory());
-    setHint(null);
-  };
-
   return (
     <div className="flex flex-col items-center gap-4 p-4">
+      <div className="flex w-full max-w-md items-center justify-between">
+        <label className="text-xs font-bold text-text-muted">Nivel</label>
+        <select
+          value={currentLevelIndex}
+          onChange={(e) => handleLevelChange(Number(e.target.value))}
+          aria-label="Seleccionar nivel"
+          className="rounded-lg bg-surface border border-border px-3 py-1.5 text-xs font-bold text-text">
+          {LEVELS.map((l, i) => (
+            <option key={l.level} value={i}>
+              Nivel {l.level}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <BoardView
         board={board}
         pieces={placed}
@@ -141,14 +173,33 @@ export const TetriLogicStage: React.FC = () => {
       <PieceTray pieces={inventory} />
       <ControlPanel
         onCheck={handleCheck}
-        onReset={handleLocalReset}
+        onReset={() => resetForLevel(currentLevelIndex)}
         onHint={() => setHint(HINT_MESSAGE)}
       />
-      {status === "SUCCESS" && (
-        <div className="rounded-lg bg-green-500/10 border border-green-500 px-4 py-2 text-sm font-bold text-green-500">
-          ¡Nivel completado!
-        </div>
-      )}
+      {status === "SUCCESS" &&
+        (currentLevelIndex === LEVELS.length - 1 ? (
+          <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-primary/10 border border-primary px-4 py-2">
+            <span className="text-sm font-bold text-primary">
+              ¡Curso Completado!
+            </span>
+            <Link
+              to="/"
+              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-primary/90">
+              Volver a mis cursos
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-green-500/10 border border-green-500 px-4 py-2">
+            <span className="text-sm font-bold text-green-500">
+              ¡Nivel completado!
+            </span>
+            <button
+              onClick={handleNextLevel}
+              className="rounded-lg bg-green-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-green-600">
+              Siguiente Nivel
+            </button>
+          </div>
+        ))}
       {hint && (
         <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
           <AiFeedbackToast message={hint} onClose={() => setHint(null)} />

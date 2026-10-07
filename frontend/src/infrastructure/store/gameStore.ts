@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { getAuthState } from "./authStore";
 
 export type GameId = 'neonflow' | 'tetrilogic';
 
@@ -8,6 +9,7 @@ export type GameResult = 'SUCCESS' | 'FAILED';
 
 export interface AttemptMetrics {
   game: GameId;
+  studentId: string;
   result: GameResult;
   tiempoResolucion: number;
   movimientos: number;
@@ -29,6 +31,7 @@ interface GameStoreState {
   registerMove: () => void;
   requestHint: () => void;
   completeGame: (result: GameResult) => void;
+  syncTelemetry: (attempt: AttemptMetrics) => Promise<void>;
 }
 
 let timerId: number | null = null;
@@ -99,24 +102,42 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     set((state) => ({ pistasIa: state.pistasIa + 1 }));
   },
 
+  syncTelemetry: async (attempt) => {
+    try {
+      const { token } = getAuthState();
+      await fetch("/api/v1/telemetry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(attempt),
+      });
+    } catch (err) {
+      console.warn("Telemetry backend no disponible:", err);
+    }
+  },
+
   completeGame: (result) => {
     const { status, game, tiempoResolucion, movimientos, reinicios, pistasIa } = get();
     if (status !== 'PLAYING' || !game) return;
+
+    const attempt: AttemptMetrics = {
+      game,
+      studentId: getAuthState().user?.id ?? "",
+      result,
+      tiempoResolucion,
+      movimientos,
+      reinicios,
+      pistasIa,
+      completedAt: new Date().toISOString(),
+    };
+
     stopTimer();
     set((state) => ({
       status: result,
-      attempts: [
-        ...state.attempts,
-        {
-          game,
-          result,
-          tiempoResolucion,
-          movimientos,
-          reinicios,
-          pistasIa,
-          completedAt: new Date().toISOString(),
-        },
-      ],
+      attempts: [...state.attempts, attempt],
     }));
+    void get().syncTelemetry(attempt);
   },
 }));

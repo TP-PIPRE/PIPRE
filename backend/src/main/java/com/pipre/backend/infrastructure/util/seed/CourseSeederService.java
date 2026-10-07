@@ -19,13 +19,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class CourseSeederService {
 
-        private final Faker faker = new Faker();
+    private final Faker faker = new Faker();
     private final UserRepositoryPort userRepositoryPort;
     private final ActivityRepositoryPort activityRepositoryPort;
     private final LessonRepositoryPort lessonRepositoryPort;
@@ -34,57 +35,9 @@ public class CourseSeederService {
     private final SimulationRepositoryPort simulationRepositoryPort;
     private final ResultRepositoryPort resultRepositoryPort;
 
-    private static final List<String> COURSE_NAMES = List.of(
-        "Fundamentos de Robótica Educativa",
-        "Programación y Algoritmos con Blockly",
-        "Sensores y Actuadores en Robots",
-        "Lógica de Programación y Control de Flujo",
-        "Automatización Básica y Domótica",
-        "Robots Móviles y Navegación"
-    );
+    private static final Set<String> OFFICIAL_COURSE_IDS = Set.of("c001", "c002");
 
-    private static final List<String> MODULE_NAMES = List.of(
-        "Introducción a la Lógica Computacional",
-        "Estructuras Secuenciales y Repetitivas",
-        "Toma de Decisiones y Condicionales",
-        "Manejo de Sensores de Proximidad",
-        "Control Dinámico de Movimiento",
-        "Optimización de Código Visual"
-    );
-
-    private static final List<String> LESSON_NAMES = List.of(
-        "Primeros Pasos con Bloques",
-        "Uso del Bucle Repetir",
-        "Lectura del Sensor de Ultrasonido",
-        "Decisiones Condicionales Si/Sino",
-        "Coordenadas y Posicionamiento del Robot",
-        "Evitando Colisiones con Sensores"
-    );
-
-    private static final List<String> ACTIVITY_NAMES = List.of(
-        "Cruzar la Pista de Obstáculos",
-        "Resolver el Laberinto de Paredes",
-        "Clasificación de Objetos por Color",
-        "Estacionar Robot en Zona Segura",
-        "Seguimiento de Línea de Guía",
-        "Recorrido Circular de Precisión"
-    );
-
-    private static final List<String> MISSION_TITLES = List.of(
-        "Misión: Llegar a la meta a salvo",
-        "Misión: Recoger muestras del área",
-        "Misión: Esquivar los obstáculos",
-        "Misión: Encontrar la salida del laberinto",
-        "Misión: Posicionar el robot en la base"
-    );
-
-    private static final List<String> MISSION_OBJECTIVES = List.of(
-        "Programa el robot para avanzar 30 unidades y detenerse sin chocar.",
-        "Utiliza el sensor de ultrasonido para evadir los muros del laberinto.",
-        "Lee los datos de los sensores de suelo para seguir la trayectoria.",
-        "Recoge todas las muestras esparcidas y vuelve al punto de inicio.",
-        "Llega a las coordenadas de destino usando el menor número de bloques."
-    );
+    private static final int NUMBER_OF_SIMULATIONS = 3;
 
     @Transactional
     public void seedCourses() {
@@ -95,98 +48,145 @@ public class CourseSeederService {
         if (students.isEmpty())
             return;
 
-        int NUMBER_OF_COURSES = 5;
-        int NUMBER_OF_MODULES = 3;
-        int NUMBER_OF_LESSONS = 3;
-        int NUMBER_OF_ACTIVITIES = 3;
-        int NUMBER_OF_SIMULATIONS = 3;
+        removeLegacyCourses();
 
-        for (int i = 0; i < NUMBER_OF_COURSES; i++) {
-            String courseName = COURSE_NAMES.get(i % COURSE_NAMES.size());
-            Course course = Course.builder()
-                    .idCourse(UUID.randomUUID().toString())
-                    .name(courseName)
-                    .description("Curso completo enfocado en " + courseName.toLowerCase() + ".")
-                    .level(faker.options().option(CourseLevel.LOW, CourseLevel.MEDIUM, CourseLevel.HIGH))
-                    .createdAt(LocalDateTime.now().minusDays(faker.number().numberBetween(1, 120)))
-                    .build();
-            courseRepositoryPort.save(course);
-            String courseId = course.getIdCourse();
+        seedNeonFlowCourse(students);
+        seedTetriLogicCourse(students);
+    }
 
-            for (int j = 1; j <= NUMBER_OF_MODULES; j++) {
-                String moduleTitle = MODULE_NAMES.get((i + j) % MODULE_NAMES.size());
-                Module module = Module.builder()
-                        .idModule(UUID.randomUUID().toString())
-                        .title("Módulo: " + moduleTitle)
-                        .idCourse(courseId)
+    private void removeLegacyCourses() {
+        courseRepositoryPort.findAll().stream()
+                .map(Course::getIdCourse)
+                .filter(id -> !OFFICIAL_COURSE_IDS.contains(id))
+                .forEach(courseRepositoryPort::deleteById);
+
+        OFFICIAL_COURSE_IDS.forEach(courseRepositoryPort::deleteById);
+    }
+
+    private void seedNeonFlowCourse(List<User> students) {
+        String courseId = "c001";
+        Course course = Course.builder()
+                .idCourse(courseId)
+                .name("Neon Flow")
+                .description("Simulador web gamificado de lógica proposicional y condicionales: guía el láser hasta los receptores usando espejos, filtros y razonamiento deductivo.")
+                .level(CourseLevel.MEDIUM)
+                .createdAt(LocalDateTime.now().minusDays(90))
+                .build();
+        courseRepositoryPort.save(course);
+
+        String moduleId = "mod-c001-l1";
+        moduleRepositoryPort.save(Module.builder()
+                .idModule(moduleId)
+                .title("Lógica Proposicional y Condicionales")
+                .idCourse(courseId)
+                .build());
+
+        String lessonId = "les-c001-l1";
+        lessonRepositoryPort.save(Lesson.builder()
+                .idLesson(lessonId)
+                .title("Introducción a Neon Flow")
+                .idModule(moduleId)
+                .build());
+
+        saveActivity(lessonId, "act-c001-1", "Neon Flow - Nivel 1",
+                ActivityLevel.LOW, "EASY", "neonflow",
+                "Ilumina el receptor rojo",
+                "Guía el láser rojo del emisor (0,2) hasta el receptor (4,2) en un tablero 5x5 usando espejos y filtros.",
+                students);
+
+        saveActivity(lessonId, "act-c001-2", "Neon Flow - Nivel 2",
+                ActivityLevel.MEDIUM, "MEDIUM", "neonflow",
+                "Esquiva los muros",
+                "Redirige el láser sorteando los muros con espejos rotados para iluminar el receptor.",
+                students);
+    }
+
+    private void seedTetriLogicCourse(List<User> students) {
+        String courseId = "c002";
+        Course course = Course.builder()
+                .idCourse(courseId)
+                .name("TetriLogic")
+                .description("Simulador web gamificado de razonamiento espacial y patrones: encaja Tetriminos en tableros con restricciones para entrenar planificación y resolución de problemas.")
+                .level(CourseLevel.MEDIUM)
+                .createdAt(LocalDateTime.now().minusDays(90))
+                .build();
+        courseRepositoryPort.save(course);
+
+        String moduleId = "mod-c002-r1";
+        moduleRepositoryPort.save(Module.builder()
+                .idModule(moduleId)
+                .title("Razonamiento Espacial y Patrones")
+                .idCourse(courseId)
+                .build());
+
+        String lessonId = "les-c002-r1";
+        lessonRepositoryPort.save(Lesson.builder()
+                .idLesson(lessonId)
+                .title("Introducción a TetriLogic")
+                .idModule(moduleId)
+                .build());
+
+        saveActivity(lessonId, "act-c002-1", "TetriLogic - Nivel 1",
+                ActivityLevel.LOW, "EASY", "tetrilogic",
+                "Cubre el tablero 4x4",
+                "Encaja los Tetriminos para cubrir el tablero cumpliendo el conteo de celdas por fila y columna.",
+                students);
+
+        saveActivity(lessonId, "act-c002-2", "TetriLogic - Nivel 2",
+                ActivityLevel.MEDIUM, "MEDIUM", "tetrilogic",
+                "Esquiva las celdas bloqueadas",
+                "Encaja los Tetriminos respetando las celdas bloqueadas de la fila inferior del tablero.",
+                students);
+    }
+
+    private void saveActivity(String lessonId, String activityId, String name,
+                              ActivityLevel logicLevel, String difficulty, String environment,
+                              String missionTitle, String missionObjective, List<User> students) {
+        com.pipre.backend.domain.entities.activity.Mission mission =
+                com.pipre.backend.domain.entities.activity.Mission.builder()
+                        .id(UUID.randomUUID().toString())
+                        .title(missionTitle)
+                        .objective(missionObjective)
+                        .maxBlocks(0)
                         .build();
-                moduleRepositoryPort.save(module);
-                String moduleId = module.getIdModule();
 
-                for (int k = 1; k <= NUMBER_OF_LESSONS; k++) {
-                    String lessonTitle = LESSON_NAMES.get((i + j + k) % LESSON_NAMES.size());
-                    Lesson lesson = Lesson.builder()
-                            .idLesson(UUID.randomUUID().toString())
-                            .title("Lección: " + lessonTitle)
-                            .idModule(moduleId)
-                            .build();
-                    lessonRepositoryPort.save(lesson);
-                    String lessonId = lesson.getIdLesson();
+        Activity activity = Activity.builder()
+                .idActivity(activityId)
+                .name(name)
+                .logicLevel(logicLevel)
+                .idLesson(lessonId)
+                .complexity(difficulty)
+                .difficulty(difficulty)
+                .type("robotics")
+                .environment(environment)
+                .startX(0.0)
+                .startZ(0.0)
+                .targetX(0.0)
+                .targetZ(0.0)
+                .missions(List.of(mission))
+                .build();
+        activityRepositoryPort.save(activity);
 
-                    for (int l = 1; l <= NUMBER_OF_ACTIVITIES; l++) {
-                        String idActivity = UUID.randomUUID().toString();
-                        int idx = (i + j + k + l);
-                        com.pipre.backend.domain.entities.activity.Mission mission = com.pipre.backend.domain.entities.activity.Mission.builder()
-                                .id(UUID.randomUUID().toString())
-                                .title(MISSION_TITLES.get(idx % MISSION_TITLES.size()))
-                                .objective(MISSION_OBJECTIVES.get(idx % MISSION_OBJECTIVES.size()))
-                                .maxBlocks(faker.number().numberBetween(5, 20))
-                                .build();
+        for (int i = 0; i < NUMBER_OF_SIMULATIONS; i++) {
+            User randomStudent = faker.options().nextElement(students);
+            SimulationResult simResult = faker.options().option(SimulationResult.SUCCESS, SimulationResult.FAILURE);
+            simulationRepositoryPort.save(Simulation.builder()
+                    .idSimulation(UUID.randomUUID().toString())
+                    .result(simResult)
+                    .idActivity(activityId)
+                    .idStudent(randomStudent.getIdUser())
+                    .build());
 
-                        String activityName = ACTIVITY_NAMES.get(idx % ACTIVITY_NAMES.size());
-                        Activity activity = Activity.builder()
-                                .idActivity(idActivity)
-                                .name(activityName)
-                                .logicLevel(faker.options().option(ActivityLevel.LOW, ActivityLevel.MEDIUM, ActivityLevel.HIGH))
-                                .idLesson(lessonId)
-                                .complexity(faker.options().option("EASY", "MEDIUM", "HARD"))
-                                .difficulty(faker.options().option("EASY", "MEDIUM", "HARD"))
-                                .type(faker.options().option("robotics", "theoretical", "quiz"))
-                                .environment(faker.options().option("obstacle", "maze", "battle", "space"))
-                                .startX(0.0)
-                                .startZ(0.0)
-                                .targetX(faker.number().randomDouble(1, 10, 50))
-                                .targetZ(faker.number().randomDouble(1, 10, 50))
-                                .missions(List.of(mission))
-                                .build();
-                        activityRepositoryPort.save(activity);
-
-                        for (int m = 1; m <= NUMBER_OF_SIMULATIONS; m++) {
-                            User randomStudent = faker.options().nextElement(students);
-                            SimulationResult simResult = faker.options().option(SimulationResult.SUCCESS, SimulationResult.FAILURE);
-                            Simulation simulation = Simulation.builder()
-                                    .idSimulation(UUID.randomUUID().toString())
-                                    .result(simResult)
-                                    .idActivity(idActivity)
-                                    .idStudent(randomStudent.getIdUser())
-                                    .build();
-                            simulationRepositoryPort.save(simulation);
-
-                            com.pipre.backend.domain.entities.result.Result result = com.pipre.backend.domain.entities.result.Result.builder()
-                                    .idResult(UUID.randomUUID().toString())
-                                    .attempts(faker.number().numberBetween(1, 5))
-                                    .errors(faker.number().numberBetween(0, 10))
-                                    .score(BigDecimal.valueOf(faker.number().randomDouble(2, 50, 100)))
-                                    .resultSimulation(simResult.name())
-                                    .idStudent(randomStudent.getIdUser())
-                                    .idActivity(idActivity)
-                                    .dateAttempted(LocalDateTime.now().minusMinutes(faker.number().numberBetween(1, 120)))
-                                    .build();
-                            resultRepositoryPort.save(result);
-                        }
-                    }
-                }
-            }
+            resultRepositoryPort.save(com.pipre.backend.domain.entities.result.Result.builder()
+                    .idResult(UUID.randomUUID().toString())
+                    .attempts(faker.number().numberBetween(1, 5))
+                    .errors(faker.number().numberBetween(0, 10))
+                    .score(BigDecimal.valueOf(faker.number().randomDouble(2, 50, 100)))
+                    .resultSimulation(simResult.name())
+                    .idStudent(randomStudent.getIdUser())
+                    .idActivity(activityId)
+                    .dateAttempted(LocalDateTime.now().minusMinutes(faker.number().numberBetween(1, 120)))
+                    .build());
         }
     }
 }

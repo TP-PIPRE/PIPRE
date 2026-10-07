@@ -20,13 +20,13 @@ public class DataSeeder {
         return args -> {
             if (!userSeederService.isDatabaseSeeded()) {
                 userSeederService.seedUsers();
-                courseSeederService.seedCourses();
                 groupSeederService.seedCourses();
                 additionalDataSeederService.seedAdditionalData();
                 System.out.println("Base de datos sembrada");
             } else {
                 System.out.println("La base de datos ya contiene datos. No se sembró nada.");
             }
+            courseSeederService.seedCourses();
         };
     }
 }
