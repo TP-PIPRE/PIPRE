@@ -65,6 +65,9 @@ export const TetriLogicStage: React.FC = () => {
 
   useEffect(() => {
     startGame("tetrilogic");
+    return () => {
+      useGameStore.getState().stopGame();
+    };
   }, [startGame]);
 
   const resetForLevel = (index: number) => {

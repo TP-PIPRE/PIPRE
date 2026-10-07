@@ -32,6 +32,7 @@ interface GameStoreState {
   requestHint: () => void;
   completeGame: (result: GameResult) => void;
   syncTelemetry: (attempt: AttemptMetrics) => Promise<void>;
+  stopGame: () => void;
 }
 
 let timerId: number | null = null;
@@ -100,6 +101,11 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     const { status } = get();
     if (status !== 'PLAYING') return;
     set((state) => ({ pistasIa: state.pistasIa + 1 }));
+  },
+
+  stopGame: () => {
+    stopTimer();
+    set({ status: 'IDLE', game: null });
   },
 
   syncTelemetry: async (attempt) => {

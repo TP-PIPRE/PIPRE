@@ -47,6 +47,9 @@ export const NeonFlowStage: React.FC = () => {
 
   useEffect(() => {
     startGame("neonflow");
+    return () => {
+      useGameStore.getState().stopGame();
+    };
   }, [startGame]);
 
   const resetForLevel = (index: number) => {

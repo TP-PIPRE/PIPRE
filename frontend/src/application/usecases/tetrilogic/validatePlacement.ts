@@ -11,6 +11,10 @@ export function validatePlacement(board: Board, tetrimino: Tetrimino, anchor: Ce
 
     const target = board.cells[y][x];
 
+    if (!target) {
+      return false;
+    }
+
     if (target.blocked) {
       return false;
     }
