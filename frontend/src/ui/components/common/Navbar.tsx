@@ -63,14 +63,12 @@ export const Navbar: React.FC = () => {
         { name: "Métricas", path: "/docente/metricas" },
         { name: "Retos", path: "/docente/retos" },
         { name: "Estudiantes", path: "/docente/estudiantes" },
-        { name: "Biblioteca", path: "/biblioteca" },
       ]
     : [
         { name: "Inicio", path: "/" },
         { name: "Simulador", path: "/simulador" },
         { name: "Resultados", path: "/resultados" },
         { name: "Ranking", path: "/ranking" },
-        { name: "Biblioteca", path: "/biblioteca" },
       ];
 
   const handleLogout = () => {

@@ -60,10 +60,10 @@ public class AuthController {
 
                 ResponseCookie cookie = ResponseCookie.from("jwt", token)
                                 .httpOnly(true)
-                                .secure(true)
+                                .secure(false)
                                 .path("/")
                                 .maxAge(3600)
-                                .sameSite("none")
+                                .sameSite("lax")
                                 .build();
 
                 com.pipre.backend.domain.entities.user.User user = userRepositoryPort
@@ -103,10 +103,10 @@ public class AuthController {
         public ResponseEntity<MessageResponseDTO> logout() {
                 ResponseCookie cookie = ResponseCookie.from("jwt", "")
                                 .httpOnly(true)
-                                .secure(true)
+                                .secure(false)
                                 .path("/")
                                 .maxAge(0)
-                                .sameSite("Strict")
+                                .sameSite("lax")
                                 .build();
 
                 MessageResponseDTO response = new MessageResponseDTO("Sesión cerrada correctamente");

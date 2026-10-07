@@ -1,9 +1,19 @@
-import type { EnvironmentType, MissionTemplate } from "./Simulador";
-import type { Position } from "./RobotSimulation";
-
 export type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
 export type ComplexityLevel = "LOW" | "MEDIUM" | "HIGH";
 export type ActivityType = "robotics" | "theoretical" | "quiz";
+
+export type EnvironmentType = 'neonflow' | 'tetrilogic';
+
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface MissionTemplate {
+  id: string;
+  title: string;
+  objective: string;
+}
 
 export interface ChallengeSimulatorConfig {
   environment: EnvironmentType;
