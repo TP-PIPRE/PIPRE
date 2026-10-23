@@ -1,9 +1,11 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "VITE_");
+  return {
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -16,8 +18,8 @@ export default defineConfig({
         "/api/v1": {
           // Choose target based on env variables
           target: (() => {
-            const useLocal = process.env.VITE_USE_LOCAL_BACKEND === "true";
-            const localUrl = process.env.VITE_LOCAL_BACKEND_URL ?? "http://localhost:8080";
+            const useLocal = env.VITE_USE_LOCAL_BACKEND === "true";
+            const localUrl = env.VITE_LOCAL_BACKEND_URL ?? "http://localhost:8080";
             return useLocal ? localUrl : "https://pipre-backend.yoshua-cloud.dedyn.io/";
           })(),
           changeOrigin: true,
@@ -36,4 +38,5 @@ export default defineConfig({
         },
     },
   },
+  };
 });

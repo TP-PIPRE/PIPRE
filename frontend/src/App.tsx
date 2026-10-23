@@ -10,6 +10,9 @@ const App = () => {
     const root = document.documentElement;
     const c = currentTheme.colors;
     const r = currentTheme.borderRadius || "8px";
+    root.style.setProperty("--font-sans", currentTheme.fonts.sans);
+    root.style.setProperty("--font-mono", currentTheme.fonts.mono);
+    root.style.colorScheme = currentTheme.style === "gamer" ? "dark" : "light";
 
     // Our custom theme vars
     root.style.setProperty("--theme-bg", c.bg);

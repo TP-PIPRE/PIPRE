@@ -1,5 +1,5 @@
 import React from "react";
-import { BsExclamationTriangleFill, BsEnvelope, BsGraphUp } from "react-icons/bs";
+import { TriangleAlert as BsExclamationTriangleFill, Mail as BsEnvelope, ChartNoAxesCombined as BsGraphUp } from "lucide-react";
 
 const MOCK_METRICS = {
   dropoutRisk: [
@@ -39,6 +39,7 @@ export const DocenteMetricasPage: React.FC = () => {
       style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
     >
       <header className="mb-10">
+        <p className="page-eyebrow mb-3">Seguimiento académico</p>
         <h1
           className="text-xl font-mono font-bold tracking-tight mb-2 transition-all duration-300 hover:text-primary"
           style={{ color: "var(--text)" }}
@@ -53,10 +54,11 @@ export const DocenteMetricasPage: React.FC = () => {
         </p>
       </header>
 
+      <p role="note" className="mb-6 rounded-lg border border-border bg-surface p-4 text-sm text-text-muted">Vista de demostración: estos indicadores utilizan datos de ejemplo.</p>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         {/* Dropout Risk Panel */}
         <div
-          className="border border-border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] rounded-lg"
+          className="border border-border p-6 transition-all duration-300 hover:shadow-lg  rounded-lg"
           style={{ backgroundColor: "var(--surface)" }}
         >
           <h2
@@ -73,7 +75,7 @@ export const DocenteMetricasPage: React.FC = () => {
             {MOCK_METRICS.dropoutRisk.map((student) => (
               <div
                 key={student.id}
-                className="flex items-center justify-between p-4 border border-border/50 transition-all duration-300 hover:bg-surface-brighter rounded-lg"
+                className="flex items-center justify-between p-4 border border-border transition-all duration-300 hover:bg-surface-brighter rounded-lg"
                 style={{ backgroundColor: "var(--surface)" }}
               >
                 <div className="flex flex-col">
@@ -84,7 +86,7 @@ export const DocenteMetricasPage: React.FC = () => {
                     {student.name}
                   </span>
                   <span
-                    className="text-[10px] transition-all duration-300"
+                    className="text-xs transition-all duration-300"
                     style={{ color: "var(--text-muted)" }}
                   >
                     {student.reason}
@@ -93,18 +95,18 @@ export const DocenteMetricasPage: React.FC = () => {
                 <div className="flex items-center gap-4 text-right">
                   <div className="flex flex-col">
                     <span
-                      className={`text-[10px] font-mono font-bold uppercase transition-all duration-300 ${
+                      className={`text-xs font-mono font-bold uppercase transition-all duration-300 ${
                         student.risk === "Alto"
                           ? "text-danger"
                           : student.risk === "Medio"
-                            ? "text-yellow-500"
+                            ? "text-accent"
                             : "text-primary"
                       }`}
                     >
                       Riesgo {student.risk}
                     </span>
                     <span
-                      className="text-[9px] font-mono transition-all duration-300"
+                      className="text-xs font-mono transition-all duration-300"
                       style={{ color: "var(--text-muted)" }}
                     >
                       {student.trend === "up"
@@ -114,7 +116,7 @@ export const DocenteMetricasPage: React.FC = () => {
                           : "Estable"}
                     </span>
                   </div>
-                  <button className="text-text-muted hover:text-primary transition-all duration-300 transform hover:scale-110 rounded-full p-1">
+                  <button disabled aria-label="Contactar estudiante (próximamente)" title="Próximamente" className="text-text-muted hover:text-primary transition-all duration-300 transform  rounded-full p-1">
                     <BsEnvelope className="text-base" />
                   </button>
                 </div>
@@ -125,7 +127,7 @@ export const DocenteMetricasPage: React.FC = () => {
 
         {/* Module Efficiency */}
         <div
-          className="border border-border p-6 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] rounded-lg"
+          className="border border-border p-6 transition-all duration-300 hover:shadow-lg  rounded-lg"
           style={{ backgroundColor: "var(--surface)" }}
         >
           <h2
@@ -142,11 +144,11 @@ export const DocenteMetricasPage: React.FC = () => {
             {MOCK_METRICS.moduleEfficiency.map((mod) => (
               <div
                 key={mod.name}
-                className="p-4 transition-all duration-300 hover:scale-[1.01] rounded-lg"
-                style={{ backgroundColor: "rgba(var(--surface-rgb), 0.5)" }}
+                className="p-4 transition-all duration-300  rounded-lg"
+                style={{ backgroundColor: "var(--surface-brighter)" }}
               >
                 <div
-                  className="flex justify-between text-[10px] font-mono uppercase tracking-widest mb-2 transition-all duration-300"
+                  className="flex justify-between text-xs font-mono uppercase tracking-widest mb-2 transition-all duration-300"
                   style={{ color: "var(--text-muted)" }}
                 >
                   <span>{mod.name}</span>
@@ -166,7 +168,7 @@ export const DocenteMetricasPage: React.FC = () => {
                 </div>
                 <div className="flex justify-end mt-1">
                   <span
-                    className="text-[9px] font-mono transition-all duration-300 hover:text-yellow-500"
+                    className="text-xs font-mono transition-all duration-300 hover:text-accent"
                     style={{ color: "var(--primary)" }}
                   >
                     Promedio: {mod.avgScore} pts

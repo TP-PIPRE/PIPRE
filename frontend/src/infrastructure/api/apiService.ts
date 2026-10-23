@@ -22,11 +22,27 @@ import type {
   PlayerProfileDTO,
   AchievementDTO,
   StudentHistoryDTO,
-  PageCourseDTO,
-  PageModuleDTO,
-  PageActivityDTO,
+  CourseResponseDTO,
+  ModuleResponseDTO,
+  ModuleProgressDTO,
+  HelpRequestDTO,
+  PageDTO,
   Pageable,
 } from "./models/apiModels";
+
+async function readCollection<T>(path: string, pageable?: Pageable): Promise<T[]> {
+  const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100, ...(pageable?.sort ? { sort: pageable.sort } : {}) };
+  const { data } = await axiosInstance.get<PageDTO<T>>(path, { params });
+  if (!Array.isArray(data.content)) throw new Error("Respuesta paginada inválida.");
+  const items = [...data.content];
+  if (!pageable) {
+    for (let page = data.number + 1; page < data.totalPages; page++) {
+      const next = await axiosInstance.get<PageDTO<T>>(path, { params: { ...params, page } });
+      items.push(...next.data.content);
+    }
+  }
+  return items;
+}
 
 export const apiService = {
   users: {
@@ -67,9 +83,7 @@ export const apiService = {
   },
   courses: {
     getAll: async (pageable?: Pageable) => {
-      const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
-      const response = await axiosInstance.get<PageCourseDTO>(API_ENDPOINTS.COURSES, { params });
-      return response.data.content;
+      return readCollection<CourseResponseDTO>(API_ENDPOINTS.COURSES, pageable);
     },
     create: async (data: CourseRequestDTO) => {
       await axiosInstance.post(API_ENDPOINTS.COURSES, data);
@@ -83,11 +97,7 @@ export const apiService = {
   },
   modules: {
     getByCourse: async (idCourse: string, pageable?: Pageable) => {
-      const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
-      const response = await axiosInstance.get<PageModuleDTO>(
-        API_ENDPOINTS.MODULES_BY_COURSE(idCourse), { params },
-      );
-      return response.data.content;
+      return readCollection<ModuleResponseDTO>(API_ENDPOINTS.MODULES_BY_COURSE(idCourse), pageable);
     },
     create: async (data: ModuleRequestDTO) => {
       await axiosInstance.post(API_ENDPOINTS.MODULES, data);
@@ -106,22 +116,17 @@ export const apiService = {
   },
   activities: {
     getByLesson: async (idLesson: string, pageable?: Pageable) => {
-      const params = { page: pageable?.page ?? 0, size: pageable?.size ?? 100 };
-      const response = await axiosInstance.get<PageActivityDTO>(
-        API_ENDPOINTS.ACTIVITIES_BY_LESSON(idLesson), { params },
-      );
-      return response.data.content;
+      return readCollection<ActivityResponseDTO>(API_ENDPOINTS.ACTIVITIES_BY_LESSON(idLesson), pageable);
     },
     getById: async (id: string) => {
       const response = await axiosInstance.get<ActivityResponseDTO>(API_ENDPOINTS.ACTIVITY_BY_ID(id));
       return response.data;
     },
     create: async (data: CreateActivityCommand) => {
-      const response = await axiosInstance.post<{ idActivity: string }>(
+      await axiosInstance.post<void>(
         API_ENDPOINTS.ACTIVITIES,
         data,
       );
-      return response.data;
     },
     update: async (id: string, data: CreateActivityCommand) => {
       await axiosInstance.put(API_ENDPOINTS.ACTIVITY_BY_ID(id), data);
@@ -193,16 +198,14 @@ export const apiService = {
       await axiosInstance.post(API_ENDPOINTS.MODULE_PROGRESS, data);
     },
     getProgressByUser: async (idStudent: string) => {
-      const response = await axiosInstance.get<
-        { idModule: string; percentage: number }[]
-      >(API_ENDPOINTS.MODULE_PROGRESS_BY_USER(idStudent));
+      const response = await axiosInstance.get<ModuleProgressDTO[]>(API_ENDPOINTS.MODULE_PROGRESS_BY_USER(idStudent));
       return response.data;
     },
     postHelpRequest: async (data: HelpRequest) => {
       await axiosInstance.post(API_ENDPOINTS.HELP_REQUESTS, data);
     },
     getHelpRequests: async (idStudent: string) => {
-      const response = await axiosInstance.get<{ timesRequested: number }[]>(
+      const response = await axiosInstance.get<HelpRequestDTO[]>(
         API_ENDPOINTS.HELP_REQUESTS_BY_USER(idStudent),
       );
       return response.data;

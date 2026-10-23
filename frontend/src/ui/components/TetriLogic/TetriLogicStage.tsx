@@ -55,7 +55,9 @@ export const TetriLogicStage: React.FC = () => {
   const [inventory, setInventory] = useState<Piece[]>(createInventory);
   const [placed, setPlaced] = useState<Piece[]>([]);
   const [hint, setHint] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState("");
 
+  const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const level = LEVELS[currentLevelIndex];
 
   const status = useGameStore((s) => s.status);
@@ -75,6 +77,8 @@ export const TetriLogicStage: React.FC = () => {
     setPlaced([]);
     setInventory(createInventory());
     setHint(null);
+    setFeedback("");
+    setSelectedPieceId(null);
   };
 
   const handleLevelChange = (index: number) => {
@@ -98,7 +102,8 @@ export const TetriLogicStage: React.FC = () => {
     const withoutOld = placed.filter((p) => p.id !== pieceId);
     const boardWithout = rebuildBoard(board, withoutOld);
 
-    if (!validatePlacement(boardWithout, piece, cell)) return;
+    if (!validatePlacement(boardWithout, piece, cell)) { setFeedback("La pieza no cabe aquí. Elige otra celda libre."); return; }
+    setFeedback("Pieza colocada.");
 
     const nextPlaced = [...withoutOld, { ...piece, position: cell }];
     setPlaced(nextPlaced);
@@ -146,19 +151,22 @@ export const TetriLogicStage: React.FC = () => {
   };
 
   const handleCheck = () => {
-    if (!checkConstraints()) return;
+    if (!checkConstraints()) { setFeedback("Revisa los objetivos de filas y columnas antes de volver a comprobar."); return; }
+    setFeedback("¡Objetivos completados!");
     completeGame("SUCCESS");
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-4">
-      <div className="flex w-full max-w-md items-center justify-between">
-        <label className="text-xs font-bold text-text-muted">Nivel</label>
+    <main className="lab-shell">
+      <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>TetriLogic</h1><p className="page-intro">Coloca las piezas y cumple los objetivos de cada fila y columna.</p></div><span className="text-sm text-text-muted">Nivel {level.level} de {LEVELS.length}</span></header>
+      <section className="lab-stage" aria-label="Área de simulación">
+      <div className="flex w-full items-center justify-between gap-4 border-b border-border pb-4">
+        <label className="text-sm font-semibold text-text-muted">Nivel</label>
         <select
           value={currentLevelIndex}
           onChange={(e) => handleLevelChange(Number(e.target.value))}
           aria-label="Seleccionar nivel"
-          className="rounded-lg bg-surface border border-border px-3 py-1.5 text-xs font-bold text-text">
+          className="rounded-lg bg-surface border border-border px-3 py-1.5 text-sm font-semibold text-text">
           {LEVELS.map((l, i) => (
             <option key={l.level} value={i}>
               Nivel {l.level}
@@ -172,8 +180,13 @@ export const TetriLogicStage: React.FC = () => {
         pieces={placed}
         onPieceDrop={handlePieceDrop}
         onRotatePiece={handleRotatePiece}
+        selectedPieceId={selectedPieceId}
+        onSelectPiece={setSelectedPieceId}
       />
-      <PieceTray pieces={inventory} />
+      <p className="text-sm text-text-muted text-center">Selecciona una pieza y una celda para colocarla. Selecciona una pieza del tablero para moverla o rotarla.</p>
+      <div className="lab-tools"><PieceTray pieces={inventory} selectedPieceId={selectedPieceId} onSelectPiece={setSelectedPieceId} /><button className="btn-secondary" disabled={!placed.some(p => p.id === selectedPieceId)} onClick={() => { if (selectedPieceId) handleRotatePiece(selectedPieceId); }}>Rotar pieza ↻</button></div>
+      <div className="w-full rounded-lg border border-border p-3"><h2 className="text-sm font-semibold mb-2">Objetivos del nivel</h2><ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-text-muted">{level.constraints.map((c, i) => <li key={i}>{c.orientation === "row" ? "Fila" : "Columna"} {c.line + 1}: {c.targetCount} celdas</li>)}</ul></div>
+      <p role="status" className="lab-status">{feedback || "Prepara el tablero y pulsa Comprobar para validar tu solución."}</p>
       <ControlPanel
         onCheck={handleCheck}
         onReset={() => resetForLevel(currentLevelIndex)}
@@ -187,27 +200,28 @@ export const TetriLogicStage: React.FC = () => {
             </span>
             <Link
               to="/"
-              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-primary/90">
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
               Volver a mis cursos
             </Link>
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-green-500/10 border border-green-500 px-4 py-2">
-            <span className="text-sm font-bold text-green-500">
+            <span className="text-sm font-bold text-success">
               ¡Nivel completado!
             </span>
             <button
               onClick={handleNextLevel}
-              className="rounded-lg bg-green-500 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-green-600">
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
               Siguiente Nivel
             </button>
           </div>
         ))}
       {hint && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
+        <div className="w-full flex justify-center">
           <AiFeedbackToast message={hint} onClose={() => setHint(null)} />
         </div>
       )}
-    </div>
+      </section>
+    </main>
   );
 };

@@ -3,38 +3,18 @@ import { useLocation } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
 import type {
   CourseResponseDTO,
+  CreateActivityCommand,
   CourseRequestDTO,
   ModuleResponseDTO,
   LessonResponseDTO,
-  MissionDTO,
-  PositionDTO,
 } from "../../infrastructure/api/models/apiModels";
+import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import { Modal } from "../components/common/Modal";
-import { BsTrashFill, BsTrash, BsChevronDown, BsTerminal, BsPencil, BsPlusLg } from "react-icons/bs";
-
-const MOCK_COURSES = [
-  {
-    idCourse: "1",
-    name: "Robótica Nivel 1: Fundamentos (Local)",
-    level: "Básico",
-    description: "Curso introductorio a la robótica.",
-  },
-  {
-    idCourse: "2",
-    name: "Programación de Microcontroladores (Local)",
-    level: "Intermedio",
-    description: "Curso avanzado de programación.",
-  },
-  {
-    idCourse: "3",
-    name: "Diseño y Mecánica de Robots (Local)",
-    level: "Avanzado",
-    description: "Curso de diseño mecánico.",
-  },
-];
+import { Trash2 as BsTrashFill, Trash2 as BsTrash, ChevronDown as BsChevronDown, Terminal as BsTerminal, Pencil as BsPencil, Plus as BsPlusLg } from "lucide-react";
 
 interface ChallengeView {
   idActivity: string;
+  idLesson?: string;
   courseId: string;
   title: string;
   description: string;
@@ -65,7 +45,7 @@ interface ChallengeFormData {
   points: number;
   complexity: "LOW" | "MEDIUM" | "HIGH";
   logicLevel: number;
-  type: "robotics";
+  type: string;
   simulatorConfig: {
     environment: string;
     maxBlocks: number;
@@ -80,6 +60,8 @@ interface ChallengeFormData {
 
 export const DocenteRetosPage: React.FC = () => {
   const location = useLocation();
+  const [operationError, setOperationError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Estados para cursos
   const [courses, setCourses] = useState<CourseResponseDTO[]>([]);
@@ -93,7 +75,7 @@ export const DocenteRetosPage: React.FC = () => {
     {
       name: "",
       description: "",
-      level: "BASIC",
+      level: "LOW",
     },
   );
 
@@ -152,11 +134,11 @@ export const DocenteRetosPage: React.FC = () => {
       if (data && data.length > 0) {
         setCourses(data);
       } else {
-        setCourses(MOCK_COURSES as unknown as CourseResponseDTO[]);
+        setCourses([]);
       }
     } catch (err) {
-      console.error("Error fetching courses, using fallback:", err);
-      setCourses(MOCK_COURSES as unknown as CourseResponseDTO[]);
+      setOperationError(getApiErrorMessage(err, "No se pudieron cargar los cursos."));
+      setCourses([]);
     } finally {
       setIsLoading(false);
     }
@@ -182,9 +164,14 @@ export const DocenteRetosPage: React.FC = () => {
         idActivity: act.idActivity,
         courseId,
         title: act.name,
+        idLesson: act.idLesson,
+        complexity: act.complexity as ChallengeView["complexity"],
+        logicLevel: act.logicLevel,
+        type: act.type,
+        simulatorConfig: { environment: act.environment || "neonflow", maxBlocks: 10, missions: act.missions || [], startingPosition: act.startingPosition, targetPosition: act.targetPosition },
         description: "",
         order: i,
-        difficulty: "MEDIUM",
+        difficulty: (act.difficulty || "MEDIUM") as ChallengeView["difficulty"],
         points: 0,
       }));
     } catch (err) {
@@ -223,6 +210,7 @@ export const DocenteRetosPage: React.FC = () => {
   // Manejar envío de curso
   const handleCourseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true); setOperationError("");
     try {
       if (modalType === "create") {
         await apiService.courses.create(formData as CourseRequestDTO);
@@ -235,17 +223,14 @@ export const DocenteRetosPage: React.FC = () => {
       setModalType(null);
       fetchCourses();
     } catch (err) {
-      console.error("Error saving course:", err);
-    }
+      setOperationError(getApiErrorMessage(err, "No se pudo guardar el curso."));
+    } finally { setSaving(false); }
   };
 
   // Validar formulario de reto
   const validateChallengeForm = (): boolean => {
     const errors: Record<string, string> = {};
     if (!challengeFormData.title?.trim()) errors.title = "El título es obligatorio";
-    if (!challengeFormData.description?.trim()) errors.description = "La descripción es obligatoria";
-    if (!challengeFormData.order || challengeFormData.order < 1) errors.order = "El orden debe ser ≥ 1";
-    if (!challengeFormData.points || challengeFormData.points < 1) errors.points = "Los puntos deben ser > 0";
     if (!challengeFormData.difficulty) errors.difficulty = "Selecciona una dificultad";
     const sim = challengeFormData.simulatorConfig;
     if (sim) {
@@ -262,7 +247,7 @@ export const DocenteRetosPage: React.FC = () => {
     setChallengeFormData((prev) => {
       const sim = prev.simulatorConfig || {};
       const missions = sim.missions || [];
-      const newId = `m${missions.length + 1}`;
+      const newId = crypto.randomUUID();
       return {
         ...prev,
         simulatorConfig: {
@@ -293,7 +278,7 @@ export const DocenteRetosPage: React.FC = () => {
     });
   };
 
-  // Reordenar retos — mover arriba/abajo y persistir
+  // Orden visual de esta sesión; el contrato no persiste un orden de actividad.
   const moveChallengeOrder = async (idActivity: string, direction: "up" | "down") => {
     try {
       const sorted = [...selectedCourseChallenges].sort((a, b) => a.order - b.order);
@@ -317,60 +302,36 @@ export const DocenteRetosPage: React.FC = () => {
   };
 
   // Cargar módulos de un curso
-  const fetchModulesForCourse = async (courseId: string) => {
-    try {
-      const data = await apiService.modules.getByCourse(courseId);
-      setModules(data);
-      if (data.length > 0) {
-        setSelectedModuleId(data[0].idModule);
-        const les = await apiService.lessons.getByModule(data[0].idModule);
-        setLessons(les);
-        if (les.length > 0) setSelectedLessonId(les[0].idLesson);
-      }
-    } catch {
-      setModules([]);
-      setLessons([]);
-    }
+  const fetchModulesForCourse = async (courseId: string, lessonId?: string): Promise<string> => {
+    const data = await apiService.modules.getByCourse(courseId);
+    setModules(data); setSelectedModuleId(""); setSelectedLessonId(""); setLessons([]);
+    const moduleLessons = await Promise.all(data.map(async m => ({ module: m, lessons: await apiService.lessons.getByModule(m.idModule) })));
+    const selected = moduleLessons.find(m => m.lessons.some(l => l.idLesson === lessonId)) || moduleLessons.find(m => m.lessons.length);
+    if (!selected) return "";
+    const id = selected.lessons.some(l => l.idLesson === lessonId) ? lessonId! : selected.lessons[0].idLesson;
+    setSelectedModuleId(selected.module.idModule); setLessons(selected.lessons); setSelectedLessonId(id);
+    return id;
   };
 
   const handleChallengeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateChallengeForm()) return;
+    if (!validateChallengeForm() || !selectedCourse) return;
+    setSaving(true); setOperationError("");
     try {
-      if (!selectedCourse) return;
-
-      let idActivity = selectedChallenge?.idActivity || "";
-
-      if (!selectedLessonId) {
-        await fetchModulesForCourse(selectedCourse.idCourse);
-        if (!selectedLessonId) {
-          console.error("No se encontraron lecciones para este curso");
-          return;
-        }
-      }
-
-      if (challengeModalType === "create" || !idActivity) {
-        const created = await apiService.activities.create({
-          idLesson: selectedLessonId,
-          name: challengeFormData.title,
-          complexity: challengeFormData.complexity,
-          difficulty: challengeFormData.difficulty,
-          logicLevel: challengeFormData.logicLevel,
-          type: challengeFormData.type,
-          environment: challengeFormData.simulatorConfig?.environment,
-          missions: challengeFormData.simulatorConfig?.missions as MissionDTO[] | undefined,
-          startingPosition: challengeFormData.simulatorConfig?.startingPosition as PositionDTO | undefined,
-          targetPosition: challengeFormData.simulatorConfig?.targetPosition as PositionDTO | undefined,
-        });
-        idActivity = created.idActivity;
-      }
-
-      setChallengeModalType(null);
-      setFormErrors({});
-      fetchChallengesByCourse(selectedCourse.idCourse);
-    } catch (err) {
-      console.error("Error saving challenge:", err);
-    }
+      const lessonId = selectedLessonId || await fetchModulesForCourse(selectedCourse.idCourse, selectedChallenge?.idLesson);
+      if (!lessonId) { setOperationError("Este curso necesita un módulo y una lección antes de crear retos."); return; }
+      const payload: CreateActivityCommand = {
+        idLesson: lessonId, name: challengeFormData.title, complexity: challengeFormData.complexity,
+        difficulty: challengeFormData.difficulty, logicLevel: challengeFormData.logicLevel, type: challengeFormData.type,
+        environment: challengeFormData.simulatorConfig.environment, missions: challengeFormData.simulatorConfig.missions,
+        startingPosition: challengeFormData.simulatorConfig.startingPosition, targetPosition: challengeFormData.simulatorConfig.targetPosition,
+      };
+      if (challengeModalType === "edit" && selectedChallenge) await apiService.activities.update(selectedChallenge.idActivity, payload);
+      else await apiService.activities.create(payload); // 201 has an empty response body.
+      setChallengeModalType(null); setFormErrors({});
+      await fetchChallengesByCourse(selectedCourse.idCourse);
+    } catch (error) { setOperationError(getApiErrorMessage(error, "No se pudo guardar el reto.")); }
+    finally { setSaving(false); }
   };
 
   // Eliminar curso
@@ -382,7 +343,8 @@ export const DocenteRetosPage: React.FC = () => {
           prev.filter((c) => c.idCourse !== selectedCourse.idCourse),
         );
       } catch (err) {
-        console.error("Error deleting course:", err);
+        setOperationError(getApiErrorMessage(err, "No se pudo eliminar el curso."));
+        return;
       }
       setModalType(null);
     }
@@ -395,13 +357,13 @@ export const DocenteRetosPage: React.FC = () => {
       await apiService.activities.delete(idActivity);
       fetchChallengesByCourse(courseId);
     } catch (err) {
-      console.error("Error deleting challenge:", err);
+      setOperationError(getApiErrorMessage(err, "No se pudo eliminar el reto."));
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center font-mono text-[10px] uppercase tracking-widest opacity-40 animate-pulse">
+      <div className="flex-1 flex items-center justify-center font-mono text-xs uppercase tracking-widest opacity-40 animate-pulse">
         Sincronizando Nodo...
       </div>
     );
@@ -409,36 +371,38 @@ export const DocenteRetosPage: React.FC = () => {
 
   return (
     <main className="flex-1 p-8 max-w-7xl mx-auto w-full animate-fade-in-soft">
+      {operationError && <p role="alert" className="mb-4 border border-danger rounded-lg p-4 text-danger">{operationError}</p>}
       <header className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">
-            Gestión de <span className="text-primary/80">Retos</span>
+            Gestión de <span className="text-primary">Retos</span>
           </h1>
-          <p className="text-xs text-text-muted/60 max-w-md font-medium">
-            Administración centralizada de la arquitectura educativa PMV01.
+          <p className="text-xs text-text-muted max-w-md font-medium">
+            Organiza cursos, módulos y retos de aprendizaje.
           </p>
         </div>
         <button
           onClick={() => {
             setModalType("create");
-            setFormData({ name: "", description: "", level: "BASIC" });
+            setFormData({ name: "", description: "", level: "LOW" });
           }}
-          className="btn-premium px-8 py-3.5 text-[10px] tracking-[0.2em] font-black active:scale-95 transition-all shadow-xl hover:shadow-primary/10"
+          className="btn-premium px-8 py-3.5 text-xs tracking-[0.2em] font-black active:scale-95 transition-all shadow-xl hover:shadow-primary/10"
           style={{ borderRadius: "var(--theme-radius)" }}
         >
-          ALTA DE CURSO
+          Crear curso
         </button>
       </header>
 
       {/* Modal para Cursos */}
       <Modal
+        title={modalType === "delete" ? "Eliminar curso" : modalType === "create" ? "Crear curso" : "Editar curso"}
         isOpen={modalType !== null}
         onClose={() => setModalType(null)}
         maxWidth={modalType === "delete" ? "max-w-lg" : "max-w-2xl"}
       >
         <div className="flex flex-col">
           {modalType !== "delete" && (
-            <div className="relative h-32 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border/10">
+            <div className="relative h-32 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border">
               <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <div
                   className="absolute inset-0"
@@ -450,21 +414,22 @@ export const DocenteRetosPage: React.FC = () => {
                 />
               </div>
               <div className="relative text-center">
-                <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2 block animate-fade-in-soft">
+                <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-2 block animate-fade-in-soft">
                   {modalType === "create"
-                    ? "Configuración de Nodo"
-                    : "Modificación de Arquitectura"}
+                    ? "Crear curso"
+                    : "Configuración del curso"}
                 </span>
                 <h2 className="text-2xl font-bold tracking-tight">
                   {modalType === "create"
-                    ? "Nuevo Reto Educativo"
-                    : "Editar Especificaciones"}
+                    ? "Nuevo curso"
+                    : "Editar curso"}
                 </h2>
               </div>
             </div>
           )}
 
           <div className="p-10">
+            {operationError && <p role="alert" className="mb-4 text-sm text-danger">{operationError}</p>}
             {modalType === "delete" ? (
               <div className="text-center py-6">
                 <div className="w-20 h-20 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mx-auto mb-8 rotate-3 hover:rotate-0 transition-transform duration-500">
@@ -473,8 +438,8 @@ export const DocenteRetosPage: React.FC = () => {
                 <h2 className="text-2xl font-bold mb-3">
                   ¿Confirmar Eliminación?
                 </h2>
-                <p className="text-sm text-text-muted/70 mb-10 px-6 leading-relaxed">
-                  Esta acción desactivará permanentemente el nodo{" "}
+                <p className="text-sm text-text-muted mb-10 px-6 leading-relaxed">
+                  Esta acción eliminará el curso{" "}
                   <span className="text-text font-bold">
                     "{selectedCourse?.name}"
                   </span>
@@ -483,70 +448,70 @@ export const DocenteRetosPage: React.FC = () => {
                 <div className="flex gap-4">
                   <button
                     onClick={() => setModalType(null)}
-                    className="flex-1 btn-secondary py-4 text-[10px] font-bold uppercase tracking-widest"
+                    className="flex-1 btn-secondary py-4 text-xs font-bold uppercase tracking-widest"
                   >
                     CANCELAR
                   </button>
                   <button
                     onClick={handleDeleteCourse}
-                    className="flex-1 bg-danger text-white hover:brightness-110 py-4 text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-danger/20 transition-all active:scale-95"
+                    className="flex-1 bg-danger text-white hover:brightness-110 py-4 text-xs font-bold uppercase tracking-widest shadow-xl shadow-danger/20 transition-all active:scale-95"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
-                    ELIMINAR NODO
+                    ELIMINAR CURSO
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleCourseSubmit} className="space-y-8">
+              <form onSubmit={handleCourseSubmit} aria-busy={saving} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
-                      Identificador del Curso
+                    <label htmlFor="docenteretospage-field-1" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
+                      Nombre del curso
                     </label>
-                    <input
+                    <input id="docenteretospage-field-1"
                       required
                       value={formData.name}
                       onChange={(e) =>
                         setFormData({ ...formData, name: e.target.value })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-6 py-4 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
+                      className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: Robótica Autónoma v2"
                     />
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="course-complexity" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Nivel de Complejidad
                     </label>
                     <div className="relative">
-                      <select
+                      <select id="course-complexity"
                         value={formData.level}
                         onChange={(e) =>
-                          setFormData({ ...formData, level: e.target.value })
+                          setFormData({ ...formData, level: e.target.value as CourseRequestDTO["level"] })
                         }
-                        className="w-full bg-bg/50 border border-border/30 px-6 py-4 text-sm focus:border-primary outline-none transition-all appearance-none cursor-pointer"
+                        className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all appearance-none cursor-pointer"
                         style={{ borderRadius: "var(--theme-radius)" }}
                       >
-                        <option value="BASIC">
-                          Protocolo Básico (Fundamentos)
+                        <option value="LOW">
+                          Básico (Fundamentos)
                         </option>
-                        <option value="INTERMEDIATE">
-                          Protocolo Intermedio (Control)
+                        <option value="MEDIUM">
+                          Intermedio (Control)
                         </option>
-                        <option value="ADVANCED">
-                          Protocolo Avanzado (Sistemas)
+                        <option value="HIGH">
+                          Avanzado (Sistemas)
                         </option>
                       </select>
-                      <BsChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/40" />
+                      <BsChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted" />
                     </div>
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-2" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Descripción Técnica
                     </label>
-                    <textarea
+                    <textarea id="docenteretospage-field-2"
                       required
                       value={formData.description}
                       onChange={(e) =>
@@ -555,7 +520,7 @@ export const DocenteRetosPage: React.FC = () => {
                           description: e.target.value,
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-6 py-4 text-sm focus:border-primary outline-none transition-all min-h-[140px] placeholder:opacity-30 resize-none"
+                      className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all min-h-[140px] placeholder:opacity-30 resize-none"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Define los objetivos y alcances del curso..."
                     />
@@ -566,16 +531,16 @@ export const DocenteRetosPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setModalType(null)}
-                    className="flex-1 btn-secondary py-5 text-[10px] font-black tracking-widest"
+                    className="flex-1 btn-secondary py-5 text-xs font-black tracking-widest"
                   >
                     DESCARTAR
                   </button>
                   <button
-                    type="submit"
-                    className="flex-[2] btn-premium py-5 text-[10px] font-black tracking-[0.3em] shadow-xl shadow-primary/20"
+                    type="submit" disabled={saving}
+                    className="flex-[2] btn-premium py-5 text-xs font-black tracking-[0.3em] shadow-xl shadow-primary/20"
                   >
                     {modalType === "create"
-                      ? "SINCRONIZAR NODO"
+                      ? "CREAR CURSO"
                       : "GUARDAR CAMBIOS"}
                   </button>
                 </div>
@@ -587,6 +552,7 @@ export const DocenteRetosPage: React.FC = () => {
 
       {/* Modal para Retos */}
       <Modal
+        title="Gestionar retos del curso"
         isOpen={isChallengesModalOpen}
         onClose={() => {
           setIsChallengesModalOpen(false);
@@ -596,7 +562,7 @@ export const DocenteRetosPage: React.FC = () => {
       >
         <div className="flex flex-col">
           {/* Header del modal (igual que antes) */}
-          <div className="relative h-32 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border/10">
+          <div className="relative h-32 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border">
             <div className="absolute inset-0 opacity-10 pointer-events-none">
               <div
                 className="absolute inset-0"
@@ -608,7 +574,7 @@ export const DocenteRetosPage: React.FC = () => {
               />
             </div>
             <div className="relative text-center">
-              <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-2 block animate-fade-in-soft">
+              <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-2 block animate-fade-in-soft">
                 {challengeModalType
                   ? challengeModalType === "create"
                     ? "Nuevo Reto"
@@ -626,6 +592,7 @@ export const DocenteRetosPage: React.FC = () => {
           </div>
 
           <div className="p-10">
+            {operationError && <p role="alert" className="mb-4 text-sm text-danger">{operationError}</p>}
             {/* Si NO estamos en modo crear/editar, mostramos la lista de retos + botón "Nuevo Reto" */}
             {!challengeModalType ? (
               <>
@@ -653,9 +620,9 @@ export const DocenteRetosPage: React.FC = () => {
                           expectedOutput: "",
                           reward: { type: "POINTS", value: 0 },
                         });
-                        if (selectedCourse) fetchModulesForCourse(selectedCourse.idCourse);
+                        if (selectedCourse) void fetchModulesForCourse(selectedCourse.idCourse).catch(e => setOperationError(getApiErrorMessage(e, "No se pudieron cargar las lecciones.")));
                       }}
-                      className="btn-premium px-4 py-2 text-[10px] font-bold uppercase tracking-widest"
+                      className="btn-premium px-4 py-2 text-xs font-bold uppercase tracking-widest"
                     >
                       + Nuevo Reto
                     </button>
@@ -670,7 +637,7 @@ export const DocenteRetosPage: React.FC = () => {
                           .map((challenge) => (
                             <div
                               key={challenge.idActivity}
-                              className="p-4 bg-bg/50 border border-border/20 rounded-lg flex justify-between items-center"
+                              className="p-4 bg-bg/50 border border-border rounded-lg flex justify-between items-center"
                               style={{ borderRadius: "var(--theme-radius)" }}
                             >
                               <div>
@@ -678,7 +645,7 @@ export const DocenteRetosPage: React.FC = () => {
                                 <p className="text-xs text-text-muted">
                                   {challenge.description}
                                 </p>
-                                <div className="flex gap-3 mt-1 text-[10px] text-text-muted">
+                                <div className="flex gap-3 mt-1 text-xs text-text-muted">
                                   <span>Orden: {challenge.order}</span>
                                   <span>Dificultad: {challenge.difficulty}</span>
                                   <span>Puntos: {challenge.points}</span>
@@ -689,16 +656,16 @@ export const DocenteRetosPage: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => moveChallengeOrder(challenge.idActivity, "up")}
-                                    className="text-text-muted/30 hover:text-primary text-[10px] leading-none"
-                                    title="Subir orden"
+                                    className="text-text-muted hover:text-primary text-xs leading-none"
+                                    title="Subir en esta sesión" aria-label="Subir en esta sesión"
                                   >
                                     ▲
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => moveChallengeOrder(challenge.idActivity, "down")}
-                                    className="text-text-muted/30 hover:text-primary text-[10px] leading-none"
-                                    title="Bajar orden"
+                                    className="text-text-muted hover:text-primary text-xs leading-none"
+                                    title="Bajar en esta sesión" aria-label="Bajar en esta sesión"
                                   >
                                     ▼
                                   </button>
@@ -729,7 +696,7 @@ export const DocenteRetosPage: React.FC = () => {
                                       expectedOutput: challenge.expectedOutput || "",
                                       reward: challenge.reward || { type: "POINTS", value: 0 },
                                     });
-                                    if (selectedCourse) fetchModulesForCourse(selectedCourse.idCourse);
+                                    if (selectedCourse) void fetchModulesForCourse(selectedCourse.idCourse, challenge.idLesson).catch(e => setOperationError(getApiErrorMessage(e, "No se pudieron cargar las lecciones.")));
                                   }}
                                   className="text-primary hover:underline text-xs"
                                 >
@@ -748,25 +715,25 @@ export const DocenteRetosPage: React.FC = () => {
                           ))}
                       </div>
                       {selectedCourseChallenges.length > pageSize && (
-                        <div className="flex items-center justify-between pt-4 border-t border-border/10">
+                        <div className="flex items-center justify-between pt-4 border-t border-border">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-text-muted">Ver</span>
+                            <span className="text-xs text-text-muted">Ver</span>
                             {PAGE_SIZE_OPTIONS.map((size) => (
                               <button
                                 key={size}
                                 type="button"
                                 onClick={() => applyPageSize(size)}
-                                className={`px-2 py-0.5 text-[10px] font-bold font-mono border rounded transition-all ${
+                                className={`px-2 py-0.5 text-xs font-bold font-mono border rounded transition-all ${
                                   pageSize === size && !customPageSize
                                     ? "border-primary text-primary bg-primary/10"
-                                    : "border-border/20 text-text-muted hover:border-primary"
+                                    : "border-border text-text-muted hover:border-primary"
                                 }`}
                               >
                                 {size}
                               </button>
                             ))}
                             {customPageSize ? (
-                              <span className="px-2 py-0.5 text-[10px] font-bold font-mono border border-primary text-primary bg-primary/10 rounded">
+                              <span className="px-2 py-0.5 text-xs font-bold font-mono border border-primary text-primary bg-primary/10 rounded">
                                 {customPageSize}
                               </span>
                             ) : (
@@ -798,29 +765,29 @@ export const DocenteRetosPage: React.FC = () => {
                                     (e.target as HTMLInputElement).blur();
                                   }
                                 }}
-                                className="w-10 px-1 py-0.5 text-[10px] font-mono text-center border border-border/20 rounded bg-transparent outline-none focus:border-primary transition-all"
+                                className="w-10 px-1 py-0.5 text-xs font-mono text-center border border-border rounded bg-transparent outline-none focus:border-primary transition-all"
                               />
                             )}
-                            <span className="text-[10px] text-text-muted ml-1">
+                            <span className="text-xs text-text-muted ml-1">
                               por página
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
-                            <span className="text-[10px] text-text-muted">
+                            <span className="text-xs text-text-muted">
                               {challengePage * pageSize + 1}–{Math.min((challengePage + 1) * pageSize, selectedCourseChallenges.length)} de {selectedCourseChallenges.length}
                             </span>
                             <div className="flex gap-2">
                               <button
                                 disabled={challengePage === 0}
                                 onClick={() => setChallengePage(p => Math.max(0, p - 1))}
-                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all rounded"
+                                className="px-3 py-1 text-xs font-bold uppercase tracking-wider border border-border disabled:opacity-30 hover:border-primary transition-all rounded"
                               >
                                 ← Anterior
                               </button>
                               <button
                                 disabled={(challengePage + 1) * pageSize >= selectedCourseChallenges.length}
                                 onClick={() => setChallengePage(p => p + 1)}
-                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all rounded"
+                                className="px-3 py-1 text-xs font-bold uppercase tracking-wider border border-border disabled:opacity-30 hover:border-primary transition-all rounded"
                               >
                                 Siguiente →
                               </button>
@@ -830,7 +797,7 @@ export const DocenteRetosPage: React.FC = () => {
                       )}
                     </>
                   ) : (
-                    <p className="text-[10px] text-center text-text-muted">
+                    <p className="text-xs text-center text-text-muted">
                       No hay retos disponibles para este curso. Crea uno nuevo.
                     </p>
                   )}
@@ -838,13 +805,14 @@ export const DocenteRetosPage: React.FC = () => {
               </>
             ) : (
               // ✅ Formulario integrado (sin fondo negro, mismo estilo que el modal)
-              <form onSubmit={handleChallengeSubmit} className="space-y-6">
+              <form onSubmit={handleChallengeSubmit} aria-busy={saving} className="space-y-6">
+                <p className="text-sm text-text-muted">Puedes guardar título, dificultad, nivel y misiones. Descripción, puntos y resultado esperado estarán disponibles más adelante. El orden de la lista sólo se conserva durante esta sesión.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-3" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Módulo
                     </label>
-                    <select
+                    <select id="docenteretospage-field-3"
                       value={selectedModuleId}
                       onChange={async (e) => {
                         setSelectedModuleId(e.target.value);
@@ -854,7 +822,7 @@ export const DocenteRetosPage: React.FC = () => {
                           if (les.length > 0) setSelectedLessonId(les[0].idLesson);
                         } catch { setLessons([]); }
                       }}
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                     >
                       {modules.map((m) => (
@@ -863,13 +831,13 @@ export const DocenteRetosPage: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-4" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Lección
                     </label>
-                    <select
+                    <select id="docenteretospage-field-4"
                       value={selectedLessonId}
                       onChange={(e) => setSelectedLessonId(e.target.value)}
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                     >
                       {lessons.map((l) => (
@@ -878,10 +846,10 @@ export const DocenteRetosPage: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-5" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Título
                     </label>
-                    <input
+                    <input id="docenteretospage-field-5"
                       required
                       value={challengeFormData.title || ""}
                       onChange={(e) =>
@@ -890,38 +858,38 @@ export const DocenteRetosPage: React.FC = () => {
                           title: e.target.value,
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: Mueve el robot 5 pasos"
                     />
-                    {formErrors.title && <p className="text-danger text-[9px] mt-1">{formErrors.title}</p>}
+                    {formErrors.title && <p className="text-danger text-xs mt-1">{formErrors.title}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-6" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Orden
                     </label>
-                    <input
+                    <input id="docenteretospage-field-6"
                       type="number"
                       required
                       min={1}
-                      value={challengeFormData.order || 0}
+                      disabled title="Campo aún no disponible para guardar" value={challengeFormData.order || 0}
                       onChange={(e) =>
                         setChallengeFormData({
                           ...challengeFormData,
                           order: Number(e.target.value),
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: 1"
                     />
-                    {formErrors.order && <p className="text-danger text-[9px] mt-1">{formErrors.order}</p>}
+                    {formErrors.order && <p className="text-danger text-xs mt-1">{formErrors.order}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-7" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Dificultad
                     </label>
-                    <select
+                    <select id="docenteretospage-field-7"
                       value={challengeFormData.difficulty || "EASY"}
                       onChange={(e) =>
                         setChallengeFormData({
@@ -932,41 +900,41 @@ export const DocenteRetosPage: React.FC = () => {
                             | "HARD",
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                     >
                       <option value="EASY">Fácil</option>
                       <option value="MEDIUM">Intermedio</option>
                       <option value="HARD">Avanzado</option>
                     </select>
-                    {formErrors.difficulty && <p className="text-danger text-[9px] mt-1">{formErrors.difficulty}</p>}
+                    {formErrors.difficulty && <p className="text-danger text-xs mt-1">{formErrors.difficulty}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-8" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Puntos
                     </label>
-                    <input
+                    <input id="docenteretospage-field-8"
                       type="number"
                       required
                       min={1}
-                      value={challengeFormData.points || 0}
+                      disabled title="Campo aún no disponible para guardar" value={challengeFormData.points || 0}
                       onChange={(e) =>
                         setChallengeFormData({
                           ...challengeFormData,
                           points: Number(e.target.value),
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: 50"
                     />
-                    {formErrors.points && <p className="text-danger text-[9px] mt-1">{formErrors.points}</p>}
+                    {formErrors.points && <p className="text-danger text-xs mt-1">{formErrors.points}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-9" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Complejidad
                     </label>
-                    <select
+                    <select id="docenteretospage-field-9"
                       value={challengeFormData.complexity || "MEDIUM"}
                       onChange={(e) =>
                         setChallengeFormData({
@@ -974,7 +942,7 @@ export const DocenteRetosPage: React.FC = () => {
                           complexity: e.target.value as "LOW" | "MEDIUM" | "HIGH",
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                     >
                       <option value="LOW">Baja</option>
@@ -983,10 +951,10 @@ export const DocenteRetosPage: React.FC = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-10" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Nivel Lógico
                     </label>
-                    <input
+                    <input id="docenteretospage-field-10"
                       type="number"
                       min={1}
                       max={5}
@@ -997,43 +965,43 @@ export const DocenteRetosPage: React.FC = () => {
                           logicLevel: Number(e.target.value),
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: 3"
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-11" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Descripción
                     </label>
-                    <textarea
+                    <textarea id="docenteretospage-field-11"
                       required
-                      value={challengeFormData.description || ""}
+                      disabled title="Campo aún no disponible para guardar" value={challengeFormData.description || ""}
                       onChange={(e) =>
                         setChallengeFormData({
                           ...challengeFormData,
                           description: e.target.value,
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all min-h-[100px] resize-none"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all min-h-[100px] resize-none"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Describe el objetivo del reto..."
                     />
-                    {formErrors.description && <p className="text-danger text-[9px] mt-1">{formErrors.description}</p>}
+                    {formErrors.description && <p className="text-danger text-xs mt-1">{formErrors.description}</p>}
                   </div>
-                  <div className="space-y-4 md:col-span-2 border border-border/20 p-4" style={{ borderRadius: "var(--theme-radius)" }}>
+                  <div className="space-y-4 md:col-span-2 border border-border p-4" style={{ borderRadius: "var(--theme-radius)" }}>
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black">
+                      <label className="text-xs uppercase tracking-widest text-text-muted font-black">
                         Configuración del Simulador
                       </label>
-                      <span className="text-[8px] text-text-muted/30 font-mono">Editor visual</span>
+                      <span className="text-xs text-text-muted font-mono">Editor visual</span>
                     </div>
 
                     {/* Environment */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Entorno</label>
-                        <select
+                        <label htmlFor="docenteretospage-field-12" className="text-xs uppercase tracking-widest text-text-muted font-bold ml-1">Entorno</label>
+                        <select id="docenteretospage-field-12"
                           value={challengeFormData.simulatorConfig?.environment || "tetrilogic"}
                           onChange={(e) =>
                             setChallengeFormData({
@@ -1041,74 +1009,74 @@ export const DocenteRetosPage: React.FC = () => {
                               simulatorConfig: { ...challengeFormData.simulatorConfig, environment: e.target.value },
                             })
                           }
-                          className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
+                          className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
                           style={{ borderRadius: "var(--theme-radius)" }}
                         >
-                          <option value="neonflow">🧭 Neon Flow (Lógica)</option>
-                          <option value="tetrilogic">🧩 TetriLogic (Patrones)</option>
+                          <option value="neonflow">Neon Flow (Lógica)</option>
+                          <option value="tetrilogic">TetriLogic (Patrones)</option>
                         </select>
-                        {formErrors.environment && <p className="text-danger text-[9px] mt-1">{formErrors.environment}</p>}
+                        {formErrors.environment && <p className="text-danger text-xs mt-1">{formErrors.environment}</p>}
                       </div>
 
                       <div>
-                        <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Límite de Bloques</label>
-                        <input
+                        <label htmlFor="docenteretospage-field-13" className="text-xs uppercase tracking-widest text-text-muted font-bold ml-1">Límite de Bloques</label>
+                        <input id="docenteretospage-field-13"
                           type="number"
                           min={1}
-                          value={challengeFormData.simulatorConfig?.maxBlocks || 10}
+                          disabled title="El límite se guarda por misión" value={challengeFormData.simulatorConfig?.maxBlocks || 10}
                           onChange={(e) =>
                             setChallengeFormData({
                               ...challengeFormData,
                               simulatorConfig: { ...challengeFormData.simulatorConfig, maxBlocks: Number(e.target.value) },
                             })
                           }
-                          className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
+                          className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all mt-1"
                           style={{ borderRadius: "var(--theme-radius)" }}
                         />
-                        {formErrors.maxBlocks && <p className="text-danger text-[9px] mt-1">{formErrors.maxBlocks}</p>}
+                        {formErrors.maxBlocks && <p className="text-danger text-xs mt-1">{formErrors.maxBlocks}</p>}
                       </div>
                     </div>
 
                     {/* Misiones */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <label className="text-[9px] uppercase tracking-widest text-text-muted/50 font-bold ml-1">Misiones</label>
+                        <label className="text-xs uppercase tracking-widest text-text-muted font-bold ml-1">Misiones</label>
                         <button
                           type="button"
                           onClick={addMissionToConfig}
-                          className="text-[9px] font-bold uppercase tracking-widest text-primary hover:underline"
+                          className="text-xs font-bold uppercase tracking-widest text-primary hover:underline"
                         >
                           + Agregar
                         </button>
                       </div>
-                      {formErrors.missions && <p className="text-danger text-[9px] mb-2">{formErrors.missions}</p>}
+                      {formErrors.missions && <p className="text-danger text-xs mb-2">{formErrors.missions}</p>}
 
                       {(challengeFormData.simulatorConfig?.missions || []).map((mission: any, _mi: number) => (
-                        <div key={mission.id} className="flex gap-2 items-start mb-2 p-2 bg-bg/30 border border-border/10" style={{ borderRadius: "var(--theme-radius)" }}>
+                        <div key={mission.id} className="flex gap-2 items-start mb-2 p-2 bg-bg/30 border border-border" style={{ borderRadius: "var(--theme-radius)" }}>
                           <div className="flex-1 space-y-1">
                             <input
-                              placeholder="Título de la misión"
+                              aria-label="Título de la misión" placeholder="Título de la misión"
                               value={mission.title}
                               onChange={(e) => updateMissionInConfig(mission.id, "title", e.target.value)}
-                              className="w-full bg-bg/50 border border-border/20 px-2 py-1 text-xs focus:border-primary outline-none"
+                              className="w-full bg-bg/50 border border-border px-2 py-1 text-xs focus:border-primary outline-none"
                               style={{ borderRadius: "var(--theme-radius)" }}
                             />
                             <input
-                              placeholder="Objetivo"
+                              aria-label="Objetivo de la misión" placeholder="Objetivo"
                               value={mission.objective}
                               onChange={(e) => updateMissionInConfig(mission.id, "objective", e.target.value)}
-                              className="w-full bg-bg/50 border border-border/20 px-2 py-1 text-xs focus:border-primary outline-none"
+                              className="w-full bg-bg/50 border border-border px-2 py-1 text-xs focus:border-primary outline-none"
                               style={{ borderRadius: "var(--theme-radius)" }}
                             />
                           </div>
                           <div className="w-16">
-                            <label className="text-[8px] text-text-muted/50 block mb-0.5">Bloques</label>
-                            <input
+                            <label htmlFor={`mission-blocks-${mission.id}`} className="text-xs text-text-muted block mb-0.5">Bloques</label>
+                            <input id={`mission-blocks-${mission.id}`}
                               type="number"
                               min={1}
                               value={mission.maxBlocks}
                               onChange={(e) => updateMissionInConfig(mission.id, "maxBlocks", Number(e.target.value))}
-                              className="w-full bg-bg/50 border border-border/20 px-2 py-1 text-xs focus:border-primary outline-none"
+                              className="w-full bg-bg/50 border border-border px-2 py-1 text-xs focus:border-primary outline-none"
                               style={{ borderRadius: "var(--theme-radius)" }}
                             />
                           </div>
@@ -1125,18 +1093,18 @@ export const DocenteRetosPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-text-muted/60 font-black ml-1">
+                    <label htmlFor="docenteretospage-field-15" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
                       Resultado Esperado
                     </label>
-                    <input
-                      value={challengeFormData.expectedOutput || ""}
+                    <input id="docenteretospage-field-15"
+                      disabled title="Campo aún no disponible para guardar" value={challengeFormData.expectedOutput || ""}
                       onChange={(e) =>
                         setChallengeFormData({
                           ...challengeFormData,
                           expectedOutput: e.target.value,
                         })
                       }
-                      className="w-full bg-bg/50 border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                      className="w-full bg-bg/50 border border-border px-4 py-2 text-sm focus:border-primary outline-none transition-all"
                       style={{ borderRadius: "var(--theme-radius)" }}
                       placeholder="Ej: robot.llegarADestino()"
                     />
@@ -1147,13 +1115,13 @@ export const DocenteRetosPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setChallengeModalType(null)}
-                    className="flex-1 btn-secondary py-3 text-[10px] font-bold uppercase tracking-widest"
+                    className="flex-1 btn-secondary py-3 text-xs font-bold uppercase tracking-widest"
                   >
                     CANCELAR
                   </button>
                   <button
-                    type="submit"
-                    className="flex-1 btn-premium py-3 text-[10px] font-bold uppercase tracking-widest"
+                    type="submit" disabled={saving}
+                    className="flex-1 btn-premium py-3 text-xs font-bold uppercase tracking-widest"
                   >
                     {challengeModalType === "create"
                       ? "CREAR RETO"
@@ -1171,39 +1139,39 @@ export const DocenteRetosPage: React.FC = () => {
         {courses.map((course) => (
           <div
             key={course.idCourse}
-            className="group relative bg-surface/40 border border-border/20 p-8 transition-all duration-700 hover:border-primary/30 hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden"
+            className="group relative bg-surface border border-border p-8 transition-all duration-700 hover:border-primary/30  hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden"
             style={{ borderRadius: "var(--theme-radius)" }}
           >
             <div className="relative z-10">
               <div className="flex justify-between items-start mb-8">
                 <div
-                  className="w-14 h-14 flex items-center justify-center bg-bg/60 border border-border/10 group-hover:border-primary/30 transition-all duration-500"
+                  className="w-14 h-14 flex items-center justify-center bg-bg/60 border border-border group-hover:border-primary/30 transition-all duration-500"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
-                  <BsTerminal className="text-primary/60 group-hover:text-primary group-hover:scale-110 transition-all" />
+                  <BsTerminal className="text-primary group-hover:text-primary  transition-all" />
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  <button aria-label={`Editar curso ${course.name}`}
                     onClick={() => {
                       setModalType("edit");
                       setSelectedCourse(course);
                       setFormData({
                         name: course.name,
                         description: course.description || "",
-                        level: course.level || "BASIC",
+                        level: course.level || "LOW",
                       });
                     }}
-                    className="w-9 h-9 flex items-center justify-center bg-bg/40 border border-border/10 hover:border-primary/40 hover:text-primary transition-all active:scale-90"
+                    className="w-11 h-11 flex items-center justify-center bg-bg/40 border border-border hover:border-primary/40 hover:text-primary transition-all active:scale-90"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
                     <BsPencil className="text-base" />
                   </button>
-                  <button
+                  <button aria-label={`Eliminar curso ${course.name}`}
                     onClick={() => {
                       setModalType("delete");
                       setSelectedCourse(course);
                     }}
-                    className="w-9 h-9 flex items-center justify-center bg-bg/40 border border-border/10 hover:border-danger/40 hover:text-danger transition-all active:scale-90"
+                    className="w-11 h-11 flex items-center justify-center bg-bg/40 border border-border hover:border-danger/40 hover:text-danger transition-all active:scale-90"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
                     <BsTrash className="text-base" />
@@ -1211,11 +1179,11 @@ export const DocenteRetosPage: React.FC = () => {
                 </div>
               </div>
 
-              <h3 className="text-lg font-bold mb-3 group-hover:text-primary/90 transition-colors">
+              <h3 className="text-lg font-bold mb-3 group-hover:text-primary transition-colors">
                 {course.name}
               </h3>
 
-              <div className="flex items-center gap-5 text-[10px] font-mono uppercase tracking-[0.15em] text-text-muted/40 mb-8">
+              <div className="flex items-center gap-5 text-xs font-mono uppercase tracking-[0.15em] text-text-muted mb-8">
                 <span className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-success/60 rounded-full group-hover:bg-success group-hover:animate-pulse transition-colors" />
                   Online
@@ -1223,7 +1191,7 @@ export const DocenteRetosPage: React.FC = () => {
                 <span>Node: {(course.idCourse || "").split("-")[0]}</span>
               </div>
 
-              <div className="flex gap-4 pt-6 border-t border-border/10">
+              <div className="flex gap-4 pt-6 border-t border-border">
                 <button
                   onClick={() => {
                     setChallengePage(0);
@@ -1232,13 +1200,13 @@ export const DocenteRetosPage: React.FC = () => {
                     fetchChallengesByCourse(course.idCourse);
                     setIsChallengesModalOpen(true);
                   }}
-                  className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-bg/60 border border-border/10 hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
+                  className="flex-1 text-xs font-black uppercase tracking-widest py-3 bg-bg/60 border border-border hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-95"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
                   Retos
                 </button>
-                <button
-                  className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 border border-border/10 hover:border-primary/30 transition-all active:scale-95"
+                <button onClick={() => { setSelectedCourse(course); setFormData({ name: course.name, description: course.description || "", level: course.level || "LOW" }); setModalType("edit"); }}
+                  className="flex-1 text-xs font-black uppercase tracking-widest py-3 border border-border hover:border-primary/30 transition-all active:scale-95"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
                   Detalles
@@ -1249,21 +1217,21 @@ export const DocenteRetosPage: React.FC = () => {
         ))}
 
         {/* CARD DE AGREGAR RÁPIDO */}
-        <div
+        <button type="button"
           onClick={() => {
             setModalType("create");
-            setFormData({ name: "", description: "", level: "BASIC" });
+            setFormData({ name: "", description: "", level: "LOW" });
           }}
-          className="border-2 border-dashed border-border/20 p-8 flex flex-col items-center justify-center gap-5 text-text-muted/30 hover:border-primary/30 hover:text-primary/60 hover:bg-primary/5 transition-all cursor-pointer group"
+          className="border-2 border-dashed border-border p-8 flex flex-col items-center justify-center gap-5 text-text-muted hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer group"
           style={{ borderRadius: "var(--theme-radius)" }}
         >
-          <div className="w-16 h-16 rounded-full border border-dashed border-border/20 flex items-center justify-center group-hover:scale-110 group-hover:border-primary/30 transition-all duration-500">
+          <div className="w-16 h-16 rounded-full border border-dashed border-border flex items-center justify-center  group-hover:border-primary/30 transition-all duration-500">
             <BsPlusLg className="text-4xl" />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-60 group-hover:opacity-100 transition-opacity">
-            Añadir Nuevo Nodo
+          <span className="text-xs font-bold uppercase tracking-[0.3em] opacity-60 group-hover:opacity-100 transition-opacity">
+            Añadir curso
           </span>
-        </div>
+        </button>
       </div>
     </main>
   );

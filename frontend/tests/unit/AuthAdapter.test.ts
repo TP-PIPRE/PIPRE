@@ -1,92 +1,39 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthAdapter } from "../../src/infrastructure/adapters/http/AuthAdapter";
-
-vi.mock("../../src/infrastructure/api/axiosInstance", () => ({
-  default: {
-    post: vi.fn(),
-  },
-}));
-
-const mockAxiosInstance = (await import("../../src/infrastructure/api/axiosInstance")).default;
-
-describe("AuthAdapter", () => {
-  let adapter: AuthAdapter;
-
-  beforeEach(() => {
-    adapter = new AuthAdapter();
-    localStorage.clear();
-    vi.clearAllMocks();
+import axiosInstance from "../../src/infrastructure/api/axiosInstance";
+vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { post: vi.fn() } }));
+const post = vi.mocked(axiosInstance.post);
+const response = (role: string, email = "ana@test.local") => ({ data: { message: "Sesión iniciada", user: { idUser: "u-1", email, firstName: "Ana", lastName: "Prueba", role } } });
+beforeEach(() => { vi.clearAllMocks(); });
+describe("AuthAdapter HTTP contract", () => {
+  it("uses the teacher role returned by the server even when the email has no role hint", async () => {
+    post.mockResolvedValueOnce(response("docente"));
+    const result = await new AuthAdapter().login("ana@test.local", "123");
+    expect(result.user).toEqual({ id: "u-1", email: "ana@test.local", name: "Ana", role: "docente" });
+    expect(result).not.toHaveProperty("token");
+    expect(post).toHaveBeenCalledWith("auth/login", { email: "ana@test.local", password: "123" });
   });
-
-  describe("register()", () => {
-    it("envía firstName/lastName camelCase y guarda UUID en localStorage", async () => {
-      const UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-      const JWT = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic3R1ZGVudCJ9.abc";
-
-      vi.mocked(mockAxiosInstance.post)
-        .mockResolvedValueOnce({ data: UUID })
-        .mockResolvedValueOnce({ data: JWT });
-
-      const result = await adapter.register(
-        "Juan", "Pérez", "juan@test.com", "pass123", 15, "9°",
-      );
-
-      expect(vi.mocked(mockAxiosInstance.post)).toHaveBeenNthCalledWith(
-        1,
-        "users",
-        expect.objectContaining({
-          firstName: "Juan",
-          lastName: "Pérez",
-          email: "juan@test.com",
-          passwordHash: "pass123",
-          role: "student",
-        }),
-      );
-
-      const stored = JSON.parse(localStorage.getItem("pipre_registered_users") || "{}");
-      expect(stored["juan@test.com"]).toBe(UUID);
-      expect(result.id).toBe(UUID);
-      expect(result.role).toBe("student");
-    });
-
-    it("lanza error si el POST falla", async () => {
-      vi.mocked(mockAxiosInstance.post).mockRejectedValueOnce({
-        response: { data: { message: "Email duplicado" } },
-      });
-
-      await expect(
-        adapter.register("Juan", "Pérez", "dup@test.com", "pass", 15, "9°"),
-      ).rejects.toThrow("Email duplicado");
-    });
+  it("never elevates a student based on their email", async () => {
+    post.mockResolvedValueOnce(response("student", "admin.docente@test.local"));
+    expect((await new AuthAdapter().login("admin.docente@test.local", "123")).user.role).toBe("student");
   });
-
-  describe("login()", () => {
-    it("decodifica JWT para asignar role admin", async () => {
-      const UUID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
-      const adminJWT = `header.${btoa(JSON.stringify({ role: "admin" }))}.sig`;
-      localStorage.setItem("pipre_registered_users", JSON.stringify({ "admin@test.com": UUID }));
-
-      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({ data: adminJWT });
-
-      const result = await adapter.login("admin@test.com", "pass");
-      expect(result.user.role).toBe("admin");
-      expect(result.user.id).toBe(UUID);
-    });
-
-    it("asigna role docente por email si no hay role en JWT", async () => {
-      const jwtNoRole = `header.${btoa(JSON.stringify({}))}.sig`;
-      vi.mocked(mockAxiosInstance.post).mockResolvedValueOnce({ data: jwtNoRole });
-
-      const result = await adapter.login("docente@test.com", "pass");
-      expect(result.user.role).toBe("docente");
-    });
-
-    it("lanza error con credenciales inválidas", async () => {
-      vi.mocked(mockAxiosInstance.post).mockRejectedValueOnce({
-        response: { data: { message: "Credenciales inválidas" } },
-      });
-
-      await expect(adapter.login("bad@test.com", "wrong")).rejects.toThrow("Credenciales inválidas");
-    });
+  it("rejects a missing or unsupported role instead of guessing", async () => {
+    post.mockResolvedValueOnce(response("unknown"));
+    await expect(new AuthAdapter().login("admin@test.local", "123")).rejects.toThrow("incompleta");
+  });
+  it("registers with the public student contract and then logs in using the returned user", async () => {
+    post.mockResolvedValueOnce({ data: "u-1" }).mockResolvedValueOnce(response("student"));
+    const user = await new AuthAdapter().register("Ana", "Prueba", "ana@test.local", "123", 15, "5to");
+    expect(post).toHaveBeenNthCalledWith(1, "users", { firstName: "Ana", lastName: "Prueba", email: "ana@test.local", passwordHash: "123", age: 15, grade: "5to", roleIdList: [] });
+    expect(user.id).toBe("u-1");
+  });
+  it("sends logout to the server that owns the HttpOnly cookie", async () => {
+    post.mockResolvedValueOnce({ data: { message: "Sesión cerrada" } });
+    await new AuthAdapter().logout();
+    expect(post).toHaveBeenCalledWith("auth/logout");
+  });
+  it("preserves validation details from the backend", async () => {
+    post.mockRejectedValueOnce({ response: { data: { errors: { age: "La edad no puede ser menor a 0" } } } });
+    await expect(new AuthAdapter().register("Ana", "Prueba", "a@t.local", "123", -1, "5to")).rejects.toThrow("La edad no puede ser menor a 0");
   });
 });

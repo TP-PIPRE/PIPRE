@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
 import { RiaBentoGrid, type RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
 import { getAuthState } from "../../infrastructure/store/authStore";
-import {
-  BsPlusCircleFill,
-  BsMortarboardFill,
-  BsPeopleFill,
-  BsGraphUpArrow,
-} from "react-icons/bs";
+import { CirclePlus as BsPlusCircleFill, GraduationCap as BsMortarboardFill, Users as BsPeopleFill, TrendingUp as BsGraphUpArrow } from "lucide-react";
 import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 import { Modal } from "../components/common/Modal";
 
@@ -100,7 +96,7 @@ const fetchRetosFromSimulations = async () => {
         const data = JSON.parse(s.result);
         if (data.type === "challenge" && !data.deleted) {
           retos.push({
-            id: data.idActivity || s.id_simulation,
+            id: data.idActivity || s.idSimulation,
             nombre: data.title || "Reto sin título",
             categoria: courseMap.get(data.courseId) || `Curso ${data.courseId || "?"}`,
             courseId: data.courseId || "",
@@ -203,23 +199,18 @@ export const DocenteDashboard = () => {
         setModalCourses([{ id: "1", name: "Curso principal" }]);
       }
       try {
-        const groups = await apiService.groups.getAll();
-        if (groups && groups.length > 0) {
-          const data = await apiService.ranking.getGroupRanking(groups[0].idGroup);
-          if (data && data.length > 0) {
-            setModalRankingData(data.map((dto: RankingDTO) => ({
-              position: dto.position,
-              studentId: dto.idStudent,
-              studentName: `Estudiante #${dto.position}`,
-              totalScore: dto.totalPoints,
-            })));
-          }
-        }
-      } catch {}
+        const data = modalActiveTab === "course" && modalSelectedCourse
+          ? await apiService.ranking.getCourseRanking(modalSelectedCourse)
+          : await apiService.groups.getAll().then(async groups => {
+              const rankings = (await Promise.all(groups.map(g => apiService.ranking.getGroupRanking(g.idGroup)))).flat();
+              return [...new Map(rankings.map(entry => [entry.idStudent, entry])).values()].sort((a, b) => b.totalPoints - a.totalPoints).map((entry, i) => ({ ...entry, position: i + 1 }));
+            });
+        setModalRankingData(data.map(dto => ({ position: dto.position, studentId: dto.idStudent, studentName: dto.studentName || `Estudiante #${dto.position}`, totalScore: dto.totalPoints })));
+      } catch { setModalRankingData([]); }
       setModalIsLoading(false);
     };
     doFetch();
-  }, [rankingModalOpen]);
+  }, [rankingModalOpen, modalActiveTab, modalSelectedCourse]);
 
   useEffect(() => {
     loadDashboardMetrics().then(({ metricas, retos }) => {
@@ -241,7 +232,7 @@ export const DocenteDashboard = () => {
           setStudents(derived);
           const destacados = ranking.slice(0, 3).map((s: RankingDTO, i: number) => ({
             id: s.idStudent,
-            nombre: `Estudiante #${s.position}`,
+            nombre: s.studentName || `Estudiante #${s.position}`,
             xp: s.totalPoints,
             variacionXP: 0,
             posicion: i + 1,
@@ -287,7 +278,7 @@ export const DocenteDashboard = () => {
             className="text-xl font-mono font-bold tracking-tight mb-1 transition-all duration-300 hover:text-primary"
             style={{ color: "var(--text)" }}
           >
-            Panel del Instructor
+            Panel docente
           </h1>
           <p
             className="text-sm transition-all duration-300"
@@ -296,7 +287,7 @@ export const DocenteDashboard = () => {
             Gestión de retos, estudiantes y seguimiento de progreso
           </p>
         </div>
-        <button className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300 hover:scale-105 flex items-center gap-2 shrink-0 rounded-lg">
+        <button onClick={() => navigate("/docente/retos")} className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300  flex items-center gap-2 shrink-0 rounded-lg">
           <BsPlusCircleFill className="text-sm" />
           Nuevo Reto
         </button>
@@ -307,7 +298,7 @@ export const DocenteDashboard = () => {
         {dashboardMetrics.metricas.map((m) => (
           <div
             key={m.id}
-            className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg hover:scale-102 rounded-lg"
+            className="border border-border bg-surface p-6 transition-all duration-300 hover:shadow-lg  rounded-lg"
           >
             <div className="flex justify-between items-start mb-4">
               {renderMetricaIcon(m.icono)}
@@ -366,12 +357,14 @@ export const DocenteDashboard = () => {
               </thead>
               <tbody
                 className="divide-y"
-                style={{ borderColor: "rgba(var(--border-rgb), 0.3)" }}
+                style={{ borderColor: "var(--border)" }}
               >
+                {!metricsReady && <tr><td colSpan={5} role="status">Cargando retos…</td></tr>}
+                {metricsReady && dashboardMetrics.retos.length === 0 && <tr><td colSpan={5}>No hay retos disponibles.</td></tr>}
                 {dashboardMetrics.retos.map((r) => (
                   <tr
                     key={r.id}
-                    className="hover:bg-surface/30 transition-colors duration-300 rounded-lg"
+                    className="hover:bg-surface transition-colors duration-300 rounded-lg"
                   >
                     <td
                       className="py-4 font-mono text-xs font-semibold"
@@ -412,8 +405,8 @@ export const DocenteDashboard = () => {
                       <span
                         className={`text-xs font-mono px-2 py-1 rounded-full ${
                           r.estado
-                            ? "bg-green-500/10 text-green-500"
-                            : "bg-yellow-500/10 text-yellow-500"
+                            ? "bg-green-500/10 text-success"
+                            : "bg-yellow-500/10 text-accent"
                         }`}
                       >
                         {r.estado ? "Activo" : "Inactivo"}
@@ -422,20 +415,16 @@ export const DocenteDashboard = () => {
                     <td className="py-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
+                          aria-label={`Editar ${r.nombre}`} onClick={() => navigate("/docente/retos", { state: { courseId: r.courseId } })}
                           className="text-text-muted hover:text-primary transition-colors duration-300 rounded-full p-1"
                         >
-                          <span className="material-symbols-outlined text-base">
-                            edit
-                          </span>
+                          <Pencil size={18} aria-hidden="true" />
                         </button>
                         <button
-                          onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
-                          className="text-text-muted hover:text-red-500 transition-colors duration-300 rounded-full p-1"
+                          aria-label={`Eliminar ${r.nombre}`} onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
+                          className="text-text-muted hover:text-danger transition-colors duration-300 rounded-full p-1"
                         >
-                          <span className="material-symbols-outlined text-base">
-                            delete
-                          </span>
+                          <Trash2 size={18} aria-hidden="true" />
                         </button>
                       </div>
                     </td>
@@ -458,7 +447,7 @@ export const DocenteDashboard = () => {
             {dashboardMetrics.estudiantesDestacados.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center gap-4 p-3 border border-border/50 transition-all duration-300 hover:shadow-sm rounded-lg"
+                className="flex items-center gap-4 p-3 border border-border transition-all duration-300 hover:shadow-sm rounded-lg"
               >
                 <div className="relative shrink-0">
                   <img
@@ -467,7 +456,7 @@ export const DocenteDashboard = () => {
                     src={e.avatar}
                   />
                   <span
-                    className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center font-bold text-[10px] rounded-full text-bg"
+                    className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center font-bold text-xs rounded-full text-bg"
                     style={{ backgroundColor: "var(--primary)" }}
                   >
                     {e.posicion}
@@ -497,7 +486,7 @@ export const DocenteDashboard = () => {
                       />
                     </div>
                     <span
-                      className="text-[10px] font-mono transition-colors duration-300"
+                      className="text-xs font-mono transition-colors duration-300"
                       style={{ color: "var(--text-muted)" }}
                     >
                       {e.xp} XP
@@ -529,7 +518,7 @@ export const DocenteDashboard = () => {
       <div className="mb-8 p-5 border border-border bg-surface rounded-xl">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-lg border border-border/50 flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
+            <div className="w-9 h-9 rounded-lg border border-border flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
             <span className="text-xs font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
@@ -537,7 +526,7 @@ export const DocenteDashboard = () => {
             </span>
           </div>
           <div className="flex-1 min-w-[200px] relative">
-            <select
+            <select aria-label="Estudiante para análisis"
               value={selectedStudentId}
               onChange={handleStudentChange}
               disabled={studentsLoading}
@@ -558,7 +547,7 @@ export const DocenteDashboard = () => {
               </div>
             )}
           </div>
-          <span className="text-[9px] font-mono italic shrink-0" style={{ color: "var(--text-muted)" }}>
+          <span className="text-xs font-mono italic shrink-0" style={{ color: "var(--text-muted)" }}>
             {students.length > 0 ? "Sincronizado" : "Sin datos"}
           </span>
         </div>
@@ -584,7 +573,7 @@ export const DocenteDashboard = () => {
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setDeleteConfirmReto(null)}
-              className="px-6 py-3 text-xs font-mono font-bold uppercase tracking-wider border border-border/60 text-text-muted hover:text-text transition-all rounded-lg"
+              className="px-6 py-3 text-xs font-mono font-bold uppercase tracking-wider border border-border text-text-muted hover:text-text transition-all rounded-lg"
             >
               Cancelar
             </button>
@@ -613,10 +602,10 @@ export const DocenteDashboard = () => {
           </h2>
 
           {/* Tabs */}
-          <div className="flex gap-6 mb-6 border-b border-border/30 pb-3">
+          <div className="flex gap-6 mb-6 border-b border-border pb-3">
             <button
               onClick={() => setModalActiveTab("global")}
-              className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-3 -mb-3 transition-all ${
+              className={`text-xs font-mono font-bold uppercase tracking-widest pb-3 -mb-3 transition-all ${
                 modalActiveTab === "global"
                   ? "text-primary border-b-2 border-primary"
                   : "text-text-muted hover:text-text"
@@ -626,7 +615,7 @@ export const DocenteDashboard = () => {
             </button>
             <button
               onClick={() => setModalActiveTab("course")}
-              className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-3 -mb-3 transition-all ${
+              className={`text-xs font-mono font-bold uppercase tracking-widest pb-3 -mb-3 transition-all ${
                 modalActiveTab === "course"
                   ? "text-primary border-b-2 border-primary"
                   : "text-text-muted hover:text-text"
@@ -641,7 +630,7 @@ export const DocenteDashboard = () => {
               <select
                 value={modalSelectedCourse}
                 onChange={(e) => setModalSelectedCourse(e.target.value)}
-                className="bg-bg border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none rounded-lg"
+                className="bg-bg border border-border px-4 py-2 text-sm focus:border-primary outline-none rounded-lg"
               >
                 {modalCourses.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
@@ -651,7 +640,7 @@ export const DocenteDashboard = () => {
           )}
 
           {modalIsLoading ? (
-            <div className="text-center py-16 text-text-muted text-[10px] font-mono uppercase tracking-widest animate-pulse">
+            <div className="text-center py-16 text-text-muted text-xs font-mono uppercase tracking-widest animate-pulse">
               Cargando ranking...
             </div>
           ) : modalRankingData.length === 0 ? (
@@ -661,10 +650,10 @@ export const DocenteDashboard = () => {
           ) : (
             <div className="border border-border overflow-hidden rounded-xl">
               <div className="p-4 border-b border-border flex justify-between items-center" style={{ backgroundColor: "var(--surface-brighter)" }}>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "var(--text)" }}>
+                <span className="text-xs font-mono font-bold uppercase tracking-widest" style={{ color: "var(--text)" }}>
                   {modalActiveTab === "global" ? "Ranking Global" : `Ranking del Curso`}
                 </span>
-                <span className="text-[9px] font-mono text-text-muted">{modalRankingData.length} estudiantes</span>
+                <span className="text-xs font-mono text-text-muted">{modalRankingData.length} estudiantes</span>
               </div>
               <div className="divide-y divide-border/30">
                 {modalRankingData.map((entry) => (

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiService } from "../../infrastructure/api/apiService";
-import { BsExclamationOctagonFill, BsChevronRight } from "react-icons/bs";
+import { OctagonAlert as BsExclamationOctagonFill, ChevronRight as BsChevronRight } from "lucide-react";
 import type {
   CourseResponseDTO,
 } from "../../infrastructure/api/models/apiModels";
@@ -220,7 +220,7 @@ export const CursosPage: React.FC = () => {
                 {/* Botón para ver retos */}
                 <div
                   onClick={() => fetchChallenges(course.idCourse)}
-                  className="flex items-center justify-between p-3 border border-border/50 rounded-lg transition-all cursor-pointer hover:bg-[var(--surface-brighter)]"
+                  className="flex items-center justify-between p-3 border border-border rounded-lg transition-all cursor-pointer hover:bg-[var(--surface-brighter)]"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
                   <div className="flex items-center gap-4">
@@ -266,7 +266,7 @@ export const CursosPage: React.FC = () => {
                           .map((challenge) => (
                           <div
                             key={challenge.id}
-                            className="p-3 bg-[var(--surface-brighter)] border border-border/30 rounded-lg flex justify-between items-center"
+                            className="p-3 bg-[var(--surface-brighter)] border border-border rounded-lg flex justify-between items-center"
                             style={{ borderRadius: "var(--theme-radius)" }}
                           >
                             <div>
@@ -324,7 +324,7 @@ export const CursosPage: React.FC = () => {
                               <button
                                 disabled={challengePage === 0}
                                 onClick={() => setChallengePage(p => Math.max(0, p - 1))}
-                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all"
+                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border disabled:opacity-30 hover:border-primary transition-all"
                                 style={{ borderRadius: "var(--theme-radius)" }}
                               >
                                 ← Anterior
@@ -332,7 +332,7 @@ export const CursosPage: React.FC = () => {
                               <button
                                 disabled={(challengePage + 1) * CHALLENGES_PER_PAGE >= selectedCourseChallenges.length}
                                 onClick={() => setChallengePage(p => p + 1)}
-                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border/20 disabled:opacity-30 hover:border-primary transition-all"
+                                className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-border disabled:opacity-30 hover:border-primary transition-all"
                                 style={{ borderRadius: "var(--theme-radius)" }}
                               >
                                 Siguiente →

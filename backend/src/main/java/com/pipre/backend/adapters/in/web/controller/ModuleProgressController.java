@@ -25,7 +25,7 @@ public class ModuleProgressController {
     private final GetModuleProgressUseCase getModuleProgressUseCase;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Registrar o actualizar el progreso de un módulo")
     @ApiResponse(responseCode = "200", description = "Progreso guardado exitosamente")
     public ResponseEntity<Void> saveModuleProgress(@RequestBody SaveModuleProgressCommand command) {

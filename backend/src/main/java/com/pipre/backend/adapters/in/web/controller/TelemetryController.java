@@ -25,7 +25,7 @@ public class TelemetryController {
     private final SaveAttemptUseCase saveAttemptUseCase;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#request.studentId())")
     @Operation(summary = "Registrar un intento del simulador")
     @ApiResponse(responseCode = "201", description = "Intento registrado exitosamente")
     public ResponseEntity<Void> saveAttempt(@Valid @RequestBody SaveAttemptRequestDTO request) {

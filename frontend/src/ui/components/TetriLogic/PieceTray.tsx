@@ -3,11 +3,13 @@ import { TETRIMINO_COLORS, TETRIMINO_DND_TYPE } from "../../../shared/constants/
 
 export interface PieceTrayProps {
   pieces: Piece[];
+  selectedPieceId?: string | null;
+  onSelectPiece?: (pieceId: string) => void;
 }
 
-export const PieceTray: React.FC<PieceTrayProps> = ({ pieces }) => {
+export const PieceTray: React.FC<PieceTrayProps> = ({ pieces, selectedPieceId, onSelectPiece }) => {
   return (
-    <div className="flex flex-wrap gap-3 rounded-xl bg-surface border border-border shadow-lg p-3">
+    <div className="lab-tray" aria-label="Piezas disponibles">
       {pieces.map((piece) => {
         const xs = piece.shape.map((c) => c.x);
         const ys = piece.shape.map((c) => c.y);
@@ -19,8 +21,11 @@ export const PieceTray: React.FC<PieceTrayProps> = ({ pieces }) => {
           piece.shape.some((c) => c.x === x && c.y === y);
 
         return (
-          <div
+          <button type="button"
             key={piece.id}
+            aria-label={`Seleccionar pieza ${piece.type}`}
+            aria-pressed={selectedPieceId === piece.id}
+            onClick={() => onSelectPiece?.(piece.id)}
             draggable
             onDragStart={(e) => {
               e.dataTransfer.setData(
@@ -29,7 +34,7 @@ export const PieceTray: React.FC<PieceTrayProps> = ({ pieces }) => {
               );
               e.dataTransfer.effectAllowed = "move";
             }}
-            className="cursor-grab active:cursor-grabbing rounded-lg bg-surface-brighter border border-border p-2 hover:border-primary transition-colors"
+            className="lab-piece cursor-grab active:cursor-grabbing"
             title={`${piece.type} - arrastra al tablero`}>
             <div
               className="grid gap-0.5"
@@ -53,7 +58,8 @@ export const PieceTray: React.FC<PieceTrayProps> = ({ pieces }) => {
                 }),
               )}
             </div>
-          </div>
+            <span>Pieza {piece.type}</span>
+          </button>
         );
       })}
     </div>

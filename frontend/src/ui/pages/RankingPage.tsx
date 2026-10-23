@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
+import { getAuthState } from "../../infrastructure/store/authStore";
+import { mergeRankings } from "../../application/usecases/mergeRankings";
 import type { RankingDTO, CourseResponseDTO, ModuleResponseDTO } from "../../infrastructure/api/models/apiModels";
 
 interface RankingEntry {
@@ -17,6 +19,7 @@ interface RankingEntry {
 type Tab = "global" | "course" | "groups";
 
 export const RankingPage: React.FC = () => {
+  const canViewCourseRanking = ["docente", "admin"].includes(getAuthState().user?.role ?? "");
   const [activeTab, setActiveTab] = useState<Tab>("global");
   const [rankingData, setRankingData] = useState<RankingEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,11 +95,7 @@ export const RankingPage: React.FC = () => {
         })
       );
 
-      const merged = results
-        .filter((r) => r.status === "fulfilled")
-        .flatMap((r) => (r as PromiseFulfilledResult<RankingEntry[]>).value)
-        .sort((a, b) => b.totalScore - a.totalScore)
-        .map((entry, i) => ({ ...entry, position: i + 1 }));
+      const merged = mergeRankings(results.filter(r => r.status === "fulfilled").map(r => r.value));
 
       setRankingData(merged);
     } catch {
@@ -186,11 +185,12 @@ export const RankingPage: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex justify-center gap-8 mb-10">
-        {(["global", "course", "groups"] as Tab[]).map((tab) => (
+        {(["global", ...(canViewCourseRanking ? ["course"] : []), "groups"] as Tab[]).map((tab) => (
           <button
             key={tab}
+            aria-pressed={activeTab === tab}
             onClick={() => setActiveTab(tab)}
-            className={`text-[10px] font-mono font-bold uppercase tracking-widest pb-2 transition-all ${
+            className={`text-xs font-mono font-bold uppercase tracking-widest pb-2 transition-all ${
               activeTab === tab
                 ? "text-primary border-b-2 border-primary"
                 : "text-text-muted hover:text-text"
@@ -206,10 +206,10 @@ export const RankingPage: React.FC = () => {
         <div className="flex justify-center gap-4 mb-8 flex-wrap">
           {courses.length > 0 ? (
             <>
-              <select
+              <select aria-label="Filtrar por curso"
                 value={selectedCourse}
                 onChange={(e) => { setSelectedCourse(e.target.value); setSelectedModule(""); }}
-                className="bg-bg border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none"
+                className="bg-bg border border-border px-4 py-2 text-sm focus:border-primary outline-none"
                 style={{ borderRadius: "var(--theme-radius)" }}
               >
                 {courses.map((c) => (
@@ -217,10 +217,10 @@ export const RankingPage: React.FC = () => {
                 ))}
               </select>
               {selectedCourse && modules.length > 0 && (
-                <select
+                <select aria-label="Filtrar por módulo"
                   value={selectedModule}
                   onChange={(e) => setSelectedModule(e.target.value)}
-                  className="bg-bg border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none"
+                  className="bg-bg border border-border px-4 py-2 text-sm focus:border-primary outline-none"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
                   <option value="">Todos los módulos</option>
@@ -239,10 +239,10 @@ export const RankingPage: React.FC = () => {
       {activeTab === "groups" && (
         <div className="flex justify-center mb-8">
           {groups.length > 0 ? (
-            <select
+            <select aria-label="Filtrar por grupo"
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
-              className="bg-bg border border-border/30 px-4 py-2 text-sm focus:border-primary outline-none"
+              className="bg-bg border border-border px-4 py-2 text-sm focus:border-primary outline-none"
               style={{ borderRadius: "var(--theme-radius)" }}
             >
               {groups.map((g) => (
@@ -256,7 +256,7 @@ export const RankingPage: React.FC = () => {
       )}
 
       {isLoading ? (
-        <div className="text-center py-20 text-text-muted text-[10px] font-mono uppercase tracking-widest animate-pulse">
+        <div className="text-center py-20 text-text-muted text-xs font-mono uppercase tracking-widest animate-pulse">
           Cargando ranking...
         </div>
       ) : rankingData.length === 0 && !isLoading ? (
@@ -267,10 +267,10 @@ export const RankingPage: React.FC = () => {
             {activeTab === "groups" && "No hay estudiantes en este grupo. Asigna estudiantes desde la gestión de estudiantes."}
           </p>
           {activeTab === "course" && groups.length > 0 && (
-            <p className="text-[9px] font-mono text-text-muted/60 mt-2">Cambia a la pestaña "Por Grupos" para ver el ranking por grupo.</p>
+            <p className="text-xs font-mono text-text-muted mt-2">Cambia a la pestaña "Por Grupos" para ver el ranking por grupo.</p>
           )}
           {activeTab === "groups" && courses.length > 0 && (
-            <p className="text-[9px] font-mono text-text-muted/60 mt-2">Cambia a la pestaña "Por Curso" para ver el ranking por curso.</p>
+            <p className="text-xs font-mono text-text-muted mt-2">Cambia a la pestaña "Por Curso" para ver el ranking por curso.</p>
           )}
         </div>
       ) : (
@@ -280,15 +280,15 @@ export const RankingPage: React.FC = () => {
             {top3[1] && (
               <div className="order-2 md:order-1 pt-8">
                 <div
-                  className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
+                  className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg "
                   style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
                 >
                   <div className="w-12 h-12 flex items-center justify-center border border-border font-bold mb-4" style={{ backgroundColor: "var(--surface-brighter)", color: "var(--text)", borderRadius: "var(--theme-radius)" }}>2</div>
                   <p className="font-bold text-sm mb-1" style={{ color: "var(--text)" }}>{top3[1].studentName}</p>
-                  {top3[1].groupName && <p className="text-[9px] font-mono text-text-muted mb-2">{top3[1].groupName}</p>}
+                  {top3[1].groupName && <p className="text-xs font-mono text-text-muted mb-2">{top3[1].groupName}</p>}
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[9px] font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[1].level}</span>
-                    <span className="text-[9px]">⭐ {top3[1].totalStars}</span>
+                    <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[1].level}</span>
+                    <span className="text-xs">⭐ {top3[1].totalStars}</span>
                   </div>
                   <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[1].totalScore.toLocaleString()} XP</span>
                 </div>
@@ -297,16 +297,16 @@ export const RankingPage: React.FC = () => {
             {top3[0] && (
               <div className="order-1 md:order-2">
                 <div
-                  className="border-2 p-8 text-center flex flex-col items-center relative transform scale-105 transition-all duration-300 hover:shadow-2xl hover:scale-110"
-                  style={{ borderColor: "var(--primary)", backgroundColor: "rgba(var(--primary-rgb), 0.05)", boxShadow: "0 0 30px rgba(var(--primary-rgb), 0.1)", borderRadius: "var(--theme-radius)" }}
+                  className="border-2 p-8 text-center flex flex-col items-center relative transform  transition-all duration-300 hover:shadow-2xl "
+                  style={{ borderColor: "var(--primary)", backgroundColor: "var(--primary-low)", boxShadow: "0 0 30px var(--primary-glow)", borderRadius: "var(--theme-radius)" }}
                 >
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-[10px] tracking-widest uppercase" style={{ backgroundColor: "var(--primary)", color: "var(--bg)", borderRadius: "var(--theme-radius)" }}>Líder</div>
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-3 py-1 font-mono font-bold text-xs tracking-widest uppercase" style={{ backgroundColor: "var(--primary)", color: "var(--bg)", borderRadius: "var(--theme-radius)" }}>Líder</div>
                   <div className="w-16 h-16 flex items-center justify-center border font-black text-xl mb-4" style={{ backgroundColor: "var(--primary)", borderColor: "var(--primary)", color: "var(--bg)", borderRadius: "var(--theme-radius)" }}>1</div>
                   <p className="font-bold text-lg mb-1" style={{ color: "var(--text)" }}>{top3[0].studentName}</p>
-                  {top3[0].groupName && <p className="text-[9px] font-mono text-text-muted mb-2">{top3[0].groupName}</p>}
+                  {top3[0].groupName && <p className="text-xs font-mono text-text-muted mb-2">{top3[0].groupName}</p>}
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[9px] font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[0].level}</span>
-                    <span className="text-[9px]">⭐ {top3[0].totalStars}</span>
+                    <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[0].level}</span>
+                    <span className="text-xs">⭐ {top3[0].totalStars}</span>
                   </div>
                   <span className="text-sm font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[0].totalScore.toLocaleString()} XP</span>
                 </div>
@@ -315,15 +315,15 @@ export const RankingPage: React.FC = () => {
             {top3[2] && (
               <div className="order-3 pt-12">
                 <div
-                  className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg hover:scale-105"
+                  className="border border-border p-6 text-center flex flex-col items-center transition-all duration-300 hover:shadow-lg "
                   style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}
                 >
                   <div className="w-10 h-10 flex items-center justify-center border border-border font-bold mb-4" style={{ backgroundColor: "var(--surface-brighter)", color: "var(--text)", borderRadius: "var(--theme-radius)" }}>3</div>
                   <p className="font-bold text-sm mb-1" style={{ color: "var(--text)" }}>{top3[2].studentName}</p>
-                  {top3[2].groupName && <p className="text-[9px] font-mono text-text-muted mb-2">{top3[2].groupName}</p>}
+                  {top3[2].groupName && <p className="text-xs font-mono text-text-muted mb-2">{top3[2].groupName}</p>}
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[9px] font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[2].level}</span>
-                    <span className="text-[9px]">⭐ {top3[2].totalStars}</span>
+                    <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[2].level}</span>
+                    <span className="text-xs">⭐ {top3[2].totalStars}</span>
                   </div>
                   <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[2].totalScore.toLocaleString()} XP</span>
                 </div>
@@ -334,10 +334,10 @@ export const RankingPage: React.FC = () => {
           {/* Table */}
           <div className="border border-border overflow-hidden" style={{ backgroundColor: "var(--surface)", borderRadius: "var(--theme-radius)" }}>
             <div className="p-4 border-b border-border flex justify-between items-center" style={{ backgroundColor: "var(--surface-brighter)" }}>
-              <h2 className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: "var(--text)" }}>
+              <h2 className="text-xs font-mono font-bold uppercase tracking-widest" style={{ color: "var(--text)" }}>
                 {activeTab === "global" ? "Ranking Global" : activeTab === "course" ? (selectedModule ? "Ranking por Módulo" : "Ranking por Curso") : "Ranking del Grupo"}
               </h2>
-              <span className="text-[9px] font-mono text-text-muted">{rankingData.length} estudiantes</span>
+              <span className="text-xs font-mono text-text-muted">{rankingData.length} estudiantes</span>
             </div>
             <div className="divide-y" style={{ backgroundColor: "var(--surface)" }}>
               {rankingData.map((entry) => (
@@ -347,10 +347,10 @@ export const RankingPage: React.FC = () => {
                   <div className="flex-1">
                     <p className="text-xs font-bold" style={{ color: "var(--text)" }}>{entry.studentName}</p>
                     <div className="flex items-center gap-3 mt-1">
-                      {entry.groupName && <span className="text-[8px] font-mono text-text-muted">{entry.groupName}</span>}
-                      <span className="text-[9px] font-mono text-primary">Nv.{entry.level}</span>
-                      <span className="text-[9px]">⭐ {entry.totalStars}</span>
-                      <span className="text-[9px] text-text-muted">🔥 {entry.currentStreak}</span>
+                      {entry.groupName && <span className="text-xs font-mono text-text-muted">{entry.groupName}</span>}
+                      <span className="text-xs font-mono text-primary">Nv.{entry.level}</span>
+                      <span className="text-xs">⭐ {entry.totalStars}</span>
+                      <span className="text-xs text-text-muted">🔥 {entry.currentStreak}</span>
                     </div>
                   </div>
                   <div className="text-right">

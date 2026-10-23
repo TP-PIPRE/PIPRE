@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useId } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface ModalProps {
   maxWidth?: string;
   height?: string;
   zIndex?: number;
+  title?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -16,23 +18,46 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = "max-w-3xl",
   height,
   zIndex = 2000,
+  title = "Detalles",
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    if (isOpen && panelRef.current && !panelRef.current.contains(document.activeElement)) panelRef.current.focus();
+  });
 
   useEffect(() => {
     if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const panel = panelRef.current;
+    panel?.focus();
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
+      if (e.key !== "Tab" || !panel) return;
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')).filter(el => el.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first) { e.preventDefault(); return; }
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (document.activeElement === last || document.activeElement === panel)) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
+    return () => {
+      document.removeEventListener("keydown", handler);
+      document.body.style.overflow = previousOverflow;
+      previous?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
-      className={`fixed inset-0 flex items-center justify-center p-4 md:p-9 animate-fade-in-soft`}
+      className="app-modal fixed inset-0 flex items-center justify-center bg-black/60 p-3 md:p-8"
       style={{ zIndex }}
       onClick={(e) => {
         if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -42,6 +67,10 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
         className={`w-full ${maxWidth} border border-border shadow-[0_32px_64px_-16px_var(--primary-glow)] relative animate-scale-up-soft overflow-hidden flex flex-col`}
         style={{
           backgroundColor: "var(--surface)",
@@ -50,10 +79,11 @@ export const Modal: React.FC<ModalProps> = ({
           maxHeight: "calc(100vh - 4rem)",
         }}
       >
+        <span id={titleId} className="sr-only">{title}</span>
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-surface-brighter text-text-muted hover:text-text hover:bg-surface transition-all duration-300"
+          className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-surface-brighter text-text-muted hover:text-text hover:bg-surface transition-all duration-300"
           aria-label="Cerrar"
         >
           <span className="text-xl">×</span>
@@ -64,6 +94,7 @@ export const Modal: React.FC<ModalProps> = ({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

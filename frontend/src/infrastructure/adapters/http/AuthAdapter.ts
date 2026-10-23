@@ -1,96 +1,31 @@
-import axiosInstance from "../../api/axiosInstance";
-import type { IAuthRepository } from "../../ports/IAuthRepository";
 import type { User } from "../../../shared/types/User";
 import type { LoginResponseDTO } from "../../api/models/apiModels";
-
-const LOGIN_ENDPOINT = "auth/login";
-const REGISTER_ENDPOINT = "users";
-
-function getCookie(name: string): string | null {
-  const cookies = document.cookie.split(";");
-  for (const cookie of cookies) {
-    const [cookieName, cookieValue] = cookie.trim().split("=");
-    if (cookieName === name) return decodeURIComponent(cookieValue);
-  }
-  return null;
-}
+import type { IAuthRepository } from "../../ports/IAuthRepository";
+import axiosInstance from "../../api/axiosInstance";
+import { getApiErrorMessage } from "../../api/errors";
 
 export class AuthAdapter implements IAuthRepository {
-  async login(
-    email: string,
-    password: string,
-  ): Promise<{ user: User; token: string }> {
+  async login(email: string, password: string): Promise<{ user: User }> {
     try {
-      const response = await axiosInstance.post<LoginResponseDTO>(LOGIN_ENDPOINT, { email, password });
-      const loginData = response.data;
-      const authUser = loginData.user;
-
-      // El backend establece la cookie jwt automáticamente vía Set-Cookie
-      const token = getCookie("jwt") || "";
-
-      let role = "student";
-      try {
-        const payloadBase64 = token.split(".")[1];
-        const payload = JSON.parse(atob(payloadBase64));
-        const backendRole = payload.role || "";
-        
-        if (backendRole === "admin") role = "admin";
-        else if (backendRole === "teacher") role = "docente";
-        else if (backendRole === "student") role = "student";
-        else {
-          if (email.includes("admin")) role = "admin";
-          else if (email.includes("docente")) role = "docente";
-        }
-      } catch {
-        if (email.includes("admin")) role = "admin";
-        else if (email.includes("docente")) role = "docente";
+      const { data } = await axiosInstance.post<LoginResponseDTO>("auth/login", { email, password });
+      const source = data.user;
+      const role = source?.role?.toLowerCase() === "teacher" ? "docente" : source?.role?.toLowerCase();
+      if (!role || !source?.idUser || !source.email || !["student", "docente", "admin"].includes(role ?? "")) {
+        throw new Error("La respuesta de inicio de sesión está incompleta.");
       }
-
-      const user: User = {
-        id: authUser.idUser || authUser.email || "",
-        name: authUser.firstName || (role === "admin" ? "Admin" : role === "docente" ? "Profesor" : "Estudiante"),
-        email: authUser.email,
-        role: role,
-      };
-
-      return { user, token };
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      throw new Error(
-        err.response?.data?.message || 
-        "Credenciales incorrectas o error en el servidor"
-      );
+      // The browser owns the HttpOnly JWT. Roles come only from the server response.
+      return { user: { id: source.idUser, email: source.email, name: source.firstName, role } };
+    } catch (error) {
+      throw new Error(getApiErrorMessage(error, "No se pudo iniciar sesión."));
     }
   }
-
-  async register(
-    name: string,
-    lastname: string,
-    email: string,
-    password: string,
-    age: number,
-    grade: string,
-  ): Promise<User> {
+  async register(name: string, lastname: string, email: string, password: string, age: number, grade: string): Promise<User> {
     try {
-      await axiosInstance.post<string>(REGISTER_ENDPOINT, {
-        firstName: name,
-        lastName: lastname,
-        email,
-        passwordHash: password,
-        age,
-        grade,
-        roleIdList: [],
-      });
-
-      // Auto-login after registration
-      const { user } = await this.login(email, password);
-      return user;
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } }; message?: string };
-      throw new Error(
-        err.response?.data?.message || 
-        "Error al registrar usuario: " + err.message
-      );
+      await axiosInstance.post<string>("users", { firstName: name, lastName: lastname, email, passwordHash: password, age, grade, roleIdList: [] });
+      return (await this.login(email, password)).user;
+    } catch (error) {
+      throw new Error(getApiErrorMessage(error, "No se pudo registrar la cuenta."));
     }
   }
+  async logout(): Promise<void> { await axiosInstance.post("auth/logout"); }
 }

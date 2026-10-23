@@ -7,7 +7,7 @@ import { PlayerCard } from "../components/Perfil/PlayerCard";
 import { StatsGrid } from "../components/Perfil/StatsGrid";
 import { AchievementGrid } from "../components/Perfil/AchievementGrid";
 import { HistoryTable } from "../components/Perfil/HistoryTable";
-import { BsArrowRepeat } from "react-icons/bs";
+import { RefreshCw as BsArrowRepeat } from "lucide-react";
 
 type Tab = "stats" | "achievements" | "history";
 
@@ -57,7 +57,7 @@ export const PerfilPage = () => {
       <main className="flex-1 p-6 max-w-4xl mx-auto w-full flex items-center justify-center">
         <div className="flex flex-col items-center gap-2 font-mono" style={{ color: "var(--text-muted)" }}>
           <BsArrowRepeat className="text-2xl animate-spin" />
-          <span className="text-[10px] uppercase tracking-widest">Cargando perfil...</span>
+          <span className="text-xs uppercase tracking-widest">Cargando perfil...</span>
         </div>
       </main>
     );
@@ -85,12 +85,13 @@ export const PerfilPage = () => {
     <main className="flex-1 p-6 max-w-4xl mx-auto w-full" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
       <PlayerCard profile={profile} />
 
-      <div className="flex gap-6 mt-6 mb-6 border-b border-border">
+      <div className="flex flex-wrap gap-3 sm:gap-6 mt-6 mb-6 border-b border-border">
         {tabs.map((tab) => (
           <button
             key={tab.id}
+            aria-pressed={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`pb-2 text-[10px] font-mono font-bold uppercase tracking-widest transition-all ${
+            className={`pb-2 text-xs font-mono font-bold uppercase tracking-widest transition-all ${
               activeTab === tab.id
                 ? "text-primary border-b-2 border-primary"
                 : "text-text-muted hover:text-text"

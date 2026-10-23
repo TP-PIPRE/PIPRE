@@ -1,4 +1,4 @@
-﻿name: pipre-application
+name: pipre-application
 
 services:
 
@@ -68,7 +68,7 @@ services:
 
 networks:
   pipre-infra-net:
-    internal: true
+    internal: false
 
 volumes:
   ml-models:

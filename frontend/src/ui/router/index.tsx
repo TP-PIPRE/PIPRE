@@ -25,9 +25,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Layout base que incluye la Navbar
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="min-h-screen pt-12 flex flex-col bg-bg text-text">
+    <div className="min-h-screen flex flex-col bg-bg text-text">
+      <a href="#contenido" className="skip-link">Saltar al contenido</a>
       <Navbar />
-      <main className="flex-1 flex flex-col">{children}</main>
+      <div id="contenido" tabIndex={-1} className="app-main flex-1 flex flex-col">{children}</div>
     </div>
   );
 };
@@ -35,7 +36,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 // Componente para restringir acceso a docentes
 const DocenteRoute = ({ children }: { children: React.ReactNode }) => {
   const { user } = getAuthState();
-  if (user?.role !== "docente") {
+  if (!user || !["docente", "admin"].includes(user.role)) {
     return <Navigate to="/" replace />;
   }
   return <>{children}</>;
