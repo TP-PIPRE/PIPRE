@@ -34,6 +34,12 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, exception) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write("{\"message\":\"Inicia sesión para continuar.\"}");
+                }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/").permitAll()
 

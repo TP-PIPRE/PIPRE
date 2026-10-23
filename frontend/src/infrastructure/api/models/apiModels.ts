@@ -6,8 +6,6 @@ export interface UserRequestDTO {
   grade: string;
   age: number;
   roleIdList: string[];
-  institution?: string;
-  zone?: string;
 }
 
 export interface UserResponseDTO {
@@ -25,19 +23,20 @@ export interface RoleDTO {
 export interface GroupDTO {
   idGroup: string;
   groupName: string;
+  description: string | null;
 }
 
 export interface CourseRequestDTO {
   name: string;
   description: string;
-  level: string;
+  level: "LOW" | "MEDIUM" | "HIGH";
 }
 
 export interface CourseResponseDTO {
   idCourse: string;
   name: string;
-  description?: string;
-  level?: string;
+  description?: string | null;
+  level?: CourseRequestDTO["level"];
 }
 
 export interface ModuleRequestDTO {
@@ -107,8 +106,12 @@ export interface ActivityResultRequest {
 }
 
 export interface ActivityResultResponse {
+  idResult: string;
+  idStudent: string;
   idActivity: string;
   score: number;
+  attempts: number;
+  date: string;
 }
 
 export interface RankingDTO {
@@ -127,28 +130,70 @@ export interface SimulationRequest {
   idStudent: string;
   idActivity: string;
   result: string;
+  blocklyCode?: string;
+  pseudocode?: string;
+  pseintDiagram?: string;
+  blocksUsage?: number;
+  codeUsage?: number;
+  sensorError?: number;
+  resolutionTime?: number;
+  environment?: string;
+  missions?: MissionDTO[];
+  startingPosition?: PositionDTO;
+  targetPosition?: PositionDTO;
 }
 
 export interface SimulationResponse {
-  id_simulation: string;
+  idSimulation: string;
+  student: UserResponseDTO;
+  activity: { idActivity: string; name: string };
+  environment: string | null;
+  missions: MissionDTO[] | null;
+  startingPosition: PositionDTO | null;
+  targetPosition: PositionDTO | null;
   result: string;
+  predictedScore: number | null;
 }
 
 export interface ModuleProgressRequest {
   idStudent: string;
   idModule: string;
   percentage: number;
+  status: string;
+}
+
+export interface ModuleProgressDTO extends ModuleProgressRequest {
+  idProgress: string;
+  updatedAt: string;
 }
 
 export interface HelpRequest {
   idStudent: string;
-  idActivity?: string;
-  description: string;
+  aiInteractions: number;
+}
+
+export interface HelpRequestDTO extends HelpRequest {
+  idHelpRequest: string;
+  requestedAt: string;
 }
 
 export interface DropoutRiskResponse {
-  riesgo: number;
-  nivel: string;
+  idRisk: string;
+  daysInactive: number;
+  performance: string;
+  riskLevel: string;
+  motivationLevel: string;
+  analysisDate: string;
+  idStudent: string;
+}
+
+export interface PageDTO<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  empty: boolean;
 }
 
 // --- Nuevos modelos para API paginada (Spring Page) y login ---

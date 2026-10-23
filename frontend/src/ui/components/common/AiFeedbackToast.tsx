@@ -1,4 +1,4 @@
-import { BsRobot, BsXLg } from "react-icons/bs";
+import { Bot as BsRobot, X as BsXLg } from "lucide-react";
 
 export interface AiFeedbackToastProps {
   message: string;
@@ -10,11 +10,11 @@ export const AiFeedbackToast: React.FC<AiFeedbackToastProps> = ({
   onClose,
 }) => {
   return (
-    <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-xl border border-border bg-surface p-3 shadow-lg">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
+    <div role="status" className="pointer-events-auto flex max-w-md items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-lg">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <BsRobot className="text-base" />
       </div>
-      <p className="flex-1 text-xs font-bold text-text">{message}</p>
+      <p className="flex-1 text-sm text-text">{message}</p>
       <button
         onClick={onClose}
         aria-label="Cerrar"

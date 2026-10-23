@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "../components/common/Modal";
-import { BsChatDotsFill, BsSearch, BsXLg } from "react-icons/bs";
+import { MessageCircle as BsChatDotsFill, Search as BsSearch, X as BsXLg } from "lucide-react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { RankingDTO, GroupDTO, UserResponseDTO } from "../../infrastructure/api/models/apiModels";
 
@@ -172,15 +172,16 @@ export const DocenteEstudiantesPage: React.FC = () => {
     <main className="flex-1 p-8 max-w-7xl mx-auto w-full animate-fade-in-soft">
       <header className="mb-12">
         <h1 className="text-3xl font-bold tracking-tight mb-2">
-          Gestión de <span className="text-primary/80">Estudiantes</span>
+          Gestión de <span className="text-primary">Estudiantes</span>
         </h1>
-        <p className="text-xs text-text-muted/60 max-w-md font-medium">
+        <p className="text-xs text-text-muted max-w-md font-medium">
           Control de grupos académicos y atención prioritaria de solicitudes de soporte técnico.
         </p>
       </header>
 
       {/* CHAT MODAL */}
       <Modal
+        title="Soporte del estudiante"
         isOpen={selectedRequest !== null}
         onClose={() => setSelectedRequest(null)}
         maxWidth="max-w-2xl"
@@ -188,18 +189,18 @@ export const DocenteEstudiantesPage: React.FC = () => {
       >
         {selectedRequest && (
           <div className="flex flex-col h-full">
-            <div className="relative h-28 bg-primary/10 overflow-hidden flex items-center px-10 border-b border-border/10">
+            <div className="relative min-h-28 bg-primary/10 flex items-center px-5 pr-14 py-5 border-b border-border">
               <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(var(--theme-primary) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
               </div>
-              <div className="relative flex items-center gap-6">
-                <div className="w-14 h-14 rounded-2xl bg-surface shadow-lg flex items-center justify-center border border-border/20 rotate-3 group-hover:rotate-0 transition-all duration-500">
+              <div className="relative flex items-center gap-3">
+                <div className="w-14 h-14 shrink-0 rounded-2xl bg-surface shadow-lg flex items-center justify-center border border-border rotate-3 group-hover:rotate-0 transition-all duration-500">
                   <BsChatDotsFill className="text-primary text-2xl" />
                 </div>
                 <div>
-                  <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-1 block">Canal de Soporte Técnico</span>
+                  <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-1 block">Canal de Soporte Técnico</span>
                   <h2 className="text-xl font-bold tracking-tight">{selectedRequest.student}</h2>
-                  <p className="text-[10px] font-medium text-text-muted/60">
+                  <p className="text-xs font-medium text-text-muted">
                     {selectedRequest.topic} • {selectedRequest.group}
                   </p>
                 </div>
@@ -207,10 +208,10 @@ export const DocenteEstudiantesPage: React.FC = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
               <div className="flex flex-col items-start gap-2 max-w-[80%]">
-                <div className="bg-surface border border-border/30 p-4 text-sm leading-relaxed" style={{ borderRadius: "var(--theme-radius)" }}>
+                <div className="bg-surface border border-border p-4 text-sm leading-relaxed" style={{ borderRadius: "var(--theme-radius)" }}>
                   {selectedRequest.message}
                 </div>
-                <span className="text-[9px] font-mono text-text-muted/40 ml-2">{selectedRequest.date}</span>
+                <span className="text-xs font-mono text-text-muted ml-2">{selectedRequest.date}</span>
               </div>
               <div className="flex flex-col items-end gap-2 ml-auto max-w-[80%] opacity-40 italic">
                 <div className="bg-primary/5 border border-primary/10 p-4 text-sm leading-relaxed" style={{ borderRadius: "var(--theme-radius)" }}>
@@ -218,7 +219,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="p-8 border-t border-border/10 bg-surface/30">
+            <div className="p-8 border-t border-border bg-surface">
               <form
                 onSubmit={(e) => { e.preventDefault(); setSelectedRequest(null); }}
                 className="flex gap-4"
@@ -228,12 +229,12 @@ export const DocenteEstudiantesPage: React.FC = () => {
                   placeholder="Escribe una instrucción técnica o respuesta..."
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
-                  className="flex-1 bg-bg/50 border border-border/30 px-6 py-5 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
+                  className="flex-1 bg-bg/50 border border-border px-6 py-5 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 />
                 <button
                   type="submit"
-                  className="btn-premium px-10 py-5 text-[10px] font-black tracking-widest"
+                  className="btn-premium px-10 py-5 text-xs font-black tracking-widest"
                 >
                   ENVIAR
                 </button>
@@ -246,12 +247,12 @@ export const DocenteEstudiantesPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Groups Column */}
         <div className="lg:col-span-8 space-y-8">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40 mb-6">
+          <h2 className="text-xs font-black uppercase tracking-[0.3em] text-text-muted mb-6">
             Grupos Asignados
           </h2>
 
           {isLoading ? (
-            <div className="text-center py-20 text-text-muted text-[10px] font-mono uppercase tracking-widest animate-pulse">
+            <div className="text-center py-20 text-text-muted text-xs font-mono uppercase tracking-widest animate-pulse">
               Cargando grupos...
             </div>
           ) : groups.length === 0 ? (
@@ -261,13 +262,13 @@ export const DocenteEstudiantesPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {groups.map((group) => (
-                <div
+                <button type="button"
                   key={group.idGroup}
-                  onClick={() => setSelectedGroup(group)}
-                  className={`group bg-surface/30 border p-8 flex flex-col justify-between transition-all duration-700 cursor-pointer hover:-translate-y-1 hover:shadow-xl ${
+                  aria-label={`Abrir grupo ${group.groupName}`} onClick={() => setSelectedGroup(group)}
+                  className={`group bg-surface border p-8 flex flex-col justify-between transition-all duration-700 cursor-pointer  hover:shadow-xl ${
                     selectedGroup?.idGroup === group.idGroup
                       ? "border-primary/40 bg-primary/5"
-                      : "border-border/10 hover:border-primary/20"
+                      : "border-border hover:border-primary/20"
                   }`}
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
@@ -276,26 +277,26 @@ export const DocenteEstudiantesPage: React.FC = () => {
                       <h3 className="text-lg font-bold mb-1 group-hover:text-primary transition-colors">
                         {group.groupName}
                       </h3>
-                      <p className="text-[10px] font-mono text-text-muted/40 uppercase tracking-widest">
+                      <p className="text-xs font-mono text-text-muted uppercase tracking-widest">
                         {group.students.length} Estudiantes • Activo
                       </p>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/60">
+                    <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em] text-text-muted">
                       <span>Promedio XP</span>
                       <span className="text-primary">{group.avgScore}</span>
                     </div>
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/60">
+                    <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em] text-text-muted">
                       <span>Estrellas Prom.</span>
                       <span>⭐ {group.avgStars}</span>
                     </div>
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/60">
+                    <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em] text-text-muted">
                       <span>Nivel Prom.</span>
                       <span className="text-primary">Nv.{group.avgLevel}</span>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -303,30 +304,30 @@ export const DocenteEstudiantesPage: React.FC = () => {
 
         {/* Help Requests Column */}
         <div className="lg:col-span-4 space-y-8">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40 mb-6">
-            Solicitudes de Soporte
+          <h2 className="text-xs font-black uppercase tracking-[0.3em] text-text-muted mb-6">
+            Solicitudes de Soporte (ejemplos)
           </h2>
           <div className="space-y-4">
             {MOCK_HELP_REQUESTS.map((req) => (
               <div
                 key={req.id}
-                className="bg-surface/30 border border-border/10 p-6 relative group transition-all duration-500 hover:border-primary/20 hover:bg-surface/50"
+                className="bg-surface border border-border p-6 relative group transition-all duration-500 hover:border-primary/20 hover:bg-surface"
                 style={{ borderRadius: "var(--theme-radius)" }}
               >
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                <div className="absolute top-3 right-3">
                   <button
-                    onClick={() => setSelectedRequest(req)}
-                    className="w-10 h-10 flex items-center justify-center bg-primary text-bg shadow-lg shadow-primary/20 hover:scale-110 active:scale-95 transition-all"
+                    aria-label={`Abrir soporte de ${req.student}`} onClick={() => setSelectedRequest(req)}
+                    className="w-11 h-11 flex items-center justify-center bg-primary text-bg shadow-lg shadow-primary/20  active:scale-95 transition-all"
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
                     <BsChatDotsFill className="text-lg" />
                   </button>
                 </div>
                 <p className="text-xs font-bold mb-1">{req.student}</p>
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">
+                <p className="text-xs font-black text-primary uppercase tracking-widest mb-4">
                   {req.topic}
                 </p>
-                <div className="flex justify-between items-center text-[9px] font-mono text-text-muted/40 uppercase tracking-[0.2em] pt-4 border-t border-border/5">
+                <div className="flex justify-between items-center text-xs font-mono text-text-muted uppercase tracking-[0.2em] pt-4 border-t border-border">
                   <span>{req.group}</span>
                   <span>{req.date}</span>
                 </div>
@@ -338,6 +339,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
 
       {/* GROUP STUDENT MANAGEMENT MODAL */}
       <Modal
+        title="Gestionar estudiantes del grupo"
         isOpen={selectedGroup !== null}
         onClose={() => {
           setSelectedGroup(null);
@@ -350,18 +352,18 @@ export const DocenteEstudiantesPage: React.FC = () => {
       >
         {selectedGroup && (
           <div className="flex flex-col h-full">
-            <div className="relative h-28 bg-primary/10 overflow-hidden flex items-center px-10 border-b border-border/10">
+            <div className="relative min-h-28 bg-primary/10 flex items-center px-5 pr-14 py-5 border-b border-border">
               <div className="absolute inset-0 opacity-10 pointer-events-none">
                 <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(var(--theme-primary) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
               </div>
-              <div className="relative flex items-center gap-6">
-                <div className="w-14 h-14 rounded-2xl bg-surface shadow-lg flex items-center justify-center border border-border/20 rotate-3 transition-all duration-500">
+              <div className="relative flex items-center gap-3">
+                <div className="w-14 h-14 shrink-0 rounded-2xl bg-surface shadow-lg flex items-center justify-center border border-border rotate-3 transition-all duration-500">
                   <span className="text-2xl font-black text-primary">{selectedGroup.groupName.charAt(0)}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] font-black text-primary uppercase tracking-[0.4em] mb-1 block">Gestión de Grupo</span>
+                  <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-1 block">Gestión de Grupo</span>
                   <h2 className="text-xl font-bold tracking-tight">{selectedGroup.groupName}</h2>
-                  <p className="text-[10px] font-medium text-text-muted/60">
+                  <p className="text-xs font-medium text-text-muted">
                     {selectedGroup.students.length} estudiantes • Prom. XP: {selectedGroup.avgScore} • ⭐ {selectedGroup.avgStars} • Nv.{selectedGroup.avgLevel}
                   </p>
                 </div>
@@ -393,12 +395,12 @@ export const DocenteEstudiantesPage: React.FC = () => {
 
                 <div className="relative flex flex-col gap-3 md:flex-row md:items-end">
                 <div className="relative flex-1">
-                  <label className="mb-2 block text-[9px] font-black uppercase tracking-[0.28em] text-primary/70">
+                  <label htmlFor="student-search" className="mb-2 block text-xs font-black uppercase tracking-[0.28em] text-primary">
                     Agregar estudiante
                   </label>
                   <div className="relative">
-                    <BsSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/70 pointer-events-none text-sm" />
-                    <input
+                    <BsSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-primary pointer-events-none text-sm" />
+                    <input id="student-search"
                       value={selectedStudent ? selectedStudent.name : searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
@@ -407,13 +409,13 @@ export const DocenteEstudiantesPage: React.FC = () => {
                       }}
                       onFocus={() => setShowDropdown(true)}
                       placeholder="Buscar por nombre o email..."
-                      className="w-full border border-primary/35 bg-[oklch(11%_0.018_250)]/95 pl-11 pr-10 py-4 text-sm text-text shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition-all placeholder:text-text-muted/45 focus:border-primary focus:bg-[oklch(12.5%_0.02_250)] focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--theme-primary)_18%,transparent)]"
+                      className="w-full border border-primary/35 bg-surface pl-11 pr-10 py-4 text-sm text-text shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition-all placeholder:text-text-muted focus:border-primary focus:bg-surface focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--theme-primary)_18%,transparent)]"
                       style={{ borderRadius: "var(--theme-radius)" }}
                     />
                     {(searchQuery || selectedStudent) && (
                       <button
                         onClick={() => { setSearchQuery(""); setSelectedStudent(null); }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted/40 transition-colors hover:bg-surface/70 hover:text-text-muted"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-text-muted transition-colors hover:bg-surface hover:text-text-muted"
                         aria-label="Limpiar búsqueda"
                       >
                         <BsXLg className="text-xs" />
@@ -423,15 +425,15 @@ export const DocenteEstudiantesPage: React.FC = () => {
 
                   {showDropdown && (
                     <div
-                      className="absolute left-0 right-0 top-full z-[80] mt-3 max-h-72 overflow-y-auto border border-primary/20 bg-[oklch(12%_0.018_250)] shadow-[0_28px_80px_rgba(0,0,0,0.45),0_0_0_1px_rgba(255,255,255,0.03)] custom-scrollbar"
+                      className="absolute left-0 right-0 top-full z-[80] mt-3 max-h-72 overflow-y-auto border border-primary/20 bg-surface shadow-[0_28px_80px_rgba(0,0,0,0.45),0_0_0_1px_rgba(255,255,255,0.03)] custom-scrollbar"
                       style={{ borderRadius: "calc(var(--theme-radius) + 4px)" }}
                     >
                       {filteredUsers.length === 0 ? (
                         <div className="px-5 py-8 text-center">
-                          <p className="text-xs font-semibold text-text-muted/70">
+                          <p className="text-xs font-semibold text-text-muted">
                             {searchQuery ? "No se encontraron estudiantes." : "Escribe para buscar estudiantes."}
                           </p>
-                          <p className="mt-1 text-[10px] text-text-muted/35">
+                          <p className="mt-1 text-xs text-text-muted">
                             Puedes buscar por nombre, apellido o correo.
                           </p>
                         </div>
@@ -440,7 +442,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                           const inGroup = alreadyInGroup(u.idUser);
                           return (
                             <React.Fragment key={u.idUser}>
-                              {i > 0 && <div className="mx-4 border-t border-border/10" />}
+                              {i > 0 && <div className="mx-4 border-t border-border" />}
                               <button
                                 onClick={() => {
                                   if (!inGroup) {
@@ -468,10 +470,10 @@ export const DocenteEstudiantesPage: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-text truncate">{u.firstName} {u.lastName}</p>
-                                  <p className="text-[10px] text-text-muted/55 font-mono truncate">{u.email}</p>
+                                  <p className="text-xs text-text-muted font-mono truncate">{u.email}</p>
                                 </div>
                                 {inGroup && (
-                                  <span className="shrink-0 rounded-md bg-primary/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-primary/70">
+                                  <span className="shrink-0 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-black uppercase tracking-widest text-primary">
                                     En el grupo
                                   </span>
                                 )}
@@ -486,7 +488,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                 <button
                   onClick={() => handleAddStudent(selectedGroup.idGroup)}
                   disabled={!selectedStudent || isAdding}
-                  className="btn-premium w-full px-8 py-4 text-[10px] font-black tracking-widest disabled:opacity-40 md:w-auto md:shrink-0"
+                  className="btn-premium w-full px-8 py-4 text-xs font-black tracking-widest disabled:opacity-40 md:w-auto md:shrink-0"
                 >
                   {isAdding ? "AGREGANDO..." : "AGREGAR"}
                 </button>
@@ -498,13 +500,13 @@ export const DocenteEstudiantesPage: React.FC = () => {
                 <div className="text-center py-16 text-text-muted text-xs">
                   <div className="text-4xl mb-4 opacity-20">👤</div>
                   <p className="font-semibold mb-1">Grupo vacío</p>
-                  <p className="text-[10px] text-text-muted/40">Busca y agrega estudiantes desde el campo de arriba.</p>
+                  <p className="text-xs text-text-muted">Busca y agrega estudiantes desde el campo de arriba.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left font-mono">
                     <thead>
-                      <tr className="text-[10px] uppercase tracking-widest border-b text-muted-foreground">
+                      <tr className="text-xs uppercase tracking-widest border-b text-muted-foreground">
                         <th className="px-4 py-3 font-normal">Estudiante</th>
                         <th className="px-4 py-3 font-normal">Nivel</th>
                         <th className="px-4 py-3 font-normal">XP Total</th>
@@ -526,12 +528,12 @@ export const DocenteEstudiantesPage: React.FC = () => {
                               </div>
                               <div className="min-w-0">
                                 <p className="max-w-[220px] truncate font-semibold">{student.studentName || `Estudiante #${student.position}`}</p>
-                                <p className="max-w-[220px] truncate text-[9px] text-text-muted/40 font-mono">{student.idStudent}</p>
+                                <p className="max-w-[220px] truncate text-xs text-text-muted font-mono">{student.idStudent}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="px-2 py-1 text-[9px] font-mono bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>
+                            <span className="px-2 py-1 text-xs font-mono bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>
                               Nv.{student.level || 1}
                             </span>
                           </td>
@@ -544,7 +546,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                           <td className="px-4 py-3">
                             🔥 {student.currentStreak || 0}
                             {student.maxStreak > 0 && (
-                              <span className="text-text-muted/40 ml-1">(máx: {student.maxStreak})</span>
+                              <span className="text-text-muted ml-1">(máx: {student.maxStreak})</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">
@@ -554,7 +556,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                                 studentId: student.idStudent,
                                 studentName: student.studentName || `Estudiante #${student.position}`
                               })}
-                              className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-widest border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all"
+                              className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest border border-red-500/30 text-danger hover:bg-red-500/10 transition-all"
                               style={{ borderRadius: "var(--theme-radius)" }}
                             >
                               REMOVER
@@ -588,14 +590,14 @@ export const DocenteEstudiantesPage: React.FC = () => {
             <div className="flex gap-4 justify-end">
               <button
                 onClick={() => setRemoveConfirm(null)}
-                className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest border border-border/30 hover:bg-surface transition-all"
+                className="px-6 py-3 text-xs font-bold uppercase tracking-widest border border-border hover:bg-surface transition-all"
                 style={{ borderRadius: "var(--theme-radius)" }}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleRemoveStudent}
-                className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest bg-red-500 text-white hover:bg-red-600 transition-all"
+                className="px-6 py-3 text-xs font-bold uppercase tracking-widest bg-red-500 text-white hover:bg-red-600 transition-all"
                 style={{ borderRadius: "var(--theme-radius)" }}
               >
                 Remover

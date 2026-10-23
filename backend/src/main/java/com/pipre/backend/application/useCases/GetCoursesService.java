@@ -20,7 +20,9 @@ public class GetCoursesService implements GetCoursesUseCase {
         return repositoryPort.findAll(pageable)
                 .map(course -> new CourseDTO(
                         course.getIdCourse(),
-                        course.getName()
+                        course.getName(),
+                        course.getDescription(),
+                        course.getLevel().name()
                 ));
     }
 }

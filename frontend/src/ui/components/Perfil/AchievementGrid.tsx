@@ -1,5 +1,5 @@
 import type { AchievementDTO } from "../../../infrastructure/api/models/apiModels";
-import { BsLockFill } from "react-icons/bs";
+import { LockKeyhole as BsLockFill } from "lucide-react";
 
 interface AchievementGridProps {
   achievements: AchievementDTO[];
@@ -30,10 +30,10 @@ export const AchievementGrid = ({ achievements }: AchievementGridProps) => {
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[10px] font-bold font-mono uppercase tracking-widest" style={{ color: "var(--text)" }}>
+        <h3 className="text-xs font-bold font-mono uppercase tracking-widest" style={{ color: "var(--text)" }}>
           Logros
         </h3>
-        <span className="text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>
+        <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
           {unlocked.length}/{achievements.length}
         </span>
       </div>
@@ -47,7 +47,7 @@ export const AchievementGrid = ({ achievements }: AchievementGridProps) => {
               className="relative flex flex-col items-center p-2 border text-center transition-all"
               style={{
                 borderColor: isUnlocked ? "var(--primary)" : "var(--border)",
-                backgroundColor: isUnlocked ? "rgba(var(--primary-rgb), 0.05)" : "var(--bg)",
+                backgroundColor: isUnlocked ? "var(--primary-low)" : "var(--bg)",
                 borderRadius: "var(--theme-radius)",
                 opacity: isUnlocked ? 1 : 0.4,
               }}

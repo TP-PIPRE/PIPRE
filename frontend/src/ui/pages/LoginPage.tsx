@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import { getApiErrorMessage } from "../../infrastructure/api/errors";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../application/hooks/useAuth";
 import { apiService } from "../../infrastructure/api/apiService";
 import { RobotIcon } from "../components/common/RobotIcon";
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
+  const errorRef = useRef<HTMLDivElement>(null);
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [regError, setRegError] = useState<string | null>(null);
+  useEffect(() => { if (regError) errorRef.current?.focus(); }, [regError]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -28,233 +31,59 @@ export const LoginPage: React.FC = () => {
         const lastName = formData.get("lastName") as string;
         const age = parseInt(formData.get("age") as string);
         const grade = formData.get("grade") as string;
-        const institution = formData.get("institution") as string;
-        const zone = formData.get("zone") as string;
 
-        const uuid = await apiService.users.create({
+        await apiService.users.create({
           firstName,
           lastName,
           age,
           grade,
           email,
           passwordHash: password,
-          institution,
-          zone,
           roleIdList: [],
         });
 
-        // Store UUID for login lookup
-        const storedUsers = JSON.parse(
-          localStorage.getItem("pipre_registered_users") || "{}",
-        );
-        storedUsers[email] = uuid;
-        localStorage.setItem(
-          "pipre_registered_users",
-          JSON.stringify(storedUsers),
-        );
-
-        setSuccessMessage("Nodo de usuario creado. Identifícate para entrar.");
+        setSuccessMessage("Tu cuenta está lista. Inicia sesión para continuar.");
         setIsLogin(true);
       }
     } catch (err) {
       console.error("Error in auth/reg:", err);
-      setRegError(
-        isLogin
-          ? "Credenciales inválidas"
-          : "Error de sincronización. Verifica los datos del nodo.",
-      );
+      setRegError(getApiErrorMessage(err, "No pudimos completar la solicitud."));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-bg animate-fade-in relative overflow-hidden">
-      {/* Decorative Blur Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
-      <div
-        className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[120px] animate-pulse"
-        style={{ animationDelay: "2s" }}
-      />
-
-      <div className="w-full max-w-md z-10">
-        {/* Logo Section */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="mb-4 flex h-20 w-20 items-center justify-center">
-            <RobotIcon size={72} className="drop-shadow-[0_12px_28px_var(--theme-primary-glow)]" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-widest text-text mb-2">
-            PIPRE
-          </h1>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-text-muted font-bold text-center">
-            Plataforma Inteligente Para<br></br> Robotica Escolar
-          </p>
+    <main className="auth-page">
+      <div className="auth-container">
+        <div className="flex items-center gap-3 mb-8">
+          <RobotIcon size={48} />
+          <div><span className="text-xl font-extrabold tracking-tight">PIPRE</span><p className="text-sm text-text-muted">Aprende. Experimenta. Resuelve.</p></div>
         </div>
-
-        {/* Login/Reg Card */}
-        <div
-          className="bg-surface/50 backdrop-blur-xl border border-border p-7 shadow-2xl relative group transition-all duration-500 hover:border-primary/30"
-          style={{ borderRadius: "var(--theme-radius)" }}
-        >
-          <div className="mb-5">
-            <h2 className="text-xl font-bold text-text mb-2">
-              {isLogin ? "Acceso al Nodo" : "Registro de Estudiante"}
-            </h2>
-            <p className="text-[11px] text-text-muted">
-              {isLogin
-                ? "Introduce tus credenciales para sincronizar sesión."
-                : "Crea tu perfil para empezar los retos industriales."}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                    Nombre
-                  </label>
-                  <input
-                    name="firstName"
-                    required
-                    className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                    Apellido
-                  </label>
-                  <input
-                    name="lastName"
-                    required
-                    className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                    Edad
-                  </label>
-                  <input
-                    name="age"
-                    type="number"
-                    required
-                    className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                    Grado
-                  </label>
-                  <input
-                    name="grade"
-                    required
-                    className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                    Institución
-                  </label>
-                  <input
-                    name="institution"
-                    required
-                    className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                    Zona
-                  </label>
-                  <input
-                    name="zone"
-                    required
-                    className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                Email
-              </label>
-              <input
-                name="email"
-                type="email"
-                required
-                className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                style={{ borderRadius: "var(--theme-radius)" }}
-                placeholder="usuario@pipre.io"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">
-                Contraseña
-              </label>
-              <input
-                name="password"
-                type="password"
-                required
-                className="w-full px-4 py-3 bg-bg/50 border border-border focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all text-sm"
-                style={{ borderRadius: "var(--theme-radius)" }}
-                placeholder="••••••••"
-              />
-            </div>
-
-            {regError && (
-              <div
-                className="p-4 bg-danger/10 border border-danger/20 text-danger text-[10px] font-bold uppercase tracking-widest text-center animate-shake"
-                style={{ borderRadius: "var(--theme-radius)" }}
-              >
-                {regError}
-              </div>
-            )}
-
-            {successMessage && (
-              <div
-                className="p-4 bg-success/10 border border-success/20 text-success text-[10px] font-bold uppercase tracking-widest text-center animate-fade-in"
-                style={{ borderRadius: "var(--theme-radius)" }}
-              >
-                {successMessage}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3.5 btn-premium font-bold uppercase tracking-[0.25em] text-[11px] active:scale-95 transition-all shadow-xl hover:shadow-primary/20 disabled:opacity-50"
-              style={{ borderRadius: "var(--theme-radius)" }}
-            >
-              {isLoading
-                ? "Sincronizando..."
-                : isLogin
-                  ? "IDENTIFICARSE"
-                  : "REGISTRARSE"}
-            </button>
+        <div className="auth-card">
+          <p className="page-eyebrow mb-3">Tu laboratorio de aprendizaje</p>
+          <h1 className="text-2xl font-bold mb-2">{isLogin ? "Bienvenido de nuevo" : "Crea tu cuenta"}</h1>
+          <p className="text-sm text-text-muted mb-6">{isLogin ? "Inicia sesión para continuar con tus retos de lógica." : "Regístrate para explorar Neon Flow y TetriLogic."}</p>
+          <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isLoading}>
+            {!isLogin && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                ["firstName", "Nombre", "text", "given-name"],
+                ["lastName", "Apellido", "text", "family-name"],
+                ["age", "Edad", "number", "off"],
+                ["grade", "Grado", "text", "off"],
+              ].map(([name, label, type, autoComplete]) => <div key={name}><label htmlFor={name}>{label}</label><input id={name} name={name} type={type} autoComplete={autoComplete} min={type === "number" ? 0 : undefined} required className="auth-input" /></div>)}
+            </div>}
+            <div><label htmlFor="email">Correo electrónico</label><input id="email" name="email" type="email" autoComplete="username" required className="auth-input" placeholder="tu.correo@ejemplo.com" aria-describedby={regError ? "auth-error" : undefined} /></div>
+            <div><label htmlFor="password">Contraseña</label><input id="password" name="password" type="password" autoComplete={isLogin ? "current-password" : "new-password"} required className="auth-input" aria-describedby={regError ? "auth-error" : undefined} /></div>
+            {regError && <div id="auth-error" ref={errorRef} tabIndex={-1} role="alert" className="rounded-lg border border-danger bg-danger/5 p-3 text-sm text-danger">{regError}</div>}
+            {successMessage && <div role="status" className="rounded-lg border border-success bg-success/5 p-3 text-sm text-success">{successMessage}</div>}
+            <button type="submit" disabled={isLoading} className="btn-premium w-full">{isLoading ? "Conectando…" : isLogin ? "Iniciar sesión" : "Crear cuenta"}</button>
           </form>
-
-          <div className="mt-7 pt-5 border-t border-border/50 text-center">
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setSuccessMessage(null);
-                setRegError(null);
-              }}
-              className="text-[10px] font-bold uppercase tracking-widest text-primary hover:glow-text transition-all"
-            >
-              {isLogin
-                ? "¿No tienes cuenta? Regístrate aquí"
-                : "¿Ya tienes cuenta? Inicia sesión"}
-            </button>
+          <div className="mt-6 pt-5 border-t border-border text-center">
+            <button disabled={isLoading} onClick={() => { setIsLogin(!isLogin); setSuccessMessage(null); setRegError(null); }} className="min-h-11 text-sm font-semibold text-primary">{isLogin ? "¿No tienes cuenta? Regístrate aquí" : "¿Ya tienes cuenta? Inicia sesión"}</button>
           </div>
         </div>
+        <p className="mt-6 text-center text-sm text-text-muted">Pensamiento lógico · Robótica educativa</p>
       </div>
     </main>
   );

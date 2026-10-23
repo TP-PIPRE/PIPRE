@@ -1,5 +1,5 @@
 import type { Board as BoardState, Cell, Piece, TetriminoType } from "../../../shared/types/TetriLogic";
-import { BsLockFill } from "react-icons/bs";
+import { LockKeyhole as BsLockFill } from "lucide-react";
 import { TETRIMINO_COLORS, TETRIMINO_DND_TYPE } from "../../../shared/constants/tetrimino";
 
 export interface BoardProps {
@@ -7,6 +7,8 @@ export interface BoardProps {
   pieces: Piece[];
   onPieceDrop: (pieceId: string, cell: Cell) => void;
   onRotatePiece: (pieceId: string) => void;
+  selectedPieceId?: string | null;
+  onSelectPiece?: (pieceId: string) => void;
 }
 
 interface CellOccupancy {
@@ -19,6 +21,8 @@ export const Board: React.FC<BoardProps> = ({
   pieces,
   onPieceDrop,
   onRotatePiece,
+  selectedPieceId,
+  onSelectPiece,
 }) => {
   const occupancy = new Map<string, CellOccupancy>();
 
@@ -50,7 +54,8 @@ export const Board: React.FC<BoardProps> = ({
 
   return (
     <div
-      className="grid gap-1 p-1 rounded-xl bg-surface border border-border shadow-lg"
+      className="game-board grid gap-1 p-1 rounded-xl bg-surface border border-border shadow-lg"
+      aria-label="Tablero TetriLogic"
       style={{
         gridTemplateRows: `repeat(${board.size.rows}, 1fr)`,
         gridTemplateColumns: `repeat(${board.size.cols}, 1fr)`,
@@ -76,9 +81,16 @@ export const Board: React.FC<BoardProps> = ({
 
           if (placed) {
             return (
-              <div
+              <button type="button"
                 key={key}
                 draggable
+                aria-label={`Pieza ${placed.type}, fila ${cell.position.y + 1}, columna ${cell.position.x + 1}`}
+                aria-pressed={selectedPieceId === placed.pieceId}
+                onClick={() => {
+                  if (selectedPieceId && selectedPieceId !== placed.pieceId) onPieceDrop(selectedPieceId, cell.position);
+                  else onSelectPiece?.(placed.pieceId);
+                }}
+                onKeyDown={e => { if (e.key.toLowerCase() === "r") { e.preventDefault(); onRotatePiece(placed.pieceId); } }}
                 onDragStart={(e) => {
                   e.dataTransfer.setData(
                     TETRIMINO_DND_TYPE,
@@ -99,8 +111,10 @@ export const Board: React.FC<BoardProps> = ({
           }
 
           return (
-            <div
+            <button type="button"
               key={key}
+              aria-label={`Celda vacía, fila ${cell.position.y + 1}, columna ${cell.position.x + 1}`}
+              onClick={() => { if (selectedPieceId) onPieceDrop(selectedPieceId, cell.position); }}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, cell.position)}
               className="rounded-sm bg-surface-brighter border border-border"

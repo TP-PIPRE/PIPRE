@@ -12,18 +12,18 @@ export const useAuth = () => {
 
   const login = async (email: string, password: string) => {
     try {
-      const { user, token } = await authAdapter.login(email, password);
+      const { user } = await authAdapter.login(email, password);
 
-      setAuthState(user, token);
+      setAuthState(user);
 
-      if (user.role === "docente") {
+      if (["docente", "admin"].includes(user.role)) {
         navigate("/docente/dashboard");
       } else {
         navigate("/");
       }
     } catch (err) {
       throw new Error(
-        "Credenciales incorrectas: " +
+        "" +
           (err instanceof Error ? err.message : String(err)),
       );
     }
@@ -48,16 +48,16 @@ export const useAuth = () => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await authAdapter.logout();
     clearAuthState();
     navigate("/login");
   };
 
-  const { user, token, isAuthenticated } = getAuthState();
+  const { user, isAuthenticated } = getAuthState();
 
   return {
     user,
-    token,
     isAuthenticated,
     login,
     register,

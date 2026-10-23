@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  BsChevronRight,
-} from "react-icons/bs";
+import { ChevronRight as BsChevronRight } from "lucide-react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { Course } from "../../shared/types/Course";
 import { Modal } from "../components/common/Modal";
-import { RobotIcon } from "../components/common/RobotIcon";
+import { CircuitBoard, Shapes, ArrowRight, BookOpen, AlertCircle } from "lucide-react";
 
 interface ChallengeView {
   id: string;
@@ -23,6 +21,7 @@ export const PaginaInicio = () => {
   const navigate = useNavigate();
   const [cursos, setCursos] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedCourseChallenges, setSelectedCourseChallenges] = useState<ChallengeView[]>([]);
   const [selectedCourseName, setSelectedCourseName] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
@@ -37,13 +36,14 @@ export const PaginaInicio = () => {
         const mapped: Course[] = data.map((c) => ({
           id: c.idCourse,
           nombre: c.name,
-          descripcion: "Explora los fundamentos de este módulo industrial.",
+          descripcion: c.description || (c.idCourse === "c001" ? "Guía la luz con espejos y filtros. Explora la lógica paso a paso." : c.idCourse === "c002" ? "Combina piezas, reconoce patrones y entrena tu razonamiento espacial." : "Explora los retos y actividades de este curso."),
           imagen: "",
           tipo: "curso",
           challenges: [],
         }));
         setCursos(mapped);
       } catch {
+        setLoadError(true);
         setCursos([]);
       } finally {
         setLoading(false);
@@ -68,7 +68,7 @@ export const PaginaInicio = () => {
         idActivity: act.idActivity,
         title: act.name,
         order: i,
-        difficulty: "MEDIUM",
+        difficulty: act.difficulty || "MEDIUM",
         points: 0,
       }));
     } catch {
@@ -94,176 +94,34 @@ export const PaginaInicio = () => {
   const totalPages = Math.ceil(selectedCourseChallenges.length / CHALLENGES_PER_PAGE);
 
   return (
-    <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-8 pt-[6rem] pb-24 animate-fade-in-soft">
-      {/* Page Header */}
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-3">
-          Ecosistema de <span className="text-primary/70">Aprendizaje</span>
-        </h1>
-        <p className="text-text-muted/60 text-xs font-medium max-w-lg leading-relaxed">
-          Plataforma educativa modular para la formación técnica en robótica
-          industrial y automatización.
-        </p>
+    <main className="flex-1 max-w-7xl mx-auto w-full">
+      <header className="mb-8 md:mb-10">
+        <p className="page-eyebrow mb-3">Explora tu laboratorio</p>
+        <h1 className="font-bold mb-3">Un reto, una nueva forma de pensar.</h1>
+        <p className="page-intro">Experimenta con luz, formas y patrones. Elige un curso para practicar a tu ritmo y poner a prueba tus ideas.</p>
+      </header>
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-4 mb-6">
+        <h2 className="text-lg font-semibold flex items-center gap-2"><BookOpen size={20} aria-hidden="true" />Mis cursos</h2>
+        {!loading && <span className="text-sm text-text-muted">{cursos.length} disponibles</span>}
       </div>
-
-      {/* Challenge Modal */}
-      <Modal
-        isOpen={isChallengeModalOpen}
-        onClose={() => setIsChallengeModalOpen(false)}
-        maxWidth="max-w-2xl"
-        height="min(80vh, 600px)"
-      >
+      {loading ? <div role="status" className="py-16 text-center text-text-muted">Cargando cursos…</div> : loadError ? <div role="alert" className="p-6 border border-danger rounded-xl"><AlertCircle className="mb-3 text-danger" aria-hidden="true" /><h2 className="text-lg mb-2">No pudimos cargar los cursos</h2><p className="text-text-muted mb-4">Comprueba tu conexión y vuelve a intentarlo.</p><button onClick={() => window.location.reload()} className="btn-secondary">Reintentar</button></div> : cursos.length === 0 ? <p className="py-16 text-center text-text-muted">Todavía no hay cursos disponibles.</p> : <section aria-label="Cursos disponibles" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {cursos.map((item, i) => {
+          const Icon = item.id === "c002" ? Shapes : CircuitBoard;
+          return <button key={item.id} onClick={() => openCourseChallenges(item)} className="course-card group">
+            <div className="course-preview"><div className="course-glyph"><Icon size={44} strokeWidth={1.5} aria-hidden="true" /></div><span className="course-index" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span></div>
+            <div className="p-5 md:p-7 flex-1 flex flex-col gap-3"><span className="page-eyebrow">{item.id === "c002" ? "Razonamiento espacial" : item.id === "c001" ? "Lógica proposicional" : "Aprendizaje interactivo"}</span><h3 className="text-xl font-bold">{item.nombre}</h3><p className="text-sm text-text-muted leading-relaxed flex-1">{item.descripcion}</p><div className="mt-4 pt-4 border-t border-border flex justify-between items-center gap-3"><span className="text-xs font-semibold text-success">Disponible</span><span className="text-sm font-semibold text-primary flex items-center gap-2">Ver retos <ArrowRight size={18} aria-hidden="true" /></span></div></div>
+          </button>;
+        })}
+      </section>}
+      <Modal isOpen={isChallengeModalOpen} onClose={() => setIsChallengeModalOpen(false)} maxWidth="max-w-2xl" height="min(80vh, 640px)" title={`Retos de ${selectedCourseName}`}>
         <div className="flex flex-col h-full">
-          <div className="p-6 border-b border-border/10">
-            <div className="flex items-center gap-3 mb-1">
-              <RobotIcon size={24} />
-              <h2 className="text-lg font-bold">{selectedCourseName}</h2>
-            </div>
-            <p className="text-xs text-text-muted/60">
-              {selectedCourseChallenges.length} retos disponibles
-            </p>
+          <header className="p-6 pr-16 border-b border-border"><p className="page-eyebrow mb-2">Elige tu próximo reto</p><h2 className="text-xl font-bold">{selectedCourseName}</h2><p className="text-sm text-text-muted mt-2">{loadingChallenges ? "Buscando actividades…" : `${selectedCourseChallenges.length} retos disponibles`}</p></header>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3" aria-busy={loadingChallenges}>
+            {loadingChallenges ? <p role="status" className="py-12 text-center text-text-muted">Cargando retos…</p> : paginatedChallenges.length ? paginatedChallenges.map(challenge => <div key={challenge.id} className="flex flex-wrap items-center justify-between gap-3 p-4 border border-border rounded-lg"><div className="flex-1 min-w-0"><p className="font-semibold break-words">{challenge.title}</p><p className="text-sm text-text-muted mt-1">Reto {challenge.order + 1} · {challenge.difficulty} · {challenge.points} pts</p></div><button onClick={() => navigate(`/simulador/${selectedCourseId}`)} className="btn-secondary px-4">Iniciar <BsChevronRight aria-hidden="true" /></button></div>) : <p className="py-12 text-center text-text-muted">No hay retos disponibles para este curso.</p>}
           </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {loadingChallenges ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
-              </div>
-            ) : paginatedChallenges.length > 0 ? (
-              paginatedChallenges.map((challenge) => (
-                <div
-                  key={challenge.id}
-                  className="flex items-center justify-between p-4 bg-surface-brighter/50 border border-border/20 rounded-lg hover:border-primary/30 transition-all group"
-                  style={{ borderRadius: "var(--theme-radius)" }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-text truncate">
-                      {challenge.title}
-                    </p>
-                    <div className="flex gap-4 mt-1">
-                      <span className="text-[10px] font-medium text-text-muted/60">
-                        Orden {challenge.order + 1}
-                      </span>
-                      <span className="text-[10px] font-medium text-text-muted/60">
-                        {challenge.difficulty}
-                      </span>
-                      <span className="text-[10px] font-medium text-text-muted/60">
-                        {challenge.points} pts
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => navigate(`/simulador/${selectedCourseId}`)}
-                    className="shrink-0 ml-3 px-4 py-2 text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-all"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  >
-                    Iniciar
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-16">
-                <p className="text-xs text-text-muted/40 font-medium">
-                  No hay retos disponibles para este curso.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border/10">
-              <span className="text-[10px] text-text-muted/60">
-                {challengePage * CHALLENGES_PER_PAGE + 1}–{Math.min((challengePage + 1) * CHALLENGES_PER_PAGE, selectedCourseChallenges.length)} de {selectedCourseChallenges.length}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  disabled={challengePage === 0}
-                  onClick={() => setChallengePage(p => p - 1)}
-                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-border/20 rounded-md disabled:opacity-30 hover:border-primary transition-all"
-                >
-                  ← Anterior
-                </button>
-                <button
-                  disabled={challengePage >= totalPages - 1}
-                  onClick={() => setChallengePage(p => p + 1)}
-                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-border/20 rounded-md disabled:opacity-30 hover:border-primary transition-all"
-                >
-                  Siguiente →
-                </button>
-              </div>
-            </div>
-          )}
+          {totalPages > 1 && <footer className="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-border"><span className="text-sm text-text-muted">Página {challengePage + 1} de {totalPages}</span><div className="flex gap-2"><button disabled={challengePage === 0} onClick={() => setChallengePage(p => p - 1)} className="btn-secondary px-3">Anterior</button><button disabled={challengePage >= totalPages - 1} onClick={() => setChallengePage(p => p + 1)} className="btn-secondary px-3">Siguiente</button></div></footer>}
         </div>
       </Modal>
-
-      {/* Grid of courses */}
-      {loading ? (
-        <div className="py-32 flex flex-col items-center gap-6 opacity-30">
-          <div className="w-10 h-10 border border-primary/30 border-t-primary rounded-full animate-spin" />
-          <span className="font-mono text-[9px] uppercase tracking-[0.3em] font-bold">
-            Sincronizando Nodo...
-          </span>
-        </div>
-      ) : (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-          {cursos.map((item) => (
-            <article
-              key={item.id}
-              onClick={() => openCourseChallenges(item)}
-              className="group bg-surface/30 border border-border/10 flex flex-col cursor-pointer transition-all duration-700 hover:border-primary/20 hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(0,0,0,0.15)] overflow-hidden"
-              style={{ borderRadius: "var(--theme-radius)" }}
-            >
-              <div className="aspect-video w-full overflow-hidden relative bg-bg/40">
-                {item.imagen ? (
-                  <img
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000"
-                    src={item.imagen}
-                    alt={item.nombre}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <RobotIcon
-                      size={64}
-                      className="opacity-75 drop-shadow-md transition-all duration-300 ease-out group-hover:scale-105 group-hover:opacity-100"
-                    />
-                  </div>
-                )}
-                <span
-                  className="absolute top-5 left-5 px-3 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] bg-bg/80 backdrop-blur-md border border-border/20 text-primary/80"
-                  style={{ borderRadius: "var(--theme-radius)" }}
-                >
-                  módulo
-                </span>
-              </div>
-
-              <div className="p-8 flex-1 flex flex-col gap-5">
-                <div className="flex justify-between items-start">
-                  <h3 className="text-lg font-bold text-text group-hover:text-primary/80 transition-colors duration-500 leading-tight flex-1">
-                    {item.nombre}
-                  </h3>
-                </div>
-
-                <p className="text-xs text-text-muted/50 leading-relaxed line-clamp-2 flex-1 font-medium">
-                  {item.descripcion}
-                </p>
-
-                <div className="pt-6 border-t border-border/5 flex justify-between items-center">
-                  <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                    <div className="w-1.5 h-1.5 bg-success/60 rounded-full group-hover:bg-success" />
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em]">
-                      Disponible
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] font-black text-primary/70 uppercase tracking-[0.2em] group-hover:translate-x-1 transition-transform">
-                    VER RETOS
-                    <BsChevronRight className="text-[10px]" />
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
-        </section>
-      )}
     </main>
   );
 };

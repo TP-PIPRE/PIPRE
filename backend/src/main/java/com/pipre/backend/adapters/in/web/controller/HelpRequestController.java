@@ -25,7 +25,7 @@ public class HelpRequestController {
     private final GetHelpRequestsUseCase getHelpRequestsUseCase;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Crear una nueva petición de ayuda")
     @ApiResponse(responseCode = "201", description = "Petición de ayuda creada exitosamente")
     public ResponseEntity<Void> createHelpRequest(@RequestBody CreateHelpRequestCommand command) {

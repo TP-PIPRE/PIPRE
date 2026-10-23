@@ -26,21 +26,21 @@ public class ProfileController {
     private final GetStudentHistoryUseCase getStudentHistoryUseCase;
 
     @GetMapping("/{idStudent}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
     @Operation(summary = "Obtener perfil completo del estudiante con estadísticas de gamificación")
     public ResponseEntity<PlayerProfileDTO> getProfile(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentProfileUseCase.execute(idStudent));
     }
 
     @GetMapping("/{idStudent}/achievements")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
     @Operation(summary = "Obtener logros del estudiante (todos con estado desbloqueado/bloqueado)")
     public ResponseEntity<List<AchievementDTO>> getAchievements(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentAchievementsUseCase.execute(idStudent));
     }
 
     @GetMapping("/{idStudent}/history")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
     @Operation(summary = "Obtener historial de resultados con estrellas y XP")
     public ResponseEntity<List<StudentHistoryDTO>> getHistory(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentHistoryUseCase.execute(idStudent));

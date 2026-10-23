@@ -23,9 +23,9 @@ const deriveStatus = (score: number): string => {
 const statusColor = (status: string): string => {
   switch (status) {
     case "Excelente": return "border-primary/50 bg-primary/10 text-primary";
-    case "Aprobado": return "border-green-500/50 bg-green-500/10 text-green-400";
-    case "En progreso": return "border-yellow-500/50 bg-yellow-500/10 text-yellow-400";
-    case "Requiere refuerzo": return "border-red-500/50 bg-red-500/10 text-red-400";
+    case "Aprobado": return "border-green-500/50 bg-green-500/10 text-success";
+    case "En progreso": return "border-yellow-500/50 bg-yellow-500/10 text-accent";
+    case "Requiere refuerzo": return "border-red-500/50 bg-red-500/10 text-danger";
     default: return "border-border text-text-muted";
   }
 };
@@ -108,49 +108,49 @@ export const ResultadosPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
+          <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Promedio General
           </span>
           <span className="text-3xl font-mono font-bold text-primary">
             {loading ? "--" : avgScore}
           </span>
-          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
+          <span className="text-xs mt-2 font-mono text-muted-foreground">
             {results.length} actividad(es) registrada(s)
           </span>
         </div>
 
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
+          <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Estrellas Totales
           </span>
           <span className="text-3xl font-mono font-bold">
             ⭐ {totalStars}
           </span>
-          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
+          <span className="text-xs mt-2 font-mono text-muted-foreground">
             {results.length > 0 ? `Promedio: ${(totalStars / results.length).toFixed(1)} por actividad` : "Sin datos"}
           </span>
         </div>
 
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
+          <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Actividades Completadas
           </span>
           <span className="text-3xl font-mono font-bold">
             {loading ? "--" : results.length}
           </span>
-          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
+          <span className="text-xs mt-2 font-mono text-muted-foreground">
             {loading ? "" : `Mejor puntaje: ${maxScore}`}
           </span>
         </div>
 
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
+          <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
             Mejor Resultado
           </span>
           <span className="text-3xl font-mono font-bold">
             {loading ? "--" : maxScore}
           </span>
-          <span className="text-[10px] mt-2 font-mono text-muted-foreground">
+          <span className="text-xs mt-2 font-mono text-muted-foreground">
             {loading ? "" : deriveStatus(maxScore)}
           </span>
         </div>
@@ -179,7 +179,7 @@ export const ResultadosPage: React.FC = () => {
           ) : (
             <table className="w-full text-left font-mono">
               <thead>
-                <tr className="text-[10px] uppercase tracking-widest border-b text-muted-foreground">
+                <tr className="text-xs uppercase tracking-widest border-b text-muted-foreground">
                   <th className="px-6 py-4 font-normal">Actividad</th>
                   <th className="px-6 py-4 font-normal">Tipo</th>
                   <th className="px-6 py-4 font-normal">Fecha</th>
@@ -212,7 +212,7 @@ export const ResultadosPage: React.FC = () => {
                       {starsDisplay(res.stars)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <span className={`px-2 py-1 text-[9px] border font-mono uppercase tracking-wider rounded-full ${statusColor(res.status)}`}>
+                      <span className={`px-2 py-1 text-xs border font-mono uppercase tracking-wider rounded-full ${statusColor(res.status)}`}>
                         {res.status}
                       </span>
                     </td>

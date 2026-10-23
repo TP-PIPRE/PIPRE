@@ -4,5 +4,5 @@ export interface IAuthRepository {
   login(
     email: string,
     password: string,
-  ): Promise<{ user: User; token: string }>;
+  ): Promise<{ user: User }>;
 }

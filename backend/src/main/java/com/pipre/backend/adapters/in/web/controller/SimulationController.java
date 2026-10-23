@@ -34,7 +34,7 @@ public class SimulationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Crear una nueva simulación")
     @ApiResponse(responseCode = "201", description = "Simulación creada exitosamente")
     public ResponseEntity<Void> createSimulation(@RequestBody CreateSimulationCommand command) {

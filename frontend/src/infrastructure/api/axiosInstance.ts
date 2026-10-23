@@ -1,13 +1,17 @@
 import axios from "axios";
 import { clearAuthState } from "../store/authStore";
 
+declare module "axios" {
+  interface AxiosRequestConfig { skipAuthRedirect?: boolean; }
+}
+
 const isDev = import.meta.env.DEV;
 
 const useLocalBackend = import.meta.env.VITE_USE_LOCAL_BACKEND === "true";
 const localBackendUrl = import.meta.env.VITE_LOCAL_BACKEND_URL ?? "http://localhost:8080";
 
 const baseURL = useLocalBackend
-  ? `${localBackendUrl}/api/v1/`
+  ? `${localBackendUrl.replace(/\/+$/, "")}/api/v1/`
   : isDev
     ? "/api/v1/"
     : "https://pipre-backend.yoshua-cloud.dedyn.io/api/v1/";
@@ -25,8 +29,8 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.error("Authentication error (401/403). Redirecting to login...");
+    if (error.response && error.response.status === 401 && !error.config?.skipAuthRedirect) {
+      console.error("La sesión ha caducado.");
       clearAuthState();
       // Only redirect if we are not already on the login page
       if (window.location.pathname !== "/login") {

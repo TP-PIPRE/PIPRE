@@ -2,6 +2,10 @@ package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.application.dto.UserDTO;
 import com.pipre.backend.application.commands.RegisterUserCommand;
+import com.pipre.backend.adapters.in.web.dto.RegisterUserRequestDTO;
+import com.pipre.backend.application.ports.output.RoleRepositoryPort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import com.pipre.backend.application.ports.input.GetAllUsersUseCase;
 import com.pipre.backend.application.ports.input.GetUserByIdUseCase;
 import com.pipre.backend.application.ports.input.RegisterUserUseCase;
@@ -26,6 +30,7 @@ public class UserController {
     private final RegisterUserUseCase registerUserUseCase;
     private final GetUserByIdUseCase getUserByIdUseCase;
     private final GetAllUsersUseCase getAllUsersUseCase;
+    private final RoleRepositoryPort roleRepositoryPort;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
@@ -48,7 +53,20 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Registrar nuevo usuario")
     @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterUserCommand command) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody RegisterUserRequestDTO request, Authentication authentication) {
+        boolean admin = authentication != null && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        String studentRoleId = roleRepositoryPort.findAll().stream()
+                .filter(r -> "STUDENT".equalsIgnoreCase(r.getName()))
+                .map(r -> r.getIdRole()).findFirst()
+                .orElseThrow(() -> new IllegalStateException("El rol STUDENT no está configurado."));
+        List<String> roleIds = request.roleIdList();
+        if (roleIds == null || roleIds.isEmpty()) roleIds = List.of(studentRoleId);
+        if (!admin && roleIds.stream().anyMatch(id -> !studentRoleId.equals(id))) {
+            throw new AccessDeniedException("El registro público sólo permite cuentas de estudiante.");
+        }
+        RegisterUserCommand command = new RegisterUserCommand(request.firstName(), request.lastName(),
+                request.email(), request.passwordHash(), request.grade(), request.age(), roleIds);
         String newUserId = registerUserUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(newUserId);
     }

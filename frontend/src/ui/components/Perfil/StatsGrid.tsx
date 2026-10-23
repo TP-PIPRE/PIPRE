@@ -1,5 +1,5 @@
 import type { PlayerProfileDTO } from "../../../infrastructure/api/models/apiModels";
-import { BsStarFill, BsLightningFill, BsTrophyFill, BsCheckCircleFill, BsBarChartFill, BsAwardFill } from "react-icons/bs";
+import { Star as BsStarFill, Zap as BsLightningFill, Trophy as BsTrophyFill, CircleCheck as BsCheckCircleFill, ChartColumn as BsBarChartFill, Award as BsAwardFill } from "lucide-react";
 
 interface StatsGridProps {
   profile: PlayerProfileDTO;
@@ -54,7 +54,7 @@ export const StatsGrid = ({ profile }: StatsGridProps) => {
         borderRadius: "var(--theme-radius)",
       }}
     >
-      <h3 className="text-[10px] font-bold font-mono uppercase tracking-widest mb-3" style={{ color: "var(--text)" }}>
+      <h3 className="text-xs font-bold font-mono uppercase tracking-widest mb-3" style={{ color: "var(--text)" }}>
         Estadísticas
       </h3>
       <div className="grid grid-cols-3 gap-2">
@@ -74,7 +74,7 @@ export const StatsGrid = ({ profile }: StatsGridProps) => {
               <div className="text-sm font-black font-mono" style={{ color: "var(--text)" }}>
                 {item.value}
               </div>
-              <div className="text-[7px] font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              <div className="text-xs font-mono uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                 {item.label}
               </div>
               {item.sub && (

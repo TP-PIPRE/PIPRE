@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -35,8 +34,6 @@ public class CourseSeederService {
     private final SimulationRepositoryPort simulationRepositoryPort;
     private final ResultRepositoryPort resultRepositoryPort;
 
-    private static final Set<String> OFFICIAL_COURSE_IDS = Set.of("c001", "c002");
-
     private static final int NUMBER_OF_SIMULATIONS = 3;
 
     @Transactional
@@ -48,19 +45,9 @@ public class CourseSeederService {
         if (students.isEmpty())
             return;
 
-        removeLegacyCourses();
-
-        seedNeonFlowCourse(students);
-        seedTetriLogicCourse(students);
-    }
-
-    private void removeLegacyCourses() {
-        courseRepositoryPort.findAll().stream()
-                .map(Course::getIdCourse)
-                .filter(id -> !OFFICIAL_COURSE_IDS.contains(id))
-                .forEach(courseRepositoryPort::deleteById);
-
-        OFFICIAL_COURSE_IDS.forEach(courseRepositoryPort::deleteById);
+        // A normal restart must not delete edited courses or their students' results.
+        if (courseRepositoryPort.findById("c001").isEmpty()) seedNeonFlowCourse(students);
+        if (courseRepositoryPort.findById("c002").isEmpty()) seedTetriLogicCourse(students);
     }
 
     private void seedNeonFlowCourse(List<User> students) {

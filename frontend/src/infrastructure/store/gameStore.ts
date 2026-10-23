@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getAuthState } from "./authStore";
+import axiosInstance from "../api/axiosInstance";
 
 export type GameId = 'neonflow' | 'tetrilogic';
 
@@ -110,18 +111,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
 
   syncTelemetry: async (attempt) => {
     try {
-      const { token } = getAuthState();
-      const res = await fetch("/api/v1/telemetry", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(attempt),
-      });
-      if (!res.ok) {
-        throw new Error(`Telemetry HTTP ${res.status}`);
-      }
+      await axiosInstance.post("telemetry", attempt, { skipAuthRedirect: true });
     } catch (err) {
       console.warn("Telemetry backend no disponible:", err);
     }
