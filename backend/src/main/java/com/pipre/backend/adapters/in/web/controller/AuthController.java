@@ -4,6 +4,7 @@ import com.pipre.backend.adapters.in.web.dto.LoginResponseDTO;
 import com.pipre.backend.adapters.in.web.dto.MessageResponseDTO;
 import com.pipre.backend.adapters.in.web.dto.LoginRequestDTO;
 import com.pipre.backend.infrastructure.security.JwtUtils;
+import com.pipre.backend.infrastructure.configuration.BrowserSecurityProperties;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.application.ports.output.RoleRepositoryPort;
 import com.pipre.backend.domain.entities.role.Role;
@@ -25,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +39,7 @@ public class AuthController {
         private final JwtUtils jwtUtils;
         private final UserRepositoryPort userRepositoryPort;
         private final RoleRepositoryPort roleRepositoryPort;
+        private final BrowserSecurityProperties browserSecurity;
 
         @PostMapping("/login")
         @Operation(summary = "Inicio de sesión")
@@ -58,13 +59,7 @@ public class AuthController {
 
                 String token = jwtUtils.createToken(authentication.getName(), roles);
 
-                ResponseCookie cookie = ResponseCookie.from("jwt", token)
-                                .httpOnly(true)
-                                .secure(false)
-                                .path("/")
-                                .maxAge(3600)
-                                .sameSite("lax")
-                                .build();
+                ResponseCookie cookie = browserSecurity.cookie(token, 3600);
 
                 com.pipre.backend.domain.entities.user.User user = userRepositoryPort
                                 .findByEmail(authentication.getName())
@@ -88,7 +83,7 @@ public class AuthController {
                                 user.getEmail(),
                                 user.getFirstName(),
                                 user.getLastName(),
-                                roleNames.isEmpty() ? "student" : roleNames.get(0));
+                                roleNames.contains("admin") ? "admin" : roleNames.contains("docente") ? "docente" : "student");
 
                 LoginResponseDTO responseBody = new LoginResponseDTO("Sesión iniciada correctamente", userResponse);
 
@@ -101,13 +96,7 @@ public class AuthController {
         @Operation(summary = "Cierre de sesión")
         @ApiResponse(responseCode = "200", description = "Sesión cerrada correctamente")
         public ResponseEntity<MessageResponseDTO> logout() {
-                ResponseCookie cookie = ResponseCookie.from("jwt", "")
-                                .httpOnly(true)
-                                .secure(false)
-                                .path("/")
-                                .maxAge(0)
-                                .sameSite("lax")
-                                .build();
+                ResponseCookie cookie = browserSecurity.cookie("", 0);
 
                 MessageResponseDTO response = new MessageResponseDTO("Sesión cerrada correctamente");
 

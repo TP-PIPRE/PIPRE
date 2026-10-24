@@ -50,11 +50,14 @@ public class UpdateActivityService implements UpdateActivityUseCase {
                 .difficulty(cmd.difficulty() != null ? cmd.difficulty() : existing.getDifficulty())
                 .type(cmd.type() != null ? cmd.type() : existing.getType())
                 .environment(cmd.environment() != null ? cmd.environment() : existing.getEnvironment())
+                .description(cmd.description() != null ? cmd.description() : existing.getDescription())
+                .displayOrder(cmd.displayOrder() != null ? cmd.displayOrder() : existing.getDisplayOrder())
+                .levelTemplate(cmd.levelTemplate() != null ? cmd.levelTemplate() : existing.getLevelTemplate())
                 .startX(startX != null ? startX : existing.getStartX())
                 .startZ(startZ != null ? startZ : existing.getStartZ())
                 .targetX(targetX != null ? targetX : existing.getTargetX())
                 .targetZ(targetZ != null ? targetZ : existing.getTargetZ())
-                .missions(missions)
+                .missions(cmd.missions() != null ? missions : existing.getMissions())
                 .idSimulationList(existing.getIdSimulationList())
                 .build();
 

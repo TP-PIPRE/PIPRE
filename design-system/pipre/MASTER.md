@@ -45,6 +45,8 @@ Los tokens tradicionales `bg`, `surface`, `text` y los de Base UI apuntan a la m
 - Selector de nivel, instrucciones, inventario, validación y métricas separados en orden de lectura.
 - Arrastre conservado. Alternativa por clic, toque y botones nativos para teclado; mismos callbacks de colocación y rotación.
 - Mantener `raycast`, `validatePlacement`, reglas de victoria y store de telemetría sin cambios.
+- Las actividades seleccionan una plantilla de tablero persistida; los cursos nuevos pueden usar ambos juegos. Descripción, misiones y orden provienen del backend. Los tableros sin configuración muestran un estado pendiente explícito.
+- TetriLogic conserva sus reglas y añade piezas O/I para que sus dos tableros tengan solución; las piezas repetidas se distinguen por su identificador accesible.
 - Pistas en el flujo del documento para evitar tapar el tablero y las acciones. Emisor y receptor identificados.
 
 ## Responsive y accesibilidad

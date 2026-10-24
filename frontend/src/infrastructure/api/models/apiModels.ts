@@ -82,6 +82,9 @@ export interface CreateActivityCommand {
   missions?: MissionDTO[];
   startingPosition?: PositionDTO;
   targetPosition?: PositionDTO;
+  description?: string;
+  displayOrder?: number;
+  levelTemplate?: string;
 }
 
 export interface ActivityResponseDTO {
@@ -96,6 +99,9 @@ export interface ActivityResponseDTO {
   startingPosition?: PositionDTO;
   targetPosition?: PositionDTO;
   missions?: MissionDTO[];
+  description?: string | null;
+  displayOrder?: number | null;
+  levelTemplate?: string | null;
 }
 
 export interface ActivityResultRequest {

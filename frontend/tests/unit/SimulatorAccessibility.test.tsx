@@ -27,7 +27,7 @@ describe("Accessible simulator interactions", () => {
   it("preserves the Neon Flow success path and records a completed attempt", () => {
     render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
-    expect(screen.getByText("¡Curso Completado!")).toBeInTheDocument();
+    expect(screen.getByText("¡Receptor iluminado! Nivel completado.")).toBeInTheDocument();
     expect(useGameStore.getState().status).toBe("SUCCESS");
     expect(axiosInstance.post).toHaveBeenCalledWith("telemetry", expect.objectContaining({ game: "neonflow", result: "SUCCESS" }), { skipAuthRedirect: true });
     expect(screen.getByRole("button", { name: "Comprobar" })).toBeDisabled();
@@ -35,7 +35,7 @@ describe("Accessible simulator interactions", () => {
 
   it("uses existing TetriLogic placement validation for the tap alternative", () => {
     render(<MemoryRouter><TetriLogicStage /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: "Seleccionar pieza O" }));
+    fireEvent.click(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" }));
     fireEvent.click(screen.getByRole("button", { name: "Celda vacía, fila 4, columna 4" }));
     expect(useGameStore.getState().movimientos).toBe(0);
     expect(screen.getByRole("status")).toHaveTextContent("La pieza no cabe aquí");
@@ -43,6 +43,6 @@ describe("Accessible simulator interactions", () => {
     expect(useGameStore.getState().movimientos).toBe(1);
     expect(screen.getByRole("button", { name: "Pieza O, fila 1, columna 1" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reiniciar" }));
-    expect(screen.getByRole("button", { name: "Seleccionar pieza O" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" })).toBeInTheDocument();
   });
 });

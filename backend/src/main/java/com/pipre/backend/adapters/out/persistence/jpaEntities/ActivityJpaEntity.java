@@ -35,6 +35,14 @@ public class ActivityJpaEntity {
 
     private String environment;
 
+    @Column(columnDefinition = "text")
+    private String description;
+
+    private Integer displayOrder;
+
+    @Column(length = 40)
+    private String levelTemplate;
+
     @Column(name = "start_x")
     private Double startX;
 

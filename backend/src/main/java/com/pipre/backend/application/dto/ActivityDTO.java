@@ -13,6 +13,9 @@ public record ActivityDTO(
         String environment,
         PositionDTO startingPosition,
         PositionDTO targetPosition,
-        List<MissionDTO> missions
+        List<MissionDTO> missions,
+        String description,
+        Integer displayOrder,
+        String levelTemplate
 ) {
 }

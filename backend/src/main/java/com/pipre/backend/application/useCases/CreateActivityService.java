@@ -8,7 +8,6 @@ import com.pipre.backend.application.ports.output.LessonRepositoryPort;
 import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.activity.Mission;
 import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
-import com.pipre.backend.domain.factories.ActivityFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,20 +38,15 @@ public class CreateActivityService implements CreateActivityUseCase {
         Double targetX = cmd.targetPosition() != null ? cmd.targetPosition().x() : null;
         Double targetZ = cmd.targetPosition() != null ? cmd.targetPosition().z() : null;
 
-        Activity newActivity = ActivityFactory.createNewActivity(
-                cmd.name(),
-                cmd.idLesson(),
-                ActivityDtoMapper.intToLogicLevel(cmd.logicLevel()),
-                cmd.complexity(),
-                cmd.difficulty(),
-                cmd.type(),
-                cmd.environment(),
-                startX,
-                startZ,
-                targetX,
-                targetZ,
-                missions
-        );
+        Activity newActivity = Activity.builder()
+                .idActivity(java.util.UUID.randomUUID().toString())
+                .name(cmd.name()).idLesson(cmd.idLesson())
+                .logicLevel(ActivityDtoMapper.intToLogicLevel(cmd.logicLevel()))
+                .complexity(cmd.complexity()).difficulty(cmd.difficulty()).type(cmd.type())
+                .environment(cmd.environment()).description(cmd.description())
+                .displayOrder(cmd.displayOrder()).levelTemplate(cmd.levelTemplate())
+                .startX(startX).startZ(startZ).targetX(targetX).targetZ(targetZ)
+                .missions(missions).build();
 
         activityRepositoryPort.save(newActivity);
         return newActivity.getIdActivity();

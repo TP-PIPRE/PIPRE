@@ -1,8 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "../components/common/Modal";
-import { MessageCircle as BsChatDotsFill, Search as BsSearch, X as BsXLg } from "lucide-react";
+import { Search as BsSearch, X as BsXLg } from "lucide-react";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { RankingDTO, GroupDTO, UserResponseDTO } from "../../infrastructure/api/models/apiModels";
+
+import { HelpRequestHistory } from "../components/common/HelpRequestHistory";
 
 interface GroupWithStudents extends GroupDTO {
   students: RankingDTO[];
@@ -11,31 +13,10 @@ interface GroupWithStudents extends GroupDTO {
   avgLevel: number;
 }
 
-const MOCK_HELP_REQUESTS = [
-  {
-    id: "r1",
-    student: "Mateo Rivera",
-    group: "Sistemas I",
-    topic: "Cinemática Inversa",
-    date: "Hace 10 min",
-    message: "Profesor, tengo dudas sobre cómo calcular la matriz Jacobiana para el brazo de 3 grados de libertad. ¿Podría revisar mi código?"
-  },
-  {
-    id: "r2",
-    student: "Sofía Chen",
-    group: "Robótica A",
-    topic: "Conexión de Actuadores",
-    date: "Hace 1 hora",
-    message: "El simulador no me reconoce el sensor ultrasónico en el puerto digital 4. Ya verifiqué los bloques de inicialización."
-  },
-];
-
 export const DocenteEstudiantesPage: React.FC = () => {
   const [groups, setGroups] = useState<GroupWithStudents[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithStudents | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
-  const [chatMessage, setChatMessage] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<{ groupId: string; studentId: string; studentName: string } | null>(null);
 
@@ -46,7 +27,6 @@ export const DocenteEstudiantesPage: React.FC = () => {
   const searchRef = useRef<HTMLDivElement>(null);
 
   const loadGroups = useCallback(async () => {
-    setIsLoading(true);
     try {
       const groupsData = await apiService.groups.getAll();
       if (!groupsData || groupsData.length === 0) {
@@ -163,6 +143,8 @@ export const DocenteEstudiantesPage: React.FC = () => {
     }
   };
 
+  const helpStudents = useMemo(() => [...new Map(groups.flatMap(g => g.students).map(student => [student.idStudent, student])).values()], [groups]);
+
   const alreadyInGroup = (userId: string) => {
     if (!selectedGroup) return false;
     return selectedGroup.students.some((s) => s.idStudent === userId);
@@ -175,74 +157,9 @@ export const DocenteEstudiantesPage: React.FC = () => {
           Gestión de <span className="text-primary">Estudiantes</span>
         </h1>
         <p className="text-xs text-text-muted max-w-md font-medium">
-          Control de grupos académicos y atención prioritaria de solicitudes de soporte técnico.
+          Organiza tus grupos y consulta las ayudas registradas por sus estudiantes.
         </p>
       </header>
-
-      {/* CHAT MODAL */}
-      <Modal
-        title="Soporte del estudiante"
-        isOpen={selectedRequest !== null}
-        onClose={() => setSelectedRequest(null)}
-        maxWidth="max-w-2xl"
-        height="600px"
-      >
-        {selectedRequest && (
-          <div className="flex flex-col h-full">
-            <div className="relative min-h-28 bg-primary/10 flex items-center px-5 pr-14 py-5 border-b border-border">
-              <div className="absolute inset-0 opacity-10 pointer-events-none">
-                <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(var(--theme-primary) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
-              </div>
-              <div className="relative flex items-center gap-3">
-                <div className="w-14 h-14 shrink-0 rounded-2xl bg-surface shadow-lg flex items-center justify-center border border-border rotate-3 group-hover:rotate-0 transition-all duration-500">
-                  <BsChatDotsFill className="text-primary text-2xl" />
-                </div>
-                <div>
-                  <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-1 block">Canal de Soporte Técnico</span>
-                  <h2 className="text-xl font-bold tracking-tight">{selectedRequest.student}</h2>
-                  <p className="text-xs font-medium text-text-muted">
-                    {selectedRequest.topic} • {selectedRequest.group}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar">
-              <div className="flex flex-col items-start gap-2 max-w-[80%]">
-                <div className="bg-surface border border-border p-4 text-sm leading-relaxed" style={{ borderRadius: "var(--theme-radius)" }}>
-                  {selectedRequest.message}
-                </div>
-                <span className="text-xs font-mono text-text-muted ml-2">{selectedRequest.date}</span>
-              </div>
-              <div className="flex flex-col items-end gap-2 ml-auto max-w-[80%] opacity-40 italic">
-                <div className="bg-primary/5 border border-primary/10 p-4 text-sm leading-relaxed" style={{ borderRadius: "var(--theme-radius)" }}>
-                  Esperando respuesta del instructor...
-                </div>
-              </div>
-            </div>
-            <div className="p-8 border-t border-border bg-surface">
-              <form
-                onSubmit={(e) => { e.preventDefault(); setSelectedRequest(null); }}
-                className="flex gap-4"
-              >
-                <input
-                  autoFocus
-                  placeholder="Escribe una instrucción técnica o respuesta..."
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                  className="flex-1 bg-bg/50 border border-border px-6 py-5 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
-                  style={{ borderRadius: "var(--theme-radius)" }}
-                />
-                <button
-                  type="submit"
-                  className="btn-premium px-10 py-5 text-xs font-black tracking-widest"
-                >
-                  ENVIAR
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Groups Column */}
@@ -284,7 +201,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em] text-text-muted">
-                      <span>Promedio XP</span>
+                      <span>Promedio de puntos</span>
                       <span className="text-primary">{group.avgScore}</span>
                     </div>
                     <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em] text-text-muted">
@@ -302,39 +219,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
           )}
         </div>
 
-        {/* Help Requests Column */}
-        <div className="lg:col-span-4 space-y-8">
-          <h2 className="text-xs font-black uppercase tracking-[0.3em] text-text-muted mb-6">
-            Solicitudes de Soporte (ejemplos)
-          </h2>
-          <div className="space-y-4">
-            {MOCK_HELP_REQUESTS.map((req) => (
-              <div
-                key={req.id}
-                className="bg-surface border border-border p-6 relative group transition-all duration-500 hover:border-primary/20 hover:bg-surface"
-                style={{ borderRadius: "var(--theme-radius)" }}
-              >
-                <div className="absolute top-3 right-3">
-                  <button
-                    aria-label={`Abrir soporte de ${req.student}`} onClick={() => setSelectedRequest(req)}
-                    className="w-11 h-11 flex items-center justify-center bg-primary text-bg shadow-lg shadow-primary/20  active:scale-95 transition-all"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  >
-                    <BsChatDotsFill className="text-lg" />
-                  </button>
-                </div>
-                <p className="text-xs font-bold mb-1">{req.student}</p>
-                <p className="text-xs font-black text-primary uppercase tracking-widest mb-4">
-                  {req.topic}
-                </p>
-                <div className="flex justify-between items-center text-xs font-mono text-text-muted uppercase tracking-[0.2em] pt-4 border-t border-border">
-                  <span>{req.group}</span>
-                  <span>{req.date}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="lg:col-span-4">{!isLoading && <HelpRequestHistory students={helpStudents} />}</div>
       </div>
 
       {/* GROUP STUDENT MANAGEMENT MODAL */}
@@ -364,7 +249,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                   <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-1 block">Gestión de Grupo</span>
                   <h2 className="text-xl font-bold tracking-tight">{selectedGroup.groupName}</h2>
                   <p className="text-xs font-medium text-text-muted">
-                    {selectedGroup.students.length} estudiantes • Prom. XP: {selectedGroup.avgScore} • ⭐ {selectedGroup.avgStars} • Nv.{selectedGroup.avgLevel}
+                    {selectedGroup.students.length} estudiantes • Prom. puntos: {selectedGroup.avgScore} • ⭐ {selectedGroup.avgStars} • Nv.{selectedGroup.avgLevel}
                   </p>
                 </div>
               </div>
