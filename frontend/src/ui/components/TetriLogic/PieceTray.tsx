@@ -23,7 +23,7 @@ export const PieceTray: React.FC<PieceTrayProps> = ({ pieces, selectedPieceId, o
         return (
           <button type="button"
             key={piece.id}
-            aria-label={`Seleccionar pieza ${piece.type}`}
+            aria-label={`Seleccionar pieza ${piece.type} (${piece.id})`}
             aria-pressed={selectedPieceId === piece.id}
             onClick={() => onSelectPiece?.(piece.id)}
             draggable
@@ -58,7 +58,7 @@ export const PieceTray: React.FC<PieceTrayProps> = ({ pieces, selectedPieceId, o
                 }),
               )}
             </div>
-            <span>Pieza {piece.type}</span>
+            <span>Pieza {piece.type} · {piece.id.slice(-1)}</span>
           </button>
         );
       })}

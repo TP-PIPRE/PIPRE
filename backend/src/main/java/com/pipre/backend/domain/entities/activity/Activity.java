@@ -16,6 +16,9 @@ public class Activity {
     private final String difficulty;
     private final String type;
     private final String environment;
+    private final String description;
+    private final Integer displayOrder;
+    private final String levelTemplate;
     private final Double startX;
     private final Double startZ;
     private final Double targetX;
@@ -33,6 +36,22 @@ public class Activity {
         this.difficulty = builder.difficulty;
         this.type = builder.type;
         this.environment = builder.environment;
+        this.description = builder.description;
+        if (builder.displayOrder != null && builder.displayOrder < 1) {
+            throw new IllegalArgumentException("El orden debe ser mayor o igual a 1");
+        }
+        this.displayOrder = builder.displayOrder;
+        this.levelTemplate = builder.levelTemplate;
+        if (this.levelTemplate != null) {
+            List<String> allowed = switch (this.environment == null ? "" : this.environment) {
+                case "neonflow" -> List.of("neonflow-1", "neonflow-2");
+                case "tetrilogic" -> List.of("tetrilogic-1", "tetrilogic-2");
+                default -> List.of();
+            };
+            if (!allowed.contains(this.levelTemplate)) {
+                throw new IllegalArgumentException("La plantilla no corresponde al entorno del simulador");
+            }
+        }
         this.startX = builder.startX;
         this.startZ = builder.startZ;
         this.targetX = builder.targetX;
@@ -87,6 +106,10 @@ public class Activity {
         return environment;
     }
 
+    public String getDescription() { return description; }
+    public Integer getDisplayOrder() { return displayOrder; }
+    public String getLevelTemplate() { return levelTemplate; }
+
     public Double getStartX() {
         return startX;
     }
@@ -117,6 +140,9 @@ public class Activity {
         private String difficulty;
         private String type;
         private String environment;
+        private String description;
+        private Integer displayOrder;
+        private String levelTemplate;
         private Double startX;
         private Double startZ;
         private Double targetX;
@@ -170,6 +196,10 @@ public class Activity {
             this.environment = environment;
             return this;
         }
+
+        public ActivityBuilder description(String description) { this.description = description; return this; }
+        public ActivityBuilder displayOrder(Integer displayOrder) { this.displayOrder = displayOrder; return this; }
+        public ActivityBuilder levelTemplate(String levelTemplate) { this.levelTemplate = levelTemplate; return this; }
 
         public ActivityBuilder startX(Double startX) {
             this.startX = startX;

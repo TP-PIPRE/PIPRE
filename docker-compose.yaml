@@ -45,6 +45,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-pipre_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-pipre_password}
       - FAST_API_URL=${FAST_API_URL:-http://ml-ia:8000}
+      - JWT_SECRET=${JWT_SECRET:-clave_secreta_segura_desarrollo_muy_larga_para_pipre}
+      - PIPRE_COOKIE_SECURE=${PIPRE_COOKIE_SECURE:-false}
+      - PIPRE_COOKIE_SAME_SITE=${PIPRE_COOKIE_SAME_SITE:-Lax}
+      - PIPRE_ALLOWED_ORIGINS=${PIPRE_ALLOWED_ORIGINS:-http://localhost:${PORT_FRONT:-3000}}
     depends_on:
       postgres:
         condition: service_healthy

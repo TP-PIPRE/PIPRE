@@ -8,8 +8,8 @@ import { NeonBoard } from "./NeonBoard";
 import { ComponentTray } from "./ComponentTray";
 import { ControlPanel } from "../common/ControlPanel";
 import { AiFeedbackToast } from "../common/AiFeedbackToast";
+import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 
-const LEVELS = NEONFLOW_LEVELS;
 const HINT_MESSAGE = "IA: Revisa la rotación del espejo en la coordenada (1, 2).";
 
 const createGrid = (level: NeonFlowLevelConfig): Grid => {
@@ -32,7 +32,7 @@ const createGrid = (level: NeonFlowLevelConfig): Grid => {
   return { width: level.width, height: level.height, cells };
 };
 
-export const NeonFlowStage: React.FC = () => {
+export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO }) => {
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [grid, setGrid] = useState<Grid>(() => createGrid(LEVELS[0]));
   const [laserPath, setLaserPath] = useState<Cell[]>([]);
@@ -123,7 +123,8 @@ export const NeonFlowStage: React.FC = () => {
 
   return (
     <main className="lab-shell">
-      <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>Neon Flow</h1><p className="page-intro">Guía el haz de luz hasta los receptores usando espejos y filtros.</p></div><span className="text-sm text-text-muted">Nivel {level.level} de {LEVELS.length}</span></header>
+      <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>{activity?.name ?? "Neon Flow"}</h1><p className="page-intro">{activity?.description || "Guía el haz de luz hasta los receptores usando espejos y filtros."}</p></div><span className="text-sm text-text-muted">{activity ? "Neon Flow" : `Nivel ${currentLevelIndex + 1} de ${LEVELS.length}`}</span></header>
+      {activity?.missions?.length ? <section aria-label="Misiones del reto" className="mb-4 rounded-lg border border-border bg-surface p-4"><h2 className="mb-2 text-lg font-semibold">Misiones</h2><ul className="space-y-2 text-sm">{activity.missions.map(m => <li key={m.id}><strong>{m.title}</strong><p className="text-text-muted">{m.objective}</p></li>)}</ul></section> : null}
       <section className="lab-stage" aria-label="Área de simulación">
       <div className="flex w-full items-center justify-between gap-4 border-b border-border pb-4">
         <label className="text-sm font-semibold text-text-muted">Nivel</label>
@@ -161,7 +162,7 @@ export const NeonFlowStage: React.FC = () => {
         (currentLevelIndex === LEVELS.length - 1 ? (
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-primary/10 border border-primary px-4 py-2">
             <span className="text-sm font-bold text-primary">
-              ¡Curso Completado!
+              {activity ? "¡Reto completado!" : "¡Curso Completado!"}
             </span>
             <Link
               to="/"

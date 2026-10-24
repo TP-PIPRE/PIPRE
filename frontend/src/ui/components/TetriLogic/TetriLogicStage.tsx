@@ -8,8 +8,8 @@ import { Board as BoardView } from "./Board";
 import { PieceTray } from "./PieceTray";
 import { ControlPanel } from "../common/ControlPanel";
 import { AiFeedbackToast } from "../common/AiFeedbackToast";
+import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 
-const LEVELS = TETRILOGIC_LEVELS;
 const HINT_MESSAGE = "IA: Intenta rotar la pieza T (click derecho) para encajarla en la esquina superior.";
 
 const createInventory = (): Piece[] => [
@@ -17,6 +17,8 @@ const createInventory = (): Piece[] => [
   { id: "i1", type: "I", rotation: 0, position: { x: -1, y: -1 }, shape: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }] },
   { id: "t1", type: "T", rotation: 0, position: { x: -1, y: -1 }, shape: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 1 }] },
   { id: "s1", type: "S", rotation: 0, position: { x: -1, y: -1 }, shape: [{ x: 1, y: 0 }, { x: 2, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }] },
+  { id: "o2", type: "O", rotation: 0, position: { x: -1, y: -1 }, shape: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }] },
+  { id: "i2", type: "I", rotation: 0, position: { x: -1, y: -1 }, shape: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }] },
 ];
 
 const createBoard = (level: LevelConfig): Board => {
@@ -49,7 +51,7 @@ const rebuildBoard = (board: Board, placed: Piece[]): Board => {
 const rotateShape = (shape: Cell[]): Cell[] =>
   shape.map(({ x, y }) => ({ x: -y, y: x }));
 
-export const TetriLogicStage: React.FC = () => {
+export const TetriLogicStage = ({ levels: LEVELS = TETRILOGIC_LEVELS, activity }: { levels?: LevelConfig[]; activity?: ActivityResponseDTO }) => {
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [board, setBoard] = useState<Board>(() => createBoard(LEVELS[0]));
   const [inventory, setInventory] = useState<Piece[]>(createInventory);
@@ -158,7 +160,8 @@ export const TetriLogicStage: React.FC = () => {
 
   return (
     <main className="lab-shell">
-      <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>TetriLogic</h1><p className="page-intro">Coloca las piezas y cumple los objetivos de cada fila y columna.</p></div><span className="text-sm text-text-muted">Nivel {level.level} de {LEVELS.length}</span></header>
+      <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>{activity?.name ?? "TetriLogic"}</h1><p className="page-intro">{activity?.description || "Coloca las piezas y cumple los objetivos de cada fila y columna."}</p></div><span className="text-sm text-text-muted">{activity ? "TetriLogic" : `Nivel ${currentLevelIndex + 1} de ${LEVELS.length}`}</span></header>
+      {activity?.missions?.length ? <section aria-label="Misiones del reto" className="mb-4 rounded-lg border border-border bg-surface p-4"><h2 className="mb-2 text-lg font-semibold">Misiones</h2><ul className="space-y-2 text-sm">{activity.missions.map(m => <li key={m.id}><strong>{m.title}</strong><p className="text-text-muted">{m.objective}</p></li>)}</ul></section> : null}
       <section className="lab-stage" aria-label="Área de simulación">
       <div className="flex w-full items-center justify-between gap-4 border-b border-border pb-4">
         <label className="text-sm font-semibold text-text-muted">Nivel</label>
@@ -196,7 +199,7 @@ export const TetriLogicStage: React.FC = () => {
         (currentLevelIndex === LEVELS.length - 1 ? (
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-primary/10 border border-primary px-4 py-2">
             <span className="text-sm font-bold text-primary">
-              ¡Curso Completado!
+              {activity ? "¡Reto completado!" : "¡Curso Completado!"}
             </span>
             <Link
               to="/"

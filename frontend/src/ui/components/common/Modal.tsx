@@ -81,13 +81,15 @@ export const Modal: React.FC<ModalProps> = ({
       >
         <span id={titleId} className="sr-only">{title}</span>
         {/* Close button */}
+        <div className="flex shrink-0 justify-end border-b border-border px-3 py-2">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-surface-brighter text-text-muted hover:text-text hover:bg-surface transition-all duration-300"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-surface-brighter text-text-muted hover:text-text hover:bg-surface transition-all duration-300"
           aria-label="Cerrar"
         >
           <span className="text-xl">×</span>
         </button>
+        </div>
 
         {/* Content — scrollable if needed */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">

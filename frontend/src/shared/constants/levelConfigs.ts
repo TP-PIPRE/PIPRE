@@ -19,6 +19,14 @@ export const NEONFLOW_LEVELS: NeonFlowLevelConfig[] = [
       color: "red",
     },
   },
+  {
+    level: 2,
+    width: 5,
+    height: 5,
+    blocked: [{ x: 2, y: 2, type: "BLOCK" }, { x: 2, y: 3, type: "BLOCK" }],
+    receptors: [{ position: { x: 4, y: 0, type: "RECEPTOR" }, color: "red" }],
+    emitter: { position: { x: 0, y: 2, type: "EMPTY" }, direction: { dx: 1, dy: 0 }, color: "red" },
+  },
 ];
 
 export const TETRILOGIC_LEVELS: LevelConfig[] = [

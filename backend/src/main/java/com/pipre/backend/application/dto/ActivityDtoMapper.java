@@ -42,7 +42,10 @@ public class ActivityDtoMapper {
                 activity.getEnvironment(),
                 startingPosition,
                 targetPosition,
-                missions
+                missions,
+                activity.getDescription(),
+                activity.getDisplayOrder(),
+                activity.getLevelTemplate()
         );
     }
 

@@ -1,186 +1,44 @@
-import React from "react";
-import { TriangleAlert as BsExclamationTriangleFill, Mail as BsEnvelope, ChartNoAxesCombined as BsGraphUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChartNoAxesCombined, RefreshCw } from "lucide-react";
+import { loadTeacherMetrics } from "../../application/usecases/loadTeacherMetrics";
+import { getApiErrorMessage } from "../../infrastructure/api/errors";
 
-const MOCK_METRICS = {
-  dropoutRisk: [
-    {
-      id: "1",
-      name: "Marcos Soto",
-      risk: "Alto",
-      trend: "up",
-      reason: "Baja actividad en simulador",
-    },
-    {
-      id: "2",
-      name: "Elena García",
-      risk: "Medio",
-      trend: "down",
-      reason: "Retraso en módulo 3",
-    },
-    {
-      id: "3",
-      name: "Sofía Chen",
-      risk: "Bajo",
-      trend: "same",
-      reason: "Progreso constante",
-    },
-  ],
-  moduleEfficiency: [
-    { name: "Intro a Robótica", completion: 94, avgScore: 88 },
-    { name: "Cinemática", completion: 72, avgScore: 75 },
-    { name: "Sensores", completion: 85, avgScore: 82 },
-  ],
+const riskLabels: Record<string, string> = { HIGH: "Alto", MEDIUM: "Medio", LOW: "Bajo", ALTO: "Alto", MEDIO: "Medio", BAJO: "Bajo" };
+const dateLabel = (value: string) => new Date(value).toLocaleString("es-CO");
+export const DocenteMetricasPage = () => {
+  const [data, setData] = useState<Awaited<ReturnType<typeof loadTeacherMetrics>> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let active = true;
+    loadTeacherMetrics().then(value => { if (active) setData(value); })
+      .catch(e => { if (active) setError(getApiErrorMessage(e, "No se pudieron cargar las métricas.")); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [revision]);
+  function refresh() { setLoading(true); setError(""); setRevision(r => r + 1); }
+  const partial = data?.students.filter(s => s.errors.length) ?? [];
+  return <main className="mx-auto w-full max-w-7xl space-y-6" aria-busy={loading}>
+    <header className="flex flex-wrap items-start justify-between gap-4">
+      <div><p className="page-eyebrow mb-3">Seguimiento académico</p><h1 className="mb-3 font-bold">Métricas y análisis</h1><p className="page-intro">Resultados y progreso registrados de los estudiantes de tus grupos.</p></div>
+      <button disabled={loading} onClick={refresh} className="btn-secondary"><RefreshCw size={18} aria-hidden="true" /> Actualizar</button>
+    </header>
+    {loading ? <p role="status" className="py-12 text-center text-text-muted">Consultando registros académicos…</p> : error ? <div role="alert" className="rounded-lg border border-danger p-5 text-danger"><p>{error}</p><button onClick={refresh} className="btn-secondary mt-3">Reintentar</button></div> : data && <>
+      <section aria-label="Resumen de registros" className="grid gap-4 sm:grid-cols-3">
+        {[ ["Estudiantes únicos", data.students.length], ["Cursos", data.courseCount], ["Resultados guardados", data.students.reduce((n, s) => n + s.results.length, 0)] ].map(([label, value]) => <div key={label} className="rounded-lg border border-border bg-surface p-5"><p className="text-sm text-text-muted">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></div>)}
+      </section>
+      {partial.length > 0 && <p role="alert" className="rounded-lg border border-danger p-4 text-sm text-danger">Datos incompletos de {partial.length} estudiantes: {partial.map(s => `${s.student.studentName} (${s.errors.join(", ")})`).join("; ")}. Puedes reintentar con Actualizar.</p>}
+      <section className="rounded-lg border border-border bg-surface p-4 md:p-6">
+        <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold"><ChartNoAxesCombined size={20} aria-hidden="true" />Progreso por módulo</h2>
+        <p className="mb-4 text-sm text-text-muted">El progreso medio usa el último registro de cada estudiante. La puntuación media incluye todos los resultados guardados de las actividades del módulo.</p>
+        {data.modules.length ? <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><caption className="sr-only">Progreso y resultados por módulo</caption><thead><tr className="border-b border-border text-text-muted">{["Módulo", "Progreso medio", "Con registro", "Completaron", "Puntuación media"].map(h => <th key={h} scope="col" className="px-3 py-3 font-semibold">{h}</th>)}</tr></thead><tbody>{data.modules.map(m => <tr key={m.idModule} className="border-b border-border last:border-0"><th scope="row" className="px-3 py-4 font-medium"><span className="block">{m.title}</span><span className="text-xs text-text-muted">{m.courseName}</span></th><td className="px-3 py-4">{m.averageProgress === null ? "Sin registro" : `${m.averageProgress}%`}</td><td className="px-3 py-4">{m.recordedStudents} de {data.students.length}</td><td className="px-3 py-4">{m.completedStudents}</td><td className="px-3 py-4">{m.averageScore === null ? "Sin resultados" : `${m.averageScore} pts · ${m.resultCount} resultados`}</td></tr>)}</tbody></table></div> : <p className="py-6 text-text-muted">Todavía no hay módulos disponibles.</p>}
+      </section>
+      <section className="rounded-lg border border-border bg-surface p-4 md:p-6">
+        <h2 className="mb-2 text-lg font-semibold">Análisis de riesgo registrado</h2><p className="mb-4 text-sm text-text-muted">Se muestra el análisis guardado por el sistema y su fecha. Esta vista no ejecuta modelos de IA.</p>
+        {data.students.length ? <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><caption className="sr-only">Último análisis disponible de cada estudiante</caption><thead><tr className="border-b border-border text-text-muted"><th scope="col" className="px-3 py-3">Estudiante</th><th scope="col" className="px-3 py-3">Riesgo registrado</th><th scope="col" className="px-3 py-3">Días sin actividad</th><th scope="col" className="px-3 py-3">Fecha del análisis</th></tr></thead><tbody>{data.students.map(({ student, risk, errors }) => <tr key={student.idStudent} className="border-b border-border last:border-0"><th scope="row" className="px-3 py-4 font-medium">{student.studentName}</th><td className="px-3 py-4">{errors.includes("análisis") ? "No disponible" : risk ? riskLabels[risk.riskLevel.toUpperCase()] ?? risk.riskLevel : "Sin análisis"}</td><td className="px-3 py-4">{risk?.daysInactive ?? "—"}</td><td className="px-3 py-4">{risk ? dateLabel(risk.analysisDate) : "—"}</td></tr>)}</tbody></table></div> : <p className="py-6 text-text-muted">No hay estudiantes asignados a los grupos.</p>}
+      </section>
+    </>}
+  </main>;
 };
-
-export const DocenteMetricasPage: React.FC = () => {
-  return (
-    <main
-      className="flex-1 p-6 max-w-7xl mx-auto w-full"
-      style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
-    >
-      <header className="mb-10">
-        <p className="page-eyebrow mb-3">Seguimiento académico</p>
-        <h1
-          className="text-xl font-mono font-bold tracking-tight mb-2 transition-all duration-300 hover:text-primary"
-          style={{ color: "var(--text)" }}
-        >
-          Métricas y Análisis
-        </h1>
-        <p
-          className="text-sm font-medium transition-all duration-300"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Seguimiento de riesgo de deserción y eficiencia de módulos académicos.
-        </p>
-      </header>
-
-      <p role="note" className="mb-6 rounded-lg border border-border bg-surface p-4 text-sm text-text-muted">Vista de demostración: estos indicadores utilizan datos de ejemplo.</p>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-        {/* Dropout Risk Panel */}
-        <div
-          className="border border-border p-6 transition-all duration-300 hover:shadow-lg  rounded-lg"
-          style={{ backgroundColor: "var(--surface)" }}
-        >
-          <h2
-            className="text-xs font-mono font-bold uppercase tracking-widest mb-6 flex items-center gap-2 transition-all duration-300"
-            style={{ color: "var(--text)" }}
-          >
-            <BsExclamationTriangleFill
-              className="text-sm transition-all duration-300"
-              style={{ color: "var(--danger)" }}
-            />
-            Alerta de Deserción (Dropout Risk)
-          </h2>
-          <div className="space-y-4">
-            {MOCK_METRICS.dropoutRisk.map((student) => (
-              <div
-                key={student.id}
-                className="flex items-center justify-between p-4 border border-border transition-all duration-300 hover:bg-surface-brighter rounded-lg"
-                style={{ backgroundColor: "var(--surface)" }}
-              >
-                <div className="flex flex-col">
-                  <span
-                    className="text-xs font-bold transition-all duration-300"
-                    style={{ color: "var(--text)" }}
-                  >
-                    {student.name}
-                  </span>
-                  <span
-                    className="text-xs transition-all duration-300"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {student.reason}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-right">
-                  <div className="flex flex-col">
-                    <span
-                      className={`text-xs font-mono font-bold uppercase transition-all duration-300 ${
-                        student.risk === "Alto"
-                          ? "text-danger"
-                          : student.risk === "Medio"
-                            ? "text-accent"
-                            : "text-primary"
-                      }`}
-                    >
-                      Riesgo {student.risk}
-                    </span>
-                    <span
-                      className="text-xs font-mono transition-all duration-300"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {student.trend === "up"
-                        ? "Aumentando"
-                        : student.trend === "down"
-                          ? "Disminuyendo"
-                          : "Estable"}
-                    </span>
-                  </div>
-                  <button disabled aria-label="Contactar estudiante (próximamente)" title="Próximamente" className="text-text-muted hover:text-primary transition-all duration-300 transform  rounded-full p-1">
-                    <BsEnvelope className="text-base" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Module Efficiency */}
-        <div
-          className="border border-border p-6 transition-all duration-300 hover:shadow-lg  rounded-lg"
-          style={{ backgroundColor: "var(--surface)" }}
-        >
-          <h2
-            className="text-xs font-mono font-bold uppercase tracking-widest mb-6 flex items-center gap-2 transition-all duration-300"
-            style={{ color: "var(--text)" }}
-          >
-            <BsGraphUp
-              className="text-sm transition-all duration-300"
-              style={{ color: "var(--primary)" }}
-            />
-            Eficiencia por Módulo
-          </h2>
-          <div className="space-y-6">
-            {MOCK_METRICS.moduleEfficiency.map((mod) => (
-              <div
-                key={mod.name}
-                className="p-4 transition-all duration-300  rounded-lg"
-                style={{ backgroundColor: "var(--surface-brighter)" }}
-              >
-                <div
-                  className="flex justify-between text-xs font-mono uppercase tracking-widest mb-2 transition-all duration-300"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  <span>{mod.name}</span>
-                  <span>{mod.completion}% Finalización</span>
-                </div>
-                <div
-                  className="h-1.5 w-full border border-border overflow-hidden transition-all duration-500 rounded-full"
-                  style={{ backgroundColor: "var(--surface)" }}
-                >
-                  <div
-                    className="h-full transition-all duration-500 rounded-full"
-                    style={{
-                      width: `${mod.completion}%`,
-                      backgroundColor: "var(--primary)",
-                    }}
-                  />
-                </div>
-                <div className="flex justify-end mt-1">
-                  <span
-                    className="text-xs font-mono transition-all duration-300 hover:text-accent"
-                    style={{ color: "var(--primary)" }}
-                  >
-                    Promedio: {mod.avgScore} pts
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-};
-
 export default DocenteMetricasPage;
