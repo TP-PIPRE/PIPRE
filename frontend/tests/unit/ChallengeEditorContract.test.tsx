@@ -24,6 +24,16 @@ async function openList() {
   await screen.findByText("Reto existente");
 }
 describe("Challenge editor contract", () => {
+  it("offers and persists the thirtieth versioned TetriLogic template", async () => {
+    vi.mocked(apiService.activities.getByLesson).mockResolvedValue([{ ...activity, environment: "tetrilogic", levelTemplate: "tetrilogic-v2-1" }]);
+    await openList();
+    fireEvent.click(screen.getByRole("button", { name: "Editar", exact: true }));
+    await waitFor(() => expect(screen.getByLabelText("Lección", { exact: true })).toHaveValue("l1"));
+    const template=screen.getByLabelText("Tablero del reto", { exact: true });
+    fireEvent.change(template,{target:{value:"tetrilogic-v2-30"}});
+    fireEvent.click(screen.getByRole("button", { name: /^guardar cambios$/i }));
+    await waitFor(()=>expect(apiService.activities.update).toHaveBeenCalledWith("a1",expect.objectContaining({environment:"tetrilogic",levelTemplate:"tetrilogic-v2-30"})));
+  });
   it("saves edits with PUT while preserving the server's metadata", async () => {
     await openList();
     fireEvent.click(screen.getByRole("button", { name: "Editar", exact: true }));

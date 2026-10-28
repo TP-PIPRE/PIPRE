@@ -1,3 +1,11 @@
+import type { LevelConfig } from "../../../shared/types/TetriLogic";
+
+export interface TetriLogicTemplateResponseDTO {
+  templateId: string;
+  version: number;
+  config: LevelConfig;
+}
+
 export interface UserRequestDTO {
   firstName: string;
   lastName: string;

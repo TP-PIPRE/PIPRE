@@ -1,10 +1,16 @@
 # Revisión de contratos frontend/backend
 
+> **Estado vigente de TetriLogic, última petición del 28/10/2026:** [retos por filas y columnas con manipulación directa](TetriLogic_Filas_Columnas.md). Conserva la validación de la plantilla persistida y consume tamaño, inventario y conteos. No evalúa las otras condiciones históricas ni envía resultados/telemetría de reto. La confirmación local no equivale a progreso persistido. Backend y migraciones publicadas se conservan.
+
+> Actualización TetriLogic del 26/10/2026: [30 retos v2 y validaciones](Informe_TetriLogic_30_Retos.md), [pendientes del SSD](Pendientes_TetriLogic_SSD.md). El informe de contratos previo conserva sus resultados históricos.
+>
+> Revisión posterior del simulador: [conexiones, claridad de reglas e interacción](Revision_Simulador_Contratos_UX.md). Conserva las reglas v2 y distingue las validaciones nuevas del historial siguiente.
+
 Fecha: 23 de octubre de 2026. Este informe actualiza los pendientes de integración detectados en la revisión visual anterior.
 
 **Estado actualizado:** se implementaron los pendientes técnicos descritos en [Cierre de pendientes](#cierre-de-pendientes-implementables). Las validaciones de la primera revisión se conservan como historial.
 
-**Continuación del catálogo:** la meta es 30 retos de Neon Flow y 30 de TetriLogic, **60 en total**. Antes de ampliarlo, seguir [AGENTS.md](../AGENTS.md) y la [guía de implementación de los 30 retos por juego](Guia_Implementacion_30_Retos.md), que exige conectar cada actividad con su tablero y verificar su solución. Hay dos actividades oficiales conectadas por juego, cuatro en total; faltan 28 por juego y 56 en conjunto.
+**Continuación del catálogo:** la meta es 30 retos de Neon Flow y 30 de TetriLogic, **60 en total**. Antes de ampliarlo, seguir [AGENTS.md](../AGENTS.md) y la [guía de implementación de los 30 retos por juego](Guia_Implementacion_30_Retos.md), que exige conectar cada actividad con su tablero y verificar su solución. Al 26/10/2026 hay treinta retos oficiales TetriLogic v2 y dos Neon Flow, conectados también en PostgreSQL local: **32 de 60; faltan 28 de Neon Flow**. Las secciones siguientes conservan el historial de la revisión anterior; el informe TetriLogic enlazado al inicio registra V14/V15 y las pruebas nuevas.
 
 ## Alcance
 

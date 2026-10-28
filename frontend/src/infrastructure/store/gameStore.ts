@@ -28,7 +28,7 @@ interface GameStoreState {
   tiempoResolucion: number;
   attempts: AttemptMetrics[];
   startGame: (game: GameId) => void;
-  resetGame: () => void;
+  resetGame: (options?: { preserveMetrics?: boolean }) => void;
   registerMove: () => void;
   requestHint: () => void;
   completeGame: (result: GameResult) => void;
@@ -76,14 +76,14 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     });
   },
 
-  resetGame: () => {
+  resetGame: (options) => {
     const { status } = get();
     if (status !== 'PLAYING') return;
     stopTimer();
     set((state) => ({
       reinicios: state.reinicios + 1,
-      movimientos: 0,
-      tiempoResolucion: 0,
+      movimientos: options?.preserveMetrics ? state.movimientos : 0,
+      tiempoResolucion: options?.preserveMetrics ? state.tiempoResolucion : 0,
     }));
     startTimer(() => {
       const { status: current } = get();

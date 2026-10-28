@@ -1,5 +1,7 @@
 # Guía para implementar y conectar 30 retos por juego (60 en total)
 
+> **Alcance vigente tras la última petición del 28/10/2026:** TetriLogic mantiene la manipulación directa y [restaura los objetivos de filas y columnas](TetriLogic_Filas_Columnas.md) para completar el reto. Las treinta configuraciones persistidas aportan tamaño, inventario y conteos; las demás condiciones históricas siguen excluidas. La confirmación local no guarda progreso ni concede puntos. El catálogo mantiene 32/60 actividades; faltan 28 Neon Flow y no se declara el SSD integral. Conservar la conexión actividad → plantilla y no editar V14/V15.
+
 Esta guía está dirigida al compañero y a la IA que continúen el desarrollo de PIPRE. Su lectura se exige desde `AGENTS.md` en la raíz para que la conexión entre reto y tablero forme parte del trabajo desde el inicio.
 
 ## Objetivo y estado de partida
@@ -8,15 +10,15 @@ La meta indicada es **30 retos de Neon Flow y 30 retos de TetriLogic: 60 en tota
 
 En esta planificación, “ambos módulos” se refiere a los dos juegos. En el modelo del backend se conserva la jerarquía curso → módulo académico → lección → actividad; no reemplazarla por una lista independiente de niveles.
 
-Estado del código al documentar esta guía:
+Estado del código actualizado el 26 de octubre de 2026. Consultar el [informe TetriLogic](Informe_TetriLogic_30_Retos.md) y sus [pendientes](Pendientes_TetriLogic_SSD.md) para validaciones, despliegue y alcance del SSD:
 
 | Juego | Curso oficial | Actividades oficiales conectadas | Plantillas | Avance |
 |---|---|---|---|---|
 | Neon Flow | `c001` | `act-c001-1`, `act-c001-2` | `neonflow-1`, `neonflow-2` | **2 de 30; faltan 28** |
-| TetriLogic | `c002` | `act-c002-1`, `act-c002-2` | `tetrilogic-1`, `tetrilogic-2` | **2 de 30; faltan 28** |
-| Total | Dos juegos | Cuatro actividades actuales | Cuatro plantillas actuales | **4 de 60; faltan 56** |
+| TetriLogic | `c002` | `act-c002-1`…`act-c002-30` | `tetrilogic-v2-1`…`tetrilogic-v2-30` | **30 tableros v2 implementados, resueltos y conectados en PostgreSQL local** |
+| Total | Dos juegos | 32 actividades oficiales en código y PostgreSQL local | Dos Neon Flow y treinta TetriLogic v2 | **32 de 60; faltan 28 de Neon Flow** |
 
-Este documento no crea los 56 restantes ni establece sus objetivos pedagógicos. Antes de cada lote, inventariar los retos ya incorporados para evitar duplicar trabajo y actualizar el conteo por juego y total al entregar.
+V14 incorpora el catálogo TetriLogic de forma aditiva y preserva actividades editadas. V15 conecta también los dos prototipos originales cuya descripción quedó nula al incorporar V13, sólo si el resto de sus metadatos y su misión siguen intactos. Ambas migraciones están aplicadas en PostgreSQL local. Los prototipos 1/2 editados conservan sus plantillas antiguas hasta revisión docente; no se cuentan las plantillas anteriores como retos oficiales extra. Antes de cada lote inventariar el código y la base desplegada, que pueden diferir. No duplicar los treinta tableros existentes ni declarar acabado el SSD completo por su cantidad.
 
 ## Asignar un tablero desde la interfaz
 
@@ -52,7 +54,7 @@ Crear 60 filas, títulos o tarjetas sin esos vínculos no completa la meta. Tamp
 |---|---|---|
 | Configuración jugable | `frontend/src/shared/constants/levelConfigs.ts` y tipos de `NeonFlow`/`TetriLogic` | El tablero está definido con sus dimensiones, obstáculos, emisor/receptores o restricciones. |
 | Registro de plantillas | `frontend/src/application/usecases/activityLevels.ts` | Hay una entrada con ID estable, juego correcto y configuración existente. No usar un índice de array fuera de rango. |
-| Validación backend | `backend/src/main/java/com/pipre/backend/domain/entities/activity/Activity.java` | La plantilla nueva está admitida para su `environment`; se rechaza una combinación de otro juego. **La lista actual sólo admite los niveles 1 y 2: hay que ampliarla al añadir plantillas.** |
+| Validación backend | `backend/src/main/java/com/pipre/backend/domain/entities/activity/Activity.java` | La plantilla nueva está admitida para su `environment`; se rechaza una combinación de otro juego. Se reconocen dos Neon Flow, dos TetriLogic anteriores y treinta TetriLogic v2. |
 | Contrato y persistencia | `CreateActivityCommand`, `ActivityDTO`, `ActivityDtoMapper`, `ActivityJpaEntity`, `CreateActivityService`, `UpdateActivityService` y `apiModels.ts` | Los datos nuevos atraviesan todas las capas y sobreviven a crear, editar y volver a consultar. No añadir campos sólo en TypeScript. |
 | Catálogo inicial y actualización | `CourseSeederService` y migraciones nuevas en `backend/src/main/resources/db/migration/` | Tanto una instalación nueva como una existente reciben los retos sin perder modificaciones del docente. |
 | Editor docente | `frontend/src/ui/pages/DocenteRetosPage.tsx` | La plantilla se puede elegir; cambiar de entorno no conserva una plantilla incompatible; la lección seleccionada pertenece al módulo. |
@@ -61,7 +63,7 @@ Crear 60 filas, títulos o tarjetas sin esos vínculos no completa la meta. Tamp
 | Resolución del tablero | `frontend/src/ui/pages/Simulador.tsx` | Se comprueba que el ID pertenezca al curso y se resuelve su plantilla; no se reemplaza por otro reto cuando falta. |
 | Ejecución | `NeonFlowStage.tsx`, `TetriLogicStage.tsx`, `NeonBoard.tsx`, `Board.tsx` y bandejas | Se consume la configuración elegida, se reinicia el estado al cambiar de actividad y se preservan los controles por teclado/toque/arrastre. |
 
-Las cuatro entradas actuales de `LEVEL_TEMPLATES` no son un límite funcional del producto. Ampliar el registro y su validación de manera coordinada; no añadir comparaciones de nombres de curso o condiciones independientes para cada tarjeta.
+Las entradas de `LEVEL_TEMPLATES` no son un límite funcional del producto. TetriLogic v2 exporta sus treinta configuraciones desde `levelConfigs.ts`, persistidas por V14 y leídas mediante `GET /api/v1/tetrilogic/templates/{templateId}`. Ampliar registro, API y versión de contenido de manera coordinada; no añadir comparaciones de nombres de curso o condiciones independientes para cada tarjeta.
 
 ## Procedimiento para añadir un lote
 
@@ -81,7 +83,7 @@ El orden se presenta por curso. Los empates actuales tienen desempate estable, p
 
 **Neon Flow:** configurar dimensiones, obstáculos, emisor, dirección, color y receptores. Verificar recorrido y solución con `raycast`. No colocar obstáculos sobre el emisor/receptor ni crear objetivos incompatibles con el comportamiento real del motor.
 
-**TetriLogic:** configurar dimensiones, celdas bloqueadas y objetivos por fila/columna. Revisar el inventario real de `TetriLogicStage`: actualmente se crea en `createInventory`. Una cuadrícula nueva no genera automáticamente las piezas necesarias. Si el reto necesita otro inventario, incorporarlo a la configuración tipada y a su consumo/reinicio, conservando los tableros existentes. Comprobar una colocación completa con `validatePlacement` y con las condiciones reales de victoria; el número total de celdas por sí solo no garantiza una solución.
+**TetriLogic:** el inventario v2 forma parte de la configuración tipada y persistida. Conservar tres o cuatro piezas, como máximo una forma repetida, todas las metas de filas/columnas, celdas requeridas, precedencias y contactos. El motor está en `application/usecases/tetrilogic/rules.ts`; `LegacyTetriLogicStage` conserva los prototipos. Una cuadrícula nueva no genera automáticamente piezas. Comprobar cada solución con las reglas reales y el solver independiente; el área ocupada por sí sola no garantiza solvencia.
 
 Mantener los algoritmos existentes al crear contenido. Si un objetivo requiere nuevas mecánicas, tratarlo como un cambio funcional explícito y documentar su compatibilidad; no alterar silenciosamente las reglas para que un tablero imposible pase una prueba.
 
@@ -119,7 +121,7 @@ Por tanto, un lote debe cubrir:
 2. Instalaciones existentes: nueva migración aditiva o mecanismo de inicialización idempotente, conforme a las convenciones del repositorio, que añada exclusivamente las actividades oficiales faltantes y sus relaciones necesarias.
 3. Reinicios y reintentos: sin duplicados ni sobrescritura de retos editados. Nunca borrar un curso para obligar al seeder a ejecutarse.
 
-No modificar V1–V13 ya aplicadas. Consultar el último número de migración antes de crear la siguiente, porque otro compañero puede haber añadido una en paralelo. Conservar los IDs y claves foráneas existentes; un reto nuevo debe tener una lección real antes de insertarse. No asignar una plantilla por defecto a actividades personalizadas antiguas sin conocer su objetivo.
+No modificar migraciones ya aplicadas, incluidas V1–V15. Consultar el último número antes de crear la siguiente, porque otro compañero puede haber añadido una en paralelo. Conservar los IDs y claves foráneas; un reto nuevo debe tener una lección real. No asignar plantillas a actividades personalizadas antiguas sin conocer su objetivo. El generador del catálogo v2 queda congelado tras publicar V14: usar `--check`; nuevas geometrías requieren nueva versión y migración.
 
 ### 5. Comprobar el recorrido del usuario
 

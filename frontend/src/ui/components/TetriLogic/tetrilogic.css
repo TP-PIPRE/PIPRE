@@ -1,0 +1,202 @@
+/* TetriLogic workbench: PIPRE semantic colors, with a dedicated board and inventory. */
+.tetri-official.lab-shell { max-width: 1120px; padding: 12px 16px 32px; }
+.simulator-course-picker { max-width: 1120px; display: flex; align-items: center; gap: 16px; margin: auto; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.simulator-course-picker label { font-size: 14px; font-weight: 600; flex-shrink: 0; }
+.simulator-course-picker select { width: 100%; min-width: 0; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; }
+.tetri-heading { margin-bottom: 16px; }
+.tetri-back { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--primary); flex-shrink: 0; }
+.tetri-title-group { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tetri-title-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 8px 0; }
+.tetri-eyebrow { display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 14px; font-weight: 700; }
+.tetri-eyebrow span { border-left: 1px solid var(--border); padding-left: 8px; color: var(--text-muted); font-weight: 400; }
+.tetri-official .tetri-title-row h1 { margin: 0; font-size: clamp(21px,2.5vw,30px); line-height: 1.2; text-wrap: balance; overflow-wrap: anywhere; }
+.tetri-intro { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+.tetri-help-button { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px; color: var(--primary); font-size: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.tetri-help-button:hover { background: var(--primary-low); }
+.tetri-board-size { font-size: 13px; color: var(--text-muted); }
+.tetri-level-number { flex-shrink: 0; padding-left: 20px; border-left: 1px solid var(--border); }
+.tetri-level-number > span { display: block; color: var(--text-muted); font-size: 12px; letter-spacing: .12em; }
+.tetri-level-number strong { color: var(--primary); font-size: 32px; font-family: var(--font-mono); font-weight: 600; }
+.tetri-level-number small { color: var(--text-muted); font-size: 16px; }
+.tetri-heading .page-intro { max-width: 920px; margin-top: 12px; }
+.tetri-workbench { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.tetri-workbench-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding: 12px 20px; }
+.tetri-mode { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.tetri-mode > span { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); }
+.tetri-level-picker { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; }
+.tetri-level-picker select { width: 210px; min-width: 0; max-width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--surface); color: var(--text); }
+.tetri-layout { display: grid; grid-template-columns: minmax(0,1fr) 220px; grid-template-areas: "board inventory" "rules rules"; gap: 24px; padding: 20px; align-items: start; }
+.tetri-panel-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 20px; }
+.tetri-panel-title h2 { font-size: 16px; font-weight: 650; margin: 0; }
+.tetri-panel-title > span { color: var(--text-muted); font-size: 12px; }
+.tetri-board-panel { grid-area: board; min-width: 0; padding: 4px 0; }
+.tetri-board-panel .tetri-panel-title { max-width: 400px; margin: 0 auto 12px; }
+.tetri-board-frame { width: 100%; max-width: 400px; margin: auto; }
+.tetri-column-counts { display: grid; gap: 4px; padding: 0 5px 8px 53px; min-height: 40px; }
+.tetri-grid-with-counts { display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 4px; align-items: stretch; }
+.tetri-row-counts { display: grid; gap: 4px; padding: 5px 0; }
+.tetri-count { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tetri-count-column { flex-direction: column; justify-content: end; }
+.tetri-count-row { flex-direction: column; }
+.tetri-count-bars { display: flex; align-items: center; justify-content: center; gap: 2px; height: 9px; }
+.tetri-count-column .tetri-count-bars { height: 22px; align-items: end; }
+.tetri-count-bars i { display: block; width: 4px; height: 9px; border: 1px solid var(--border); border-radius: 1px; background: var(--surface-brighter); }
+.tetri-count-column .tetri-count-bars i { height: 18px; }
+.tetri-count-bars i[data-filled="true"] { background: var(--primary); border-color: var(--primary); }
+.tetri-count[data-state="over"] i[data-extra="true"] { border-color: var(--danger); background: var(--danger); }
+.tetri-count-bars i.tetri-zero { height: 1px; width: 10px; border: 0; background: var(--text-muted); }
+.tetri-count-number { font: 600 13px var(--font-mono); color: var(--text); line-height: 1; }
+.tetri-count-number > span { color: var(--text-muted); font-weight: 400; }
+.tetri-count[data-state="complete"] .tetri-count-number { color: var(--success); }
+.tetri-count[data-state="over"] .tetri-count-number { color: var(--danger); }
+.tetri-official .game-board { width: 100%; max-width: none; margin: 0; padding: 5px; border-radius: 6px; border-color: var(--border); background: var(--border); box-shadow: none; gap: 3px; }
+.tetri-official .game-board button { position: relative; border: 0; border-radius: 2px; font-size: clamp(12px,1.5vw,16px); }
+.tetri-official .tetri-cell-empty { background: var(--surface); }
+.tetri-official .tetri-cell-empty::before { content: ""; position: absolute; inset: 6px; border: 1px solid color-mix(in srgb,var(--border) 48%,transparent); pointer-events: none; }
+.tetri-cell-center { display: block; width: 3px; height: 3px; margin: auto; border-radius: 50%; background: var(--border); }
+.tetri-official .tetri-cell-empty:hover { background: var(--primary-low); }
+.tetri-official .tetri-cell-blocked { color: var(--text-muted); background: repeating-linear-gradient(135deg,transparent 0 4px,color-mix(in srgb,var(--text-muted) 12%,transparent) 4px 6px),var(--surface-brighter); }
+.tetri-official .tetri-cell-filled { color: #182e39; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .16); font-weight: 650; }
+.tetri-official .game-board [aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: -3px; box-shadow: inset 0 0 0 4px var(--surface); }
+.tetri-official .game-board button:disabled { opacity: 1; cursor: default; }
+.tetri-required { position: relative; color: var(--primary); font-size: 18px; }
+.tetri-board-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 10px; color: var(--text-muted); font-size: 12px; }
+.tetri-board-legend span { display: flex; align-items: center; gap: 4px; }
+.tetri-legend-required { width: 6px; height: 6px; background: var(--primary); border-radius: 50%; }
+.tetri-selection { min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px; color: var(--text-muted); font-size: 13px; }
+.tetri-selection-tag { background: var(--primary-low); color: var(--primary); padding: 4px 8px; border-radius: 4px; font: 600 13px var(--font-mono); }
+.tetri-inventory-panel { grid-area: inventory; min-width: 0; align-self: start; background: var(--surface-brighter); border: 1px solid var(--border); padding: 12px; border-radius: 8px; }
+.tetri-official .lab-tray { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; padding: 0; border: 0; background: transparent; }
+.tetri-official .lab-piece { position: relative; width: 100%; min-width: 0; min-height: 94px; padding: 22px 6px 10px; gap: 0; border-color: var(--border); border-radius: 6px; background: var(--surface); }
+.tetri-piece-preview { display: flex; justify-content: center; align-items: center; }
+.tetri-official .lab-piece .tetri-piece-preview { min-height: 48px; }
+.tetri-official .tetri-piece-preview > div { transform: scale(1.12); }
+.tetri-official .lab-piece[aria-pressed="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); background: var(--primary-low); }
+.tetri-piece-label { color: var(--text-muted); font-size: 12px; }
+.tetri-inventory-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 8px; font-size: 14px; color: var(--primary); text-align: center; }
+.tetri-piece-actions { display: grid; gap: 8px; margin-top: 0; }
+.tetri-piece-actions .btn-secondary { width: 100%; min-width: 0; padding: 10px; justify-content: start; gap: 8px; font-size: 13px; }
+.tetri-official kbd { font: 400 11px var(--font-mono); color: var(--text-muted); border: 1px solid var(--border); border-radius: 3px; padding: 1px 4px; margin-left: auto; }
+.tetri-cancel { display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 8px 10px; font-size: 13px; color: var(--text-muted); }
+.tetri-cancel:disabled { opacity: .5; }
+.tetri-brief { grid-area: rules; min-width: 0; padding: 16px 0 0; border-top: 1px solid var(--border); }
+.tetri-brief h2 { display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 16px; font-weight: 650; margin: 0 0 12px; }
+.tetri-objective { font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+.tetri-dimension { display: inline-block; margin-top: 12px; font-size: 12px; color: var(--primary); background: var(--primary-low); padding: 5px 8px; border-radius: 4px; }
+.tetri-brief h3 { font-size: 13px; font-weight: 650; margin: 24px 0 12px; }
+.tetri-rules { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+.tetri-rules li { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.tetri-rules li > span { color: var(--text-muted); }
+.tetri-rules strong { font-family: var(--font-mono); font-weight: 600; }
+.tetri-rule-note { font-size: 12px; line-height: 1.6; color: var(--text-muted); margin-top: 16px; }
+.tetri-reference { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.tetri-reference > span { display: block; color: var(--text-muted); font-size: 12px; }
+.tetri-reference strong { display: block; margin-top: 4px; font: 600 22px var(--font-mono); }
+.tetri-reference small { font: 400 13px var(--font-sans); color: var(--text-muted); }
+.tetri-reference p { margin-top: 6px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.tetri-bottom { display: flex; flex-direction: column; border-top: 1px solid var(--border); padding: 12px 24px 0; }
+.tetri-official [aria-label="Misiones del reto"] { padding: 16px 24px; }
+.tetri-official [aria-label="Misiones del reto"] h2 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+.tetri-official [aria-label="Misiones del reto"] ul { margin: 0; font-size: 14px; line-height: 1.6; }
+.tetri-feedback { order: 1; display: flex; align-items: center; justify-content: center; text-align: center; min-height: 32px; font-size: 14px; line-height: 1.5; color: var(--text-muted); margin: 8px 0 0; }
+.tetri-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.tetri-actions .btn-secondary { gap: 8px; }
+.tetri-actions-divider { width: 1px; align-self: stretch; background: var(--border); margin: 0 8px; }
+.tetri-metrics { order: 3; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin: 16px -24px 0; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--surface-brighter); }
+.tetri-metrics > div { text-align: center; border-right: 1px solid var(--border); }
+.tetri-metrics > div:last-child { border: 0; }
+.tetri-metrics dt { color: var(--text-muted); font-size: 12px; }
+.tetri-metrics dd { margin-top: 4px; font: 600 20px var(--font-mono); }
+.tetri-official [aria-label="Resultado del reto"] { border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; }
+.tetri-mini-grid { display: grid; gap: 2px; }
+.tetri-mini-grid > span { border-radius: 2px; }
+.tetri-piece-number, .tetri-token-number { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); font: 600 12px var(--font-mono); }
+.tetri-piece-number { position: absolute; left: 6px; top: 6px; }
+.tetri-board-piece-number { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 1px 3px; border-radius: 3px; color: var(--text); background: var(--surface); font: 600 12px var(--font-mono); pointer-events: none; }
+.tetri-board-piece-number:empty { display: none; }
+.tetri-inventory-panel .tetri-selection { margin: 8px 0; min-height: 24px; font-size: 12px; }
+.tetri-rule-content > h2 { font-size: 15px; color: var(--text); margin: 0 0 16px; }
+.tetri-rule-group + .tetri-rule-group { margin-top: 18px; }
+.tetri-rule-group h3 { font-size: 14px; margin: 0 0 4px; }
+.tetri-rule-group p { color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0 0 8px; }
+.tetri-rule-group ul { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.tetri-rule-group li { display: flex; gap: 8px; align-items: center; }
+.tetri-rule-group li > svg { color: var(--text-muted); flex-shrink: 0; }
+.tetri-rule-piece { display: inline-flex; align-items: center; justify-content: space-between; min-width: 64px; height: 38px; padding: 5px; gap: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-brighter); }
+.tetri-rule-piece .tetri-token-number { width: 16px; height: 18px; flex-shrink: 0; border: 0; background: transparent; }
+.tetri-orientation-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.tetri-orientation-option { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 64px; padding: 8px; background: var(--surface-brighter); border: 1px solid var(--border); border-radius: 6px; font: 500 12px var(--font-mono); }
+.tetri-orientation-option .tetri-piece-preview { min-height: 32px; }
+.tetri-hint { order: 2; margin-top: 16px; padding: 16px; border: 1px solid var(--border); background: var(--surface-brighter); border-radius: 8px; font-size: 14px; }
+.tetri-hint p { margin-top: 8px; line-height: 1.6; }
+.tetri-hint button { min-height: 44px; margin-top: 4px; font-weight: 600; color: var(--primary); }
+.tetri-instructions { margin-top: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 14px; }
+.tetri-instructions summary { min-height: 44px; padding: 12px 16px; cursor: pointer; color: var(--primary); font-weight: 600; }
+.tetri-instructions [aria-label="Misiones del reto"] { padding: 0 16px 16px; line-height: 1.6; }
+.tetri-instructions [aria-label="Misiones del reto"] > div { margin-top: 12px; }
+.tetri-instructions p { color: var(--text-muted); }
+.tetri-help-content { padding: 24px; }
+.tetri-help-content h2 { margin: 0 0 12px; font-size: 22px; font-weight: 650; }
+.tetri-help-content p, .tetri-help-content dd { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+.tetri-help-content dt { font-size: 14px; font-weight: 600; margin: 18px 0 4px; }
+.tetri-help-content dd { margin: 0; }
+.tetri-dialog-actions, .tetri-result > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 16px; }
+.tetri-result { border-top: 1px solid var(--border); background: var(--primary-low); padding: 20px; text-align: center; }
+.tetri-result h2 { color: var(--primary); font-size: 22px; font-weight: 650; }
+.tetri-result p { margin-top: 8px; font-size: 14px; }
+@media (min-width: 1200px) {
+  .tetri-layout { grid-template-columns: 210px minmax(0,1fr) 210px; grid-template-areas: "rules board inventory"; gap: 24px; padding: 20px; }
+  .tetri-brief { padding: 4px 16px 0 0; border: 0; border-right: 1px solid var(--border); }
+  .tetri-rules { display: grid; gap: 12px; }
+}
+@media (max-width: 767px) {
+  .simulator-course-picker { flex-direction: column; align-items: stretch; gap: 6px; padding: 12px; }
+  .tetri-official.lab-shell { padding: 12px 8px 24px; }
+  .tetri-heading { margin-bottom: 16px; }
+  .tetri-title-row { margin-top: 16px; }
+  .tetri-eyebrow span { display: none; }
+  .tetri-level-number { padding-left: 12px; }
+  .tetri-level-number strong { font-size: 26px; }
+  .tetri-heading .page-intro { font-size: 14px; }
+  .tetri-workbench-top { padding: 12px; }
+  .tetri-mode { font-size: 13px; }
+  .tetri-level-picker { width: 100%; }
+  .tetri-level-picker select { flex: 1; width: 100%; }
+  .tetri-layout { grid-template-columns: minmax(0,1fr); grid-template-areas: "board" "inventory" "rules"; gap: 20px; padding: 16px 12px; }
+  .tetri-inventory-panel { padding: 12px; }
+  .tetri-official .lab-tray { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .tetri-official .lab-piece { min-height: 90px; padding: 8px 2px; }
+  .tetri-official .tetri-piece-preview > div { transform: scale(.9); }
+  .tetri-official .lab-piece .tetri-piece-preview { min-height: 42px; }
+  .tetri-piece-label { font-size: 12px; }
+  .tetri-piece-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .tetri-cancel { grid-column: 1/-1; justify-content: center; gap: 12px; }
+  .tetri-cancel kbd { margin-left: 0; }
+  .tetri-bottom { padding: 12px 12px 0; }
+  .tetri-official [aria-label="Misiones del reto"] { padding: 16px 12px; }
+  .tetri-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .tetri-actions > button { min-width: 0; padding: 10px 8px; font-size: 13px; }
+  .tetri-actions-divider { display: none; }
+  .tetri-metrics { margin: 20px -12px 0; padding: 16px 8px; }
+  .tetri-metrics dd { font-size: 18px; }
+  .tetri-metrics dt { font-size: 12px; }
+}
+@media (max-width: 479px) {
+  .tetri-title-row { gap: 8px; align-items: start; }
+  .tetri-title-row h1 { font-size: 23px; }
+  .tetri-help-button { max-width: 104px; gap: 5px; padding: 6px 8px; font-size: 12px; }
+  .tetri-help-button { min-width: 44px; padding: 8px; }
+  .tetri-help-button span { display: none; }
+  .tetri-title-group { gap: 8px; }
+  .tetri-help-button svg { width: 16px; flex-shrink: 0; }
+  .tetri-help-content { padding: 16px; }
+}
+@media (max-width: 359px) {
+  .tetri-grid-with-counts { grid-template-columns: 34px minmax(0,1fr); }
+  .tetri-column-counts { padding-left: 43px; }
+  .tetri-count { gap: 4px; }
+  .tetri-count-bars { gap: 1px; }
+  .tetri-count-bars i { width: 3px; }
+  .tetri-board-legend { gap: 8px; font-size: 12px; }
+  .tetri-official .lab-tray { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}

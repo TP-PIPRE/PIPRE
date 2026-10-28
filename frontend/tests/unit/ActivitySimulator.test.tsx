@@ -19,7 +19,8 @@ describe("Backend activity selection", () => {
     ]);
     open("/simulador/course-uuid?activity=a-tetri");
     expect(await screen.findByRole("heading", { name: "Mi reto espacial" })).toBeInTheDocument();
-    expect(screen.getByText("Instrucciones guardadas")).toBeInTheDocument();
+    expect(screen.queryByText("Instrucciones guardadas")).not.toBeInTheDocument();
+    expect(screen.getByText("Filas y columnas")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" })).toBeInTheDocument();
     expect(loadCourseActivities).toHaveBeenCalledWith("course-uuid");
   });
@@ -36,11 +37,11 @@ describe("Backend activity selection", () => {
     open("/simulador/course-uuid?activity=other-course-activity");
     expect(await screen.findByText(/no pertenece a este curso/)).toBeInTheDocument();
   });
-  it("guides users from the simulator menu without claiming that a board is missing", () => {
+  it("opens free exploration directly without requiring a course or a challenge", () => {
     open("/simulador");
-    expect(screen.getByRole("heading", { name: "Selecciona un reto para empezar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ver mis cursos" })).toHaveAttribute("href", "/");
-    expect(screen.getByText(/elige un curso y pulsa Iniciar/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "TetriLogic" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Seleccionar tablero" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Comprobar" })).not.toBeInTheDocument();
     expect(loadCourseActivities).not.toHaveBeenCalled();
   });
   it("distinguishes an empty course from an activity awaiting configuration", async () => {
@@ -54,7 +55,8 @@ describe("Backend activity selection", () => {
     open("/simulador/course-uuid?activity=a");
     await screen.findByRole("heading", { name: "Tablero anterior" });
     fireEvent.click(screen.getByRole("link", { name: "Abrir simulador sin seleccionar curso" }));
-    expect(screen.getByRole("heading", { name: "Selecciona un reto para empezar" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "TetriLogic" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Tablero anterior" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Comprobar" })).not.toBeInTheDocument();
     expect(useGameStore.getState().status).toBe("IDLE");
   });

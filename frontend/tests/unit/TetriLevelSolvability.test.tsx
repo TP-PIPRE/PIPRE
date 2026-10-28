@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { TetriLogicStage } from "../../src/ui/components/TetriLogic/TetriLogicStage";
-import { TETRILOGIC_LEVELS } from "../../src/shared/constants/levelConfigs";
+import { HistoricalTetriLogicStage as TetriLogicStage } from "../../src/ui/components/TetriLogic/HistoricalTetriLogicStage";
+import { LEGACY_TETRILOGIC_LEVELS as TETRILOGIC_LEVELS } from "../../src/shared/constants/levelConfigs";
 import { useGameStore } from "../../src/infrastructure/store/gameStore";
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { post: vi.fn().mockResolvedValue({ status: 201 }) } }));
 afterEach(() => { cleanup(); useGameStore.getState().stopGame(); });

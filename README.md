@@ -2,9 +2,7 @@
 
 Plataforma Inteligente de Programación y Robótica Escolar con feedback de IA.
 
-## Desarrollo de retos
-
-Antes de añadir retos, el compañero o la IA deben leer [AGENTS.md](AGENTS.md) y la [guía para implementar los 30 retos por juego](docs/Guia_Implementacion_30_Retos.md). La meta es 30 retos de Neon Flow y 30 de TetriLogic, 60 en total; cada actividad debe quedar conectada con su tablero jugable y tener una solución comprobada. La guía explica cómo actualizar instalaciones existentes sin depender sólo del seeder.
+TetriLogic ofrece [retos de filas y columnas con manipulación directa](docs/TetriLogic_Filas_Columnas.md): arrastre, giro y bandeja externa. Se completa el reto al igualar todos los conteos. Las treinta configuraciones persistidas conservan tamaños, inventarios y objetivos; no se restauran orden, contactos ni orientaciones obligatorias.
 
 ## Inicio local con Docker
 

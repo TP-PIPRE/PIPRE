@@ -28,6 +28,7 @@ import type {
   HelpRequestDTO,
   PageDTO,
   Pageable,
+  TetriLogicTemplateResponseDTO,
 } from "./models/apiModels";
 
 async function readCollection<T>(path: string, pageable?: Pageable): Promise<T[]> {
@@ -45,6 +46,14 @@ async function readCollection<T>(path: string, pageable?: Pageable): Promise<T[]
 }
 
 export const apiService = {
+  tetrilogic: {
+    getTemplate: async (templateId: string, signal?: AbortSignal) => {
+      const response = await axiosInstance.get<TetriLogicTemplateResponseDTO>(
+        `tetrilogic/templates/${encodeURIComponent(templateId)}`, { signal },
+      );
+      return response.data;
+    },
+  },
   users: {
     getAll: async () => {
       const response = await axiosInstance.get<UserResponseDTO[]>(API_ENDPOINTS.USERS);

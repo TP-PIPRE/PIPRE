@@ -4,6 +4,7 @@ import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { NeonFlowStage } from "../../src/ui/components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../../src/ui/components/TetriLogic/TetriLogicStage";
+import { LEGACY_TETRILOGIC_LEVELS } from "../../src/shared/constants/levelConfigs";
 import { useGameStore } from "../../src/infrastructure/store/gameStore";
 
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { post: vi.fn() } }));
@@ -33,16 +34,17 @@ describe("Accessible simulator interactions", () => {
     expect(screen.getByRole("button", { name: "Comprobar" })).toBeDisabled();
   });
 
-  it("uses existing TetriLogic placement validation for the tap alternative", () => {
-    render(<MemoryRouter><TetriLogicStage /></MemoryRouter>);
+  it("keeps bounds and a tap alternative in the free TetriLogic workspace", () => {
+    render(<MemoryRouter><TetriLogicStage levels={LEGACY_TETRILOGIC_LEVELS} /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" }));
     fireEvent.click(screen.getByRole("button", { name: "Celda vacía, fila 4, columna 4" }));
     expect(useGameStore.getState().movimientos).toBe(0);
-    expect(screen.getByRole("status")).toHaveTextContent("La pieza no cabe aquí");
+    expect(screen.getByRole("status")).toHaveTextContent("Ese espacio no está disponible");
     fireEvent.click(screen.getByRole("button", { name: "Celda vacía, fila 1, columna 1" }));
-    expect(useGameStore.getState().movimientos).toBe(1);
+    expect(useGameStore.getState().movimientos).toBe(0);
     expect(screen.getByRole("button", { name: "Pieza O, fila 1, columna 1" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Reiniciar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer tablero", exact: true }));
     expect(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" })).toBeInTheDocument();
   });
 });

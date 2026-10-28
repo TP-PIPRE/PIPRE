@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { NeonFlowStage } from "../components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../components/TetriLogic/TetriLogicStage";
+import { PersistedTetriLogicStage } from "../components/TetriLogic/PersistedTetriLogicStage";
 
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
 import { resolveActivityLevel } from "../../application/usecases/activityLevels";
@@ -29,7 +30,7 @@ export const Simulador = () => {
   }, [courseId, legacy, retry]);
 
   if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage />;
-  if (TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
+  if (!courseId || TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
 
   if (courseId && data?.courseId !== courseId) return <p role="status" className="p-8 text-center">Cargando retos del curso…</p>;
   const courseData = courseId && data?.courseId === courseId ? data : null;
@@ -39,9 +40,7 @@ export const Simulador = () => {
   const role = getAuthState().user?.role;
   const canManage = role === "docente" || role === "admin";
   const showConfigure = canManage && Boolean(courseId) && !courseData?.error && (!activityId || Boolean(activity));
-  const notice = !courseId
-    ? { title: "Selecciona un reto para empezar", message: "En Mis cursos, elige un curso y pulsa Iniciar en el reto que quieras resolver." }
-    : courseData?.error
+  const notice = courseData?.error
       ? { title: "No pudimos cargar los retos", message: courseData.error }
       : activityId && !activity
         ? { title: "No encontramos este reto", message: "El reto ya no está disponible o no pertenece a este curso. Vuelve a tus cursos y selecciona otro." }
@@ -49,16 +48,18 @@ export const Simulador = () => {
           ? { title: "Este curso aún no tiene retos", message: canManage ? "Añade un reto y asígnale un tablero desde la gestión del curso para habilitar la práctica." : "Tu docente todavía no ha añadido retos a este curso. Mientras tanto, puedes explorar otros cursos." }
           : { title: activity ? "Este reto aún no está listo para jugar" : "Este curso aún no tiene retos listos para jugar", message: canManage ? "Abre el curso en Retos, edita la actividad y selecciona Tablero del reto. Guarda los cambios para habilitarla." : "El tablero aún está pendiente de configuración por parte de tu docente. Mientras lo prepara, puedes elegir otro reto desde Mis cursos." };
   return <div>
-    {courseData?.activities.length ? <div className="mx-auto mb-5 max-w-5xl rounded-lg border border-border bg-surface p-4">
-      <label htmlFor="simulator-activity" className="mb-2 block text-sm font-semibold">Reto del curso</label>
-      <select id="simulator-activity" className="w-full rounded-lg border border-border bg-bg p-3" value={activity?.idActivity ?? ""} onChange={e => setSearch({ activity: e.target.value })}>
+    {courseData?.activities.length ? <div className="simulator-course-picker">
+      <label htmlFor="simulator-activity">{template?.game === "tetrilogic" ? "Tablero del curso" : "Reto del curso"}</label>
+      <select id="simulator-activity" value={activity?.idActivity ?? ""} onChange={e => setSearch({ activity: e.target.value })}>
         {!activity && <option value="" disabled>Selecciona un reto</option>}
         {courseData.activities.map(a => <option key={a.idActivity} value={a.idActivity}>{a.name}{resolveActivityLevel(a) ? "" : " · tablero pendiente"}</option>)}
       </select>
     </div> : null}
     {activity && template ? template.game === "neonflow"
       ? <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
-      : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+      : template.config.version === 2
+        ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
+        : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
       : <div className="mx-auto max-w-2xl rounded-xl border border-border bg-surface p-8 text-center space-y-4">
         <h1 className="text-xl font-bold">{notice.title}</h1>
         <p role={courseData?.error ? "alert" : "status"} className="text-text-muted">{notice.message}</p>

@@ -42,11 +42,13 @@ Los tokens tradicionales `bg`, `surface`, `text` y los de Base UI apuntan a la m
 ## Simuladores
 
 - Tablero de hasta 420 px y ancho limitado por el contenedor. La cuadrícula conserva su relación de aspecto.
-- Selector de nivel, instrucciones, inventario, validación y métricas separados en orden de lectura.
+- En Neon Flow, selector de nivel, instrucciones, inventario, validación y métricas separados en orden de lectura. TetriLogic conserva la manipulación directa y usa objetivos por filas/columnas descritos a continuación.
 - Arrastre conservado. Alternativa por clic, toque y botones nativos para teclado; mismos callbacks de colocación y rotación.
-- Mantener `raycast`, `validatePlacement`, reglas de victoria y store de telemetría sin cambios.
+- Conservar `raycast` y el comportamiento de Neon Flow. La última petición del 28/10/2026 restaura únicamente los conteos de TetriLogic como condición de completar el reto. Conservar JSON v2, migraciones y motores históricos; no recuperar las demás condiciones ni introducir puntuación.
 - Las actividades seleccionan una plantilla de tablero persistida; los cursos nuevos pueden usar ambos juegos. Descripción, misiones y orden provienen del backend. Los tableros sin configuración muestran un estado pendiente explícito.
-- TetriLogic conserva sus reglas y añade piezas O/I para que sus dos tableros tengan solución; las piezas repetidas se distinguen por su identificador accesible.
+- TetriLogic presenta cuadrícula de hasta 420 px y bandeja externa a la derecha; en móvil, bandeja debajo. Siluetas continuas con esquinas redondeadas, borde tonal fino y casillas interiores suaves; la previsualización comparte esa silueta. Paleta por pieza centralizada en `freePlay.css`, mezclada con los tokens de superficie; evitar bloques planos neón y contornos negros gruesos. Miniaturas y números estables, sin etiquetas técnicas repetidas.
+- Los conteos ocupadas/objetivo se alinean arriba de columnas y a la izquierda de filas, sin cubrir el tablero. Verde para coincidencia, rojo para exceso y neutro para pendiente; el número y la etiqueta accesible permiten entenderlos sin depender sólo del color. Confirmar automáticamente cuando todos coincidan, sin congelar la manipulación ni conceder puntos. Mantener el objetivo cero; una línea antigua sin objetivo muestra `—`.
+- Girar y Devolver son acciones de la pieza seleccionada. Mantener arrastre con punto de agarre, giro de 90° con R/botón/clic derecho, cancelación con Escape y alternativa por selección + casilla. Mantener foco visible, controles de 44 px y mensajes breves anunciados. Límites y colisiones impiden colocaciones; se permite exceso de conteo durante la exploración, sin completar el reto. Ver [alcance vigente](../../docs/TetriLogic_Filas_Columnas.md). El número de tablero no representa progreso.
 - Pistas en el flujo del documento para evitar tapar el tablero y las acciones. Emisor y receptor identificados.
 
 ## Responsive y accesibilidad

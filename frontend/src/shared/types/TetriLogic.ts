@@ -46,4 +46,16 @@ export interface LevelConfig {
   boardSize: BoardSize;
   blockedCells: Cell[];
   constraints: LineCountConstraint[];
+  templateId?: string;
+  version?: number;
+  title?: string;
+  description?: string;
+  cognitiveDimension?: string;
+  inventory?: { id: string; type: TetriminoType }[];
+  requiredCells?: Cell[];
+  precedences?: { before: string; after: string }[];
+  contacts?: { first: string; second: string }[];
+  orientations?: { pieceId: string; allowed: number[] }[];
+  referenceMoves?: number;
+  hints?: { general: string; specific: string };
 }

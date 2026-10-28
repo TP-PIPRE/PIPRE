@@ -1,5 +1,9 @@
 # GDD Curso 2 - TetriLogic (Razonamiento Espacial y Patrones)
 
+> **Alcance de interacción vigente, última petición del 28/10/2026:** [manipulación directa y reto por filas/columnas](../docs/TetriLogic_Filas_Columnas.md). Se completa al igualar todos los conteos publicados, incluidos los ceros. No se restauran bloqueos, puntos obligatorios, orden, contactos, orientaciones exigidas, puntuación ni temporizador. Las reglas siguientes conservan el historial del diseño anterior; la confirmación de éxito del modo activo es local.
+
+Actualización del 26/10/2026: el catálogo v2 sigue el SSD revisado por el equipo. Consultar el [informe de los treinta retos](../docs/Informe_TetriLogic_30_Retos.md) y sus [pendientes](../docs/Pendientes_TetriLogic_SSD.md) para distinguir tableros implementados de puntuación, progreso y Reto diario todavía pendientes.
+
 ## 1. Objetivo Cognitivo
 
 Desarrollar identificación de patrones, razonamiento espacial, planificación y resolución de problemas[cite: 15].
@@ -25,6 +29,8 @@ Formadas por celdas conectadas[cite: 15]. Formas disponibles:
 - Tetriminos S y Z[cite: 15].
 - Tetriminos L y J[cite: 15].
 
+Cada reto v2 tiene tres o cuatro tetrominós y como máximo una forma repetida una vez. Se deben usar todas las piezas; los objetivos de filas y columnas suman 12 o 16 respectivamente. No es obligatorio cubrir todas las celdas libres.
+
 ## 5. Acciones y Reglas de Colocación
 
 - **Trasladar / Arrastrar:** Mover pieza con el click izquierdo[cite: 15].
@@ -38,5 +44,5 @@ Formadas por celdas conectadas[cite: 15]. Formas disponibles:
 ## 6. Condiciones de Victoria y Registro (Telemetría)
 
 - **Victoria:** Cumplir todas las condiciones requeridas por el nivel[cite: 15].
-- **Derrota:** Se acaba el tiempo (con opción a reintentar)[cite: 15].
+- **Tiempo en el SSD actualizado:** el modo pedagógico principal registra duración sin derrota automática por lentitud. Un límite temporal sólo corresponde a un modo que lo declare expresamente; ese modo aún no está implementado.
 - **Registro en BD por intento:** `tiempo`, `movimientos`, `reinicios`, `pistas utilizadas` y `resultado final`[cite: 15].
