@@ -45,7 +45,7 @@ export function raycast(
         }
         break;
       case "RECEPTOR":
-        return path;
+        break;
       default:
         return path;
     }

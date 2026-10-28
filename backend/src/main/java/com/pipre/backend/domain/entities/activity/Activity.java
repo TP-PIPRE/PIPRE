@@ -3,6 +3,7 @@ package com.pipre.backend.domain.entities.activity;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class Activity {
 
@@ -44,7 +45,9 @@ public class Activity {
         this.levelTemplate = builder.levelTemplate;
         if (this.levelTemplate != null) {
             List<String> allowed = switch (this.environment == null ? "" : this.environment) {
-                case "neonflow" -> List.of("neonflow-1", "neonflow-2");
+                case "neonflow" -> IntStream.rangeClosed(1, 30)
+                        .mapToObj(level -> "neonflow-" + level)
+                        .toList();
                 case "tetrilogic" -> List.of("tetrilogic-1", "tetrilogic-2");
                 default -> List.of();
             };

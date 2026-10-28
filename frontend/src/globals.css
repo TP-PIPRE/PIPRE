@@ -351,7 +351,7 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1
 .lab-shell { width: 100%; max-width: 1120px; margin: auto; padding: 2rem 1rem 3rem; }
 .lab-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
 .lab-heading h1 { margin: .5rem 0; }
-.game-board { width: min(100%, 420px); flex-shrink: 0; margin: 0 auto; }
+.game-board { width: min(100%, clamp(340px, 72vw, 640px)); flex-shrink: 0; margin: 0 auto; }
 .game-board button { min-height: 0; min-width: 0; }
 .game-board [aria-pressed=true] { outline: 3px solid var(--primary); outline-offset: -3px; }
 .lab-stage { border: 1px solid var(--border); background: var(--surface); border-radius: var(--theme-radius); padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }

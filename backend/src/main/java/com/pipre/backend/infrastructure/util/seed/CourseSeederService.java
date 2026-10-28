@@ -47,6 +47,7 @@ public class CourseSeederService {
 
         // A normal restart must not delete edited courses or their students' results.
         if (courseRepositoryPort.findById("c001").isEmpty()) seedNeonFlowCourse(students);
+        else ensureNeonFlowLevels(students);
         if (courseRepositoryPort.findById("c002").isEmpty()) seedTetriLogicCourse(students);
     }
 
@@ -75,17 +76,58 @@ public class CourseSeederService {
                 .idModule(moduleId)
                 .build());
 
-        saveActivity(lessonId, "act-c001-1", "Neon Flow - Nivel 1",
-                ActivityLevel.LOW, "EASY", "neonflow",
-                "Ilumina el receptor rojo",
-                "Guía el láser rojo del emisor (0,2) hasta el receptor (4,2) en un tablero 5x5 usando espejos y filtros.",
-                students);
+        seedNeonFlowActivities(lessonId, students);
+    }
 
-        saveActivity(lessonId, "act-c001-2", "Neon Flow - Nivel 2",
-                ActivityLevel.MEDIUM, "MEDIUM", "neonflow",
-                "Esquiva los muros",
-                "Redirige el láser sorteando los muros con espejos rotados para iluminar el receptor.",
-                students);
+    private void ensureNeonFlowLevels(List<User> students) {
+        String lessonId = moduleRepositoryPort.findAllByIdCourse("c001").stream()
+                .flatMap(module -> lessonRepositoryPort.findAll().stream()
+                        .filter(lesson -> module.getIdModule().equals(lesson.getIdModule())))
+                .map(com.pipre.backend.domain.entities.lesson.Lesson::getIdLesson)
+                .findFirst()
+                .orElse(null);
+        if (lessonId == null) return;
+
+        seedNeonFlowActivities(lessonId, students);
+    }
+
+    private void seedNeonFlowActivities(String lessonId, List<User> students) {
+        for (int level = 1; level <= 30; level++) {
+            String activityId = "act-c001-" + level;
+            if (activityRepositoryPort.findById(activityId).isPresent()) continue;
+
+            ActivityLevel logicLevel = level <= 10
+                    ? ActivityLevel.LOW
+                    : level <= 20 ? ActivityLevel.MEDIUM : ActivityLevel.HIGH;
+            String difficulty = level <= 10 ? "EASY" : level <= 20 ? "MEDIUM" : "HARD";
+            String title = neonFlowTitle(level);
+            saveActivity(
+                    lessonId,
+                    activityId,
+                    "Neon Flow - Nivel " + level,
+                    logicLevel,
+                    difficulty,
+                    "neonflow",
+                    title,
+                    neonFlowObjective(level),
+                    students);
+        }
+    }
+
+    private String neonFlowTitle(int level) {
+        if (level <= 10) return "Análisis lógico del haz";
+        if (level <= 20) return "Reconocimiento de patrones ópticos";
+        return "Resolución de problemas multicondición";
+    }
+
+    private String neonFlowObjective(int level) {
+        if (level <= 10) {
+            return "Analiza la trayectoria y aplica condiciones de color para guiar el láser al receptor en un tablero 4x4. Nivel " + level + ".";
+        }
+        if (level <= 20) {
+            return "Reconoce el patrón de obstáculos, planifica los rebotes y guía el láser en un tablero 5x5. Nivel " + level + ".";
+        }
+        return "Resuelve una ruta óptica compleja combinando espejos y filtros en un tablero 6x6. Nivel " + level + ".";
     }
 
     private void seedTetriLogicCourse(List<User> students) {

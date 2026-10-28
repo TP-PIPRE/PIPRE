@@ -1,33 +1,5 @@
-import type { NeonFlowLevelConfig } from "../types/NeonFlow";
 import type { LevelConfig } from "../types/TetriLogic";
-
-export const NEONFLOW_LEVELS: NeonFlowLevelConfig[] = [
-  {
-    level: 1,
-    width: 5,
-    height: 5,
-    blocked: [
-      { x: 0, y: 0, type: "BLOCK" },
-      { x: 4, y: 0, type: "BLOCK" },
-      { x: 0, y: 4, type: "BLOCK" },
-      { x: 4, y: 4, type: "BLOCK" },
-    ],
-    receptors: [{ position: { x: 4, y: 2, type: "RECEPTOR" }, color: "red" }],
-    emitter: {
-      position: { x: 0, y: 2, type: "EMPTY" },
-      direction: { dx: 1, dy: 0 },
-      color: "red",
-    },
-  },
-  {
-    level: 2,
-    width: 5,
-    height: 5,
-    blocked: [{ x: 2, y: 2, type: "BLOCK" }, { x: 2, y: 3, type: "BLOCK" }],
-    receptors: [{ position: { x: 4, y: 0, type: "RECEPTOR" }, color: "red" }],
-    emitter: { position: { x: 0, y: 2, type: "EMPTY" }, direction: { dx: 1, dy: 0 }, color: "red" },
-  },
-];
+export { NEONFLOW_LEVELS } from "./neonFlowLevels";
 
 export const TETRILOGIC_LEVELS: LevelConfig[] = [
   {
