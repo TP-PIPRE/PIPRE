@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, RotateCw, RotateCcw, Undo2 } from "lucide-react";
@@ -6,6 +6,9 @@ import type { LevelConfig } from "../../../shared/types/TetriLogic";
 import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 import { createBoard } from "../../../application/usecases/tetrilogic/rules";
 import { createFreePlay, freePlayReducer, isPlaced } from "../../../application/usecases/tetrilogic/freePlay";
+import type { FreePlayAction } from "../../../application/usecases/tetrilogic/freePlay";
+import type { Piece } from "../../../shared/types/TetriLogic";
+import { useAttemptTrace } from "../common/useAttemptTrace";
 import { lineGoalsMet } from "../../../application/usecases/tetrilogic/lineGoals";
 import { Board } from "./Board";
 import { PieceTray } from "./PieceTray";
@@ -20,7 +23,24 @@ export function FreeTetriLogicStage({ level, levels, index, onLevel, activity }:
 }) {
   const [state, dispatch] = useReducer(freePlayReducer, level, createFreePlay);
   const [confirmReset, setConfirmReset] = useState(false);
-  const { boardRef, trayRef, preview, begin, activateCell, activateTray, rotatePiece, returnPiece, reset, rootEvents } = useFreePieceInteraction(state, dispatch);
+  const templateId=activity?.levelTemplate??level.templateId;
+  const {record,finish}=useAttemptTrace(templateId?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null);
+  const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));
+  const trackedDispatch=(action:FreePlayAction)=>{
+    const next=freePlayReducer(state,action);
+    if(action.type==='select')record('SELECT',action.id?{pieceId:action.id}:{});
+    else if(action.type==='reset')record('RESET',{},snapshot(state.pieces),snapshot(next.pieces));
+    else if(['place','rotate','return'].includes(action.type)&&'id' in action) {
+      const piece=next.pieces.find(p=>p.id===action.id);
+      if(next.pieces===state.pieces)record('REJECT',{pieceId:action.id,errorCode:'BOUNDS_OR_COLLISION'});
+      else if(piece)record(action.type==='place'?'PLACE':action.type==='rotate'?'ROTATE':'RETURN',{pieceId:piece.id,pieceType:piece.type,x:piece.position.x,y:piece.position.y,rotation:piece.rotation},snapshot(state.pieces),snapshot(next.pieces));
+    } else if(action.type==='message'&&action.message)record('CANCEL');
+    dispatch(action);
+  };
+  const { boardRef, trayRef, preview, begin, activateCell, activateTray, rotatePiece, returnPiece, reset, rootEvents } = useFreePieceInteraction(state, trackedDispatch,{
+    onDraftRotate:(id,rotation)=>record('ROTATE',{pieceId:id,rotation,source:'DRAFT'}),
+    onRejectedDrop:outside=>record('REJECT',{errorCode:outside?'OUTSIDE':'BOUNDS_OR_COLLISION'}),
+  });
   const placed = state.pieces.filter(isPlaced);
   const available = state.pieces.filter(p => !isPlaced(p));
   // Keep published content immutable; this experience only restores its row/column goals.
@@ -29,6 +49,7 @@ export function FreeTetriLogicStage({ level, levels, index, onLevel, activity }:
   const selected = state.pieces.find(p => p.id === state.selectedId);
   const changed = state.pieces.some(p => isPlaced(p) || p.rotation !== 0);
   const completed = lineGoalsMet(level, state.pieces);
+  useEffect(()=>{if(completed)finish('SUCCESS');},[completed,finish]);
   return <main className="lab-shell tetri-free" {...rootEvents} onKeyDown={event => {
     if (!confirmReset) rootEvents.onKeyDown(event);
   }}>

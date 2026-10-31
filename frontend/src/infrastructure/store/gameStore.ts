@@ -27,13 +27,14 @@ interface GameStoreState {
   pistasIa: number;
   tiempoResolucion: number;
   attempts: AttemptMetrics[];
-  startGame: (game: GameId) => void;
+  startGame: (game: GameId, options?: { telemetry?: boolean }) => void;
   resetGame: (options?: { preserveMetrics?: boolean }) => void;
   registerMove: () => void;
   requestHint: () => void;
   completeGame: (result: GameResult) => void;
   syncTelemetry: (attempt: AttemptMetrics) => Promise<void>;
   stopGame: () => void;
+  legacyTelemetry: boolean;
 }
 
 let timerId: number | null = null;
@@ -58,11 +59,13 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   pistasIa: 0,
   tiempoResolucion: 0,
   attempts: [],
+  legacyTelemetry: true,
 
-  startGame: (game) => {
+  startGame: (game, options) => {
     stopTimer();
     set({
       game,
+      legacyTelemetry: options?.telemetry !== false,
       status: 'PLAYING',
       movimientos: 0,
       reinicios: 0,
@@ -137,6 +140,6 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       status: result,
       attempts: [...state.attempts, attempt],
     }));
-    void get().syncTelemetry(attempt);
+    if (get().legacyTelemetry) void get().syncTelemetry(attempt);
   },
 }));

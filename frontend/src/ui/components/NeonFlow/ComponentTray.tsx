@@ -17,7 +17,7 @@ export const ComponentTray = ({ selected, onSelect }: { selected?: OpticalCompon
         className="lab-piece cursor-grab active:cursor-grabbing"
         title="Espejo 90° - arrastra al tablero, click derecho para rotar">
         <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-border">
-          <div className="h-[2px] w-[70%] rotate-45 rounded-full bg-cyan-300" />
+          <div className="h-[2px] w-[70%] -rotate-45 rounded-full bg-cyan-300" />
         </div>
         <p className="mt-1 text-center text-[10px] font-bold text-text-muted">Espejo 90°</p>
       </button>

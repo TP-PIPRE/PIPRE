@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { PersistedNeonFlowStage } from "../components/NeonFlow/PersistedNeonFlowStage";
 import { NeonFlowStage } from "../components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../components/TetriLogic/TetriLogicStage";
 import { PersistedTetriLogicStage } from "../components/TetriLogic/PersistedTetriLogicStage";
 
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
-import { resolveActivityLevel } from "../../application/usecases/activityLevels";
+import { activityDisplayName, resolveActivityLevel } from "../../application/usecases/activityLevels";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 import { getAuthState } from "../../infrastructure/store/authStore";
@@ -52,11 +53,13 @@ export const Simulador = () => {
       <label htmlFor="simulator-activity">{template?.game === "tetrilogic" ? "Tablero del curso" : "Reto del curso"}</label>
       <select id="simulator-activity" value={activity?.idActivity ?? ""} onChange={e => setSearch({ activity: e.target.value })}>
         {!activity && <option value="" disabled>Selecciona un reto</option>}
-        {courseData.activities.map(a => <option key={a.idActivity} value={a.idActivity}>{a.name}{resolveActivityLevel(a) ? "" : " · tablero pendiente"}</option>)}
+        {courseData.activities.map(a => <option key={a.idActivity} value={a.idActivity}>{activityDisplayName(a)}{resolveActivityLevel(a) ? "" : " · tablero pendiente"}</option>)}
       </select>
     </div> : null}
     {activity && template ? template.game === "neonflow"
-      ? <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+      ? template.config.version === 2
+        ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
+        : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
       : template.config.version === 2
         ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
         : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />

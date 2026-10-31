@@ -36,4 +36,13 @@ export interface NeonFlowLevelConfig {
   blocked: Cell[];
   receptors: Array<{ position: Cell; color: string }>;
   emitter: EmitterConfig;
+  templateId?: string;
+  version?: number;
+}
+
+export interface NeonFlowPlacement {
+  position: { x: number; y: number };
+  type: 'MIRROR_90' | 'FILTER';
+  color?: string;
+  rotation?: RotationAngle;
 }

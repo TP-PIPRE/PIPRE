@@ -24,6 +24,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CourseSeederService {
+    @org.springframework.beans.factory.annotation.Value("${pipre.seed.demo-data:false}")
+    private boolean demoData;
 
     private final Faker faker = new Faker();
     private final UserRepositoryPort userRepositoryPort;
@@ -156,6 +158,9 @@ public class CourseSeederService {
                 .missions(List.of(mission))
                 .build();
         activityRepositoryPort.save(activity);
+
+        // Demonstration observations must never masquerade as actual learner performance.
+        if (!demoData) return;
 
         for (int i = 0; i < NUMBER_OF_SIMULATIONS; i++) {
             User randomStudent = faker.options().nextElement(students);

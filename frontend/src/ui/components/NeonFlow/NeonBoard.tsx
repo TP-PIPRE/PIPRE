@@ -22,7 +22,7 @@ interface CellHandlers {
 const isInPath = (laserPath: Cell[], cell: Cell): boolean =>
   laserPath.some((c) => c.x === cell.x && c.y === cell.y);
 
-const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitter?: Cell): React.ReactNode => {
+const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitter?: Cell, laserColor?: string): React.ReactNode => {
   const isEmitter = cell.x === emitter?.x && cell.y === emitter?.y;
   switch (cell.type as CellType) {
     case "EMPTY":
@@ -56,7 +56,7 @@ const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitt
           }}
           className="flex cursor-pointer items-center justify-center rounded-sm bg-surface-brighter border border-border"
           title="Click derecho para rotar">
-          <div className="h-[3px] w-[70%] rounded-full bg-primary" style={{ transform: `rotate(${cell.rotation ?? 0}deg)` }} />
+          <div className="h-[3px] w-[70%] rounded-full bg-primary" style={{ transform: `rotate(${(cell.rotation ?? 0)-45}deg)` }} />
         </button>
       );
     case "FILTER":
@@ -76,7 +76,7 @@ const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitt
         </div>
       );
     case "RECEPTOR": {
-      const lit = isInPath(laserPath, cell);
+      const lit = cell.color === laserColor && isInPath(laserPath, cell);
       return (
         <div
           key={`${cell.x},${cell.y}`}
@@ -145,7 +145,7 @@ export const NeonBoard: React.FC<NeonBoardProps> = ({
           gridTemplateColumns: `repeat(${grid.width}, 1fr)`,
           aspectRatio: `${grid.width} / ${grid.height}`,
         }}>
-        {grid.cells.map((cell) => renderCell(cell, laserPath, handlers, emitter))}
+        {grid.cells.map((cell) => renderCell(cell, laserPath, handlers, emitter, laserColor))}
       </div>
 
       {laserPath.length > 1 && (

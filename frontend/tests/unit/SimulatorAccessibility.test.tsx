@@ -12,6 +12,21 @@ beforeEach(() => { vi.mocked(axiosInstance.post).mockResolvedValue({ status: 201
 afterEach(() => { cleanup(); useGameStore.getState().stopGame(); vi.unstubAllGlobals(); });
 
 describe("Accessible simulator interactions", () => {
+  it("supports native drag and drop from the optical tray", () => {
+    render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
+    const transfer = {
+      dropEffect: "none",
+      setData: vi.fn(),
+      getData: vi.fn().mockReturnValue(JSON.stringify({ type: "MIRROR_90" })),
+    };
+    fireEvent.dragStart(screen.getByRole("button", { name: "Espejo 90°" }), { dataTransfer: transfer });
+    fireEvent.dragOver(screen.getByRole("button", { name: "Celda vacía, fila 2, columna 2" }), { dataTransfer: transfer });
+    fireEvent.drop(screen.getByRole("button", { name: "Celda vacía, fila 2, columna 2" }), { dataTransfer: transfer });
+    expect(transfer.setData).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Rotar espejo, fila 2, columna 2/ })).toBeInTheDocument();
+    expect(useGameStore.getState().movimientos).toBe(1);
+  });
+
   it("places and rotates an optical component without dragging, then resets the board", () => {
     render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Espejo 90°" }));
@@ -30,7 +45,7 @@ describe("Accessible simulator interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(screen.getByText("¡Receptor iluminado! Nivel completado.")).toBeInTheDocument();
     expect(useGameStore.getState().status).toBe("SUCCESS");
-    expect(axiosInstance.post).toHaveBeenCalledWith("telemetry", expect.objectContaining({ game: "neonflow", result: "SUCCESS" }), { skipAuthRedirect: true });
+    expect(axiosInstance.post).not.toHaveBeenCalled(); // No anonymous or duplicate legacy telemetry.
     expect(screen.getByRole("button", { name: "Comprobar" })).toBeDisabled();
   });
 

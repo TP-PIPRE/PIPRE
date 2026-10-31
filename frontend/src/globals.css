@@ -421,3 +421,5 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 1
 @media (min-width:1280px) { .app-header .icon-button { display: none; } }
 
 #contenido, :where(h1,h2,input,select,button,a) { scroll-margin-top: 88px; }
+
+.neon-flow-stage .game-board { width: min(100%, clamp(340px, 72vw, 640px)); }

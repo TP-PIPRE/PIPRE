@@ -1,3 +1,5 @@
+import type { NeonFlowLevelConfig } from "../../../shared/types/NeonFlow";
+export interface NeonFlowTemplateResponseDTO {templateId:string;version:number;config:NeonFlowLevelConfig}
 import type { LevelConfig } from "../../../shared/types/TetriLogic";
 
 export interface TetriLogicTemplateResponseDTO {

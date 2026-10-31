@@ -18,7 +18,7 @@ class TetriLogicCatalogMigrationTest {
         return "jdbc:h2:mem:catalog_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1;MODE=PostgreSQL";
     }
     private Flyway migrate(String url, String target) {
-        var flyway = Flyway.configure().dataSource(url, "sa", "").locations("classpath:db/migration").target(target).load();
+        var flyway = Flyway.configure().dataSource(url, "sa", "").locations("classpath:db/migration").placeholders(java.util.Map.of("telemetry_fk_validation", "")).target(target).load();
         flyway.migrate();
         return flyway;
     }
@@ -68,16 +68,16 @@ class TetriLogicCatalogMigrationTest {
         try (var c = DriverManager.getConnection(url, "sa", "")) {
             assertEquals("30", scalar(c, "SELECT count(*) FROM tetrilogic_templates"));
             assertEquals("30", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='" + LESSON + "'"));
-            assertEquals("30", scalar(c, "SELECT count(*) FROM activity_missions"));
+            assertEquals("30", scalar(c, "SELECT count(*) FROM activity_missions WHERE id_activity IN (SELECT id_activity FROM activities WHERE id_lesson='les-c002-r1')"));
             assertEquals("30", scalar(c, "SELECT count(*) FROM activities a JOIN tetrilogic_templates t ON t.template_id=a.level_template"));
-            assertEquals("30", scalar(c, "SELECT count(DISTINCT display_order) FROM activities"));
+            assertEquals("30", scalar(c, "SELECT count(DISTINCT display_order) FROM activities WHERE id_lesson='les-c002-r1'"));
             var parsed = new ObjectMapper().readTree(scalar(c, "SELECT config FROM tetrilogic_templates WHERE template_id='tetrilogic-v2-30'"));
             assertTrue(parsed.isObject(), "Config must be a JSON object, not an encoded JSON string");
             assertEquals(30, parsed.get("level").asInt());
             assertEquals(6, parsed.get("boardSize").get("rows").asInt());
             assertFalse(parsed.has("placements"));
             assertEquals(0, flyway.migrate().migrationsExecuted);
-            assertEquals("30", scalar(c, "SELECT count(*) FROM activities"));
+            assertEquals("30", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='les-c002-r1'"));
         }
     }
 
@@ -91,7 +91,7 @@ class TetriLogicCatalogMigrationTest {
         }
         migrate(url, "latest");
         try (var c = DriverManager.getConnection(url, "sa", "")) {
-            assertEquals("30", scalar(c, "SELECT count(*) FROM activities"));
+            assertEquals("30", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='les-c002-r1'"));
             assertEquals("tetrilogic-v2-1", scalar(c, "SELECT level_template FROM activities WHERE id_activity='act-c002-1'"));
             assertEquals("tetrilogic-v2-2", scalar(c, "SELECT level_template FROM activities WHERE id_activity='act-c002-2'"));
             assertEquals("Primer encuentro", scalar(c, "SELECT title FROM activity_missions WHERE id_mission='original-mission-1'"));
@@ -121,7 +121,7 @@ class TetriLogicCatalogMigrationTest {
         }
         var flyway = migrate(url, "latest");
         try (var c = DriverManager.getConnection(url, "sa", "")) {
-            assertEquals("30", scalar(c, "SELECT count(*) FROM activities"));
+            assertEquals("30", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='les-c002-r1'"));
             assertEquals("30", scalar(c, "SELECT count(*) FROM activities a JOIN tetrilogic_templates t ON t.template_id=a.level_template"));
             assertEquals("tetrilogic-v2-1", scalar(c, "SELECT level_template FROM activities WHERE id_activity='act-c002-1'"));
             assertEquals("tetrilogic-v2-2", scalar(c, "SELECT level_template FROM activities WHERE id_activity='act-c002-2'"));
@@ -154,7 +154,7 @@ class TetriLogicCatalogMigrationTest {
             assertEquals("1.0", scalar(c, "SELECT start_x FROM activities WHERE id_activity='act-c002-1'"));
             assertEquals("Misión docente", scalar(c, "SELECT objective FROM activity_missions WHERE id_mission='original-mission-2'"));
             assertEquals("9", scalar(c, "SELECT max_blocks FROM activity_missions WHERE id_mission='original-mission-2'"));
-            assertEquals("30", scalar(c, "SELECT count(*) FROM activities"));
+            assertEquals("30", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='les-c002-r1'"));
         }
     }
 
@@ -172,7 +172,7 @@ class TetriLogicCatalogMigrationTest {
         }
         migrate(url, "latest");
         try (var c = DriverManager.getConnection(url, "sa", "")) {
-            assertEquals("31", scalar(c, "SELECT count(*) FROM activities"));
+            assertEquals("31", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='les-c002-r1'"));
             assertEquals("Mi reto editado", scalar(c, "SELECT name FROM activities WHERE id_activity='act-c002-1'"));
             assertEquals("Texto docente", scalar(c, "SELECT description FROM activities WHERE id_activity='act-c002-1'"));
             assertEquals("42", scalar(c, "SELECT display_order FROM activities WHERE id_activity='act-c002-1'"));
@@ -182,7 +182,7 @@ class TetriLogicCatalogMigrationTest {
             assertEquals("9", scalar(c, "SELECT max_blocks FROM activity_missions WHERE id_mission='original-mission-2'"));
             assertEquals("0", scalar(c, "SELECT count(*) FROM activity_missions WHERE id_activity='act-c002-3'"));
             assertEquals("Actividad personal", scalar(c, "SELECT name FROM activities WHERE id_activity='custom-teacher'"));
-            assertEquals("27", scalar(c, "SELECT count(*) FROM activities WHERE id_activity NOT IN ('act-c002-1','act-c002-2','act-c002-3','custom-teacher')"));
+            assertEquals("27", scalar(c, "SELECT count(*) FROM activities WHERE id_lesson='les-c002-r1' AND id_activity NOT IN ('act-c002-1','act-c002-2','act-c002-3','custom-teacher')"));
         }
     }
 }

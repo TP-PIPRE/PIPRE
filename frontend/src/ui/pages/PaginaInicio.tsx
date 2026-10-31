@@ -6,7 +6,7 @@ import type { Course } from "../../shared/types/Course";
 import { Modal } from "../components/common/Modal";
 import { CircuitBoard, Shapes, ArrowRight, BookOpen, AlertCircle } from "lucide-react";
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
-import { resolveActivityLevel } from "../../application/usecases/activityLevels";
+import { activityDisplayName, resolveActivityLevel } from "../../application/usecases/activityLevels";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 
 interface ChallengeView {
@@ -67,7 +67,7 @@ export const PaginaInicio = () => {
         return {
         id: act.idActivity,
         idActivity: act.idActivity,
-        title: act.name,
+        title: activityDisplayName(act),
         order: (act.displayOrder ?? i + 1) - 1,
         difficulty: act.difficulty || "MEDIUM",
         description: countChallenge ? `${template.config.boardSize.cols} × ${template.config.boardSize.rows} · Iguala los objetivos de filas y columnas.` : act.description ?? "",

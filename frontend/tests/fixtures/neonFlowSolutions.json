@@ -1,0 +1,735 @@
+[
+  {
+    "templateId": "neonflow-v2-1",
+    "placements": []
+  },
+  {
+    "templateId": "neonflow-v2-2",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-3",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-4",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 1
+        },
+        "type": "FILTER",
+        "color": "green"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-5",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-6",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "FILTER",
+        "color": "red"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-7",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-8",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "FILTER",
+        "color": "blue"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-9",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-10",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "FILTER",
+        "color": "green"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-11",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-12",
+    "placements": [
+      {
+        "position": {
+          "x": 3,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 3,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 1
+        },
+        "type": "FILTER",
+        "color": "red"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-13",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-14",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "FILTER",
+        "color": "blue"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-15",
+    "placements": [
+      {
+        "position": {
+          "x": 3,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 3,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-16",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "FILTER",
+        "color": "green"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-17",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-18",
+    "placements": [
+      {
+        "position": {
+          "x": 3,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 3,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 2
+        },
+        "type": "FILTER",
+        "color": "red"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-19",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-20",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 4
+        },
+        "type": "FILTER",
+        "color": "blue"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-21",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 4,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-22",
+    "placements": [
+      {
+        "position": {
+          "x": 3,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 3,
+          "y": 5
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 1
+        },
+        "type": "FILTER",
+        "color": "green"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-23",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-24",
+    "placements": [
+      {
+        "position": {
+          "x": 4,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 4,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 3
+        },
+        "type": "FILTER",
+        "color": "red"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-25",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-26",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 5
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 3
+        },
+        "type": "FILTER",
+        "color": "blue"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-27",
+    "placements": [
+      {
+        "position": {
+          "x": 4,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 4,
+          "y": 4
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-28",
+    "placements": [
+      {
+        "position": {
+          "x": 2,
+          "y": 1
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 2,
+          "y": 5
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 1
+        },
+        "type": "FILTER",
+        "color": "green"
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-29",
+    "placements": [
+      {
+        "position": {
+          "x": 3,
+          "y": 2
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      },
+      {
+        "position": {
+          "x": 3,
+          "y": 0
+        },
+        "type": "MIRROR_90",
+        "rotation": 0
+      }
+    ]
+  },
+  {
+    "templateId": "neonflow-v2-30",
+    "placements": [
+      {
+        "position": {
+          "x": 1,
+          "y": 3
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 5
+        },
+        "type": "MIRROR_90",
+        "rotation": 90
+      },
+      {
+        "position": {
+          "x": 1,
+          "y": 4
+        },
+        "type": "FILTER",
+        "color": "red"
+      }
+    ]
+  }
+]

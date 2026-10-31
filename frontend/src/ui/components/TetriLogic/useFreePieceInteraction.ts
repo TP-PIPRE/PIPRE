@@ -15,7 +15,7 @@ export interface FreePreview {
   position: Cell | null; valid: boolean; overTray: boolean; dragging: boolean;
 }
 
-export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch<FreePlayAction>) {
+export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch<FreePlayAction>, observers: {onDraftRotate?:(id:string,rotation:number)=>void;onRejectedDrop?:(outside:boolean)=>void} = {}) {
   const boardRef = useRef<HTMLDivElement>(null);
   const trayRef = useRef<HTMLElement>(null);
   const pickup = useRef<Pickup | null>(null);
@@ -109,7 +109,7 @@ export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch
     } else if (next?.overTray) {
       grip.current = { x: 0, y: 0 };
       dispatch({ type: "return", id: item.piece.id, rotation: item.piece.rotation });
-    } else dispatch({ type: "message", message: "Movimiento cancelado: elige un espacio libre o la bandeja." });
+    } else { observers.onRejectedDrop?.(!next?.position);dispatch({ type: "message", message: "Movimiento cancelado: elige un espacio libre o la bandeja." }); }
     setPreview(null);
   }
   function rotatePiece(id = state.selectedId ?? "", cell?: Cell) {
@@ -118,6 +118,7 @@ export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch
       item.active = true;
       const offset = rotateGrip(item.piece, item.grip);
       item.piece = rotateFreely(item.piece, item.grip); item.grip = offset;
+      observers.onDraftRotate?.(item.piece.id,item.piece.rotation);
       setPreview(calculate(item.piece, offset, item.point, true));
       return;
     }

@@ -44,7 +44,11 @@ public class Activity {
         this.levelTemplate = builder.levelTemplate;
         if (this.levelTemplate != null) {
             List<String> allowed = switch (this.environment == null ? "" : this.environment) {
-                case "neonflow" -> List.of("neonflow-1", "neonflow-2");
+                case "neonflow" -> {
+                    var templates = new ArrayList<String>();
+                    for (int i = 1; i <= 30; i++) { templates.add("neonflow-" + i); templates.add("neonflow-v2-" + i); }
+                    yield templates;
+                }
                 case "tetrilogic" -> {
                     var templates = new ArrayList<>(List.of("tetrilogic-1", "tetrilogic-2"));
                     for (int i = 1; i <= 30; i++) templates.add("tetrilogic-v2-" + i);

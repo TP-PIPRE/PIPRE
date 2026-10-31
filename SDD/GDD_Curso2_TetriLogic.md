@@ -1,8 +1,8 @@
 # GDD Curso 2 - TetriLogic (Razonamiento Espacial y Patrones)
 
-> **Alcance de interacción vigente, última petición del 28/10/2026:** [manipulación directa y reto por filas/columnas](../docs/TetriLogic_Filas_Columnas.md). Se completa al igualar todos los conteos publicados, incluidos los ceros. No se restauran bloqueos, puntos obligatorios, orden, contactos, orientaciones exigidas, puntuación ni temporizador. Las reglas siguientes conservan el historial del diseño anterior; la confirmación de éxito del modo activo es local.
+> **Alcance vigente, revisado el 30/10/2026:** [manipulación directa y reto por filas/columnas](../docs/simuladores/TetriLogic_Filas_Columnas.md). Se completa al igualar todos los conteos publicados, incluidos los ceros. No se restauran bloqueos, puntos obligatorios, orden, contactos, orientaciones exigidas, puntuación ni temporizador visible. Las reglas siguientes conservan el historial del diseño anterior. La confirmación es local, sin progreso académico automático; el usuario autorizó registrar intentos/acciones el 30/10. Ver [estado consolidado](../docs/ESTADO_ACTUAL.md).
 
-Actualización del 26/10/2026: el catálogo v2 sigue el SSD revisado por el equipo. Consultar el [informe de los treinta retos](../docs/Informe_TetriLogic_30_Retos.md) y sus [pendientes](../docs/Pendientes_TetriLogic_SSD.md) para distinguir tableros implementados de puntuación, progreso y Reto diario todavía pendientes.
+Actualización del 26/10/2026: el catálogo v2 sigue el SSD revisado por el equipo. Consultar el [informe de los treinta retos](../docs/historial/Informe_TetriLogic_30_Retos.md) y sus [pendientes](../docs/simuladores/Pendientes_TetriLogic_SSD.md) para distinguir tableros implementados de puntuación, progreso y Reto diario todavía pendientes.
 
 ## 1. Objetivo Cognitivo
 

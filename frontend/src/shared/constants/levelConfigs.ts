@@ -1,8 +1,9 @@
 import type { NeonFlowLevelConfig } from "../types/NeonFlow";
+export { NEONFLOW_LEVELS } from "./neonFlowLevels";
 import type { LevelConfig } from "../types/TetriLogic";
 import catalog from "./tetrilogicCatalog.json";
 
-export const NEONFLOW_LEVELS: NeonFlowLevelConfig[] = [
+export const LEGACY_NEONFLOW_LEVELS: NeonFlowLevelConfig[] = [
   {
     level: 1,
     width: 5,

@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "spring.datasource.url=jdbc:h2:mem:catalog_http;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
         "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.flyway.placeholders.telemetry_fk_validation=",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
@@ -29,6 +30,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TetriLogicTemplateHttpTest {
     @Autowired private MockMvc mvc;
     @Autowired private TestRestTemplate http;
+    @Autowired private com.pipre.backend.application.ports.output.ActivityRepositoryPort activities;
+
+    @Test void activityCanBeMappedOutsideAServiceTransactionForTelemetryValidation() {
+        var activity=activities.findById("act-c001-v2-1").orElseThrow();
+        assertEquals("neonflow-v2-1",activity.getLevelTemplate());
+        assertFalse(activity.getMissions().isEmpty());
+        assertNotNull(activity.getIdSimulationList());
+    }
 
     @Test void realHttpMethodRejectionPreservesAuthenticationAndAllowHeader() {
         var login = http.postForEntity("/api/v1/auth/login",
@@ -90,5 +99,16 @@ class TetriLogicTemplateHttpTest {
         mvc.perform(post("/api/v1/tetrilogic/templates/tetrilogic-v2-30").cookie(cookie)
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test void neonFlowCatalogIsPersistedAndConnectedWithoutSolutionsInResponses() throws Exception {
+        var cookie=studentSession();
+        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-30").cookie(cookie))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.config.width").value(6))
+            .andExpect(jsonPath("$.config.solution").doesNotExist());
+        mvc.perform(get("/api/v1/activities/lesson/les-c001-l1?size=100").cookie(cookie))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(30));
+        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-31").cookie(cookie)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-30")).andExpect(status().isUnauthorized());
     }
 }
