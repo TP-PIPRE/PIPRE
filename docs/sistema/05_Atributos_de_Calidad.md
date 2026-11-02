@@ -21,7 +21,7 @@ CSRF está desactivado en `SecurityConfig`. HttpOnly, CORS y SameSite no acredit
 
 ## Integridad y tolerancia a fallos
 
-El seeder sólo crea cursos oficiales ausentes. Las incorporaciones del catálogo se realizan mediante migraciones aditivas; no se borran cursos al arrancar. V1…V17 quedan congeladas tras publicarse.
+El seeder sólo crea cursos oficiales ausentes. Las incorporaciones del catálogo se realizan mediante migraciones aditivas; no se borran cursos al arrancar. V1…V19 quedan congeladas tras aplicarse; V18/V19 incorporan logros y sesiones verificadas con restricciones únicas e idempotencia. [Validación del 02/11](../informes/Implementacion_35_Logros_2026_11_02.md).
 
 Las trazas nuevas usan identidad, huella e inserción idempotente incluso ante reintentos simultáneos. Las FK y sus límites históricos se explican en la [arquitectura](02_Arquitectura_del_Sistema.md). No se inventa contexto para observaciones antiguas ni se considera que toda escritura del sistema tiene la misma estrategia transaccional.
 

@@ -12,10 +12,12 @@ import type { ActivityResponseDTO } from "../../../infrastructure/api/models/api
 
 import { createNeonGrid, neonSolved } from "../../../application/usecases/neonflow/board";
 import { useAttemptTrace } from "../common/useAttemptTrace";
+import { useValidatedGameSession } from "../common/useValidatedGameSession";
+import { GameSessionFeedback } from "../common/GameSessionFeedback";
 const createGrid=createNeonGrid;
 const snapshot=(grid:Grid)=>grid.cells.filter(c=>c.type==='MIRROR_90'||c.type==='FILTER').map(c=>({type:c.type,x:c.x,y:c.y,...(c.rotation!==undefined?{rotation:c.rotation}:{}),...(c.color?{color:c.color}:{})}));
 
-export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO }) => {
+export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string }) => {
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [grid, setGrid] = useState<Grid>(() => createGrid(LEVELS[0]));
   const [laserPath, setLaserPath] = useState<Cell[]>([]);
@@ -26,6 +28,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
   const [selectedComponent, setSelectedComponent] = useState<OpticalComponent | null>(null);
   const level = LEVELS[currentLevelIndex];
   const templateId=activity?.levelTemplate??level.templateId;
+  const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
   const {record,finish}=useAttemptTrace(templateId?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null);
 
   const status = useGameStore((s) => s.status);
@@ -74,11 +77,12 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
   };
 
   const handleComponentDrop = (cell: Cell, component: OpticalComponent) => {
-    if(cell.x===level.emitter.position.x&&cell.y===level.emitter.position.y){record('REJECT',{errorCode:'EMITTER_RESERVED'});return;}
+    if(cell.x===level.emitter.position.x&&cell.y===level.emitter.position.y){record('REJECT',{errorCode:'EMITTER_RESERVED'});gameSession.action({type:"REJECT"});return;}
     if(status!=='PLAYING')startGame('neonflow',{telemetry:false});
     const patch=component.type==='MIRROR_90'?{type:'MIRROR_90' as const,rotation:0 as const}:{type:'FILTER' as const,color:component.color};
     const next={...grid,cells:grid.cells.map(c=>c.x===cell.x&&c.y===cell.y?{...c,...patch}:c)};
     record('PLACE',{x:cell.x,y:cell.y,component:component.type,...(component.color?{color:component.color}:{})},snapshot(grid),snapshot(next));
+    gameSession.action({type:"PLACE",x:cell.x,y:cell.y,component:component.type,...(component.color?{color:component.color}:{})});
     setLaserPath([]);setFeedback('');
     if (component.type === "MIRROR_90") {
       updateCell(cell, { type: "MIRROR_90", rotation: 0 });
@@ -93,6 +97,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
     const rotation=(((cell.rotation??0)+90)%360) as RotationAngle;
     const next={...grid,cells:grid.cells.map(c=>c.x===cell.x&&c.y===cell.y?{...c,rotation}:c)};
     record('ROTATE',{x:cell.x,y:cell.y,rotation},snapshot(grid),snapshot(next));setLaserPath([]);setFeedback('');
+    gameSession.action({type:"ROTATE",x:cell.x,y:cell.y,rotation});
     updateCell(cell, {
       rotation: (((cell.rotation ?? 0) + 90) % 360) as RotationAngle,
     });
@@ -110,13 +115,16 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
 
     const allLit=neonSolved(grid,path,level.emitter.color);
     record('CHECK',{matched:allLit,...(!allLit?{errorCode:'UNLIT_RECEPTOR'}:{})});
+    gameSession.action({type:"CHECK"});
     setFeedback(allLit ? "¡Todos los receptores están iluminados!" : "El haz aún no llega a todos los receptores. Revisa los espejos y vuelve a comprobar.");
     if (allLit) {
       completeGame("SUCCESS");
       finish("SUCCESS");
+      gameSession.complete();
     }
   };
 
+  if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"Neon Flow"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
   return (
     <main className="lab-shell neon-flow-stage">
       <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>{activity?.name ?? "Neon Flow"}</h1><p className="page-intro">{activity?.description || "Guía el haz de luz hasta los receptores usando espejos y filtros."}</p></div><span className="text-sm text-text-muted">{activity ? "Neon Flow" : `Nivel ${currentLevelIndex + 1} de ${LEVELS.length}`}</span></header>
@@ -126,6 +134,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
         <label className="text-sm font-semibold text-text-muted">Nivel</label>
         <select
           value={currentLevelIndex}
+          disabled={gameSession.verifying || (gameSession.enabled && status === "SUCCESS" && !gameSession.state?.victory)}
           onChange={(e) => handleLevelChange(Number(e.target.value))}
           aria-label="Seleccionar nivel"
           className="rounded-lg bg-surface border border-border px-3 py-1.5 text-sm font-semibold text-text">
@@ -151,9 +160,20 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
       <p role="status" className="lab-status">{feedback || "Prepara el tablero y pulsa Comprobar para validar tu solución."}</p>
       <ControlPanel
         onCheck={handleCheck}
-        onReset={() => {record("RESET",{},snapshot(grid),[]);resetForLevel(currentLevelIndex);}}
+        allowResetAfterCompletion
+        resetDisabled={gameSession.verifying}
+        onReset={() => {
+          record("RESET",{},snapshot(grid),[]);
+          gameSession.reset();
+          if (status !== "PLAYING") {
+            startGame("neonflow", {telemetry:false});
+            useGameStore.getState().resetGame();
+          }
+          setStaticHints(0);
+          resetForLevel(currentLevelIndex);
+        }}
         hintKind="static" hintCount={staticHints}
-        onHint={() => {record("HELP",{source:"STATIC"});setStaticHints(n=>n+1);setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");}}
+        onHint={() => {record("HELP",{source:"STATIC"});gameSession.action({type:"HELP",source:"STATIC"});setStaticHints(n=>n+1);setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");}}
       />
       {status === "SUCCESS" &&
         (currentLevelIndex === LEVELS.length - 1 ? (
@@ -174,6 +194,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
             </span>
             <button
               onClick={handleNextLevel}
+              disabled={gameSession.enabled && !gameSession.state?.victory}
               className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
               Siguiente Nivel
             </button>
@@ -185,6 +206,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
         </div>
       )}
       </section>
+      <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
     </main>
   );
 };

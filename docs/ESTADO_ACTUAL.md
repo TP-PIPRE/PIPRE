@@ -1,6 +1,6 @@
 # Estado actual de PIPRE
 
-**Referencia consolidada: 30/10/2026.** Describe el código de la integración local en `Feature/Tetrilogic-avances`. No afirma un despliegue de producción ni sustituye las instrucciones de [AGENTS.md](../AGENTS.md).
+**Referencia consolidada: 02/11/2026.** Describe el código de la integración local en `Feature/Tetrilogic-avances`, incluido el sistema de 35 logros. No afirma un despliegue de producción ni sustituye las instrucciones de [AGENTS.md](../AGENTS.md).
 
 ## Catálogo y conexión
 
@@ -24,7 +24,7 @@ El modo activo sólo consume tamaño, inventario y conteos del catálogo publica
 
 ## Persistencia y trazabilidad
 
-Las migraciones publicadas son **V1…V17**. V13 incorpora metadatos de actividad, V14/V15 el catálogo TetriLogic y compatibilidad de prototipos, V16 Neon Flow y V17 contexto de intentos. No reescribirlas. Los generadores se usan con `--check`.
+Las migraciones aplicadas localmente son **V1…V19**. V13 incorpora metadatos de actividad, V14/V15 el catálogo TetriLogic y compatibilidad de prototipos, V16 Neon Flow, V17 contexto de intentos, V18 logros/progreso y V19 sesiones verificadas. No reescribirlas. Los generadores se usan con `--check`.
 
 La autorización del 30/10 permite registrar intentos y acciones de ambos juegos en `telemetry_attempts`. Incluyen estudiante autorizado, actividad opcional, plantilla, versión de reglas, tiempos, eventos y estado inicial/final. Los reintentos aceptados son idempotentes. La práctica independiente admite actividad nula; los registros anteriores conservan contexto nulo.
 
@@ -32,16 +32,30 @@ Las trazas son **declaradas por el cliente**. Persistirlas no valida la solució
 
 La generación automática de resultados, simulaciones y analítica de demostración está desactivada por defecto con `pipre.seed.demo-data=false`. El bootstrap de usuarios todavía crea las tres cuentas de acceso y diez estudiantes ficticios cuando se ejecuta; esa opción no elimina esas cuentas ni identifica retroactivamente la procedencia de datos históricos. No tratarlos como observaciones reales de aprendizaje.
 
+## Logros, estrellas y diario — autorización del 02/11
+
+El catálogo activo tiene **35 logros L01–L35**; los diez anteriores y sus desbloqueos quedan como historial inactivo. L01–L30 exigen ambos niveles del mismo número, L31/L34 rachas diarias de 5/10 fechas, L32/L35 tres estrellas en los 30 niveles de cada juego y L33 tres niveles consecutivos del mismo juego en menos de 180 segundos de servidor. Se guardan mejores estrellas y XP global sin duplicados, incluso con varias membresías.
+
+El nuevo canal `game-sessions` persiste inicio y acciones, reproduce las reglas activas y valida la victoria en el servidor. No usa éxito, estrellas ni tiempo declarados por el navegador como autoridad. La rúbrica `game-stars-v1` y la idempotencia se detallan en la [guía de logros](guias/Sistema_35_Logros.md). No reinterpreta resultados antiguos ni otorga notas o progreso de lecciones.
+
+Inicio y Perfil ofrecen un diario determinista sobre los 60 tableros, según `America/Lima`, con una finalización por estudiante/fecha y rachas actual/mejor. El perfil muestra categorías, condiciones, fechas, progreso por juego y notificaciones tras confirmación. La exportación autenticada y la [consulta SQL](Consultas_35_Logros.sql) distinguen estado actual y desbloqueos dentro de una ventana inclusiva; los 16 días de tesis no limitan la plataforma.
+
+Se conserva el tablero manipulable después de resolver; reiniciarlo abre otro intento puntuable. Las acciones aún en memoria pueden perderse con un corte y no se reanuda el tablero al recargar. Docentes/administradores mantienen vista previa sin adjudicarse logros estudiantiles.
+
 ## Roles, paneles y alcance excluido
 
 El backend usa `STUDENT`, `TEACHER`, `ADMIN`; el frontend representa `student`, `docente`, `admin`. Docentes y administradores acceden a gestión; el estudiante sólo puede operar sus propios recursos personales donde se comprueba identidad. El JWT se guarda en cookie HttpOnly; los metadatos visibles del frontend no autorizan llamadas. [Matriz de permisos](guias/Clasificacion_Endpoints_Roles.md).
 
-Las pantallas académicas consumen sus recursos existentes; las nuevas trazas no alimentan automáticamente sus calificaciones o predicciones. `data-science/`, sus modelos, endpoints, proxy y contenedor siguen excluidos. No se entrega el SSD integral, tutor adaptativo, reto diario, modelo ML entrenado ni una validación causal/pedagógica del aprendizaje.
+Las pantallas académicas consumen sus recursos existentes; las trazas no alimentan automáticamente sus calificaciones o predicciones. `data-science/`, sus modelos, endpoints, proxy y contenedor siguen excluidos. No se entrega el SSD integral, tutor adaptativo, modelo ML entrenado ni una validación causal/pedagógica del aprendizaje. El diario mínimo y la gamificación del 02/11 tienen su propio contrato; no equivalen al SSD completo.
 
 ## Evidencias y pendientes
 
 El [informe de integración](informes/Integracion_TetriLogic_NeonFlow_ML.md) registra 291 pruebas frontend, 86 backend, 91 comprobaciones HTTP y 20 comprobaciones PostgreSQL aisladas, además de conservación de 111 filas históricas y revisión visual. Son resultados de aquella implementación; la reorganización documental no volvió a ejecutar esas suites.
 
-Quedan pendientes reanudación, verificación de soluciones en servidor, rúbrica, evaluación pedagógica, privacidad/retención y pipeline seudonimizado. También requieren revisión la persistencia Docker de PostgreSQL mediante volumen nombrado, la configuración general de despliegue, el lint global y las pruebas con lector de pantalla/dispositivo táctil físico. [Continuidad y límites](simuladores/Pendientes_TetriLogic_SSD.md).
+La [revisión posterior de simuladores del 30/10](informes/Revision_Exhaustiva_Simuladores_2026_10_30.md) ejecutó 307 pruebas frontend, 98 backend, 167 comprobaciones HTTP y 20 PostgreSQL aisladas. Corrige reinicio Neon Flow tras éxito, bloqueo de cola por rechazo permanente y desbordamientos numéricos en trazas. Se abrieron los 60 tableros en navegador, se probó edición docente/curso mixto y se conservaron 172 filas previas tras limpiar los fixtures propios. No añade reglas de juego ni implementa ML.
 
-Las propuestas de [PATCH y asignación de actividades a grupos](guias/Pendientes_Endpoints_Backend.md) están separadas del contrato actual y no son un requisito ya implementado del catálogo. La [revisión de endpoints IA y datos](../req-ia-endpoints.md) documenta alineación parcial, diferencias de rutas/DTO y agregación futura; no autoriza cambios en el servicio de IA.
+El [lote de 35 logros del 02/11](informes/Implementacion_35_Logros_2026_11_02.md) ejecutó **335 pruebas frontend, 246 backend, 227 comprobaciones HTTP y 29 comprobaciones PostgreSQL aisladas**. Verificó victorias de los 60 niveles, maestrías, concurrencia, permisos, exportación, diario y conservación histórica. La revisión en navegador confirmó L01, mejores estrellas, notificación/perfil y el diario; se comprobaron anchos de 320, 390, 768 y 1440 px. Las rachas de varios días y límites temporales se probaron con reloj controlado, sin alterar el reloj del entorno local.
+
+Quedan pendientes reanudación, evaluación pedagógica, privacidad/retención y pipeline seudonimizado. También requieren revisión la persistencia Docker de PostgreSQL mediante volumen nombrado, la configuración general de despliegue, el lint global y las pruebas con lector de pantalla/dispositivo táctil físico. [Continuidad y límites](simuladores/Pendientes_TetriLogic_SSD.md).
+
+Las propuestas de [PATCH y asignación de actividades a grupos](guias/Pendientes_Endpoints_Backend.md) están separadas del contrato actual y no son un requisito ya implementado del catálogo. La [revisión de endpoints IA y datos](req-ia-endpoints.md) documenta alineación parcial, diferencias de rutas/DTO y agregación futura. El [plan de implementación ML](guias/Plan_Implementacion_ML.md) ordena contratos, calidad, validación y evaluación antes de modificar IA; no constituye una implementación ni levanta su exclusión.

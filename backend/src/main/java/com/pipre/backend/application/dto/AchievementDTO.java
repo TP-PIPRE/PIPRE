@@ -10,5 +10,7 @@ public record AchievementDTO(
         Integer xpReward,
         boolean hidden,
         boolean unlocked,
-        String unlockedAt
+        String unlockedAt,
+        String unlockCondition,
+        boolean active
 ) {}

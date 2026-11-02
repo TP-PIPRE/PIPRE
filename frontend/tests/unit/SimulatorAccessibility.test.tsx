@@ -49,6 +49,22 @@ describe("Accessible simulator interactions", () => {
     expect(screen.getByRole("button", { name: "Comprobar" })).toBeDisabled();
   });
 
+  it("allows restarting a completed Neon Flow board without leaving the activity", () => {
+    render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "Pista" }));
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(useGameStore.getState().status).toBe("SUCCESS");
+    expect(screen.getByRole("button", { name: "Reiniciar" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Reiniciar" }));
+    expect(useGameStore.getState().status).toBe("PLAYING");
+    expect(useGameStore.getState().reinicios).toBe(1);
+    expect(screen.queryByText("¡Receptor iluminado! Nivel completado.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Comprobar" })).toBeEnabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Prepara el tablero");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(useGameStore.getState().status).toBe("SUCCESS");
+  });
+
   it("keeps bounds and a tap alternative in the free TetriLogic workspace", () => {
     render(<MemoryRouter><TetriLogicStage levels={LEGACY_TETRILOGIC_LEVELS} /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" }));

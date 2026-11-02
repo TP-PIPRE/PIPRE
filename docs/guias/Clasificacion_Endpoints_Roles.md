@@ -1,6 +1,6 @@
 # Roles y endpoints del backend
 
-**Revisado contra controladores y SecurityConfig el 30/10/2026.** [Índice](../README.md) · [Autenticación](Guia_Migracion_Autenticacion.md).
+**Revisado contra controladores y SecurityConfig el 02/11/2026.** [Índice](../README.md) · [Autenticación](Guia_Migracion_Autenticacion.md).
 
 ## Convenciones
 
@@ -48,6 +48,10 @@ Las plantillas tienen endpoints de lectura, sin edición de geometría por API. 
 | GET `/users` | No | Sí | Sí |
 | GET `/users/{userId}` | Propio | Sí | Sí |
 | GET `/profile/{idStudent}`, `/profile/{idStudent}/achievements`, `/profile/{idStudent}/history` | Propio | Sí | Sí |
+| GET `/profile/{idStudent}/game-progress`, `/profile/{idStudent}/achievements/export` | Propio | Sí | Sí |
+| GET `/daily-challenges/today?studentId=...` | Propio | Sí | Sí |
+| POST `/game-sessions` | Propio en cuerpo | No | No |
+| POST `/game-sessions/{sessionId}/actions`, `/game-sessions/{sessionId}/complete` | Sesión propia | No | No |
 | GET `/activity-results/user/{idStudent}` | Propio | Sí | Sí |
 | POST `/activity-results` | Propio en cuerpo | Sí | Sí |
 | GET `/simulations/user/{idStudent}` | Propio | Sí | Sí |
@@ -67,4 +71,4 @@ Las plantillas tienen endpoints de lectura, sin edición de geometría por API. 
 
 Ver [SecurityConfig](../../backend/src/main/java/com/pipre/backend/infrastructure/configuration/SecurityConfig.java), [SecurityService](../../backend/src/main/java/com/pipre/backend/infrastructure/security/SecurityService.java) y [controladores](../../backend/src/main/java/com/pipre/backend/adapters/in/web/controller). La restricción ADMIN de RoleController está declarada en la clase y se aplica a sus métodos.
 
-401 indica falta de autenticación; 403 falta de permiso. Para revisar cambios futuros contrastar filtro, anotación de clase, anotación de método y validaciones del caso de uso. Esta edición documental no volvió a ejecutar pruebas HTTP ni modificó los permisos.
+401 indica falta de autenticación; 403 falta de permiso. Para revisar cambios futuros contrastar filtro, anotación de clase, anotación de método y validaciones del caso de uso. Las nuevas rutas se contrastaron con pruebas backend y HTTP del [lote del 02/11](../informes/Implementacion_35_Logros_2026_11_02.md). Los permisos históricos no se amplían por existir gamificación.

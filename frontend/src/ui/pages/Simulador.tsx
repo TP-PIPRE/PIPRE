@@ -10,6 +10,7 @@ import { activityDisplayName, resolveActivityLevel } from "../../application/use
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 import { getAuthState } from "../../infrastructure/store/authStore";
+import { DailyChallengeStage } from "../components/common/DailyChallengeStage";
 
 const NEONFLOW_IDS = new Set(["1", "neonflow", "logica"]);
 const TETRILOGIC_IDS = new Set(["2", "tetrilogic", "patrones"]);
@@ -18,18 +19,20 @@ export const Simulador = () => {
   const { courseId = "" } = useParams<{ courseId?: string }>();
   const [search, setSearch] = useSearchParams();
   const [retry, setRetry] = useState(0);
+  const daily = search.get("daily") === "true";
   const [data, setData] = useState<{ courseId: string; activities: ActivityResponseDTO[]; error: string } | null>(null);
   const normalized = courseId.trim().toLowerCase();
   const legacy = NEONFLOW_IDS.has(normalized) || TETRILOGIC_IDS.has(normalized);
   useEffect(() => {
-    if (legacy || !courseId) return;
+    if (daily || legacy || !courseId) return;
     let active = true;
     loadCourseActivities(courseId).then(activities => {
       if (active) setData({ courseId, activities, error: "" });
     }).catch(e => { if (active) setData({ courseId, activities: [], error: getApiErrorMessage(e, "No se pudo cargar el curso.") }); });
     return () => { active = false; };
-  }, [courseId, legacy, retry]);
+  }, [courseId, legacy, retry, daily]);
 
+  if (daily) return <DailyChallengeStage />;
   if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage />;
   if (!courseId || TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
 

@@ -1,4 +1,5 @@
 import axiosInstance from '../api/axiosInstance';
+import { isAxiosError } from 'axios';
 import { getAuthState } from './authStore';
 
 export type TraceState = Array<{id?:string;type:string;x:number;y:number;rotation?:number;color?:string}>;
@@ -26,7 +27,13 @@ export async function flushAttemptOutbox() {
       const user=getAuthState().user;if(user?.id!==payload.studentId||user.role!=='student')continue;
       const keepalive=pageExiting&&new TextEncoder().encode(JSON.stringify(payload)).length<60000;
       try { await axiosInstance.post('telemetry',payload,{skipAuthRedirect:true,...(keepalive?{adapter:'fetch' as const,fetchOptions:{keepalive:true}}:{})});pending.delete(key);persist(); }
-      catch { break; } // Keep the exact request and id for a later authenticated retry.
+      catch (error) {
+        // Preserve rejected observations, but do not let an outdated activity or
+        // invalid request prevent delivery of subsequent valid episodes.
+        const status=isAxiosError(error)?error.response?.status:undefined;
+        if(status!==undefined&&[400,404,409,422].includes(status))continue;
+        break; // Offline, server or session failure: retry the same request later.
+      }
     }
   } finally { flushing=false; }
 }

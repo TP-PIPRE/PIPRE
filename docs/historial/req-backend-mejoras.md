@@ -1,6 +1,6 @@
 # Mejoras futuras para el Backend
 
-> **Documento histórico archivado el 30/10/2026.** La lista original inferior contiene requisitos ya implementados y ejemplos de entornos anteriores. No representa el backlog vigente. Consultar los [dos bloques pendientes de endpoints](../guias/Pendientes_Endpoints_Backend.md), los [contratos actuales](../guias/Contratos_Frontend_Backend.md) y la [revisión de contratos IA y datos](../../req-ia-endpoints.md). Se conserva el contenido original como antecedente, sin autorizar cambios en `data-science`.
+> **Documento histórico archivado el 30/10/2026.** La lista original inferior contiene requisitos ya implementados y ejemplos de entornos anteriores. No representa el backlog vigente. Consultar los [dos bloques pendientes de endpoints](../guias/Pendientes_Endpoints_Backend.md), los [contratos actuales](../guias/Contratos_Frontend_Backend.md) y la [revisión de contratos IA y datos](../req-ia-endpoints.md). Se conserva el contenido original como antecedente, sin autorizar cambios en `data-science`.
 
 Basado en el análisis del código fuente real del backend (`backend/src/main/java/com/pipre/backend/`) y los contratos que el frontend espera.
 

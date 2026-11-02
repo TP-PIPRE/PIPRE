@@ -12,6 +12,7 @@ import { ResultadosPage } from "../pages/ResultadosPage";
 import { RankingPage } from "../pages/RankingPage";
 import { PerfilPage } from "../pages/PerfilPage";
 import { getAuthState } from "../../infrastructure/store/authStore";
+import { AchievementNotification } from "../components/common/AchievementNotification";
 
 // Componente para rutas protegidas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -28,7 +29,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="min-h-screen flex flex-col bg-bg text-text">
       <a href="#contenido" className="skip-link">Saltar al contenido</a>
       <Navbar />
-      <div id="contenido" tabIndex={-1} className="app-main flex-1 flex flex-col">{children}</div>
+      <div id="contenido" tabIndex={-1} className="app-main flex-1 flex flex-col"><AchievementNotification />{children}</div>
     </div>
   );
 };

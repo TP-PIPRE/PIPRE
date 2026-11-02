@@ -69,7 +69,7 @@ Set-Location backend
 .\mvnw.cmd spring-boot:run
 ```
 
-El backend nativo usa 8080 por defecto. Spring no importa automáticamente el `.env` de Compose: exportar su configuración en la terminal. Flyway valida/aplica V1…V17 y Hibernate valida el esquema; no borrar/recrear cursos para incorporar retos.
+El backend nativo usa 8080 por defecto. Spring no importa automáticamente el `.env` de Compose: exportar su configuración en la terminal. Flyway valida/aplica V1…V19 y Hibernate valida el esquema; no borrar/recrear cursos para incorporar retos. Respaldar antes de actualizar una base existente; las nuevas V18/V19 conservan el catálogo anterior como historial.
 
 En otra terminal, crear `frontend/.env.local` con:
 
@@ -113,6 +113,6 @@ Set-Location backend
 .\mvnw.cmd -B test
 ```
 
-Los generadores se ejecutan sólo con `--check`: V1…V17 están publicadas. Un build con `-DskipTests` no cuenta como pruebas ejecutadas. El lint global tiene deuda histórica; no asumir que todas las comprobaciones generales están aprobadas.
+Los generadores se ejecutan sólo con `--check`: V1…V19 están aplicadas localmente. Un build con `-DskipTests` no cuenta como pruebas ejecutadas. El lint global tiene deuda histórica; no asumir que todas las comprobaciones generales están aprobadas.
 
 El [informe de integración](../informes/Integracion_TetriLogic_NeonFlow_ML.md) contiene resultados ejecutados y límites. Esta guía no presenta sus comandos como ejecutados nuevamente por una edición de documentos. Para HTTPS revisar cookies, CORS, proxy y CSRF con la configuración real.

@@ -8,6 +8,7 @@ import { CircuitBoard, Shapes, ArrowRight, BookOpen, AlertCircle } from "lucide-
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
 import { activityDisplayName, resolveActivityLevel } from "../../application/usecases/activityLevels";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
+import { DailyChallengeCard } from "../components/common/DailyChallengeCard";
 
 interface ChallengeView {
   id: string;
@@ -108,6 +109,7 @@ export const PaginaInicio = () => {
         <h1 className="font-bold mb-3">Un reto, una nueva forma de pensar.</h1>
         <p className="page-intro">Experimenta con luz, formas y patrones. Elige un curso para practicar a tu ritmo y poner a prueba tus ideas.</p>
       </header>
+      <DailyChallengeCard />
       <div className="flex items-center justify-between gap-3 border-b border-border pb-4 mb-6">
         <h2 className="text-lg font-semibold flex items-center gap-2"><BookOpen size={20} aria-hidden="true" />Mis cursos</h2>
         {!loading && <span className="text-sm text-text-muted">{cursos.length} disponibles</span>}

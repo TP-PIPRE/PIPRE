@@ -1,6 +1,6 @@
 # Contratos vigentes entre frontend y backend
 
-**Revisado contra el código el 30/10/2026.** [Estado actual](../ESTADO_ACTUAL.md) · [Roles](Clasificacion_Endpoints_Roles.md) · [Historial de correcciones](../historial/Informe_Contratos_Frontend_Backend.md).
+**Revisado contra el código el 02/11/2026.** [Estado actual](../ESTADO_ACTUAL.md) · [Roles](Clasificacion_Endpoints_Roles.md) · [Historial de correcciones](../historial/Informe_Contratos_Frontend_Backend.md).
 
 ## Sesión y transporte
 
@@ -49,9 +49,29 @@ El mismo estudiante/UUID de cliente/contenido se acepta idempotentemente, inclui
 
 Los clientes anteriores sin `trace` siguen aceptándose con contexto nulo; no se inventa su actividad ni se extiende retroactivamente la idempotencia nueva a esos requests. Las pistas estáticas llevan `source=STATIC` y no incrementan `pistasIa`. El campo heredado no prueba que una consulta IA haya ocurrido históricamente.
 
+## Sesiones verificadas, logros y diario
+
+El canal anterior conserva su naturaleza declarativa. Desde el 02/11 existe además un canal de juego autorizado que reproduce acciones y verifica la solución en el servidor:
+
+| Método / ruta bajo `/api/v1` | Contrato |
+|---|---|
+| POST `/game-sessions` | Estudiante propio, UUID de cliente, juego, plantilla, actividad/diario opcionales; devuelve inicio UTC, estado y revisión. |
+| POST `/game-sessions/{id}/actions` | Acción tipada, secuencia creciente y campos planos; reintento idéntico devuelve el recibo original. |
+| POST `/game-sessions/{id}/complete` | Valida el tablero persistido; devuelve estrellas, mejor resultado, tiempo, logros nuevos y estado diario. No recibe éxito ni calificación autoritativos. |
+| GET `/daily-challenges/today?studentId=...` | Fecha servidor en Lima, tablero oficial del día, finalización y rachas. |
+| GET `/profile/{id}/game-progress` | Mejor estrella y estado de los 60 niveles, totales y rachas. |
+| GET `/profile/{id}/achievements` | Exactamente 35 logros activos, condición, estado y fecha; excluye el catálogo histórico. |
+| GET `/profile/{id}/achievements/export?from=...&to=...` | 35 estados binarios actuales y nuevos dentro del periodo inclusivo en Lima. |
+
+Las tres escrituras de sesión sólo admiten al estudiante propietario. Las lecturas admiten propietario o docente/administrador. Ninguna ruta permite asignar un logro arbitrario. Ver campos, errores, rúbrica e idempotencia en [Sistema de 35 logros](Sistema_35_Logros.md); los DTO TypeScript están en [gameProgressModels.ts](../../frontend/src/infrastructure/api/models/gameProgressModels.ts).
+
+El historial conserva las métricas desconocidas como `null`: `score` y `efficiency` no se inventan para una victoria verificada. `dateAttempted` es una cadena ISO; los registros verificados incluyen `Z`, los anteriores conservan su fecha local sin atribuir una zona nueva. Las estrellas y XP nuevos proceden del recibo/ledger servidor. El ranking conserva puntos, posición y orden anteriores, y presenta XP/estrellas/racha globales sin multiplicarlos por membresías.
+
 ## Persistencia y límites
 
 V17 amplía `telemetry_attempts`; no crea otra entidad de intento. Las FK y la compatibilidad histórica se documentan en [arquitectura](../sistema/02_Arquitectura_del_Sistema.md). Telemetría, resultados, simulaciones y progreso no son contratos equivalentes.
+
+V18/V19 añaden progreso/logros y sesiones verificadas sin convertir trazas antiguas en victorias. V1…V19 ya se aplicaron localmente y no se reescriben. La sesión persistida no implica reanudación del tablero en el navegador.
 
 La cola por estudiante usa almacenamiento de sesión y envío de mejor esfuerzo. No garantiza entrega ante corte de luz/cierre sin conexión, no reanuda el tablero y no actualiza calificaciones. Datos de cliente no son una validación antifraude de la solución.
 

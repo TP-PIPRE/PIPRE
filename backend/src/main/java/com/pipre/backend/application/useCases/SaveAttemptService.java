@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeParseException;
+import java.time.DateTimeException;
 import com.pipre.backend.application.ports.output.ActivityRepositoryPort;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import com.pipre.backend.domain.entities.activity.Activity;
@@ -35,7 +35,7 @@ public class SaveAttemptService implements SaveAttemptUseCase {
         }
         try {
             return LocalDateTime.ofInstant(Instant.parse(completedAt), ZoneOffset.UTC);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeException e) {
             throw new BusinessException("El formato de completedAt no es válido.");
         }
     }
@@ -81,13 +81,16 @@ public class SaveAttemptService implements SaveAttemptUseCase {
         try { Activity.builder().idActivity("validation").idLesson("validation").name("validation").environment(command.game()).levelTemplate(template).build(); }
         catch (IllegalArgumentException e) { throw new BusinessException("La plantilla no corresponde al juego."); }
         int version = template.contains("-v2-") || (template.startsWith("neonflow-") && !Set.of("neonflow-1", "neonflow-2").contains(template)) ? 2 : 1;
-        if (!trace.path("templateVersion").isIntegralNumber() || trace.path("templateVersion").asInt(-1) != version) throw new BusinessException("La versión de la plantilla no es válida.");
+        if (!trace.path("templateVersion").isIntegralNumber() || !trace.path("templateVersion").canConvertToInt() || trace.path("templateVersion").asInt(-1) != version) throw new BusinessException("La versión de la plantilla no es válida.");
         String ruleset = command.game().equals("neonflow") ? "neonflow-raycast-v1" : "tetrilogic-counts-v1";
         if (!ruleset.equals(trace.path("ruleset").asText())) throw new BusinessException("La versión de reglas no es válida.");
         var started = parseCompletedAt(trace.path("startedAt").asText());
         var completed = parseCompletedAt(command.completedAt());
         if (started.isAfter(completed)) throw new BusinessException("El inicio no puede ser posterior al final.");
-        long duration=java.time.Duration.between(started,completed).toMillis();
+        long duration;
+        try { duration=java.time.Duration.between(started,completed).toMillis(); }
+        catch (ArithmeticException e) { throw new BusinessException("La duración del intento no es válida."); }
+        long maximumEventTime = Math.min(duration, 604799000L) + 1000;
         if (trace.hasNonNull("activityId")) {
             var activity = activities.findById(trace.path("activityId").asText()).orElseThrow(() -> new BusinessException("La actividad no existe."));
             if (!command.game().equals(activity.getEnvironment()) || !template.equals(activity.getLevelTemplate())) throw new BusinessException("La actividad no corresponde a la plantilla del intento.");
@@ -101,7 +104,7 @@ public class SaveAttemptService implements SaveAttemptUseCase {
         for (int i=0; i<events.size(); i++) {
             JsonNode event = events.get(i);
             long elapsed = event.path("elapsedMs").asLong(-1);
-            if (!event.path("sequence").isIntegralNumber() || !event.path("elapsedMs").isIntegralNumber() || event.path("sequence").asInt(-1) != i+1 || elapsed < 0 || elapsed < previous || elapsed > Math.min(604800000,duration+1000) || !types.contains(event.path("type").asText())) throw new BusinessException("El orden o tipo de evento no es válido.");
+            if (!event.path("sequence").isIntegralNumber() || !event.path("sequence").canConvertToInt() || !event.path("elapsedMs").isIntegralNumber() || !event.path("elapsedMs").canConvertToLong() || event.path("sequence").asInt(-1) != i+1 || elapsed < 0 || elapsed < previous || elapsed > maximumEventTime || !types.contains(event.path("type").asText())) throw new BusinessException("El orden o tipo de evento no es válido.");
             previous = elapsed;
             var eventFields=event.fieldNames();while(eventFields.hasNext())if(!Set.of("sequence","elapsedMs","type","data").contains(eventFields.next()))throw new BusinessException("Campo de evento no admitido.");
             JsonNode data = event.path("data");
@@ -110,8 +113,8 @@ public class SaveAttemptService implements SaveAttemptUseCase {
             while(names.hasNext()) {
                 String key = names.next(); JsonNode value = data.get(key);
                 if (!keys.contains(key) || !value.isValueNode() || value.isNull() || (value.isTextual() && value.asText().length()>80)) throw new BusinessException("Los datos de evento contienen campos no admitidos.");
-                if (Set.of("x","y").contains(key) && (!value.isIntegralNumber() || value.asInt() < -1 || value.asInt()>32)) throw new BusinessException("Coordenada no válida.");
-                if (key.equals("rotation") && (!value.isIntegralNumber() || !Set.of(0,90,180,270).contains(value.asInt()))) throw new BusinessException("Giro no válido.");
+                if (Set.of("x","y").contains(key) && (!value.isIntegralNumber() || !value.canConvertToInt() || value.asInt() < -1 || value.asInt()>32)) throw new BusinessException("Coordenada no válida.");
+                if (key.equals("rotation") && (!value.isIntegralNumber() || !value.canConvertToInt() || !Set.of(0,90,180,270).contains(value.asInt()))) throw new BusinessException("Giro no válido.");
                 if (key.equals("matched")&&!value.isBoolean())throw new BusinessException("Estado de comprobación no válido.");
                 if (Set.of("pieceId","pieceType","component","color","errorCode","source").contains(key) && (!value.isTextual()||!value.asText().matches("[A-Za-z0-9_-]{1,40}")))throw new BusinessException("Identificador de evento no válido.");
             }
@@ -124,14 +127,14 @@ public class SaveAttemptService implements SaveAttemptUseCase {
                 var names=piece.fieldNames();
                 while(names.hasNext()) { String key=names.next(); JsonNode value=piece.get(key); if(!Set.of("id","type","x","y","rotation","color").contains(key) || !value.isValueNode() || value.isNull() || value.toString().length()>82) throw new BusinessException("Campo de estado no admitido.");
                     if(Set.of("id","type","color").contains(key)&&(!value.isTextual()||!value.asText().matches("[A-Za-z0-9_-]{1,40}")))throw new BusinessException("Identificador de estado no válido.");
-                    if(Set.of("x","y").contains(key)&&(!value.isIntegralNumber()||value.asInt() < -1||value.asInt()>32))throw new BusinessException("Coordenada de estado no válida.");
-                    if(key.equals("rotation")&&(!value.isIntegralNumber()||!Set.of(0,90,180,270).contains(value.asInt())))throw new BusinessException("Giro de estado no válido.");
+                    if(Set.of("x","y").contains(key)&&(!value.isIntegralNumber()||!value.canConvertToInt()||value.asInt() < -1||value.asInt()>32))throw new BusinessException("Coordenada de estado no válida.");
+                    if(key.equals("rotation")&&(!value.isIntegralNumber()||!value.canConvertToInt()||!Set.of(0,90,180,270).contains(value.asInt())))throw new BusinessException("Giro de estado no válido.");
                 }
             }
         }
         Set<String> fields=Set.of("clientAttemptId","activityId","levelTemplate","templateVersion","ruleset","startedAt","events","initialState","finalState","droppedEvents","difficulty");
         var names=trace.fieldNames(); while(names.hasNext()) if(!fields.contains(names.next())) throw new BusinessException("Campo de traza no admitido.");
-        if (!trace.path("droppedEvents").isIntegralNumber() || trace.path("droppedEvents").asInt()<0) throw new BusinessException("Contador de eventos omitidos no válido.");
+        if (!trace.path("droppedEvents").isIntegralNumber() || !trace.path("droppedEvents").canConvertToInt() || trace.path("droppedEvents").asInt()<0) throw new BusinessException("Contador de eventos omitidos no válido.");
         trace.put("clientReported", true);
         return trace;
     }

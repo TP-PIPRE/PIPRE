@@ -2,7 +2,7 @@
 
 **Revisión documental: 30/10/2026. Alineación con PostgreSQL V17: parcial.** Sustituye el borrador que afirmaba, sin verificación actual, qué faltaba en la API desplegada. Se contrastaron el cliente TypeScript, las rutas FastAPI del repositorio y los metadatos de la base local. No se consultó la publicación remota.
 
-Esta revisión **no autoriza implementar, iniciar ni modificar `data-science`, modelos, endpoints o proxy**. Las rutas propuestas y cambios de DTO descritos siguen pendientes. [Pendientes backend](docs/guias/Pendientes_Endpoints_Backend.md) · [Estado actual](docs/ESTADO_ACTUAL.md) · [Contratos vigentes](docs/guias/Contratos_Frontend_Backend.md).
+Esta revisión **no autoriza implementar, iniciar ni modificar `data-science`, modelos, endpoints o proxy**. Las rutas propuestas y cambios de DTO descritos siguen pendientes. [Pendientes backend](guias/Pendientes_Endpoints_Backend.md) · [Estado actual](ESTADO_ACTUAL.md) · [Contratos vigentes](guias/Contratos_Frontend_Backend.md) · [Plan de implementación ML](guias/Plan_Implementacion_ML.md).
 
 ## 1. Diferencias encontradas
 
@@ -173,7 +173,7 @@ Estas quince declaraciones se identificaron mediante análisis estático, sin im
 
 ## 6. Evidencias y aceptación futura
 
-Fuentes: [rutas cliente](frontend/src/infrastructure/api/aiEndpoints.ts), [modelos TypeScript](frontend/src/infrastructure/api/models/aiModels.ts), [cliente IA](frontend/src/infrastructure/api/aiService.ts), [rutas FastAPI](data-science/app/adapters/api/main.py), [esquemas IA](data-science/app/adapters/api/schemas.py), [wiring del dataset](data-science/app/infrastructure/container.py) y [migraciones](backend/src/main/resources/db/migration).
+Fuentes: [rutas cliente](../frontend/src/infrastructure/api/aiEndpoints.ts), [modelos TypeScript](../frontend/src/infrastructure/api/models/aiModels.ts), [cliente IA](../frontend/src/infrastructure/api/aiService.ts), [rutas FastAPI](../data-science/app/adapters/api/main.py), [esquemas IA](../data-science/app/adapters/api/schemas.py), [wiring del dataset](../data-science/app/infrastructure/container.py) y [migraciones](../backend/src/main/resources/db/migration).
 
 Se verificó en PostgreSQL local la aplicación de V16/V17 y el esquema de actividades, simulaciones, resultados, ayudas, grupos, membresías, usuarios y telemetría, sin leer filas personales ni modificar datos. No existe una relación grupo–actividad en las entidades/migraciones/tablas inspeccionadas.
 

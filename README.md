@@ -2,7 +2,7 @@
 
 Plataforma educativa para practicar lógica y razonamiento espacial mediante simuladores interactivos. Los estudiantes exploran y resuelven retos; docentes y administradores organizan el contenido y consultan la información académica disponible.
 
-**Catálogo actual: 60 retos oficiales, 30 por simulador.**
+**Catálogo actual: 60 retos oficiales, 30 por simulador, y 35 logros persistentes.**
 
 [Simuladores](#simuladores) · [Inicio local](#inicio-local-con-docker) · [Cuentas de prueba](#cuentas-de-prueba) · [Estructura](#estructura-del-proyecto) · [Documentación](#documentación)
 
@@ -89,8 +89,10 @@ Son credenciales de desarrollo. Una base existente puede tener cuentas modificad
 ## Estado y alcance
 
 - **Catálogo:** 30 retos oficiales por juego. Los prototipos y alias compatibles se conservan y no se cuentan otra vez; una base existente puede mostrar 62 actividades al preservar dos prototipos de Neon Flow.
-- **Trazabilidad:** ambos juegos registran intentos y acciones autorizados. Esto no concede automáticamente notas, puntos, XP ni progreso académico, y no guarda una partida para reanudarla.
-- **Ayudas e IA:** la pista de Neon Flow es estática. El tutor adaptativo, los modelos ML y los retos diarios conservan su alcance pendiente; `data-science` sigue excluido de las intervenciones actuales.
+- **Logros y progreso:** L01–L30 requieren completar el nivel correspondiente en ambos juegos. Los cinco especiales reconocen constancia, velocidad y maestría. El servidor valida las victorias, conserva las mejores estrellas y concede XP una sola vez por logro. [Reglas y consulta para tesis](docs/guias/Sistema_35_Logros.md).
+- **Reto diario:** disponible desde Inicio y Perfil, con calendario `America/Lima`, una finalización por fecha y rachas de 5/10 días.
+- **Trazabilidad:** ambos juegos registran intentos y acciones. La telemetría declarada sigue separada de las sesiones verificadas que conceden logros. No se generan notas de curso ni se reanuda automáticamente una partida tras recargar.
+- **Ayudas e IA:** la pista de Neon Flow es estática. El tutor adaptativo y los modelos ML conservan su alcance pendiente; `data-science` sigue excluido de las intervenciones actuales.
 - **Datos de demostración:** `pipre.seed.demo-data=false` evita resultados y analítica aleatorios. El bootstrap aún crea usuarios ficticios; deben distinguirse de estudiantes reales antes de analizar datos.
 
 Consulta el [estado consolidado](docs/ESTADO_ACTUAL.md) para conocer lo implementado, las evidencias y los pendientes.
@@ -115,11 +117,13 @@ La base de datos es PostgreSQL 16. El frontend y el backend mantienen una separa
 |---|---|
 | Encontrar la documentación del proyecto | [Índice principal](docs/README.md) |
 | Conocer el alcance vigente | [Estado actual](docs/ESTADO_ACTUAL.md) |
+| Entender logros, estrellas, rachas y exportación por periodo | [Sistema de 35 logros](docs/guias/Sistema_35_Logros.md) · [Validación del 02/11](docs/informes/Implementacion_35_Logros_2026_11_02.md) |
 | Instalar y ejecutar PIPRE | [Ejecución local](docs/sistema/06_Guia_Despliegue_Ejecucion_Local.md) |
 | Entender los módulos y la navegación | [Manual del sistema](docs/sistema/README.md) |
 | Revisar integración y permisos | [Contratos](docs/guias/Contratos_Frontend_Backend.md) · [Roles y endpoints](docs/guias/Clasificacion_Endpoints_Roles.md) |
-| Consultar propuestas de endpoints y su relación con IA | [Pendientes backend](docs/guias/Pendientes_Endpoints_Backend.md) · [Contratos IA y datos](req-ia-endpoints.md) |
+| Consultar propuestas de endpoints y su relación con IA | [Pendientes backend](docs/guias/Pendientes_Endpoints_Backend.md) · [Contratos IA y datos](docs/req-ia-endpoints.md) |
+| Preparar Machine Learning antes de modificar IA | [Plan de implementación ML](docs/guias/Plan_Implementacion_ML.md) |
 | Crear o conectar actividades con sus tableros | [Guía de retos](docs/guias/Guia_Implementacion_30_Retos.md) |
 | Revisar pruebas y decisiones de integración | [Informe del 30/10/2026](docs/informes/Integracion_TetriLogic_NeonFlow_ML.md) |
 
-Para continuar el desarrollo, lee [AGENTS.md](AGENTS.md). Las migraciones aplicadas V1…V17 se conservan; los generadores de catálogo se ejecutan únicamente con `--check`.
+Para continuar el desarrollo, lee [AGENTS.md](AGENTS.md). Las migraciones aplicadas V1…V19 se conservan; los generadores de catálogo se ejecutan únicamente con `--check`.

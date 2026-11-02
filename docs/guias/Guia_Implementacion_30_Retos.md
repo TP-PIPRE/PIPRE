@@ -161,6 +161,6 @@ En el PR o entrega de cada lote incluir:
 
 `data-science`, modelos, proxy y endpoints de IA continúan fuera del alcance, salvo que el usuario cambie expresamente esa indicación. Las instrucciones anteriores no autorizan modificar esas partes.
 
-Puntuación, XP, estrellas, recompensas y progreso automático siguen pendientes de una rúbrica. Guardar telemetría no acredita que se haya actualizado la calificación o el perfil del estudiante. No prometer esas funciones como parte de un reto conectado hasta que su contrato y reglas estén definidos e implementados.
+Desde el 02/11, la [gamificación de 35 logros](Sistema_35_Logros.md) implementa mejores estrellas, XP idempotente por logro, progreso individual y diario mediante sesiones verificadas. Guardar telemetría sigue sin acreditar una victoria ni una nota académica. Si cambia una plantilla, mantener alineadas las reglas activas de ambos motores y la validación del servidor; no conceder progreso por una tarjeta o una respuesta del cliente. V18/V19 también se aplicaron localmente y permanecen inmutables.
 
 Consultar los [contratos vigentes](Contratos_Frontend_Backend.md) y el [informe histórico de contratos](../historial/Informe_Contratos_Frontend_Backend.md) para distinguir funcionamiento y evidencias previas. Las cifras históricas de pruebas allí registradas no equivalen a haber ejecutado las pruebas de un lote nuevo.

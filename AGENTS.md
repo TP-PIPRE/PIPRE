@@ -4,6 +4,14 @@ Estas instrucciones se aplican a todo el repositorio.
 
 La documentación se organiza desde [docs/README.md](docs/README.md). Consultar [el estado consolidado](docs/ESTADO_ACTUAL.md) y distinguir guías vigentes, informes fechados e historial; no reactivar requisitos de un checkpoint antiguo.
 
+## Autorización del sistema de 35 logros — 02/11/2026
+
+El encargo posterior del usuario autoriza implementar **L01–L35**, progreso individual por juego/nivel, mejores estrellas de 1–3, reto diario en `America/Lima` y XP idempotente por desbloqueo. Sustituye las exclusiones anteriores de esas funciones dentro de este alcance; `data-science`, sus modelos, endpoints, proxy y contenedor continúan excluidos.
+
+La fuente de verdad debe ser una partida con inicio, acciones y victoria validados/persistidos por el servidor. La telemetría declarativa y los resultados históricos con score del cliente no conceden los nuevos logros. No reactivar restricciones históricas de TetriLogic: sus victorias siguen dependiendo de filas/columnas, límites y colisiones. El tiempo para L33 procede del servidor, sin imponer un temporizador visible al tablero.
+
+Preservar los diez logros anteriores como historial inactivo y sus desbloqueos/XP, sin reasignarles códigos nuevos ni recalificar datos antiguos. **V18/V19 ya se aplicaron en PostgreSQL local: no editar V1…V19.** Usar la siguiente versión disponible para otros cambios. La intervención de tesis de 16 días es una ventana de consulta, no un límite de funcionamiento. No hacer commits ni pushes automáticamente. Consultar el [contrato de logros](docs/guias/Sistema_35_Logros.md) y su [informe de validación](docs/informes/Implementacion_35_Logros_2026_11_02.md); las restricciones de checkpoints anteriores quedan sustituidas sólo dentro del alcance autorizado arriba.
+
 ## Integración vigente y trazabilidad autorizada — 30/10/2026
 
 La autorización posterior del usuario permite **registrar intentos y acciones en ambos juegos**. Esta excepción sustituye la prohibición de telemetría de TetriLogic del checkpoint del 28/10; no autoriza puntuación, progreso académico automático ni cambios en `data-science`. Leer el [informe de integración y preparación ML](docs/informes/Integracion_TetriLogic_NeonFlow_ML.md).

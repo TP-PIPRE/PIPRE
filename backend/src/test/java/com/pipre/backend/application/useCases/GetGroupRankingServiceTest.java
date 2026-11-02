@@ -15,12 +15,16 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyList;
 
 @ExtendWith(MockitoExtension.class)
 class GetGroupRankingServiceTest {
 
     @Mock
     private RankingRepositoryPort rankingRepositoryPort;
+
+    @Mock
+    private RankingGamificationView gamification;
 
     @InjectMocks
     private GetGroupRankingService getGroupRankingService;
@@ -46,6 +50,7 @@ class GetGroupRankingServiceTest {
                 .build();
 
         when(rankingRepositoryPort.findAllByIdGroup(groupId)).thenReturn(List.of(r1, r2));
+        when(gamification.apply(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         List<RankingDTO> result = getGroupRankingService.execute(groupId);

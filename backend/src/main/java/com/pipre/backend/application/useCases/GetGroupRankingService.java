@@ -12,10 +12,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GetGroupRankingService implements GetGroupRankingUseCase {
     private final RankingRepositoryPort rankingRepositoryPort;
+    private final RankingGamificationView gamification;
 
     @Override
     public List<RankingDTO> execute(String idGroup) {
-        return rankingRepositoryPort.findAllByIdGroup(idGroup)
+        return gamification.apply(rankingRepositoryPort.findAllByIdGroup(idGroup)
                 .stream()
                 .map(r -> new RankingDTO(
                         r.getIdStudent(),
@@ -28,6 +29,6 @@ public class GetGroupRankingService implements GetGroupRankingUseCase {
                         r.getCurrentStreak(),
                         r.getMaxStreak()
                 ))
-                .toList();
+                .toList());
     }
 }

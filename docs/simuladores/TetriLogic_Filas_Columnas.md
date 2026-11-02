@@ -1,6 +1,6 @@
 # TetriLogic: apariencia de piezas y retos por filas y columnas
 
-**Reglas vigentes, revisadas el 30/10/2026.** La mecánica restaurada el 28/10 conserva manipulación directa y conteos. El 30/10 se autorizó además trazabilidad de intentos/acciones. [Estado actual](../ESTADO_ACTUAL.md) · [Índice](../README.md).
+**Reglas vigentes, revisadas el 02/11/2026.** La mecánica restaurada el 28/10 conserva manipulación directa y conteos. El 30/10 se autorizó trazabilidad y el 02/11 se añadieron sesiones verificadas y logros. [Estado actual](../ESTADO_ACTUAL.md) · [Índice](../README.md).
 
 ## Reglas vigentes
 
@@ -8,7 +8,7 @@
 - Se completa el reto cuando coinciden **todos** los objetivos definidos en `constraints`, con geometría dentro del tablero y sin superposiciones. La confirmación aparece automáticamente y no bloquea el tablero; mover o devolver piezas actualiza de nuevo el estado.
 - Mientras se experimenta se puede superar un conteo. El indicador lo muestra en rojo y ese estado no completa el reto. Se conservan los indicadores verdes para coincidencias y valores neutros para líneas pendientes. Una línea sin objetivo en una plantilla antigua muestra `—`, sin inventar un cero.
 - Se mantienen arrastre con punto de agarre, giro con R/botón/clic derecho, devolución a bandeja, selección por clic/toque, desplazamiento con flechas y cancelación con Escape.
-- No se restauran bloqueos, celdas obligatorias, precedencias, contactos, orientaciones exigidas, pistas condicionadas, temporizador visible, puntuación, XP o progreso académico. La confirmación es local y no escribe calificaciones; la trazabilidad autorizada registra el episodio sin condicionar la interacción.
+- No se restauran bloqueos, celdas obligatorias, precedencias, contactos, orientaciones exigidas, pistas condicionadas ni temporizador visible. La confirmación local no escribe calificaciones académicas. Desde el 02/11, una sesión estudiantil oficial reproduce las acciones y valida la victoria en servidor para guardar mejores estrellas y evaluar los [35 logros](../guias/Sistema_35_Logros.md), con XP sólo por desbloqueos nuevos. Esto no añade restricciones de colocación ni notas de curso.
 
 ## Cambios visuales
 

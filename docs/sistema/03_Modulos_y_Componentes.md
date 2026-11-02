@@ -1,6 +1,6 @@
 # 3. Módulos y componentes
 
-**Actualizado: 30/10/2026.** [Manual](README.md) · [Estado actual](../ESTADO_ACTUAL.md).
+**Actualizado: 02/11/2026.** [Manual](README.md) · [Estado actual](../ESTADO_ACTUAL.md).
 
 ## Autenticación y currículo
 
@@ -13,6 +13,7 @@ El currículo conserva curso → módulo → lección → actividad. `DocenteRet
 | Ruta o contexto | Comportamiento |
 |---|---|
 | `/simulador` | Práctica TetriLogic independiente, con selector de configuraciones. |
+| `/simulador?daily=true` | Lee el diario del servidor, su fecha Lima y plantilla persistida; no inventa una actividad académica. |
 | `/simulador/:courseId?activity=:idActivity` | Lee actividades del curso, comprueba pertenencia y abre la plantilla de esa actividad. |
 | Curso `c001` o `c002` | Sigue la resolución por actividad; no es un alias que omita el backend. |
 | Alias `1`, `neonflow`, `logica` | Acceso compatible a práctica Neon Flow. |
@@ -36,3 +37,9 @@ El catálogo conserva condiciones históricas adicionales, pero el modo activo n
 El contrato admite `SUCCESS`, `FAILED`, `ABANDONED`; el flujo actual cierra episodios por éxito o abandono. Una comprobación fallida no se convierte automáticamente en un episodio `FAILED`.
 
 Las pantallas de resultados, ranking, perfil, métricas y ayuda conservan sus APIs académicas. Guardar telemetría no actualiza automáticamente esas APIs. Los datos históricos de demostración y las cuentas ficticias requieren separación antes de un análisis real. [Contratos y trazabilidad](../guias/Contratos_Frontend_Backend.md).
+
+## Progreso y logros verificados
+
+`useValidatedGameSession` y `ValidatedGameSession` coordinan el inicio, la cola ordenada de acciones y la confirmación en servidor. `GameSessionFeedback` distingue pendiente/error/guardado y muestra estrellas sólo tras confirmar. `achievementStore` actualiza el perfil y deduplica notificaciones; `AchievementGrid` muestra 35 tarjetas por categoría y `GameProgressOverview` los 60 niveles. `DailyChallengeCard` y `DailyChallengeStage` conectan el diario desde Inicio/Perfil al tablero oficial.
+
+Los errores de red permiten reintentar con los mismos identificadores. Una sesión abandonada ofrece abrir otro intento; una completada conserva su recibo. La cola en memoria no restaura un tablero después de recargar. Las vistas previas de gestión no crean progreso estudiantil. [Reglas, estrellas y límites](../guias/Sistema_35_Logros.md).

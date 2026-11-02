@@ -1,6 +1,6 @@
 # 1. Introducción y alcance
 
-**Actualizado: 30/10/2026.** [Manual](README.md) · [Estado actual](../ESTADO_ACTUAL.md).
+**Actualizado: 02/11/2026.** [Manual](README.md) · [Estado actual](../ESTADO_ACTUAL.md).
 
 ## Propósito
 
@@ -25,12 +25,13 @@ El backend usa `STUDENT`, `TEACHER`, `ADMIN`; la interfaz usa `student`, `docent
 - Conexión persistida curso → módulo → lección → actividad → plantilla → simulador.
 - Autenticación por cookie HttpOnly, permisos de gestión y controles de propiedad de datos personales.
 - Observación de intentos y acciones autorizada para ambos juegos, con contexto y reintentos idempotentes.
+- Sesiones con victorias validadas por servidor, mejores estrellas, 35 logros persistentes, XP por desbloqueo y reto diario con rachas en Lima. [Reglas y exportación de tesis](../guias/Sistema_35_Logros.md).
 
 Los prototipos y alias se conservan por compatibilidad, fuera del conteo de 60 retos. Las trazas no conceden automáticamente calificaciones, XP, estrellas, logros o progreso.
 
 ## Alcance pendiente
 
-La puntuación, reanudación, validación de soluciones por servidor, tutor adaptativo, retos diarios y evaluación pedagógica requieren trabajo adicional. La pista de Neon Flow es estática; el modo TetriLogic activo no presenta pistas condicionadas. No deben describirse como retroalimentación IA implementada.
+La reanudación, las notas académicas derivadas del juego, el tutor adaptativo y la evaluación pedagógica requieren trabajo adicional. La pista de Neon Flow es estática; el modo TetriLogic activo no presenta pistas condicionadas. El diario y los logros no deben describirse como retroalimentación IA implementada.
 
 `data-science`, sus modelos, endpoints, proxy y contenedor permanecen excluidos de las intervenciones actuales. El registro de eventos permite preparar análisis futuros, pero todavía requiere un protocolo, etiquetas y exportación seudonimizada antes de entrenar o evaluar modelos.
 

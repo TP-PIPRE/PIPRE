@@ -7,6 +7,10 @@ import { useGameStore } from "../../src/infrastructure/store/gameStore";
 import { getAuthState } from "../../src/infrastructure/store/authStore";
 vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
+vi.mock("../../src/ui/components/common/useValidatedGameSession", () => {
+  const session={enabled:false,state:null,ready:true,verifying:false,action:()=>{},complete:()=>{},retry:()=>{},reset:()=>{}};
+  return {useValidatedGameSession:()=>session};
+});
 beforeEach(() => { vi.mocked(getAuthState).mockReturnValue({ user: { id: "s", name: "Alumno", email: "alumno@example.com", role: "student" }, isAuthenticated: true }); });
 afterEach(() => { cleanup(); useGameStore.getState().stopGame(); vi.clearAllMocks(); });
 function ManagementDestination() { const location = useLocation(); return <p>Gestión del curso {location.state?.courseId}</p>; }
@@ -36,6 +40,17 @@ describe("Backend activity selection", () => {
     vi.mocked(loadCourseActivities).mockResolvedValue([{ idActivity: "a", name: "Propio", environment: "neonflow", levelTemplate: "neonflow-1" }]);
     open("/simulador/course-uuid?activity=other-course-activity");
     expect(await screen.findByText(/no pertenece a este curso/)).toBeInTheDocument();
+  });
+  it.each([403,404])("shows a recoverable load error for HTTP %s without opening a substitute board", async status => {
+    vi.mocked(loadCourseActivities).mockRejectedValueOnce({response:{status,data:{message:"El curso no está disponible."}}});
+    open("/simulador/restricted-course?activity=deleted-activity");
+    expect(await screen.findByRole("heading",{name:"No pudimos cargar los retos"})).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tablero Neon Flow")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Tablero TetriLogic")).not.toBeInTheDocument();
+    vi.mocked(loadCourseActivities).mockResolvedValueOnce([]);
+    fireEvent.click(screen.getByRole("button",{name:"Reintentar"}));
+    expect(await screen.findByRole("heading",{name:"No encontramos este reto"})).toBeInTheDocument();
   });
   it("opens free exploration directly without requiring a course or a challenge", () => {
     open("/simulador");

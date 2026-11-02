@@ -2,7 +2,7 @@
 
 **Revisado el 30/10/2026 contra código y esquema local V17.** Este documento separa los dos bloques aún propuestos en la [lista histórica](../historial/req-backend-mejoras.md): actualización mediante `PATCH` y asignación de actividades a grupos. No son dos rutas exactas ni funcionalidades implementadas; cada bloque necesita los endpoints indicados abajo.
 
-[Índice](../README.md) · [Contratos vigentes](Contratos_Frontend_Backend.md) · [Revisión IA y datos](../../req-ia-endpoints.md).
+[Índice](../README.md) · [Contratos vigentes](Contratos_Frontend_Backend.md) · [Revisión IA y datos](../req-ia-endpoints.md).
 
 ## Resumen y alcance
 
@@ -86,7 +86,7 @@ Conservar el inicio del tablero por `idActivity` y verificar su pertenencia al c
 
 **La alineación es parcial.** La nueva asociación no es necesaria para agregar observaciones de estudiantes de un grupo: esa membresía ya existe en `group_students`. Sí sería necesaria si se quisiera filtrar por «retos asignados a este grupo». No mezclar los dos significados.
 
-El borrador IA tenía una ruta de feedback incorrecta y respuestas distintas de TypeScript. También exigía score, nivel lógico y errores sin una procedencia válida para los juegos activos. El [documento IA actualizado](../../req-ia-endpoints.md) separa contrato existente, propuesta de agregación desde Spring, datos disponibles y métricas todavía indefinidas. Añadir PATCH o `group_activities` no soluciona automáticamente esas diferencias.
+El borrador IA tenía una ruta de feedback incorrecta y respuestas distintas de TypeScript. También exigía score, nivel lógico y errores sin una procedencia válida para los juegos activos. El [documento IA actualizado](../req-ia-endpoints.md) separa contrato existente, propuesta de agregación desde Spring, datos disponibles y métricas todavía indefinidas. Añadir PATCH o `group_activities` no soluciona automáticamente esas diferencias.
 
 ## Comprobaciones de esta revisión
 

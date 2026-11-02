@@ -13,12 +13,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GetCourseRankingService implements GetCourseRankingUseCase {
     private final ResultRepositoryPort resultRepositoryPort;
+    private final RankingGamificationView gamification;
 
     @Override
     public List<RankingDTO> execute(String courseId) {
-        return resultRepositoryPort.findCourseRankingRaw(courseId).stream()
+        return gamification.apply(resultRepositoryPort.findCourseRankingRaw(courseId).stream()
                 .map(this::rowToRankingDTO)
-                .toList();
+                .toList());
     }
 
     private RankingDTO rowToRankingDTO(Object[] row) {
