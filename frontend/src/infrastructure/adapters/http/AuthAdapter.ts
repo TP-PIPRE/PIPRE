@@ -16,7 +16,7 @@ export class AuthAdapter implements IAuthRepository {
       // The browser owns the HttpOnly JWT. Roles come only from the server response.
       return { user: { id: source.idUser, email: source.email, name: source.firstName, role } };
     } catch (error) {
-      throw new Error(getApiErrorMessage(error, "No se pudo iniciar sesión."));
+      throw new Error(getApiErrorMessage(error, "No se pudo iniciar sesión."), { cause: error });
     }
   }
   async register(name: string, lastname: string, email: string, password: string, age: number, grade: string): Promise<User> {
@@ -24,7 +24,7 @@ export class AuthAdapter implements IAuthRepository {
       await axiosInstance.post<string>("users", { firstName: name, lastName: lastname, email, passwordHash: password, age, grade, roleIdList: [] });
       return (await this.login(email, password)).user;
     } catch (error) {
-      throw new Error(getApiErrorMessage(error, "No se pudo registrar la cuenta."));
+      throw new Error(getApiErrorMessage(error, "No se pudo registrar la cuenta."), { cause: error });
     }
   }
   async logout(): Promise<void> { await axiosInstance.post("auth/logout"); }

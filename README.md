@@ -123,6 +123,7 @@ La base de datos es PostgreSQL 16. El frontend y el backend mantienen una separa
 | Revisar integración y permisos | [Contratos](docs/guias/Contratos_Frontend_Backend.md) · [Roles y endpoints](docs/guias/Clasificacion_Endpoints_Roles.md) |
 | Consultar propuestas de endpoints y su relación con IA | [Pendientes backend](docs/guias/Pendientes_Endpoints_Backend.md) · [Contratos IA y datos](docs/req-ia-endpoints.md) |
 | Preparar Machine Learning antes de modificar IA | [Plan de implementación ML](docs/guias/Plan_Implementacion_ML.md) |
+| Revisar la corrección de dependencias del frontend | [Actualización con pnpm](docs/informes/Actualizacion_Dependencias_Pnpm_2026_11_02.md) · [Texto y preparación del PR](docs/informes/PR_Dependencias_Pnpm.md) |
 | Crear o conectar actividades con sus tableros | [Guía de retos](docs/guias/Guia_Implementacion_30_Retos.md) |
 | Revisar pruebas y decisiones de integración | [Informe del 30/10/2026](docs/informes/Integracion_TetriLogic_NeonFlow_ML.md) |
 

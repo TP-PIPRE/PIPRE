@@ -4,7 +4,7 @@
 
 ## Requisitos
 
-Para contenedores: Docker Desktop con Compose v2 y los puertos del host disponibles. Para ejecución nativa: Java 21, el wrapper Maven incluido, PostgreSQL 16 accesible y Node compatible con Vite 8/pnpm 11. El build Docker usa Node 22; el manifiesto fija pnpm 11.7.0. [Configuración frontend](../../frontend/package.json).
+Para contenedores: Docker Desktop con Compose v2 y los puertos del host disponibles. Para ejecución nativa: Java 21, el wrapper Maven incluido, PostgreSQL 16 accesible y Node `^22.13.0 || >=24.0.0`, con Corepack disponible. El build Docker usa Node 22; el manifiesto fija pnpm 11.7.0. [Configuración frontend](../../frontend/package.json).
 
 Los comandos PowerShell siguientes parten de la raíz del repositorio. Revisar el `.env` existente; no sustituirlo si ya contiene una configuración de trabajo.
 
@@ -83,8 +83,8 @@ Después:
 ```powershell
 Set-Location frontend
 corepack enable
-pnpm install --frozen-lockfile
-pnpm dev
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```
 
 Usar sólo una instancia frontend por puerto. En Docker, las variables VITE se incorporan durante el build: cambiar únicamente variables del contenedor estático no recompila el JavaScript.
@@ -107,8 +107,8 @@ Desde la raíz, con las herramientas instaladas:
 node scripts/generate_neonflow_catalog.mjs --check
 python scripts/generate_tetrilogic_catalog.py --check
 python scripts/verify_source_integrity.py
-pnpm --dir frontend test:run --maxWorkers=2 --testTimeout=20000
-pnpm --dir frontend build
+corepack pnpm --dir frontend test:run --maxWorkers=2 --testTimeout=20000
+corepack pnpm --dir frontend build
 Set-Location backend
 .\mvnw.cmd -B test
 ```

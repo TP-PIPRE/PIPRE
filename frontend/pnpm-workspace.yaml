@@ -1,3 +1,9 @@
 allowBuilds:
   cypress: true
   msw: true
+
+# ESLint / typescript-eslint use the v10 named API, retained by v11.
+# Keep the override scoped to v10; older callable APIs must not be forced to v11.
+# GHSA-g3hv-75wg-m249. Remove when the parent ranges include the patched release.
+overrides:
+  "minimatch@>=10.0.0 <11.0.1": "^11.0.1"

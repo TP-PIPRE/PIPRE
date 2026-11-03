@@ -26,3 +26,8 @@ dist-ssr
 
 # Compilation files
 .vite
+
+# pnpm-lock.yaml is the only dependency lockfile used locally and by Docker.
+/package-lock.json
+/npm-shrinkwrap.json
+/yarn.lock
