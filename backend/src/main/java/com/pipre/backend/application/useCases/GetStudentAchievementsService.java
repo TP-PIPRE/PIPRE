@@ -2,59 +2,29 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.dto.AchievementDTO;
 import com.pipre.backend.application.ports.input.GetStudentAchievementsUseCase;
-import com.pipre.backend.application.ports.output.AchievementRepositoryPort;
-import com.pipre.backend.application.ports.output.PlayerAchievementRepositoryPort;
-import com.pipre.backend.application.ports.output.UserRepositoryPort;
+import com.pipre.backend.application.ports.output.*;
+import com.pipre.backend.domain.entities.gamification.Achievement;
+import com.pipre.backend.domain.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class GetStudentAchievementsService implements GetStudentAchievementsUseCase {
     private final AchievementRepositoryPort achievementRepositoryPort;
-    private final PlayerAchievementRepositoryPort playerAchievementRepositoryPort;
+    private final GamificationRepositoryPort gamificationRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
 
-    private String resolveUserId(String idOrEmail) {
-        if (idOrEmail != null && idOrEmail.contains("@")) {
-            return userRepositoryPort.findByEmail(idOrEmail)
-                    .map(u -> u.getIdUser())
-                    .orElse(idOrEmail);
-        }
-        return idOrEmail;
-    }
-
-    @Override
+    @Override @Transactional(readOnly=true)
     public List<AchievementDTO> execute(String idStudent) {
-        String resolvedId = resolveUserId(idStudent);
-        var allAchievements = achievementRepositoryPort.findAll();
-        var playerAchievements = playerAchievementRepositoryPort.findByIdStudent(resolvedId);
-
-        Set<String> unlockedIds = playerAchievements.stream()
-                .map(pa -> pa.getIdAchievement())
-                .collect(Collectors.toSet());
-
-        return allAchievements.stream()
-                .map(a -> new AchievementDTO(
-                        a.getIdAchievement(),
-                        a.getCode(),
-                        a.getName(),
-                        a.getDescription(),
-                        a.getIcon(),
-                        a.getCategory(),
-                        a.getXpReward(),
-                        a.isHidden(),
-                        unlockedIds.contains(a.getIdAchievement()),
-                        playerAchievements.stream()
-                                .filter(pa -> pa.getIdAchievement().equals(a.getIdAchievement()))
-                                .findFirst()
-                                .map(pa -> pa.getUnlockedAt().toString())
-                                .orElse(null)
-                ))
-                .toList();
+        var user=idStudent!=null&&idStudent.contains("@")?userRepositoryPort.findByEmail(idStudent):userRepositoryPort.findById(idStudent);
+        String id=user.orElseThrow(()->new BusinessException("El estudiante no existe.")).getIdUser();
+        var unlocked=gamificationRepositoryPort.unlocks(id).stream().collect(Collectors.toMap(GamificationRepositoryPort.Unlock::achievementId,Function.identity()));
+        return achievementRepositoryPort.findAll().stream().filter(Achievement::isActive).sorted(Comparator.comparing(Achievement::getCode))
+                .map(a->GamificationService.view(a,unlocked.containsKey(a.getIdAchievement()),unlocked.containsKey(a.getIdAchievement())?unlocked.get(a.getIdAchievement()).unlockedAt():null)).toList();
     }
 }

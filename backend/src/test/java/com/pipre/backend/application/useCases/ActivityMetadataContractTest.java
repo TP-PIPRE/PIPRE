@@ -21,6 +21,16 @@ class ActivityMetadataContractTest {
     @Test void rejectsNonPositiveOrder() {
         assertThrows(IllegalArgumentException.class, () -> Activity.builder().idActivity("a").idLesson("l").name("Reto").displayOrder(0).build());
     }
+    @Test void acceptsLastNeonFlowTemplate() {
+        assertDoesNotThrow(() -> Activity.builder()
+                .idActivity("a")
+                .idLesson("l")
+                .name("Neon Flow - Nivel 30")
+                .environment("neonflow")
+                .levelTemplate("neonflow-30")
+                .displayOrder(30)
+                .build());
+    }
     @Test void createsAndExposesPlayableMetadata() {
         var repository = mock(ActivityRepositoryPort.class);
         var lessons = mock(LessonRepositoryPort.class);

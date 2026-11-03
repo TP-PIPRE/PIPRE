@@ -22,6 +22,8 @@ spring:
 
   flyway:
     enabled: true
+    placeholders:
+      telemetry_fk_validation: NOT VALID
   threads:
     virtual:
       enabled: true

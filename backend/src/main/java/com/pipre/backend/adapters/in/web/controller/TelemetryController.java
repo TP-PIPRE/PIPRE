@@ -37,7 +37,7 @@ public class TelemetryController {
                 request.movimientos(),
                 request.reinicios(),
                 request.pistasIa(),
-                request.completedAt());
+                request.completedAt(), request.trace());
         saveAttemptUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

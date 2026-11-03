@@ -1,3 +1,13 @@
+import type { NeonFlowLevelConfig } from "../../../shared/types/NeonFlow";
+export interface NeonFlowTemplateResponseDTO {templateId:string;version:number;config:NeonFlowLevelConfig}
+import type { LevelConfig } from "../../../shared/types/TetriLogic";
+
+export interface TetriLogicTemplateResponseDTO {
+  templateId: string;
+  version: number;
+  config: LevelConfig;
+}
+
 export interface UserRequestDTO {
   firstName: string;
   lastName: string;
@@ -253,7 +263,7 @@ export interface PlayerProfileDTO {
   maxStreak: number;
   challengesCompleted: number;
   totalBlocksUsed: number;
-  efficiencyAvg: number;
+  efficiencyAvg: number | null;
 }
 
 export interface AchievementDTO {
@@ -267,16 +277,18 @@ export interface AchievementDTO {
   hidden: boolean;
   unlocked: boolean;
   unlockedAt: string | null;
+  unlockCondition: string;
+  active: boolean;
 }
 
 export interface StudentHistoryDTO {
   idResult: string;
   idActivity: string;
   activityName: string;
-  score: number;
+  score: number | null;
   stars: number;
   xpEarned: number;
-  efficiency: number;
+  efficiency: number | null;
   dateAttempted: string;
 }
 

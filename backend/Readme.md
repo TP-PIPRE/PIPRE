@@ -61,7 +61,7 @@ backend/
 └── Dockerfile                     # Contenerización de la aplicación
 ```
 ## Base de datos física
-![bd-diagrama-fisico.drawio.svg](../docs/bd-diagrama-fisico.drawio.svg)
+![bd-diagrama-fisico.drawio.svg](../docs/diagramas/bd-diagrama-fisico.drawio.svg)
 ## Guía de ejecución
 1. Se requiere la instalación de las siguientes herramientas:
     - JAVA 21

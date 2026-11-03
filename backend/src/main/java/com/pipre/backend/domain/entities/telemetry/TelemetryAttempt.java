@@ -15,10 +15,11 @@ public class TelemetryAttempt {
     private final Integer reinicios;
     private final Integer pistasIa;
     private final LocalDateTime completedAt;
+    private final com.fasterxml.jackson.databind.JsonNode trace;
 
     TelemetryAttempt(String idAttempt, String studentId, String game, String result,
                      Integer tiempoResolucion, Integer movimientos, Integer reinicios,
-                     Integer pistasIa, LocalDateTime completedAt) {
+                     Integer pistasIa, LocalDateTime completedAt, com.fasterxml.jackson.databind.JsonNode trace) {
         if (idAttempt == null || idAttempt.isBlank()) {
             throw new BusinessException("El ID del intento es obligatorio.");
         }
@@ -53,6 +54,7 @@ public class TelemetryAttempt {
         this.reinicios = reinicios;
         this.pistasIa = pistasIa;
         this.completedAt = completedAt != null ? completedAt : LocalDateTime.now();
+        this.trace = trace == null ? null : trace.deepCopy();
     }
 
     public static TelemetryAttemptBuilder builder() {
@@ -95,6 +97,8 @@ public class TelemetryAttempt {
         return this.completedAt;
     }
 
+    public com.fasterxml.jackson.databind.JsonNode getTrace() { return trace == null ? null : trace.deepCopy(); }
+
     public static class TelemetryAttemptBuilder {
         private String idAttempt;
         private String studentId;
@@ -105,6 +109,7 @@ public class TelemetryAttempt {
         private Integer reinicios;
         private Integer pistasIa;
         private LocalDateTime completedAt;
+        private com.fasterxml.jackson.databind.JsonNode trace;
 
         TelemetryAttemptBuilder() {
         }
@@ -154,10 +159,12 @@ public class TelemetryAttempt {
             return this;
         }
 
+        public TelemetryAttemptBuilder trace(com.fasterxml.jackson.databind.JsonNode trace) { this.trace=trace; return this; }
+
         public TelemetryAttempt build() {
             return new TelemetryAttempt(this.idAttempt, this.studentId, this.game, this.result,
                     this.tiempoResolucion, this.movimientos, this.reinicios,
-                    this.pistasIa, this.completedAt);
+                    this.pistasIa, this.completedAt, this.trace);
         }
     }
 }

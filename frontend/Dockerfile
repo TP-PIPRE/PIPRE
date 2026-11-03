@@ -12,7 +12,10 @@ ENV VITE_LOCAL_BACKEND_URL=$VITE_LOCAL_BACKEND_URL
 RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY scripts/require-pnpm.mjs ./scripts/require-pnpm.mjs
 
+# The production build does not need Cypress's browser binary.
+ENV CYPRESS_INSTALL_BINARY=0
 RUN pnpm install --frozen-lockfile
 
 COPY . .

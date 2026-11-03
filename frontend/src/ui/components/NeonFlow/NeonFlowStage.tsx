@@ -10,37 +10,26 @@ import { ControlPanel } from "../common/ControlPanel";
 import { AiFeedbackToast } from "../common/AiFeedbackToast";
 import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 
-const HINT_MESSAGE = "IA: Revisa la rotación del espejo en la coordenada (1, 2).";
+import { createNeonGrid, neonSolved } from "../../../application/usecases/neonflow/board";
+import { useAttemptTrace } from "../common/useAttemptTrace";
+import { useValidatedGameSession } from "../common/useValidatedGameSession";
+import { GameSessionFeedback } from "../common/GameSessionFeedback";
+const createGrid=createNeonGrid;
+const snapshot=(grid:Grid)=>grid.cells.filter(c=>c.type==='MIRROR_90'||c.type==='FILTER').map(c=>({type:c.type,x:c.x,y:c.y,...(c.rotation!==undefined?{rotation:c.rotation}:{}),...(c.color?{color:c.color}:{})}));
 
-const createGrid = (level: NeonFlowLevelConfig): Grid => {
-  const cells: Cell[] = Array.from({ length: level.width * level.height }, (_, i) => ({
-    x: i % level.width,
-    y: Math.floor(i / level.width),
-    type: "EMPTY",
-  }));
-
-  for (const block of level.blocked) {
-    cells[block.y * level.width + block.x].type = "BLOCK";
-  }
-
-  for (const receptor of level.receptors) {
-    const cell = cells[receptor.position.y * level.width + receptor.position.x];
-    cell.type = "RECEPTOR";
-    cell.color = receptor.color;
-  }
-
-  return { width: level.width, height: level.height, cells };
-};
-
-export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO }) => {
+export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string }) => {
   const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
   const [grid, setGrid] = useState<Grid>(() => createGrid(LEVELS[0]));
   const [laserPath, setLaserPath] = useState<Cell[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [staticHints,setStaticHints]=useState(0);
 
   const [selectedComponent, setSelectedComponent] = useState<OpticalComponent | null>(null);
   const level = LEVELS[currentLevelIndex];
+  const templateId=activity?.levelTemplate??level.templateId;
+  const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
+  const {record,finish}=useAttemptTrace(templateId?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null);
 
   const status = useGameStore((s) => s.status);
   const startGame = useGameStore((s) => s.startGame);
@@ -48,7 +37,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
   const completeGame = useGameStore((s) => s.completeGame);
 
   useEffect(() => {
-    startGame("neonflow");
+    startGame("neonflow", {telemetry:false});
     return () => {
       useGameStore.getState().stopGame();
     };
@@ -63,17 +52,19 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
   };
 
   const handleLevelChange = (index: number) => {
+    setStaticHints(0);
     setCurrentLevelIndex(index);
     resetForLevel(index);
-    startGame("neonflow");
+    startGame("neonflow", {telemetry:false});
   };
 
   const handleNextLevel = () => {
+    setStaticHints(0);
     const next = currentLevelIndex + 1;
     if (next >= LEVELS.length) return;
     setCurrentLevelIndex(next);
     resetForLevel(next);
-    startGame("neonflow");
+    startGame("neonflow", {telemetry:false});
   };
 
   const updateCell = (target: Cell, patch: Partial<Cell>) => {
@@ -86,6 +77,13 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
   };
 
   const handleComponentDrop = (cell: Cell, component: OpticalComponent) => {
+    if(cell.x===level.emitter.position.x&&cell.y===level.emitter.position.y){record('REJECT',{errorCode:'EMITTER_RESERVED'});gameSession.action({type:"REJECT"});return;}
+    if(status!=='PLAYING')startGame('neonflow',{telemetry:false});
+    const patch=component.type==='MIRROR_90'?{type:'MIRROR_90' as const,rotation:0 as const}:{type:'FILTER' as const,color:component.color};
+    const next={...grid,cells:grid.cells.map(c=>c.x===cell.x&&c.y===cell.y?{...c,...patch}:c)};
+    record('PLACE',{x:cell.x,y:cell.y,component:component.type,...(component.color?{color:component.color}:{})},snapshot(grid),snapshot(next));
+    gameSession.action({type:"PLACE",x:cell.x,y:cell.y,component:component.type,...(component.color?{color:component.color}:{})});
+    setLaserPath([]);setFeedback('');
     if (component.type === "MIRROR_90") {
       updateCell(cell, { type: "MIRROR_90", rotation: 0 });
     } else {
@@ -95,6 +93,11 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
   };
 
   const handleRotateComponent = (cell: Cell) => {
+    if(status!=='PLAYING')startGame('neonflow',{telemetry:false});
+    const rotation=(((cell.rotation??0)+90)%360) as RotationAngle;
+    const next={...grid,cells:grid.cells.map(c=>c.x===cell.x&&c.y===cell.y?{...c,rotation}:c)};
+    record('ROTATE',{x:cell.x,y:cell.y,rotation},snapshot(grid),snapshot(next));setLaserPath([]);setFeedback('');
+    gameSession.action({type:"ROTATE",x:cell.x,y:cell.y,rotation});
     updateCell(cell, {
       rotation: (((cell.rotation ?? 0) + 90) % 360) as RotationAngle,
     });
@@ -110,19 +113,20 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
     );
     setLaserPath(path);
 
-    const receptors = grid.cells.filter((c) => c.type === "RECEPTOR");
-    const allLit =
-      receptors.length > 0 &&
-      receptors.every((r) => path.some((p) => p.x === r.x && p.y === r.y));
-
+    const allLit=neonSolved(grid,path,level.emitter.color);
+    record('CHECK',{matched:allLit,...(!allLit?{errorCode:'UNLIT_RECEPTOR'}:{})});
+    gameSession.action({type:"CHECK"});
     setFeedback(allLit ? "¡Todos los receptores están iluminados!" : "El haz aún no llega a todos los receptores. Revisa los espejos y vuelve a comprobar.");
     if (allLit) {
       completeGame("SUCCESS");
+      finish("SUCCESS");
+      gameSession.complete();
     }
   };
 
+  if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"Neon Flow"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
   return (
-    <main className="lab-shell">
+    <main className="lab-shell neon-flow-stage">
       <header className="lab-heading"><div><Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link><h1>{activity?.name ?? "Neon Flow"}</h1><p className="page-intro">{activity?.description || "Guía el haz de luz hasta los receptores usando espejos y filtros."}</p></div><span className="text-sm text-text-muted">{activity ? "Neon Flow" : `Nivel ${currentLevelIndex + 1} de ${LEVELS.length}`}</span></header>
       {activity?.missions?.length ? <section aria-label="Misiones del reto" className="mb-4 rounded-lg border border-border bg-surface p-4"><h2 className="mb-2 text-lg font-semibold">Misiones</h2><ul className="space-y-2 text-sm">{activity.missions.map(m => <li key={m.id}><strong>{m.title}</strong><p className="text-text-muted">{m.objective}</p></li>)}</ul></section> : null}
       <section className="lab-stage" aria-label="Área de simulación">
@@ -130,6 +134,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
         <label className="text-sm font-semibold text-text-muted">Nivel</label>
         <select
           value={currentLevelIndex}
+          disabled={gameSession.verifying || (gameSession.enabled && status === "SUCCESS" && !gameSession.state?.victory)}
           onChange={(e) => handleLevelChange(Number(e.target.value))}
           aria-label="Seleccionar nivel"
           className="rounded-lg bg-surface border border-border px-3 py-1.5 text-sm font-semibold text-text">
@@ -151,12 +156,24 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
         emitter={level.emitter.position}
       />
       <p className="text-sm text-text-muted text-center">Selecciona un componente y una celda vacía. Pulsa un espejo para rotarlo; también puedes arrastrar.</p>
-      <ComponentTray selected={selectedComponent} onSelect={setSelectedComponent} />
+      <ComponentTray selected={selectedComponent} onSelect={component=>{setSelectedComponent(component);record("SELECT",{component:component.type,...(component.color?{color:component.color}:{})});}} />
       <p role="status" className="lab-status">{feedback || "Prepara el tablero y pulsa Comprobar para validar tu solución."}</p>
       <ControlPanel
         onCheck={handleCheck}
-        onReset={() => resetForLevel(currentLevelIndex)}
-        onHint={() => setHint(HINT_MESSAGE)}
+        allowResetAfterCompletion
+        resetDisabled={gameSession.verifying}
+        onReset={() => {
+          record("RESET",{},snapshot(grid),[]);
+          gameSession.reset();
+          if (status !== "PLAYING") {
+            startGame("neonflow", {telemetry:false});
+            useGameStore.getState().resetGame();
+          }
+          setStaticHints(0);
+          resetForLevel(currentLevelIndex);
+        }}
+        hintKind="static" hintCount={staticHints}
+        onHint={() => {record("HELP",{source:"STATIC"});gameSession.action({type:"HELP",source:"STATIC"});setStaticHints(n=>n+1);setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");}}
       />
       {status === "SUCCESS" &&
         (currentLevelIndex === LEVELS.length - 1 ? (
@@ -177,6 +194,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
             </span>
             <button
               onClick={handleNextLevel}
+              disabled={gameSession.enabled && !gameSession.state?.victory}
               className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
               Siguiente Nivel
             </button>
@@ -188,6 +206,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity }: { 
         </div>
       )}
       </section>
+      <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
     </main>
   );
 };

@@ -28,6 +28,8 @@ import type {
   HelpRequestDTO,
   PageDTO,
   Pageable,
+  TetriLogicTemplateResponseDTO,
+  NeonFlowTemplateResponseDTO,
 } from "./models/apiModels";
 
 async function readCollection<T>(path: string, pageable?: Pageable): Promise<T[]> {
@@ -45,6 +47,17 @@ async function readCollection<T>(path: string, pageable?: Pageable): Promise<T[]
 }
 
 export const apiService = {
+  neonflow: {
+    getTemplate: async (id:string, signal?:AbortSignal) => (await axiosInstance.get<NeonFlowTemplateResponseDTO>(`neonflow/templates/${encodeURIComponent(id)}`,{signal})).data,
+  },
+  tetrilogic: {
+    getTemplate: async (templateId: string, signal?: AbortSignal) => {
+      const response = await axiosInstance.get<TetriLogicTemplateResponseDTO>(
+        `tetrilogic/templates/${encodeURIComponent(templateId)}`, { signal },
+      );
+      return response.data;
+    },
+  },
   users: {
     getAll: async () => {
       const response = await axiosInstance.get<UserResponseDTO[]>(API_ENDPOINTS.USERS);

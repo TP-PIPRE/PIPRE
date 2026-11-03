@@ -6,14 +6,15 @@ import type { StudentHistoryDTO } from "../../infrastructure/api/models/apiModel
 interface ResultRow {
   id: string;
   activity: string;
-  score: number;
+  score: number | null;
   stars: number;
   date: string;
   status: string;
   type: string;
 }
 
-const deriveStatus = (score: number): string => {
+const deriveStatus = (score: number | null): string => {
+  if (score === null) return "Sin nota académica";
   if (score >= 90) return "Excelente";
   if (score >= 70) return "Aprobado";
   if (score >= 50) return "En progreso";
@@ -56,30 +57,20 @@ export const ResultadosPage: React.FC = () => {
         if (history && history.length > 0) {
           setResults(
             history.map((h: StudentHistoryDTO) => ({
-              id: h.idResult || String(Math.random()),
+              id: h.idResult,
               activity: h.activityName || `Actividad ${h.idActivity}`,
               score: h.score,
               stars: h.stars,
-              date: h.dateAttempted || new Date().toISOString().split("T")[0],
+              date: h.dateAttempted || "Fecha no disponible",
               status: deriveStatus(h.score),
               type: "Actividad",
             }))
           );
         } else {
-          const stored = getLocalResults();
-          if (stored.length > 0) {
-            setResults(stored);
-          } else {
-            setError("No hay resultados disponibles desde el servidor.");
-          }
+          setResults([]);
         }
       } catch {
-        const stored = getLocalResults();
-        if (stored.length > 0) {
-          setResults(stored);
-        } else {
-          setError("No se pudieron cargar los resultados. Verifica tu conexión.");
-        }
+        setError("No se pudieron cargar los resultados. Verifica tu conexión.");
       }
 
       setLoading(false);
@@ -87,13 +78,10 @@ export const ResultadosPage: React.FC = () => {
     load();
   }, []);
 
-  const avgScore = results.length > 0
-    ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length)
-    : 0;
+  const scores = results.flatMap(result => result.score === null ? [] : [result.score]);
+  const avgScore = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
   const totalStars = results.reduce((sum, r) => sum + r.stars, 0);
-  const maxScore = results.length > 0
-    ? Math.max(...results.map((r) => r.score))
-    : 0;
+  const maxScore = scores.length ? Math.max(...scores) : null;
 
   return (
     <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
@@ -102,7 +90,7 @@ export const ResultadosPage: React.FC = () => {
           Mis Resultados
         </h1>
         <p className="text-sm font-medium text-muted-foreground">
-          Seguimiento de desempeño en actividades y simulaciones robóticas.
+          Resultados registrados de tus actividades y partidas.
         </p>
       </header>
 
@@ -112,7 +100,7 @@ export const ResultadosPage: React.FC = () => {
             Promedio General
           </span>
           <span className="text-3xl font-mono font-bold text-primary">
-            {loading ? "--" : avgScore}
+            {loading ? "--" : avgScore ?? "Sin nota"}
           </span>
           <span className="text-xs mt-2 font-mono text-muted-foreground">
             {results.length} actividad(es) registrada(s)
@@ -121,7 +109,7 @@ export const ResultadosPage: React.FC = () => {
 
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
           <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
-            Estrellas Totales
+            Estrellas en el historial
           </span>
           <span className="text-3xl font-mono font-bold">
             ⭐ {totalStars}
@@ -133,13 +121,13 @@ export const ResultadosPage: React.FC = () => {
 
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
           <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
-            Actividades Completadas
+            Intentos registrados
           </span>
           <span className="text-3xl font-mono font-bold">
             {loading ? "--" : results.length}
           </span>
           <span className="text-xs mt-2 font-mono text-muted-foreground">
-            {loading ? "" : `Mejor puntaje: ${maxScore}`}
+            {loading ? "" : maxScore === null ? "Sin nota académica" : `Mejor puntaje: ${maxScore}`}
           </span>
         </div>
 
@@ -148,7 +136,7 @@ export const ResultadosPage: React.FC = () => {
             Mejor Resultado
           </span>
           <span className="text-3xl font-mono font-bold">
-            {loading ? "--" : maxScore}
+            {loading ? "--" : maxScore ?? "Sin nota"}
           </span>
           <span className="text-xs mt-2 font-mono text-muted-foreground">
             {loading ? "" : deriveStatus(maxScore)}
@@ -198,7 +186,7 @@ export const ResultadosPage: React.FC = () => {
                     <td className="px-6 py-4 text-muted-foreground">{res.type}</td>
                     <td className="px-6 py-4 text-muted-foreground">{res.date}</td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                      {res.score === null ? <span className="text-muted-foreground">Sin nota académica</span> : <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden" style={{ width: "120px" }}>
                           <div
                             className="h-full transition-all duration-500 rounded-full"
@@ -206,7 +194,7 @@ export const ResultadosPage: React.FC = () => {
                           />
                         </div>
                         <span className="font-bold text-primary">{res.score}</span>
-                      </div>
+                      </div>}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       {starsDisplay(res.stars)}
@@ -227,24 +215,5 @@ export const ResultadosPage: React.FC = () => {
     </main>
   );
 };
-
-function getLocalResults(): ResultRow[] {
-  try {
-    const stored = localStorage.getItem("pipre_results");
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return parsed.map((r: any) => ({
-      id: r.challengeId || r.id,
-      activity: r.challengeTitle || r.activity || "Actividad",
-      score: r.score || 0,
-      stars: r.stars || 0,
-      date: r.completedAt || new Date().toISOString().split("T")[0],
-      status: deriveStatus(r.score || 0),
-      type: "Simulación",
-    }));
-  } catch {
-    return [];
-  }
-}
 
 export default ResultadosPage;

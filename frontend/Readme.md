@@ -85,22 +85,38 @@ frontend/
 - Tailwind CSS
 - React Icons
 
-# Uso de pnpm
+# Dependencias y pnpm
 
-Instalar pnpm (si no lo tienes):
+El frontend usa **pnpm 11.7.0**, fijado en `package.json`, y un único lockfile:
+`pnpm-lock.yaml`. Docker usa el mismo contrato. Necesitas Node 22.13 o superior
+dentro de la rama 22, o Node 24 o superior, con Corepack disponible.
 
-```Bash
-npm install -g pnpm
+```powershell
+corepack pnpm --version
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```
 
-| Acción                      | Comando npm          | Comando pnpm      |
-| --------------------------- | -------------------- | ----------------- |
-| Instalar dependencias       | npm install          | pnpm i            |
-| Levantar proyecto           | npm run dev          | pnpm dev          |
-| Construir para prod         | npm run build        | pnpm build        |
-| Agregar un paquete          | npm install <pkg>    | pnpm add <pkg>    |
-| Agregar como dev dependency | npm install -D <pkg> | pnpm add -D <pkg> |
-| Quitar un paquete           | npm uninstall <pkg>  | pnpm remove <pkg> |
+| Acción | Comando desde `frontend/` |
+|---|---|
+| Instalar versiones publicadas del proyecto | `corepack pnpm install --frozen-lockfile` |
+| Agregar o actualizar un paquete | `corepack pnpm add <paquete>@<versión revisada>` |
+| Agregar dependencia de desarrollo | `corepack pnpm add -D <paquete>@<versión revisada>` |
+| Quitar dependencia | `corepack pnpm remove <paquete>` |
+| Comprobar vulnerabilidades | `corepack pnpm audit` |
+| Pruebas unitarias | `corepack pnpm test:run --maxWorkers=2 --testTimeout=20000` |
+| Compilar y verificar TypeScript | `corepack pnpm build` |
+| Analizar código | `corepack pnpm lint` |
+
+No generar `package-lock.json` ni mezclar instalaciones npm/yarn. El preinstall
+comprueba el gestor. Para una actualización de seguridad, revisar el diff del
+lockfile, auditar, ejecutar pruebas y compilar antes de preparar el PR.
+
+Los componentes ya generados siguen en `src/components/ui`. Sus variantes CSS
+se conservan en `src/styles/component-variants.css`, con licencia en
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); no requieren instalar la CLI
+de shadcn. Si se vuelve a usar un generador, revisar su árbol y no añadirlo como
+dependencia de ejecución sólo para importar estilos.
 
 ### Agregar Nuevos plugins
 
@@ -131,6 +147,6 @@ Estas rutas solo las usaremos para carpetas importantes.
 # Para comenzar
 
 ```shell
-pnpm i
-pnpm dev
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
 ```

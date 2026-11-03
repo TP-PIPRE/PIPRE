@@ -41,4 +41,12 @@ public class TelemetryAttemptJpaEntity {
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
+
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "trace_context", columnDefinition = "jsonb")
+    private com.fasterxml.jackson.databind.JsonNode trace;
+
+    private String idActivity;
+    private java.time.Instant receivedAt;
+    private String requestHash;
 }

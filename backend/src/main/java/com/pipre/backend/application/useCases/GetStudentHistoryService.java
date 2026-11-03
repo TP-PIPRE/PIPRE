@@ -2,52 +2,21 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.dto.StudentHistoryDTO;
 import com.pipre.backend.application.ports.input.GetStudentHistoryUseCase;
-import com.pipre.backend.application.ports.output.ResultRepositoryPort;
-import com.pipre.backend.application.ports.output.UserRepositoryPort;
+import com.pipre.backend.application.ports.output.*;
+import com.pipre.backend.domain.exceptions.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GetStudentHistoryService implements GetStudentHistoryUseCase {
-    private final ResultRepositoryPort resultRepositoryPort;
-    private final UserRepositoryPort userRepositoryPort;
-
-    private String resolveUserId(String idOrEmail) {
-        if (idOrEmail != null && idOrEmail.contains("@")) {
-            return userRepositoryPort.findByEmail(idOrEmail)
-                    .map(u -> u.getIdUser())
-                    .orElse(idOrEmail);
-        }
-        return idOrEmail;
-    }
-
-    @Override
+    private final GamificationRepositoryPort repository;
+    private final UserRepositoryPort users;
+    @Override @Transactional(readOnly=true)
     public List<StudentHistoryDTO> execute(String idStudent) {
-        String resolvedId = resolveUserId(idStudent);
-        return resultRepositoryPort.findByIdStudent(resolvedId)
-                .stream()
-                .map(r -> {
-                    int stars = 0;
-                    if (r.getScore() != null) {
-                        double score = r.getScore().doubleValue();
-                        if (score >= 50) stars = 1;
-                        if (score >= 70) stars = 2;
-                        if (score >= 90) stars = 3;
-                    }
-                    return new StudentHistoryDTO(
-                            r.getIdResult(),
-                            r.getIdActivity(),
-                            "Actividad " + r.getIdActivity(),
-                            r.getScore(),
-                            stars,
-                            r.getScore() != null ? r.getScore().intValue() : 0,
-                            0.0,
-                            r.getDateAttempted()
-                    );
-                })
-                .toList();
+        var user=idStudent!=null&&idStudent.contains("@")?users.findByEmail(idStudent):users.findById(idStudent);
+        return repository.history(user.orElseThrow(()->new BusinessException("El estudiante no existe.")).getIdUser());
     }
 }

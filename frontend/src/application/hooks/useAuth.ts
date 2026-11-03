@@ -25,6 +25,7 @@ export const useAuth = () => {
       throw new Error(
         "" +
           (err instanceof Error ? err.message : String(err)),
+        { cause: err },
       );
     }
   };
@@ -44,6 +45,7 @@ export const useAuth = () => {
       throw new Error(
         "Error al registrar: " +
           (err instanceof Error ? err.message : String(err)),
+        { cause: err },
       );
     }
   };

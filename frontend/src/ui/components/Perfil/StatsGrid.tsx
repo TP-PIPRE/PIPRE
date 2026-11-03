@@ -27,7 +27,7 @@ const statItems = (p: PlayerProfileDTO) => [
   },
   {
     icon: BsBarChartFill,
-    value: `${Math.round(p.efficiencyAvg)}%`,
+    value: p.efficiencyAvg === null ? "—" : `${Math.round(p.efficiencyAvg)}%`,
     label: "Eficiencia",
     color: "var(--primary)",
   },
@@ -57,7 +57,7 @@ export const StatsGrid = ({ profile }: StatsGridProps) => {
       <h3 className="text-xs font-bold font-mono uppercase tracking-widest mb-3" style={{ color: "var(--text)" }}>
         Estadísticas
       </h3>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {statItems(profile).map((item) => {
           const Icon = item.icon;
           return (
@@ -78,7 +78,7 @@ export const StatsGrid = ({ profile }: StatsGridProps) => {
                 {item.label}
               </div>
               {item.sub && (
-                <div className="text-[6px] font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>
+                <div className="text-xs font-mono mt-1" style={{ color: "var(--text-muted)" }}>
                   {item.sub}
                 </div>
               )}

@@ -60,7 +60,7 @@ export const HistoryTable = ({ history }: HistoryTableProps) => {
         {history.map((entry) => (
           <div
             key={entry.idResult}
-            className="flex items-center px-4 py-2.5 hover:bg-surface-brighter/50 transition-colors"
+            className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-surface-brighter/50 transition-colors"
           >
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold truncate" style={{ color: "var(--text)" }}>
@@ -70,10 +70,10 @@ export const HistoryTable = ({ history }: HistoryTableProps) => {
                 {new Date(entry.dateAttempted).toLocaleDateString()}
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <StarDisplay count={entry.stars} />
               <span className="font-mono text-xs font-bold min-w-[40px] text-right" style={{ color: "var(--primary)" }}>
-                {entry.score}
+                {entry.score ?? "Sin nota"}
               </span>
               <span className="font-mono text-xs" style={{ color: "var(--text-muted)" }}>
                 +{entry.xpEarned} XP

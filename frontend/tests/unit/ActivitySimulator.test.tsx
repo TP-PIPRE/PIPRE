@@ -7,6 +7,10 @@ import { useGameStore } from "../../src/infrastructure/store/gameStore";
 import { getAuthState } from "../../src/infrastructure/store/authStore";
 vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
+vi.mock("../../src/ui/components/common/useValidatedGameSession", () => {
+  const session={enabled:false,state:null,ready:true,verifying:false,action:()=>{},complete:()=>{},retry:()=>{},reset:()=>{}};
+  return {useValidatedGameSession:()=>session};
+});
 beforeEach(() => { vi.mocked(getAuthState).mockReturnValue({ user: { id: "s", name: "Alumno", email: "alumno@example.com", role: "student" }, isAuthenticated: true }); });
 afterEach(() => { cleanup(); useGameStore.getState().stopGame(); vi.clearAllMocks(); });
 function ManagementDestination() { const location = useLocation(); return <p>Gestión del curso {location.state?.courseId}</p>; }
@@ -19,7 +23,8 @@ describe("Backend activity selection", () => {
     ]);
     open("/simulador/course-uuid?activity=a-tetri");
     expect(await screen.findByRole("heading", { name: "Mi reto espacial" })).toBeInTheDocument();
-    expect(screen.getByText("Instrucciones guardadas")).toBeInTheDocument();
+    expect(screen.queryByText("Instrucciones guardadas")).not.toBeInTheDocument();
+    expect(screen.getByText("Filas y columnas")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" })).toBeInTheDocument();
     expect(loadCourseActivities).toHaveBeenCalledWith("course-uuid");
   });
@@ -36,11 +41,22 @@ describe("Backend activity selection", () => {
     open("/simulador/course-uuid?activity=other-course-activity");
     expect(await screen.findByText(/no pertenece a este curso/)).toBeInTheDocument();
   });
-  it("guides users from the simulator menu without claiming that a board is missing", () => {
+  it.each([403,404])("shows a recoverable load error for HTTP %s without opening a substitute board", async status => {
+    vi.mocked(loadCourseActivities).mockRejectedValueOnce({response:{status,data:{message:"El curso no está disponible."}}});
+    open("/simulador/restricted-course?activity=deleted-activity");
+    expect(await screen.findByRole("heading",{name:"No pudimos cargar los retos"})).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tablero Neon Flow")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Tablero TetriLogic")).not.toBeInTheDocument();
+    vi.mocked(loadCourseActivities).mockResolvedValueOnce([]);
+    fireEvent.click(screen.getByRole("button",{name:"Reintentar"}));
+    expect(await screen.findByRole("heading",{name:"No encontramos este reto"})).toBeInTheDocument();
+  });
+  it("opens free exploration directly without requiring a course or a challenge", () => {
     open("/simulador");
-    expect(screen.getByRole("heading", { name: "Selecciona un reto para empezar" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Ver mis cursos" })).toHaveAttribute("href", "/");
-    expect(screen.getByText(/elige un curso y pulsa Iniciar/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "TetriLogic" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Seleccionar tablero" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Comprobar" })).not.toBeInTheDocument();
     expect(loadCourseActivities).not.toHaveBeenCalled();
   });
   it("distinguishes an empty course from an activity awaiting configuration", async () => {
@@ -54,7 +70,8 @@ describe("Backend activity selection", () => {
     open("/simulador/course-uuid?activity=a");
     await screen.findByRole("heading", { name: "Tablero anterior" });
     fireEvent.click(screen.getByRole("link", { name: "Abrir simulador sin seleccionar curso" }));
-    expect(screen.getByRole("heading", { name: "Selecciona un reto para empezar" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "TetriLogic" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Tablero anterior" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Comprobar" })).not.toBeInTheDocument();
     expect(useGameStore.getState().status).toBe("IDLE");
   });

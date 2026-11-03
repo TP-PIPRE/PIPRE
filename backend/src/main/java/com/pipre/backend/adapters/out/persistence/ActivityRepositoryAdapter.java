@@ -56,6 +56,7 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Optional<Activity> findById(String idActivity) {
         return activityJpaRepository.findById(idActivity)
                 .map(activityMapper::toDomain);

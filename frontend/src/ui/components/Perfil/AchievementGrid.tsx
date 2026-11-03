@@ -1,75 +1,39 @@
+import { Award, CheckCircle2, Flame, LockKeyhole, Timer, Trophy } from "lucide-react";
 import type { AchievementDTO } from "../../../infrastructure/api/models/apiModels";
-import { LockKeyhole as BsLockFill } from "lucide-react";
 
-interface AchievementGridProps {
-  achievements: AchievementDTO[];
+const categories = [
+  { id: "progreso", name: "Progreso", Icon: Trophy, description: "Completa el mismo nivel en los dos simuladores." },
+  { id: "constancia", name: "Constancia", Icon: Flame, description: "Completa el reto diario en días consecutivos." },
+  { id: "velocidad", name: "Velocidad", Icon: Timer, description: "Encadena tres niveles consecutivos de un mismo juego." },
+  { id: "maestria", name: "Maestría", Icon: Award, description: "Mejora hasta conseguir tres estrellas en todos los niveles." },
+];
+
+function formatAchievementDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Fecha no disponible" : new Intl.DateTimeFormat("es-PE", { dateStyle: "medium", timeZone: "America/Lima" }).format(date);
 }
 
-const categoryIcons: Record<string, string> = {
-  progreso: "\u{1F3C6}",
-  bucles: "\u{1F501}",
-  eficiencia: "\u26A1",
-  persistencia: "\uD83D\uDD25",
-  exploracion: "\uD83C\uDF0D",
-  desafio: "\uD83D\uDD0B",
-  velocidad: "\u23F0",
-  maestria: "\u2B50",
-  competitivo: "\uD83D\uDC51",
-};
-
-export const AchievementGrid = ({ achievements }: AchievementGridProps) => {
-  const unlocked = achievements.filter((a) => a.unlocked);
-  const locked = achievements.filter((a) => !a.unlocked && !a.hidden);
-
-  return (
-    <div
-      className="border border-border p-4"
-      style={{
-        backgroundColor: "var(--surface)",
-        borderRadius: "var(--theme-radius)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xs font-bold font-mono uppercase tracking-widest" style={{ color: "var(--text)" }}>
-          Logros
-        </h3>
-        <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-          {unlocked.length}/{achievements.length}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-5 gap-2">
-        {[...unlocked, ...locked].map((ach) => {
-          const isUnlocked = ach.unlocked;
-          return (
-            <div
-              key={ach.idAchievement}
-              className="relative flex flex-col items-center p-2 border text-center transition-all"
-              style={{
-                borderColor: isUnlocked ? "var(--primary)" : "var(--border)",
-                backgroundColor: isUnlocked ? "var(--primary-low)" : "var(--bg)",
-                borderRadius: "var(--theme-radius)",
-                opacity: isUnlocked ? 1 : 0.4,
-              }}
-              title={`${ach.name}: ${ach.description}${ach.hidden ? " (oculto)" : ""}`}
-            >
-              {isUnlocked ? (
-                <span className="text-lg mb-1">{categoryIcons[ach.category] || "\u{1F3C6}"}</span>
-              ) : (
-                <BsLockFill className="text-sm mb-1" style={{ color: "var(--text-muted)" }} />
-              )}
-              <span className="text-[6px] font-mono font-bold uppercase leading-tight" style={{ color: "var(--text)" }}>
-                {isUnlocked ? ach.name : ach.hidden ? "???" : ach.name}
-              </span>
-              {isUnlocked && ach.unlockedAt && (
-                <span className="text-[5px] font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {new Date(ach.unlockedAt).toLocaleDateString()}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+export const AchievementGrid = ({ achievements }: { achievements: AchievementDTO[] }) => {
+  const active = achievements.filter(achievement => achievement.active !== false && /^L(0[1-9]|[12]\d|3[0-5])$/.test(achievement.code));
+  const unlocked = active.filter(achievement => achievement.unlocked).length;
+  return <section className="space-y-6" aria-labelledby="achievements-title">
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+      <div><h2 id="achievements-title" className="text-xl font-bold">Tus logros</h2><p className="mt-1 text-sm text-text-muted">Cada logro se guarda al confirmar tu resultado.</p></div>
+      <span className="rounded-lg border border-border bg-surface px-4 py-3 font-mono text-sm" aria-label={`${unlocked} de 35 logros desbloqueados`}>{unlocked}<span className="text-text-muted"> / 35</span></span>
+    </header>
+    {active.length === 0 ? <p className="rounded-xl border border-border bg-surface p-6 text-text-muted">El catálogo de logros no está disponible. Actualiza el perfil para volver a consultarlo.</p> : categories.map(({ id, name, Icon, description }) => {
+      const items = active.filter(achievement => achievement.category.toLowerCase() === id).sort((a, b) => a.code.localeCompare(b.code));
+      return <section key={id} aria-labelledby={`achievement-category-${id}`}>
+        <header className="mb-4"><h3 id={`achievement-category-${id}`} className="flex items-center gap-2 text-lg font-semibold"><Icon size={20} aria-hidden="true" />{name}<span className="ml-auto text-sm font-normal text-text-muted">{items.filter(item => item.unlocked).length}/{items.length}</span></h3><p className="mt-1 text-sm text-text-muted">{description}</p></header>
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map(achievement => <li key={achievement.idAchievement} className={`min-w-0 rounded-xl border p-4 ${achievement.unlocked ? "border-primary bg-primary/5" : "border-border bg-surface"}`}>
+            <div className="mb-3 flex items-center gap-2"><span className="font-mono text-xs text-text-muted">{achievement.code}</span><span className={`ml-auto inline-flex items-center gap-1.5 text-xs font-semibold ${achievement.unlocked ? "text-success" : "text-text-muted"}`}>{achievement.unlocked ? <CheckCircle2 size={15} aria-hidden="true" /> : <LockKeyhole size={15} aria-hidden="true" />}{achievement.unlocked ? "Desbloqueado" : "Por conseguir"}</span></div>
+            <h4 className="break-words text-base font-semibold">{achievement.name}</h4>
+            <p className="mt-2 text-sm leading-relaxed text-text-muted">{achievement.unlockCondition || achievement.description}</p>
+            {achievement.unlocked && achievement.unlockedAt && <p className="mt-3 border-t border-border pt-3 text-xs text-text-muted">Desbloqueado el <time dateTime={achievement.unlockedAt}>{formatAchievementDate(achievement.unlockedAt)}</time></p>}
+          </li>)}
+        </ul>
+      </section>;
+    })}
+  </section>;
 };

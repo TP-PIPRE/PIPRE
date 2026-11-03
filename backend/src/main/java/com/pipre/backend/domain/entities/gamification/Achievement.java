@@ -11,8 +11,10 @@ public class Achievement {
     private final String category;
     private final int xpReward;
     private final boolean hidden;
+    private final boolean active;
+    private final String unlockCondition;
 
-    Achievement(String idAchievement, String code, String name, String description, String icon, String category, int xpReward, boolean hidden) {
+    Achievement(String idAchievement, String code, String name, String description, String icon, String category, int xpReward, boolean hidden, boolean active, String unlockCondition) {
         if (idAchievement == null || idAchievement.isBlank()) throw new BusinessException("El ID del logro es obligatorio.");
         if (code == null || code.isBlank()) throw new BusinessException("El código del logro es obligatorio.");
         if (name == null || name.isBlank()) throw new BusinessException("El nombre del logro es obligatorio.");
@@ -25,6 +27,8 @@ public class Achievement {
         this.category = category;
         this.xpReward = xpReward;
         this.hidden = hidden;
+        this.active = active;
+        this.unlockCondition = unlockCondition;
     }
 
     public static AchievementBuilder builder() { return new AchievementBuilder(); }
@@ -37,6 +41,8 @@ public class Achievement {
     public String getCategory() { return category; }
     public int getXpReward() { return xpReward; }
     public boolean isHidden() { return hidden; }
+    public boolean isActive() { return active; }
+    public String getUnlockCondition() { return unlockCondition; }
 
     public static class AchievementBuilder {
         private String idAchievement;
@@ -47,6 +53,8 @@ public class Achievement {
         private String category;
         private int xpReward;
         private boolean hidden;
+        private boolean active = true;
+        private String unlockCondition;
 
         AchievementBuilder() {}
 
@@ -58,6 +66,8 @@ public class Achievement {
         public AchievementBuilder category(String category) { this.category = category; return this; }
         public AchievementBuilder xpReward(int xpReward) { this.xpReward = xpReward; return this; }
         public AchievementBuilder hidden(boolean hidden) { this.hidden = hidden; return this; }
-        public Achievement build() { return new Achievement(idAchievement, code, name, description, icon, category, xpReward, hidden); }
+        public AchievementBuilder active(boolean active) { this.active = active; return this; }
+        public AchievementBuilder unlockCondition(String unlockCondition) { this.unlockCondition = unlockCondition; return this; }
+        public Achievement build() { return new Achievement(idAchievement, code, name, description, icon, category, xpReward, hidden, active, unlockCondition); }
     }
 }

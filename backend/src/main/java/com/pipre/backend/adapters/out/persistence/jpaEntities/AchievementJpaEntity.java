@@ -28,4 +28,7 @@ public class AchievementJpaEntity {
     private String category;
     private Integer xpReward;
     private Boolean hidden;
+    private Boolean active;
+    @Column(columnDefinition = "TEXT")
+    private String unlockCondition;
 }

@@ -33,5 +33,9 @@ public record SaveAttemptRequestDTO(
         Integer pistasIa,
         @Schema(example = "2026-10-07T15:00:00Z")
         @NotBlank(message = "La fecha de finalización no puede estar vacía")
-        String completedAt) {
+        String completedAt,
+        com.fasterxml.jackson.databind.JsonNode trace) {
+    public SaveAttemptRequestDTO(String studentId, String game, String result, Integer tiempoResolucion, Integer movimientos, Integer reinicios, Integer pistasIa, String completedAt) {
+        this(studentId, game, result, tiempoResolucion, movimientos, reinicios, pistasIa, completedAt, null);
+    }
 }

@@ -1,132 +1,57 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { apiService } from "../../infrastructure/api/apiService";
+import { gameProgressService } from "../../infrastructure/api/gameProgressService";
+import { useAchievementStore } from "../../infrastructure/store/achievementStore";
 import type { PlayerProfileDTO, AchievementDTO, StudentHistoryDTO } from "../../infrastructure/api/models/apiModels";
+import type { GameProgressDTO } from "../../infrastructure/api/models/gameProgressModels";
 import { PlayerCard } from "../components/Perfil/PlayerCard";
 import { StatsGrid } from "../components/Perfil/StatsGrid";
 import { AchievementGrid } from "../components/Perfil/AchievementGrid";
 import { HistoryTable } from "../components/Perfil/HistoryTable";
-import { RefreshCw as BsArrowRepeat } from "lucide-react";
+import { GameProgressOverview } from "../components/Perfil/GameProgressOverview";
+import { DailyChallengeCard } from "../components/common/DailyChallengeCard";
 
 type Tab = "stats" | "achievements" | "history";
+const tabs: Array<{ id: Tab; label: string }> = [{ id: "stats", label: "Estadísticas" }, { id: "achievements", label: "Logros" }, { id: "history", label: "Historial" }];
+interface ProfileData { studentId: string; profile: PlayerProfileDTO; achievements: AchievementDTO[]; history: StudentHistoryDTO[]; progress: GameProgressDTO; }
 
 export const PerfilPage = () => {
-  const { user } = getAuthState();
-  const [searchParams] = useSearchParams();
-  const userId = user?.id || user?.email || "";
-  const [profile, setProfile] = useState<PlayerProfileDTO | null>(null);
-  const [achievements, setAchievements] = useState<AchievementDTO[]>([]);
-  const [history, setHistory] = useState<StudentHistoryDTO[]>([]);
+  const studentId = getAuthState().user?.id ?? "";
+  const [search, setSearch] = useSearchParams();
+  const requestedTab = search.get("tab");
+  const activeTab = tabs.find(tab => tab.id === requestedTab)?.id ?? "stats";
+  const revision = useAchievementStore(state => state.revisions[studentId] ?? 0);
+  const [retry, setRetry] = useState(0);
+  const [data, setData] = useState<ProfileData | null>(null);
+  const [errorStudentId, setErrorStudentId] = useState<string|null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get("tab") as Tab) || "stats");
-
   useEffect(() => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-    const load = async () => {
-      try {
-        const [p, a, h] = await Promise.all([
-          apiService.profile.get(userId),
-          apiService.profile.getAchievements(userId),
-          apiService.profile.getHistory(userId),
-        ]);
-        setProfile(p);
-        setAchievements(a);
-        if (h && h.length > 0) {
-          setHistory(h);
-        } else {
-          const stored = getLocalHistory();
-          setHistory(stored);
-        }
-      } catch {
-        setProfile(null);
-        setAchievements([]);
-        const stored = getLocalHistory();
-        setHistory(stored);
-      }
-      setLoading(false);
-    };
-    load();
-  }, [userId]);
-
-  if (loading) {
-    return (
-      <main className="flex-1 p-6 max-w-4xl mx-auto w-full flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2 font-mono" style={{ color: "var(--text-muted)" }}>
-          <BsArrowRepeat className="text-2xl animate-spin" />
-          <span className="text-xs uppercase tracking-widest">Cargando perfil...</span>
-        </div>
-      </main>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <main className="flex-1 p-6 max-w-4xl mx-auto w-full">
-        <div className="text-center py-20">
-          <p className="text-sm font-mono" style={{ color: "var(--text-muted)" }}>
-            No hay datos de perfil disponibles. Completa un reto para generar tu perfil.
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "stats", label: "Estadísticas" },
-    { id: "achievements", label: "Logros" },
-    { id: "history", label: "Historial" },
-  ];
-
-  return (
-    <main className="flex-1 p-6 max-w-4xl mx-auto w-full" style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}>
-      <PlayerCard profile={profile} />
-
-      <div className="flex flex-wrap gap-3 sm:gap-6 mt-6 mb-6 border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            aria-pressed={activeTab === tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`pb-2 text-xs font-mono font-bold uppercase tracking-widest transition-all ${
-              activeTab === tab.id
-                ? "text-primary border-b-2 border-primary"
-                : "text-text-muted hover:text-text"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "stats" && <StatsGrid profile={profile} />}
-      {activeTab === "achievements" && <AchievementGrid achievements={achievements} />}
-      {activeTab === "history" && <HistoryTable history={history} />}
-    </main>
-  );
+    if (!studentId) return;
+    let active = true;
+    Promise.all([apiService.profile.get(studentId), apiService.profile.getAchievements(studentId), apiService.profile.getHistory(studentId), gameProgressService.progress(studentId)])
+      .then(([profile, achievements, history, progress]) => {
+        if (active) { setData({ studentId, profile, achievements, history, progress }); setErrorStudentId(null); }
+      }).catch(() => { if (active) setErrorStudentId(studentId); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [studentId, retry, revision]);
+  const refresh = () => { setLoading(true); setRetry(value => value + 1); };
+  const current = data?.studentId === studentId ? data : null;
+  const error=errorStudentId===studentId;
+  const waiting=loading||Boolean(studentId&&!current&&!error);
+  return <main className="mx-auto w-full max-w-6xl flex-1 px-2 py-2 sm:px-4 sm:py-4">
+    <header className="mb-6 flex flex-wrap items-center justify-between gap-3"><div><p className="page-eyebrow mb-2">Tu laboratorio</p><h1>Mi perfil</h1></div><button className="btn-secondary" onClick={refresh} disabled={waiting}><RefreshCw size={18} aria-hidden="true" className={waiting ? "animate-spin" : ""} />Actualizar</button></header>
+    {studentId && waiting && !current ? <p role="status" className="py-12 text-center text-text-muted">Cargando tu perfil…</p> : !studentId || (!current && error) ? <div className="rounded-xl border border-border bg-surface p-6"><p role="alert" className="mb-4">No pudimos cargar tu perfil. Comprueba tu conexión y vuelve a intentarlo.</p><button className="btn-secondary" onClick={refresh}>Reintentar</button></div> : current ? <>
+      {error && <p role="alert" className="mb-4 rounded-lg border border-danger p-4 text-sm">No pudimos actualizar el perfil. Se muestran los últimos datos recibidos del servidor.</p>}
+      <PlayerCard profile={current.profile} />
+      <nav aria-label="Secciones del perfil" className="my-6 flex flex-wrap gap-2 border-b border-border">{tabs.map(tab => <button key={tab.id} aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => setSearch({ tab: tab.id })} className={`min-h-11 border-b-2 px-4 text-sm font-semibold ${activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-text-muted hover:text-text"}`}>{tab.label}</button>)}</nav>
+      {activeTab === "stats" && <div className="space-y-6"><StatsGrid profile={current.profile} /><GameProgressOverview progress={current.progress} /><DailyChallengeCard /></div>}
+      {activeTab === "achievements" && <AchievementGrid achievements={current.achievements} />}
+      {activeTab === "history" && <HistoryTable history={current.history} />}
+    </> : null}
+  </main>;
 };
-
 export default PerfilPage;
-
-function getLocalHistory(): StudentHistoryDTO[] {
-  try {
-    const stored = localStorage.getItem("pipre_results");
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return parsed.map((r: any, i: number) => ({
-      idResult: r.challengeId || `local-${i}`,
-      idActivity: r.challengeId || "",
-      activityName: r.challengeTitle || "Actividad local",
-      score: r.score || 0,
-      stars: r.stars || 0,
-      xpEarned: 0,
-      efficiency: 0,
-      dateAttempted: r.completedAt || new Date().toISOString(),
-    }));
-  } catch {
-    return [];
-  }
-}

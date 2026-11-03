@@ -1,7 +1,6 @@
 package com.pipre.backend.application.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public record StudentHistoryDTO(
         String idResult,
@@ -11,5 +10,5 @@ public record StudentHistoryDTO(
         Integer stars,
         Integer xpEarned,
         Double efficiency,
-        LocalDateTime dateAttempted
+        String dateAttempted
 ) {}

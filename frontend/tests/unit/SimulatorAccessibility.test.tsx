@@ -4,6 +4,7 @@ import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { NeonFlowStage } from "../../src/ui/components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../../src/ui/components/TetriLogic/TetriLogicStage";
+import { LEGACY_TETRILOGIC_LEVELS } from "../../src/shared/constants/levelConfigs";
 import { useGameStore } from "../../src/infrastructure/store/gameStore";
 
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { post: vi.fn() } }));
@@ -11,6 +12,21 @@ beforeEach(() => { vi.mocked(axiosInstance.post).mockResolvedValue({ status: 201
 afterEach(() => { cleanup(); useGameStore.getState().stopGame(); vi.unstubAllGlobals(); });
 
 describe("Accessible simulator interactions", () => {
+  it("supports native drag and drop from the optical tray", () => {
+    render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
+    const transfer = {
+      dropEffect: "none",
+      setData: vi.fn(),
+      getData: vi.fn().mockReturnValue(JSON.stringify({ type: "MIRROR_90" })),
+    };
+    fireEvent.dragStart(screen.getByRole("button", { name: "Espejo 90°" }), { dataTransfer: transfer });
+    fireEvent.dragOver(screen.getByRole("button", { name: "Celda vacía, fila 2, columna 2" }), { dataTransfer: transfer });
+    fireEvent.drop(screen.getByRole("button", { name: "Celda vacía, fila 2, columna 2" }), { dataTransfer: transfer });
+    expect(transfer.setData).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Rotar espejo, fila 2, columna 2/ })).toBeInTheDocument();
+    expect(useGameStore.getState().movimientos).toBe(1);
+  });
+
   it("places and rotates an optical component without dragging, then resets the board", () => {
     render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Espejo 90°" }));
@@ -29,20 +45,37 @@ describe("Accessible simulator interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
     expect(screen.getByText("¡Receptor iluminado! Nivel completado.")).toBeInTheDocument();
     expect(useGameStore.getState().status).toBe("SUCCESS");
-    expect(axiosInstance.post).toHaveBeenCalledWith("telemetry", expect.objectContaining({ game: "neonflow", result: "SUCCESS" }), { skipAuthRedirect: true });
+    expect(axiosInstance.post).not.toHaveBeenCalled(); // No anonymous or duplicate legacy telemetry.
     expect(screen.getByRole("button", { name: "Comprobar" })).toBeDisabled();
   });
 
-  it("uses existing TetriLogic placement validation for the tap alternative", () => {
-    render(<MemoryRouter><TetriLogicStage /></MemoryRouter>);
+  it("allows restarting a completed Neon Flow board without leaving the activity", () => {
+    render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "Pista" }));
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(useGameStore.getState().status).toBe("SUCCESS");
+    expect(screen.getByRole("button", { name: "Reiniciar" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Reiniciar" }));
+    expect(useGameStore.getState().status).toBe("PLAYING");
+    expect(useGameStore.getState().reinicios).toBe(1);
+    expect(screen.queryByText("¡Receptor iluminado! Nivel completado.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Comprobar" })).toBeEnabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Prepara el tablero");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    expect(useGameStore.getState().status).toBe("SUCCESS");
+  });
+
+  it("keeps bounds and a tap alternative in the free TetriLogic workspace", () => {
+    render(<MemoryRouter><TetriLogicStage levels={LEGACY_TETRILOGIC_LEVELS} /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" }));
     fireEvent.click(screen.getByRole("button", { name: "Celda vacía, fila 4, columna 4" }));
     expect(useGameStore.getState().movimientos).toBe(0);
-    expect(screen.getByRole("status")).toHaveTextContent("La pieza no cabe aquí");
+    expect(screen.getByRole("status")).toHaveTextContent("Ese espacio no está disponible");
     fireEvent.click(screen.getByRole("button", { name: "Celda vacía, fila 1, columna 1" }));
-    expect(useGameStore.getState().movimientos).toBe(1);
+    expect(useGameStore.getState().movimientos).toBe(0);
     expect(screen.getByRole("button", { name: "Pieza O, fila 1, columna 1" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Reiniciar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Restablecer tablero", exact: true }));
     expect(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" })).toBeInTheDocument();
   });
 });
