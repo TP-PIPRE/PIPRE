@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class DailyChallengeController {
     private final DailyChallengeUseCase dailyChallengeUseCase;
+    private final com.pipre.backend.application.useCases.ProceduralDailyService procedural;
+    @GetMapping("/today/set")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#studentId)")
+    public com.pipre.backend.application.useCases.ProceduralDailyService.DailySet set(@RequestParam String studentId) { return procedural.today(studentId); }
     @GetMapping("/today")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#studentId)")
     public DailyChallengeDTO today(@RequestParam String studentId) { return dailyChallengeUseCase.today(studentId); }

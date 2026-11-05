@@ -17,7 +17,7 @@ import type { DailyChallengeDTO, GameProgressDTO, GameVictoryDTO } from "../../s
 
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
 vi.mock("../../src/infrastructure/api/apiService", () => ({ apiService: { profile: { get: vi.fn(), getAchievements: vi.fn(), getHistory: vi.fn() }, neonflow: { getTemplate: vi.fn() }, tetrilogic: { getTemplate: vi.fn() } } }));
-vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { progress: vi.fn(), daily: vi.fn() } }));
+vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { progress: vi.fn(), daily: vi.fn(), dailySet: vi.fn() } }));
 vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 vi.mock("../../src/ui/components/common/useValidatedGameSession", () => {
   const session = { enabled: false, state: null, ready: true, verifying: false, action: () => {}, complete: () => {}, retry: () => {}, reset: () => {} };
@@ -36,6 +36,7 @@ const victory = (achievements: AchievementDTO[]): GameVictoryDTO => ({ sessionId
 const openProfile = (tab = "achievements") => render(<MemoryRouter initialEntries={[`/perfil?tab=${tab}`]}><PerfilPage /></MemoryRouter>);
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear();
+  vi.mocked(gameProgressService.dailySet).mockResolvedValue({date: daily.date, timeZone: daily.timeZone, expiresAt: "2099-01-01T05:00:00Z", challenges: Array.from({length:5}, (_, i) => ({id: "daily-"+i, date: daily.date, slot: i+1, game: daily.game, levelNumber: 1, levelTemplate: daily.levelTemplate, difficulty: "easy" as const, config: NEONFLOW_LEVELS[0], completedAt: null, bestStars: 0}))});
   vi.mocked(getAuthState).mockReturnValue({ user: student, isAuthenticated: true });
   vi.mocked(apiService.profile.get).mockResolvedValue(profile);
   vi.mocked(apiService.profile.getAchievements).mockResolvedValue(catalog());
@@ -131,12 +132,15 @@ describe("Daily challenge entry", () => {
     vi.mocked(apiService.neonflow.getTemplate).mockResolvedValue({ templateId: NEONFLOW_LEVELS[0].templateId!, version: 2, config: NEONFLOW_LEVELS[0] });
     render(<MemoryRouter initialEntries={["/simulador?daily=true"]}><Routes><Route path="/simulador" element={<Simulador />} /></Routes></MemoryRouter>);
     expect(await screen.findByLabelText("Tablero Neon Flow")).toBeInTheDocument();
-    expect(apiService.neonflow.getTemplate).toHaveBeenCalledWith("neonflow-v2-1", expect.any(AbortSignal));
+    expect(gameProgressService.dailySet).toHaveBeenCalledWith(student.id, expect.any(AbortSignal));
+    expect(screen.queryByRole("navigation", {name: "Retos de hoy"})).not.toBeInTheDocument();
+    expect(screen.getByText("Ejercicio 1 de 5 · Neon Flow")).toBeInTheDocument();
     expect(loadCourseActivities).not.toHaveBeenCalled();
     expect(screen.getByText(/America\/Lima/)).toBeInTheDocument();
   });
   it("refuses an unknown or mismatched daily board instead of silently choosing level one", async () => {
-    vi.mocked(gameProgressService.daily).mockResolvedValue({ ...daily, levelTemplate: "neonflow-v2-30" });
+    const set = await gameProgressService.dailySet(student.id);
+    vi.mocked(gameProgressService.dailySet).mockResolvedValue({...set, challenges: set.challenges.map(c => ({...c, levelTemplate: "neonflow-v2-30"}))});
     render(<MemoryRouter initialEntries={["/simulador?daily=true"]}><Routes><Route path="/simulador" element={<Simulador />} /></Routes></MemoryRouter>);
     await screen.findByRole("alert");
     expect(screen.queryByLabelText("Tablero Neon Flow")).not.toBeInTheDocument();
@@ -146,10 +150,12 @@ describe("Daily challenge entry", () => {
     render(<MemoryRouter><DailyChallengeCard /></MemoryRouter>);
     await screen.findByText("Racha: 4 días");
     vi.mocked(gameProgressService.daily).mockResolvedValue({ ...daily, completed: true, currentStreak: 5 });
+    const set = await gameProgressService.dailySet(student.id);
+    vi.mocked(gameProgressService.dailySet).mockResolvedValue({...set, challenges: set.challenges.map(c=>({...c, completedAt: "2026-11-02T12:00:00Z", bestStars:3}))});
     act(() => { useAchievementStore.getState().confirmed(student.id, victory([])); });
     await screen.findByText("Completado hoy");
     expect(screen.getByText("Racha: 5 días")).toBeInTheDocument();
-    await waitFor(() => expect(gameProgressService.daily).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(gameProgressService.dailySet).toHaveBeenCalledTimes(3));
   });
   it("ignores another account's late daily response and does not leak its streak", async () => {
     let resolve!:(value:DailyChallengeDTO)=>void;

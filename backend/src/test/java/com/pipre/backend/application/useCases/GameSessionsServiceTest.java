@@ -25,7 +25,7 @@ class GameSessionsServiceTest {
     private final DailyChallengeUseCase daily=mock(DailyChallengeUseCase.class);
     private final RecordVerifiedVictoryUseCase victories=mock(RecordVerifiedVictoryUseCase.class);
     private final MutableClock clock=new MutableClock();
-    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock);
+    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class));
     @BeforeEach void setup() throws Exception {
         JsonNode catalog=json.readTree(getClass().getResourceAsStream("/catalog/neonflow-v2.json"));
         for(JsonNode config:catalog) {

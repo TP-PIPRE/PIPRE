@@ -27,7 +27,7 @@ export function FreeTetriLogicStage({ level, levels, index, onLevel, activity, d
   const [confirmReset, setConfirmReset] = useState(false);
   const templateId=activity?.levelTemplate??level.templateId;
   const gameSession=useValidatedGameSession(templateId?{game:"tetrilogic",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
-  const {record,finish}=useAttemptTrace(templateId?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null);
+  const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null);
   const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));
   const trackedDispatch=(action:FreePlayAction)=>{
     const next=freePlayReducer(state,action);

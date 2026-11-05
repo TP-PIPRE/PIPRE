@@ -29,7 +29,7 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dail
   const level = LEVELS[currentLevelIndex];
   const templateId=activity?.levelTemplate??level.templateId;
   const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
-  const {record,finish}=useAttemptTrace(templateId?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null);
+  const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null);
 
   const status = useGameStore((s) => s.status);
   const startGame = useGameStore((s) => s.startGame);

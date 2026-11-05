@@ -34,6 +34,7 @@ public class GameSessionsService implements GameSessionsUseCase {
     private final RecordVerifiedVictoryUseCase victories;
     private final ObjectMapper json;
     private final Clock clock;
+    private final ProceduralDailyService procedural;
 
     @Override @Transactional
     public GameSessionDTO start(StartGameSessionCommand command) {
@@ -48,14 +49,18 @@ public class GameSessionsService implements GameSessionsUseCase {
                 throw new BusinessException("El identificador de sesión ya corresponde a otra solicitud.");
             return dto(previous); // Never resurrect a completed or abandoned session.
         }
-        config(command.game(),canonical);
+        if(ProceduralDailyService.procedural(command.dailyChallengeId())) {
+            if(command.activityId()!=null)throw new BusinessException("Un reto diario no es una actividad del catálogo.");
+            procedural.config(command.studentId(),command.dailyChallengeId(),command.game(),canonical,true);
+        } else config(command.game(),canonical);
         if(command.activityId()!=null) {
             var activity=activities.findById(command.activityId()).orElseThrow(()->new ResourceNotFoundException("La actividad no existe."));
             if(!command.game().equals(activity.getEnvironment())||!canonical.equals(BoardRules.canonicalTemplate(activity.getEnvironment(),activity.getLevelTemplate())))
                 throw new BusinessException("La actividad no corresponde al tablero solicitado.");
         }
-        if(command.dailyChallengeId()!=null)daily.validate(command.studentId(),command.dailyChallengeId(),command.game(),canonical);
+        if(command.dailyChallengeId()!=null&&!ProceduralDailyService.procedural(command.dailyChallengeId()))daily.validate(command.studentId(),command.dailyChallengeId(),command.game(),canonical);
         Instant now=clock.instant();sessions.abandonActive(command.studentId(),now);
+        if(ProceduralDailyService.procedural(command.dailyChallengeId()))procedural.start(command.dailyChallengeId(),now);
         int level=Integer.parseInt(canonical.substring(canonical.lastIndexOf('-')+1));
         return dto(sessions.insert(new GameSession(UUID.randomUUID().toString(),clientId,command.studentId(),command.game(),level,canonical,
             command.activityId(),command.dailyChallengeId(),now,null,"ACTIVE",BoardRules.initialState(),0,0,null,null)));
@@ -72,7 +77,7 @@ public class GameSessionsService implements GameSessionsUseCase {
         if(!session.status().equals("ACTIVE"))throw new BusinessException("La sesión ya terminó. Inicia otra partida para registrar progreso.");
         if(action.sequence()<1||action.sequence()!=session.revision()+1)throw new BusinessException("La secuencia de acciones no es consecutiva.");
         if(action.sequence()>20000)throw new BusinessException("Se alcanzó el límite de acciones. Inicia otra sesión.");
-        var state=BoardRules.apply(session.game(),config(session.game(),session.levelTemplate()),session.state(),
+        var state=BoardRules.apply(session.game(),sessionConfig(session),session.state(),
             new BoardAction(action.type(),action.pieceId(),action.x(),action.y(),action.rotation(),action.component(),action.color(),action.source()));
         var changed=session.change(state,action.sequence(),"ACTIVE",null,null,null);
         sessions.update(changed);var response=dto(changed);
@@ -85,7 +90,7 @@ public class GameSessionsService implements GameSessionsUseCase {
         if(session.status().equals("COMPLETED")&&session.completionResponse()!=null)
             return json.convertValue(session.completionResponse(),GameCompletionDTO.class);
         if(!session.status().equals("ACTIVE"))throw new BusinessException("La sesión fue abandonada. Inicia otra partida.");
-        JsonNode config=config(session.game(),session.levelTemplate());
+        JsonNode config=sessionConfig(session);
         if(!BoardRules.isSolved(session.game(),config,session.state())) {
             var checked=BoardRules.apply(session.game(),config,session.state(),new BoardAction("CHECK",null,null,null,null,null,null,null));
             sessions.update(session.change(checked,session.revision(),session.status(),null,null,null));
@@ -112,6 +117,11 @@ public class GameSessionsService implements GameSessionsUseCase {
             ?tetriTemplates.findById(template).orElseThrow(()->new ResourceNotFoundException("El tablero no está disponible.")).config()
             :neonTemplates.findById(template).orElseThrow(()->new ResourceNotFoundException("El tablero no está disponible.")).config();
         return json.valueToTree(value);
+    }
+    private JsonNode sessionConfig(GameSession session) {
+        return ProceduralDailyService.procedural(session.dailyChallengeId())
+            ? procedural.config(session.studentId(),session.dailyChallengeId(),session.game(),session.levelTemplate(),false)
+            : config(session.game(),session.levelTemplate());
     }
     private GameSessionDTO dto(GameSession s) { return new GameSessionDTO(s.sessionId(),s.game(),s.levelNumber(),s.levelTemplate(),BoardRules.ruleset(s.game()),s.startedAt().toString(),s.status(),s.state(),s.revision()); }
     private String uuid(String value) {

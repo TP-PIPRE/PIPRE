@@ -1,0 +1,1000 @@
+[
+  {
+    "templateId": "tetrilogic-v2-1",
+    "placements": [
+      {
+        "id": "i1",
+        "rotation": 90,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 2
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-2",
+    "placements": [
+      {
+        "id": "z1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 1
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-3",
+    "placements": [
+      {
+        "id": "s1",
+        "rotation": 270,
+        "position": {
+          "x": 2,
+          "y": 1
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-4",
+    "placements": [
+      {
+        "id": "z1",
+        "rotation": 90,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 1
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-5",
+    "placements": [
+      {
+        "id": "o1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 3
+        }
+      },
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-6",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 0,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 4
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 90,
+        "position": {
+          "x": 1,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-7",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 2
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 270,
+        "position": {
+          "x": 2,
+          "y": 1
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 3,
+          "y": 2
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-8",
+    "placements": [
+      {
+        "id": "o1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 3
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 3
+        }
+      },
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-9",
+    "placements": [
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 270,
+        "position": {
+          "x": 1,
+          "y": 3
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-10",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 90,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 3
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-11",
+    "placements": [
+      {
+        "id": "s1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 3
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-12",
+    "placements": [
+      {
+        "id": "t1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 3
+        }
+      },
+      {
+        "id": "t2",
+        "rotation": 90,
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-13",
+    "placements": [
+      {
+        "id": "z1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 3
+        }
+      },
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-14",
+    "placements": [
+      {
+        "id": "j1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 2
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 3
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 90,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-15",
+    "placements": [
+      {
+        "id": "j1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 2
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 90,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-16",
+    "placements": [
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 2
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      },
+      {
+        "id": "j2",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-17",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 2
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 3
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-18",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 90,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 1
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-19",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 4
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-20",
+    "placements": [
+      {
+        "id": "o1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 3
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 1
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": "o2",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-21",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 3
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 2
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-22",
+    "placements": [
+      {
+        "id": "i1",
+        "rotation": 270,
+        "position": {
+          "x": 5,
+          "y": 1
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 180,
+        "position": {
+          "x": 2,
+          "y": 1
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 270,
+        "position": {
+          "x": 3,
+          "y": 3
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 4
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-23",
+    "placements": [
+      {
+        "id": "i1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 3
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 270,
+        "position": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 4,
+          "y": 0
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 90,
+        "position": {
+          "x": 1,
+          "y": 4
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-24",
+    "placements": [
+      {
+        "id": "o1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 0
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 270,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "o2",
+        "rotation": 0,
+        "position": {
+          "x": 4,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-25",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 0,
+        "position": {
+          "x": 3,
+          "y": 0
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 4
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-26",
+    "placements": [
+      {
+        "id": "l1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 2
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 3,
+          "y": 1
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 0,
+        "position": {
+          "x": 1,
+          "y": 0
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 2
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-27",
+    "placements": [
+      {
+        "id": "s1",
+        "rotation": 270,
+        "position": {
+          "x": 2,
+          "y": 3
+        }
+      },
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 0,
+          "y": 2
+        }
+      },
+      {
+        "id": "o1",
+        "rotation": 90,
+        "position": {
+          "x": 4,
+          "y": 3
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-28",
+    "placements": [
+      {
+        "id": "t1",
+        "rotation": 90,
+        "position": {
+          "x": 0,
+          "y": 2
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 90,
+        "position": {
+          "x": 2,
+          "y": 2
+        }
+      },
+      {
+        "id": "i1",
+        "rotation": 180,
+        "position": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      {
+        "id": "t2",
+        "rotation": 90,
+        "position": {
+          "x": 4,
+          "y": 2
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-29",
+    "placements": [
+      {
+        "id": "z1",
+        "rotation": 90,
+        "position": {
+          "x": 2,
+          "y": 3
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 0,
+        "position": {
+          "x": 0,
+          "y": 3
+        }
+      },
+      {
+        "id": "s1",
+        "rotation": 0,
+        "position": {
+          "x": 2,
+          "y": 1
+        }
+      },
+      {
+        "id": "l1",
+        "rotation": 180,
+        "position": {
+          "x": 4,
+          "y": 0
+        }
+      }
+    ]
+  },
+  {
+    "templateId": "tetrilogic-v2-30",
+    "placements": [
+      {
+        "id": "t1",
+        "rotation": 270,
+        "position": {
+          "x": 1,
+          "y": 2
+        }
+      },
+      {
+        "id": "j1",
+        "rotation": 90,
+        "position": {
+          "x": 2,
+          "y": 4
+        }
+      },
+      {
+        "id": "z1",
+        "rotation": 180,
+        "position": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    ]
+  }
+]

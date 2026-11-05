@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
-import type { DailyChallengeDTO, GameAction, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "./models/gameProgressModels";
+import type { DailySetDTO, DailyChallengeDTO, GameAction, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "./models/gameProgressModels";
 
 export const gameProgressService = {
   start: async (context: GameSessionContext, clientSessionId: string): Promise<GameSessionDTO> =>
@@ -8,6 +8,8 @@ export const gameProgressService = {
     (await axiosInstance.post<GameSessionDTO>(`game-sessions/${encodeURIComponent(sessionId)}/actions`, action)).data,
   complete: async (sessionId: string): Promise<GameVictoryDTO> =>
     (await axiosInstance.post<GameVictoryDTO>(`game-sessions/${encodeURIComponent(sessionId)}/complete`)).data,
+  dailySet: async (studentId: string, signal?: AbortSignal): Promise<DailySetDTO> =>
+    (await axiosInstance.get<DailySetDTO>("daily-challenges/today/set", { params: { studentId }, signal })).data,
   daily: async (studentId: string, signal?: AbortSignal): Promise<DailyChallengeDTO> =>
     (await axiosInstance.get<DailyChallengeDTO>("daily-challenges/today", { params: { studentId }, signal })).data,
   progress: async (studentId: string): Promise<GameProgressDTO> =>

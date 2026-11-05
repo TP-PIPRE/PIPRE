@@ -22,7 +22,7 @@ class StudentOwnershipContractTest {
         @Bean SaveAttemptUseCase attempts() { return mock(SaveAttemptUseCase.class); }
         @Bean TelemetryController telemetry(SaveAttemptUseCase attempts) { return new TelemetryController(attempts); }
         @Bean ProfileController profile() { return new ProfileController(mock(GetStudentProfileUseCase.class), mock(GetStudentAchievementsUseCase.class), mock(GetStudentHistoryUseCase.class),mock(GetGameProgressUseCase.class),mock(ExportAchievementsUseCase.class)); }
-        @Bean DailyChallengeController daily() { return new DailyChallengeController(mock(DailyChallengeUseCase.class)); }
+        @Bean DailyChallengeController daily() { return new DailyChallengeController(mock(DailyChallengeUseCase.class), mock(com.pipre.backend.application.useCases.ProceduralDailyService.class)); }
         @Bean ResultController results() { return new ResultController(mock(GetStudentResultUseCase.class), mock(SaveResultUseCase.class)); }
         @Bean SimulationController simulations() { return new SimulationController(mock(GetSimulationsUseCase.class), mock(CreateSimulationUseCase.class)); }
         @Bean ModuleProgressController progress() { return new ModuleProgressController(mock(SaveModuleProgressUseCase.class), mock(GetModuleProgressUseCase.class)); }
@@ -55,12 +55,14 @@ class StudentOwnershipContractTest {
         assertThrows(AccessDeniedException.class,()->context.getBean(ProfileController.class).getAchievements("other"));
         assertThrows(AccessDeniedException.class,()->context.getBean(ProfileController.class).export("other",day,day));
         assertThrows(AccessDeniedException.class,()->context.getBean(DailyChallengeController.class).today("other"));
+        assertThrows(AccessDeniedException.class,()->context.getBean(DailyChallengeController.class).set("other"));
     }
     @Test void acceptsOwnProgressDailyAndAchievementExport() {
         var day=java.time.LocalDate.of(2026,11,2);
         assertDoesNotThrow(()->context.getBean(ProfileController.class).gameProgress("mine"));
         assertDoesNotThrow(()->context.getBean(ProfileController.class).export("mine",day,day));
         assertDoesNotThrow(()->context.getBean(DailyChallengeController.class).today("mine"));
+        assertDoesNotThrow(()->context.getBean(DailyChallengeController.class).set("mine"));
     }
     @Test void teacherCanReadStudentsAchievementExportAndProgress() {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("teacher@test.local",null,List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))));

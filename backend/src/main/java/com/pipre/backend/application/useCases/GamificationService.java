@@ -23,6 +23,7 @@ public class GamificationService implements RecordVerifiedVictoryUseCase,DailyCh
     private final AchievementRepositoryPort achievements;
     private final UserRepositoryPort users;
     private final Clock clock;
+    private final ProceduralDailyService procedural;
 
     private String resolve(String id) {
         var user=id!=null&&id.contains("@")?users.findByEmail(id):users.findById(id);
@@ -40,18 +41,14 @@ public class GamificationService implements RecordVerifiedVictoryUseCase,DailyCh
             throw new BusinessException("La victoria verificada no es válida.");
         repository.lockStudent(v.studentId());
         if(!repository.recordVictory(v)) return new VictoryAwardsDTO(bestStars(v),List.of(),today(v.studentId()));
-        repository.improveProgress(v);
-        LocalDate completedDay=v.completedAt().atZone(DAILY_ZONE).toLocalDate();
-        if(v.dailyChallengeId()!=null && v.dailyChallengeId().equals(completedDay.toString())
-                && v.startedAt().atZone(DAILY_ZONE).toLocalDate().equals(completedDay)) {
-            var daily=repository.daily(completedDay);
-            if(daily.game().equals(v.game()) && daily.levelTemplate().equals(v.levelTemplate()))
-                repository.completeDaily(v.studentId(),completedDay,v.sessionId(),v.completedAt());
-        }
-        var streak=AchievementRules.streak(repository.dailyDates(v.studentId()),todayDate());
+        boolean generated=ProceduralDailyService.procedural(v.dailyChallengeId());
+        if(generated) procedural.complete(v.studentId(),v.dailyChallengeId(),v.sessionId(),v.startedAt(),v.completedAt(),v.stars());
+        else repository.improveProgress(v);
+        // Legacy single-board sessions remain playable; only a verified full set credits a new daily date.
+        var streak=AchievementRules.streak(dailyDates(v.studentId()),todayDate());
         var last=repository.recentVictories(v.studentId());
         var timed=last.stream().map(w->new AchievementRules.SpeedVictory(w.sessionId(),w.game(),w.levelNumber(),w.startedAt(),w.completedAt(),w.startedOrder())).toList();
-        boolean speed=last.size()==3 && AchievementRules.speed(timed,
+        boolean speed=!generated && last.stream().noneMatch(w->ProceduralDailyService.procedural(w.dailyChallengeId())) && last.size()==3 && AchievementRules.speed(timed,
                 repository.sessionStarts(v.studentId(),last.get(0).startedOrder(),v.completedAt()));
         var codes=AchievementRules.earnedCodes(repository.progress(v.studentId()),streak,speed);
         var newlyUnlocked=new ArrayList<AchievementDTO>();
@@ -61,6 +58,7 @@ public class GamificationService implements RecordVerifiedVictoryUseCase,DailyCh
         return new VictoryAwardsDTO(bestStars(v),List.copyOf(newlyUnlocked),today(v.studentId()));
     }
     private int bestStars(VerifiedVictory v) {
+        if(ProceduralDailyService.procedural(v.dailyChallengeId()))return procedural.bestStars(v.dailyChallengeId());
         return repository.progress(v.studentId()).stream().filter(p->p.game().equals(v.game())&&p.levelNumber()==v.levelNumber())
                 .mapToInt(AchievementRules.LevelProgress::bestStars).max().orElse(v.stars());
     }
@@ -68,8 +66,14 @@ public class GamificationService implements RecordVerifiedVictoryUseCase,DailyCh
     @Override @Transactional
     public DailyChallengeDTO today(String studentId) {
         String id=resolve(studentId); LocalDate date=todayDate(); var daily=repository.daily(date);
-        var dates=repository.dailyDates(id); var streak=AchievementRules.streak(dates,date);
-        return new DailyChallengeDTO(date.toString(),date.toString(),DAILY_ZONE.getId(),daily.game(),daily.levelNumber(),daily.levelTemplate(),dates.contains(date),streak.current(),streak.best());
+        var dates=dailyDates(id); var streak=AchievementRules.streak(dates,date);
+        boolean completed=procedural.completed(id,date).orElse(dates.contains(date));
+        return new DailyChallengeDTO(date.toString(),date.toString(),DAILY_ZONE.getId(),daily.game(),daily.levelNumber(),daily.levelTemplate(),completed,streak.current(),streak.best());
+    }
+    private List<LocalDate> dailyDates(String studentId) {
+        var dates=new ArrayList<>(repository.dailyDates(studentId));
+        if(procedural.completed(studentId,todayDate()).filter(done->!done).isPresent())dates.remove(todayDate());
+        return dates;
     }
     @Override @Transactional
     public void validate(String studentId,String dailyId,String game,String templateId) {
@@ -88,7 +92,7 @@ public class GamificationService implements RecordVerifiedVictoryUseCase,DailyCh
             var p=byLevel.get(game+":"+number);
             levels.add(new GameProgressDTO.Level(game,number,p!=null,p==null?0:p.bestStars(),p==null?null:p.firstCompletedAt().toString(),p==null?null:p.lastCompletedAt().toString()));
         }
-        var streak=AchievementRules.streak(repository.dailyDates(id),todayDate());
+        var streak=AchievementRules.streak(dailyDates(id),todayDate());
         return new GameProgressDTO(List.copyOf(levels),progress.size(),60,progress.stream().mapToInt(AchievementRules.LevelProgress::bestStars).sum(),streak.current(),streak.best());
     }
 

@@ -44,6 +44,7 @@ export class ValidatedGameSession {
         if (!session?.sessionId || session.game !== this.context.game || session.status !== "ACTIVE") throw new Error("No pudimos preparar el intento. Vuelve a intentarlo.");
         this.nextSequence = session.revision + 1;
         this.update({ session, phase: "ready" });
+        if (this.context.dailyChallengeId?.length === 36) window.dispatchEvent(new CustomEvent("pipre:daily-started", { detail: this.context.studentId }));
       } catch (error) { this.update({ phase: "error", error: getApiErrorMessage(error, "No pudimos preparar el intento. Comprueba tu conexión.") }); }
     }).finally(() => { this.starting = null; });
     return this.starting;
