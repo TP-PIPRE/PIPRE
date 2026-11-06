@@ -19,6 +19,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:procedural_daily;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
     "spring.datasource.driver-class-name=org.h2.Driver","spring.datasource.username=sa","spring.datasource.password=",
     "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect","spring.jpa.show-sql=false","spring.flyway.placeholders.telemetry_fk_validation="})
+@org.junit.jupiter.api.Tag("integration")
 class ProceduralDailyTest {
     @Autowired ProceduralDailyService daily;
     @Autowired ProceduralDailyGenerator generator;

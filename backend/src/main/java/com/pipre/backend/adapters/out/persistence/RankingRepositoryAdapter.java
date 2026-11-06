@@ -20,6 +20,9 @@ public class RankingRepositoryAdapter implements RankingRepositoryPort {
     private final GroupJpaRepository groupJpaRepository;
     private final UserJpaRepository userJpaRepository;
     private final RankingMapper rankingMapper;
+    @Override public void lockGroup(String idGroup) {
+        groupJpaRepository.lockById(idGroup).orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El grupo no existe."));
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -35,13 +38,13 @@ public class RankingRepositoryAdapter implements RankingRepositoryPort {
         RankingJpaEntity entity = rankingMapper.toJpaEntity(ranking);
 
         if (ranking.getIdGroup() != null) {
-            groupJpaRepository.findById(ranking.getIdGroup())
-                    .ifPresent(entity::setGroupJpaEntity);
+            entity.setGroupJpaEntity(groupJpaRepository.findById(ranking.getIdGroup())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El grupo no existe.")));
         }
 
         if (ranking.getIdStudent() != null) {
-            userJpaRepository.findById(ranking.getIdStudent())
-                    .ifPresent(entity::setStudentJpaEntity);
+            entity.setStudentJpaEntity(userJpaRepository.findById(ranking.getIdStudent())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El estudiante no existe.")));
         }
 
         rankingJpaRepository.save(entity);

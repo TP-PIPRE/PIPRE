@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).headers(ex.getHeaders()).body(body);
     }
 
-    @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler({com.pipre.backend.domain.exceptions.BusinessException.class, IllegalArgumentException.class})
     public ResponseEntity<Map<String, Object>> handleDomainErrors(RuntimeException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
@@ -34,11 +34,33 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    public ResponseEntity<Map<String,Object>> handleMalformedInput(Exception ex) {
+        return ResponseEntity.badRequest().body(Map.of("timestamp",LocalDateTime.now(),"error","Error de validación de entrada",
+                "message","La solicitud contiene campos ausentes, tipos incorrectos o JSON inválido."));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String,Object>> handleConflict(org.springframework.dao.DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("timestamp",LocalDateTime.now(),"error","Conflicto de datos",
+                "message","La operación entra en conflicto con los datos existentes."));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String,Object>> handleUnexpected(RuntimeException ex) {
+        org.slf4j.LoggerFactory.getLogger(getClass()).error("Fallo interno al procesar la solicitud",ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("timestamp",LocalDateTime.now(),"error","Error interno",
+                "message","No pudimos procesar la solicitud. Inténtalo nuevamente."));
+    }
+
     @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(org.springframework.web.bind.MethodArgumentNotValidException ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("error", "Error de validación de entrada");
+        body.put("message", "Revisa los campos de la solicitud.");
         
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> 

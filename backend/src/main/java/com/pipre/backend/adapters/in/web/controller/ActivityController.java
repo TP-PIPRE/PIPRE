@@ -49,7 +49,7 @@ public class ActivityController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Crear una nueva actividad")
     @ApiResponse(responseCode = "201", description = "Actividad creada exitosamente")
-    public ResponseEntity<Void> postActivity(@RequestBody CreateActivityCommand requestDTO) {
+    public ResponseEntity<Void> postActivity(@jakarta.validation.Valid @RequestBody CreateActivityCommand requestDTO) {
         createActivityUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -58,7 +58,7 @@ public class ActivityController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Actualizar parámetros y misiones de una actividad")
     @ApiResponse(responseCode = "200", description = "Actividad actualizada exitosamente")
-    public ResponseEntity<Void> putActivity(@PathVariable String id, @RequestBody CreateActivityCommand requestDTO) {
+    public ResponseEntity<Void> putActivity(@PathVariable String id, @jakarta.validation.Valid @RequestBody CreateActivityCommand requestDTO) {
         updateActivityUseCase.execute(id, requestDTO);
         return ResponseEntity.ok().build();
     }

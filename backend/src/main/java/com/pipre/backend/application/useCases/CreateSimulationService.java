@@ -16,7 +16,7 @@ public class CreateSimulationService implements CreateSimulationUseCase {
     @Override
     public String execute(CreateSimulationCommand command) {
         // Heurística para calcular predictedScore (valor de 0 a 100)
-        int predictedScore = 0;
+        long predictedScore = 0;
         if ("SUCCESS".equalsIgnoreCase(command.result())) {
             predictedScore = 100;
             // Descontar por sensor error (ej. por cada 0.1 de error, restamos 10 puntos)
@@ -29,7 +29,7 @@ public class CreateSimulationService implements CreateSimulationUseCase {
             }
             // Descontar por exceso de bloques (ej. si usa más de 10 bloques, descontar 2 puntos por bloque extra)
             if (command.blocksUsage() != null && command.blocksUsage() > 10) {
-                predictedScore -= (command.blocksUsage() - 10) * 2;
+                predictedScore -= (command.blocksUsage() - 10L) * 2L;
             }
             // Asegurar que el score no sea menor que 50 para un SUCCESS
             predictedScore = Math.max(50, predictedScore);
@@ -37,7 +37,7 @@ public class CreateSimulationService implements CreateSimulationUseCase {
             // Si falló la simulación
             predictedScore = 30;
             if (command.blocksUsage() != null && command.blocksUsage() > 0) {
-                predictedScore += Math.min(20, command.blocksUsage() * 2);
+                predictedScore += Math.min(20L, command.blocksUsage() * 2L);
             }
         }
         // Asegurar rango 0 - 100
@@ -54,7 +54,7 @@ public class CreateSimulationService implements CreateSimulationUseCase {
                 command.codeUsage(),
                 command.sensorError(),
                 command.resolutionTime(),
-                predictedScore
+                (int)predictedScore
         );
         simulationRepositoryPort.save(simulation);
         return simulation.getIdSimulation();

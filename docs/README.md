@@ -1,6 +1,6 @@
 # Documentación de PIPRE
 
-Reorganizada el 30/10 y actualizada el **02/11/2026** para los 35 logros. Este índice distingue documentación vigente, evidencias de una entrega y antecedentes históricos.
+Reorganizada el 30/10 y actualizada el **05/11/2026** para diario 5/5 y auditoría del backend. Este índice distingue documentación vigente, evidencias de una entrega y antecedentes históricos.
 
 ## Por dónde empezar
 
@@ -16,6 +16,8 @@ Reorganizada el 30/10 y actualizada el **02/11/2026** para los 35 logros. Este �
 | Revisar las dependencias corregidas y preparar su PR | [Actualización pnpm del 02/11](informes/Actualizacion_Dependencias_Pnpm_2026_11_02.md) · [PR preparado](informes/PR_Dependencias_Pnpm.md) |
 | Consultar la revisión de seguridad actual y los avisos pendientes | [Auditoría frontend y corrección Maven del 04/11](informes/Revision_Seguridad_2026_11_04.md) |
 | Generar y jugar los cinco retos diarios sin IA | [Contrato procedural del diario](guias/Retos_Diarios_Procedurales.md) |
+| Revisar correcciones, pruebas y cobertura del backend | [Auditoría del 05/11](informes/Auditoria_Backend_2026_11_05.md) · [Ejecución de pruebas](../backend/TESTING.md) |
+| Continuar los pendientes concretos de implementación backend | [Pendientes del backend](guias/Pendientes_Implementacion_Backend.md) |
 | Consultar logros actuales y nuevos dentro de la intervención | [Contrato y exportación](guias/Sistema_35_Logros.md#consulta-para-la-investigación) · [SQL de sólo lectura](Consultas_35_Logros.sql) |
 | Continuar el trabajo pendiente | [Pendientes del SSD](simuladores/Pendientes_TetriLogic_SSD.md) |
 | Revisar los dos bloques pendientes de endpoints backend | [PATCH y asignación de actividades a grupos](guias/Pendientes_Endpoints_Backend.md) |

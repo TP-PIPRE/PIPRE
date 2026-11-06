@@ -1,6 +1,6 @@
 # Estado actual de PIPRE
 
-**Referencia funcional: 02/11/2026; dependencias: 04/11; diario 5/5: 05/11/2026.** La integración funcional incluye el sistema de 35 logros y se incorporó a `develop` mediante el PR #72 (`554cf0f`). Los parches Maven de la revisión del 04/11 permanecen como cambios locales sin commit. No afirma un despliegue de producción ni sustituye las instrucciones de [AGENTS.md](../AGENTS.md).
+**Referencia funcional: 02/11/2026; dependencias: 04/11; diario 5/5 y auditoría backend: 05/11/2026.** La integración funcional incluye el sistema de 35 logros y se incorporó a `develop` mediante el PR #72 (`554cf0f`). Los parches Maven de la revisión del 04/11 están presentes en esta rama. La auditoría del backend deja cambios de trabajo sin commit automático. No afirma un despliegue de producción ni sustituye las instrucciones de [AGENTS.md](../AGENTS.md).
 
 ## Catálogo y conexión
 
@@ -24,7 +24,7 @@ El modo activo sólo consume tamaño, inventario y conteos del catálogo publica
 
 ## Persistencia y trazabilidad
 
-Las migraciones aplicadas localmente son **V1…V19**. V13 incorpora metadatos de actividad, V14/V15 el catálogo TetriLogic y compatibilidad de prototipos, V16 Neon Flow, V17 contexto de intentos, V18 logros/progreso y V19 sesiones verificadas. No reescribirlas. Los generadores se usan con `--check`.
+Las migraciones aplicadas localmente son **V1…V21**. V13 incorpora metadatos de actividad, V14/V15 el catálogo TetriLogic y compatibilidad de prototipos, V16 Neon Flow, V17 contexto de intentos, V18 logros/progreso, V19 sesiones verificadas, V20 conjuntos diarios y V21 inicio de cada ejercicio diario. No reescribirlas. Los generadores se usan con `--check`.
 
 La autorización del 30/10 permite registrar intentos y acciones de ambos juegos en `telemetry_attempts`. Incluyen estudiante autorizado, actividad opcional, plantilla, versión de reglas, tiempos, eventos y estado inicial/final. Los reintentos aceptados son idempotentes. La práctica independiente admite actividad nula; los registros anteriores conservan contexto nulo.
 
@@ -49,6 +49,8 @@ El backend usa `STUDENT`, `TEACHER`, `ADMIN`; el frontend representa `student`, 
 Las pantallas académicas consumen sus recursos existentes; las trazas no alimentan automáticamente sus calificaciones o predicciones. `data-science/`, sus modelos, endpoints, proxy y contenedor siguen excluidos. No se entrega el SSD integral, tutor adaptativo, modelo ML entrenado ni una validación causal/pedagógica del aprendizaje. El diario mínimo y la gamificación del 02/11 tienen su propio contrato; no equivalen al SSD completo.
 
 ## Evidencias y pendientes
+
+La [auditoría del backend del 05/11](informes/Auditoria_Backend_2026_11_05.md) corrige respuestas de error, referencias inexistentes, concurrencia de progreso/asignación a grupos y cálculos extremos. Añade categorías de pruebas, cobertura JaCoCo y una integración PostgreSQL desechable, sin tocar frontend, migraciones ni datos reales. Los [pendientes de implementación backend](guias/Pendientes_Implementacion_Backend.md) especifican qué falta, su evidencia y los criterios de cierre; no presentan propuestas como funciones terminadas.
 
 El [informe de integración](informes/Integracion_TetriLogic_NeonFlow_ML.md) registra 291 pruebas frontend, 86 backend, 91 comprobaciones HTTP y 20 comprobaciones PostgreSQL aisladas, además de conservación de 111 filas históricas y revisión visual. Son resultados de aquella implementación; la reorganización documental no volvió a ejecutar esas suites.
 

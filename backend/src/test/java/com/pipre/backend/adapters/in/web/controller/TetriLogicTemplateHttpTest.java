@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.jpa.show-sql=false"
 })
 @AutoConfigureMockMvc
+@org.junit.jupiter.api.Tag("integration")
 class TetriLogicTemplateHttpTest {
     @Autowired private MockMvc mvc;
     @Autowired private TestRestTemplate http;

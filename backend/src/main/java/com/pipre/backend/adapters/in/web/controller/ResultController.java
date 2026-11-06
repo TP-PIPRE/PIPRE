@@ -37,7 +37,7 @@ public class ResultController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Guardar un nuevo resultado de actividad")
     @ApiResponse(responseCode = "201", description = "Resultado guardado exitosamente")
-    public ResponseEntity<Void> saveResult(@RequestBody SaveResultCommand command) {
+    public ResponseEntity<Void> saveResult(@jakarta.validation.Valid @RequestBody SaveResultCommand command) {
         saveResultUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

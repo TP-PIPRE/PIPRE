@@ -49,8 +49,8 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
     public void save(Activity activity) {
         ActivityJpaEntity entity = activityMapper.toJpaEntity(activity);
         if (activity.getIdLesson() != null) {
-            lessonJpaRepository.findById(activity.getIdLesson())
-                    .ifPresent(entity::setLessonJpaEntity);
+            entity.setLessonJpaEntity(lessonJpaRepository.findById(activity.getIdLesson())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("La lección no existe.")));
         }
         activityJpaRepository.save(entity);
     }

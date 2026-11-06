@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.flyway.placeholders.telemetry_fk_validation="
 })
 @AutoConfigureMockMvc
+@org.junit.jupiter.api.Tag("integration")
 class GameSessionHttpTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;

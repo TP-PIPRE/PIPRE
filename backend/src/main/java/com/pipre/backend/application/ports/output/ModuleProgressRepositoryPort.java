@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ModuleProgressRepositoryPort {
+    void lockStudent(String idStudent);
     Optional<ModuleProgress> findById(String idProgress);
     Optional<ModuleProgress> findByStudentAndModule(String idStudent, String idModule);
     List<ModuleProgress> findAllByIdStudent(String idStudent);

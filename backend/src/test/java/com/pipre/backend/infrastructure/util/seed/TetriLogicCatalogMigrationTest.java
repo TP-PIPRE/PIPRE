@@ -9,6 +9,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** Uses actual Flyway scripts and FK constraints, never a substitute in-memory catalog. */
+@org.junit.jupiter.api.Tag("integration")
 class TetriLogicCatalogMigrationTest {
     private static final String LESSON = "les-c002-r1";
     private static final String OBJECTIVE_1 = "Encaja los Tetriminos para cubrir el tablero cumpliendo el conteo de celdas por fila y columna.";

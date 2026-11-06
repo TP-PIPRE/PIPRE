@@ -40,13 +40,13 @@ public class ResultRepositoryAdapter implements ResultRepositoryPort {
         ResultJpaEntity entity = resultMapper.toJpaEntity(result);
 
         if (result.getIdStudent() != null) {
-            userJpaRepository.findById(result.getIdStudent())
-                    .ifPresent(entity::setStudentJpaEntity);
+            entity.setStudentJpaEntity(userJpaRepository.findById(result.getIdStudent())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El estudiante no existe.")));
         }
 
         if (result.getIdActivity() != null) {
-            activityJpaRepository.findById(result.getIdActivity())
-                    .ifPresent(entity::setActivityJpaEntity);
+            entity.setActivityJpaEntity(activityJpaRepository.findById(result.getIdActivity())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("La actividad no existe.")));
         }
 
         resultJpaRepository.save(entity);

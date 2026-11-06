@@ -37,6 +37,10 @@
 		<postgresql.version>42.7.12</postgresql.version>
 		<log4j2.version>2.25.5</log4j2.version>
 		<commons-lang3.version>3.18.0</commons-lang3.version>
+        <argLine></argLine>
+        <test.groups></test.groups>
+        <test.excludedGroups></test.excludedGroups>
+        <test.reportsDirectory>${project.build.directory}/surefire-reports</test.reportsDirectory>
 	</properties>
 	<dependencies>
         <dependency>
@@ -159,10 +163,49 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
+                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
+                    <groups>${test.groups}</groups>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
+                    <reportsDirectory>${test.reportsDirectory}</reportsDirectory>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.16</version>
+                <executions>
+                    <execution><id>coverage-agent</id><goals><goal>prepare-agent</goal></goals><configuration><append>false</append></configuration></execution>
+                    <execution><id>coverage-report</id><phase>verify</phase><goals><goal>report</goal></goals></execution>
+                    <execution>
+                        <id>critical-coverage-check</id><phase>verify</phase><goals><goal>check</goal></goals>
+                        <configuration>
+                            <!-- Filter this gate only; the coverage report above remains unfiltered. -->
+                            <includes>
+                                <include>**/BoardRules.class</include>
+                                <include>**/AchievementRules.class</include>
+                                <include>**/GameSessionsService.class</include>
+                                <include>**/GamificationService.class</include>
+                                <include>**/ProceduralDailyGenerator.class</include>
+                                <include>**/ProceduralDailyService.class</include>
+                                <include>**/RandomDailySelectionPolicy.class</include>
+                                <include>**/SaveModuleProgressService.class</include>
+                                <include>**/SaveResultService.class</include>
+                                <include>**/CreateSimulationService.class</include>
+                                <include>**/AddStudentRankingService.class</include>
+                                <include>**/RemoveStudentRankingService.class</include>
+                            </includes>
+                            <rules><rule><element>CLASS</element><limits><limit>
+                                <counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum>
+                            </limit></limits></rule></rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 		</plugins>
 	</build>
+    <profiles>
+        <profile><id>unit</id><properties><test.excludedGroups>integration</test.excludedGroups></properties></profile>
+        <profile><id>integration</id><properties><test.groups>integration</test.groups></properties></profile>
+    </profiles>
 
 </project>

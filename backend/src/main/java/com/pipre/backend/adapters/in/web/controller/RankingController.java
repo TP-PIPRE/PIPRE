@@ -41,7 +41,7 @@ public class RankingController {
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     @Operation(summary = "Asignar un estudiante a un grupo y registrar su ranking inicial")
     @ApiResponse(responseCode = "201", description = "Estudiante asignado y ranking creado/actualizado exitosamente")
-    public ResponseEntity<Void> assignGroupStudent(@RequestBody AddStudentRankingCommand command) {
+    public ResponseEntity<Void> assignGroupStudent(@jakarta.validation.Valid @RequestBody AddStudentRankingCommand command) {
         addStudentRankingUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
