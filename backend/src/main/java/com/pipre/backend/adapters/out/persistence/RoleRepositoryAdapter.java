@@ -15,6 +15,8 @@ public class RoleRepositoryAdapter implements RoleRepositoryPort {
 
     private final RoleJpaRepository jpaRepository;
     private final RoleMapper roleMapper;
+    @Override public void lockAdministration() {jpaRepository.lockAdministration().orElseThrow(()->new IllegalStateException("ADMIN role is missing"));}
+    @Override public long activeAdministrators() {return jpaRepository.activeAdministrators();}
 
     @Override
     public List<Role> findAll() {

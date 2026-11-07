@@ -9,6 +9,9 @@ CRITICAL = {
     "ProceduralDailyGenerator", "ProceduralDailyService", "RandomDailySelectionPolicy",
     "SaveModuleProgressService", "SaveResultService", "CreateSimulationService",
     "AddStudentRankingService", "RemoveStudentRankingService",
+    "ExercisePointsRules", "VerifiedExercisePointsService", "GameReferenceMoves",
+    "AcademicAccessPolicy", "IdempotentDeclarationService", "PatchCurriculumService",
+    "LoginAttemptLimiter", "JwtTokenFilter", "ProductionSecurityGuard",
 }
 
 

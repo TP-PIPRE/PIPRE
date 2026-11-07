@@ -13,9 +13,9 @@ public class DailyChallengeController {
     private final DailyChallengeUseCase dailyChallengeUseCase;
     private final com.pipre.backend.application.useCases.ProceduralDailyService procedural;
     @GetMapping("/today/set")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#studentId)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#studentId) or (hasRole('TEACHER') and @academicAccess.readStudent(#studentId))")
     public com.pipre.backend.application.useCases.ProceduralDailyService.DailySet set(@RequestParam String studentId) { return procedural.today(studentId); }
     @GetMapping("/today")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#studentId)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#studentId) or (hasRole('TEACHER') and @academicAccess.readStudent(#studentId))")
     public DailyChallengeDTO today(@RequestParam String studentId) { return dailyChallengeUseCase.today(studentId); }
 }

@@ -24,9 +24,10 @@ public class ResultController {
 
     private final GetStudentResultUseCase getStudentResultUseCase;
     private final SaveResultUseCase saveResultUseCase;
+    private final com.pipre.backend.application.useCases.IdempotentDeclarationService retries;
 
     @GetMapping("/user/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener resultados de actividades por estudiante")
     @ApiResponse(responseCode = "200", description = "Resultados obtenidos exitosamente")
     public ResponseEntity<List<ResultDTO>> getStudentResult(@PathVariable String idStudent) {
@@ -34,11 +35,11 @@ public class ResultController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Guardar un nuevo resultado de actividad")
     @ApiResponse(responseCode = "201", description = "Resultado guardado exitosamente")
-    public ResponseEntity<Void> saveResult(@jakarta.validation.Valid @RequestBody SaveResultCommand command) {
-        saveResultUseCase.execute(command);
+    public ResponseEntity<Void> saveResult(@jakarta.validation.Valid @RequestBody SaveResultCommand command,@RequestHeader(value="Idempotency-Key",required=false) String key,org.springframework.security.core.Authentication authentication) {
+        retries.execute(authentication.getName(),"activity-result",key,command,()->saveResultUseCase.execute(command));
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

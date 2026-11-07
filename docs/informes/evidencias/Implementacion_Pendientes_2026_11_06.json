@@ -1,0 +1,205 @@
+{
+  "validatedAtLima": "2026-11-07T00:31:48-05:00",
+  "branch": "Feature/niveles",
+  "tests": {
+    "backend": {
+      "tests": 337,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "postgresqlRepeatedSubset": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frontend": {
+      "tests": 481,
+      "files": 44,
+      "failures": 0,
+      "maxWorkers": 1
+    },
+    "e2e": {
+      "startedTestsAt": "2026-11-07T05:25:34.872Z",
+      "endedTestsAt": "2026-11-07T05:27:02.481Z",
+      "totalTests": 34,
+      "totalPassed": 34,
+      "totalFailed": 0,
+      "totalPending": 0,
+      "totalSkipped": 0,
+      "totalDuration": 77355,
+      "browserName": "edge",
+      "browserVersion": "157.0.4341.42",
+      "cypressVersion": "15.21.1",
+      "realApplicationCases": 11,
+      "httpFixtureCases": 23,
+      "specs": 8,
+      "report": "frontend/test-results/e2e/latest-run.json"
+    }
+  },
+  "coverage": {
+    "backendGlobal": {
+      "INSTRUCTION": {
+        "covered": 19264,
+        "missed": 5144,
+        "percent": 78.92
+      },
+      "BRANCH": {
+        "covered": 1334,
+        "missed": 721,
+        "percent": 64.91
+      },
+      "LINE": {
+        "covered": 2870,
+        "missed": 908,
+        "percent": 75.97
+      },
+      "COMPLEXITY": {
+        "covered": 1342,
+        "missed": 890,
+        "percent": 60.13
+      },
+      "METHOD": {
+        "covered": 927,
+        "missed": 273,
+        "percent": 77.25
+      },
+      "CLASS": {
+        "covered": 274,
+        "missed": 33,
+        "percent": 89.25
+      }
+    },
+    "backendCritical": {
+      "LINE": {
+        "covered": 630,
+        "missed": 19,
+        "percent": 97.07
+      },
+      "BRANCH": {
+        "covered": 706,
+        "missed": 205,
+        "percent": 77.5
+      }
+    },
+    "backendCriticalClasses": 21,
+    "frontendGlobal": {
+      "lines": {
+        "total": 2585,
+        "covered": 1876,
+        "skipped": 0,
+        "pct": 72.57
+      },
+      "statements": {
+        "total": 3541,
+        "covered": 2517,
+        "skipped": 0,
+        "pct": 71.08
+      },
+      "functions": {
+        "total": 1194,
+        "covered": 752,
+        "skipped": 0,
+        "pct": 62.98
+      },
+      "branches": {
+        "total": 3074,
+        "covered": 2178,
+        "skipped": 0,
+        "pct": 70.85
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "frontendCritical": {
+      "lines": {
+        "covered": 645,
+        "total": 673,
+        "pct": 95.84
+      },
+      "branches": {
+        "covered": 721,
+        "total": 859,
+        "pct": 83.93
+      },
+      "functions": {
+        "covered": 244,
+        "total": 280,
+        "pct": 87.14
+      },
+      "statements": {
+        "covered": 860,
+        "total": 963,
+        "pct": 89.3
+      }
+    },
+    "frontendCriticalFiles": 31
+  },
+  "frontend": {
+    "lintErrors": 0,
+    "lintWarnings": 0,
+    "e2eTypesPassed": true,
+    "productionBuildPassed": true,
+    "initialJsKilobytes": 454.18
+  },
+  "workflow": {
+    "actionlintVersion": "1.7.12",
+    "actionlintPassed": true,
+    "remoteRun": false
+  },
+  "docker": {
+    "applicationImagesBuilt": true,
+    "health": [
+      "frontend running",
+      "backend running healthy",
+      "postgres running healthy"
+    ],
+    "cleanup": {
+      "remainingOwnedContainers": 0,
+      "remainingOwnedNetworks": 0,
+      "remainingOwnedVolumes": 0,
+      "manifestRemoved": true
+    },
+    "postgresqlVersion": "16.15"
+  },
+  "dockerScout": {
+    "version": "1.27.0",
+    "scope": "QA images scanned during this implementation; includes OS/runtime and global packages",
+    "backend": {
+      "report": "backend/target/docker-backend.sarif",
+      "total": 8,
+      "severity": {
+        "low": 1,
+        "medium": 2,
+        "high": 2,
+        "critical": 3
+      }
+    },
+    "frontend": {
+      "report": "frontend/node_modules/.cache/pipre-audit/docker-frontend.sarif",
+      "total": 68,
+      "severity": {
+        "low": 5,
+        "medium": 20,
+        "high": 39,
+        "critical": 4
+      }
+    }
+  },
+  "migrations": {
+    "testedOnDisposableDatabases": [
+      "V22",
+      "V23",
+      "V24",
+      "V25",
+      "V26"
+    ],
+    "appliedToApplicationDatabase": false
+  },
+  "published": false
+}

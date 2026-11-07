@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import com.pipre.backend.application.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,15 +28,15 @@ public class ModuleController {
     private final DeleteModuleUseCase deleteModuleUseCase;
 
     @GetMapping("course/{idCourse}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.readCourse(#idCourse)")
     @Operation(summary = "Obtener todos los módulos de un curso paginados")
     @ApiResponse(responseCode = "200", description = "Módulos obtenidos exitosamente")
-    public ResponseEntity<Page<ModuleDTO>> getModules(@PathVariable String idCourse, Pageable pageable) {
-        return ResponseEntity.ok(getModulesUseCase.execute(idCourse, pageable));
+    public ResponseEntity<PageResponse<ModuleDTO>> getModules(@PathVariable String idCourse, Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(getModulesUseCase.execute(idCourse, pageable)));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.manageCourse(#requestDTO.idCourse())")
     @Operation(summary = "Crear un nuevo módulo")
     @ApiResponse(responseCode = "201", description = "Módulo creado exitosamente")
     public ResponseEntity<Void> postModule(@RequestBody CreateModuleCommand requestDTO) {
@@ -45,7 +45,7 @@ public class ModuleController {
     }
 
     @DeleteMapping("/{idModule}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.manageModule(#idModule)")
     @Operation(summary = "Eliminar un módulo existente")
     @ApiResponse(responseCode = "204", description = "Módulo eliminado exitosamente")
     public ResponseEntity<Void> deleteModule(@PathVariable String idModule) {

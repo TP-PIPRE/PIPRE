@@ -23,7 +23,7 @@ public class CourseModuleRankingController {
     private final GetModuleRankingUseCase getModuleRankingUseCase;
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.rankCourse(#courseId)")
     @Operation(summary = "Obtener ranking de estudiantes filtrado por curso")
     @ApiResponse(responseCode = "200", description = "Ranking del curso obtenido exitosamente")
     public ResponseEntity<List<RankingDTO>> getCourseRanking(@PathVariable String courseId) {
@@ -31,7 +31,7 @@ public class CourseModuleRankingController {
     }
 
     @GetMapping("/module/{moduleId}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('TEACHER') and @academicAccess.manageModule(#moduleId))")
     @Operation(summary = "Obtener ranking de estudiantes filtrado por módulo")
     @ApiResponse(responseCode = "200", description = "Ranking del módulo obtenido exitosamente")
     public ResponseEntity<List<RankingDTO>> getModuleRanking(@PathVariable String moduleId) {

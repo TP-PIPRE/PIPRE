@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GetCoursesService implements GetCoursesUseCase {
     private final CourseRepositoryPort repositoryPort;
+    @Override @Transactional(readOnly = true)
+    public Page<CourseDTO> visible(java.util.Set<String> ids,Pageable pageable) {
+        return repositoryPort.findAllByIds(ids,pageable).map(course->new CourseDTO(course.getIdCourse(),course.getName(),course.getDescription(),course.getLevel().name()));
+    }
 
     @Override
     @Transactional(readOnly = true)

@@ -67,16 +67,16 @@ export const HistoryTable = ({ history }: HistoryTableProps) => {
                 {entry.activityName}
               </div>
               <div className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-                {new Date(entry.dateAttempted).toLocaleDateString()}
+                {entry.dateAttempted && !Number.isNaN(Date.parse(entry.dateAttempted)) ? new Date(entry.dateAttempted).toLocaleDateString() : "Fecha no disponible"} · {entry.source==="SERVER_VERIFIED"?"Partida verificada":"Registro histórico declarado"}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <StarDisplay count={entry.stars} />
               <span className="font-mono text-xs font-bold min-w-[40px] text-right" style={{ color: "var(--primary)" }}>
-                {entry.score ?? "Sin nota"}
+                {entry.score ?? "Sin puntaje"}
               </span>
               <span className="font-mono text-xs" style={{ color: "var(--text-muted)" }}>
-                +{entry.xpEarned} XP
+                {entry.xpEarned===null?"XP no registrado":`+${entry.xpEarned} XP`}
               </span>
             </div>
           </div>

@@ -1,0 +1,60 @@
+# Development QA only. Start through scripts/audit-environment.ps1.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pipre_audit
+      POSTGRES_USER: audit
+      POSTGRES_PASSWORD: audit-test-only
+    tmpfs:
+      - /var/lib/postgresql/data
+    labels:
+      pipre.audit.run: ${PIPRE_AUDIT_RUN:?Use scripts/audit-environment.ps1}
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U audit -d pipre_audit]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  backend:
+    build: ./backend
+    image: pipre-audit-backend:local
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/pipre_audit
+      POSTGRES_USER: audit
+      POSTGRES_PASSWORD: audit-test-only
+      JWT_SECRET: pipre-audit-test-only-secret-never-use-in-production
+      PIPRE_COOKIE_SECURE: 'false'
+      PIPRE_COOKIE_SAME_SITE: Lax
+      PIPRE_ALLOWED_ORIGINS: http://127.0.0.1:15183
+      SPRING_JPA_SHOW_SQL: 'false'
+      PIPRE_SEED_DEMO_DATA: 'false'
+    ports:
+      - 127.0.0.1:18183:8080
+    labels:
+      pipre.audit.run: ${PIPRE_AUDIT_RUN:?Use scripts/audit-environment.ps1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, wget -q -O- http://127.0.0.1:8080/ > /dev/null]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_USE_LOCAL_BACKEND: 'true'
+        VITE_LOCAL_BACKEND_URL: http://127.0.0.1:18183
+    image: pipre-audit-frontend:local
+    ports:
+      - 127.0.0.1:15183:3000
+    labels:
+      pipre.audit.run: ${PIPRE_AUDIT_RUN:?Use scripts/audit-environment.ps1}
+    depends_on:
+      backend:
+        condition: service_healthy
+networks:
+  default:
+    labels:
+      pipre.audit.run: ${PIPRE_AUDIT_RUN:?Use scripts/audit-environment.ps1}

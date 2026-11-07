@@ -30,6 +30,22 @@ function mockPointerLayout() {
 const pointer = (x: number, y: number, pointerType = "mouse") => ({ clientX: x, clientY: y, pointerId: 1, pointerType, button: 0, buttons: 1 });
 
 describe("Direct manipulation with row and column goals", () => {
+  it.each(["keyboard","mouse","touch"])("places a tray piece at an occupied valid origin using %s", input => {
+    if(input!=="keyboard")mockPointerLayout();
+    const level={...TETRILOGIC_LEVELS[0],inventory:[{id:"o1",type:"O" as const},{id:"j1",type:"J" as const}]};
+    render(<MemoryRouter><TetriLogicStage levels={[level]}/></MemoryRouter>);
+    select("O","o1");fireEvent.click(cell(1,1));
+    select("J","j1");
+    const target=cell(2,2);
+    if(input!=="keyboard") {
+      fireEvent.pointerDown(target,pointer(175,175,input));
+      fireEvent.pointerUp(target,{...pointer(175,175,input),buttons:0});
+    }
+    fireEvent.click(target,{detail:input==="keyboard"?0:1});
+    expect(screen.getByRole("button",{name:"Pieza J, fila 2, columna 3"})).toBeInTheDocument();
+    expect(screen.getAllByRole("button",{name:/^Pieza O,/})).toHaveLength(4);
+    expect(screen.getAllByRole("button",{name:/^Pieza J,/})).toHaveLength(4);
+  });
   it("restores counts without restoring blocked cells, dependencies or scoring", () => {
     open();
     expect(screen.getAllByRole("button", { name: /^Celda vacía/ })).toHaveLength(16);

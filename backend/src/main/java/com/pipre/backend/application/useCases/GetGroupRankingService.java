@@ -1,34 +1,16 @@
 package com.pipre.backend.application.useCases;
-
 import com.pipre.backend.application.dto.RankingDTO;
 import com.pipre.backend.application.ports.input.GetGroupRankingUseCase;
-import com.pipre.backend.application.ports.output.RankingRepositoryPort;
+import com.pipre.backend.application.ports.output.VerifiedRankingRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class GetGroupRankingService implements GetGroupRankingUseCase {
-    private final RankingRepositoryPort rankingRepositoryPort;
+    private final VerifiedRankingRepositoryPort rankings;
     private final RankingGamificationView gamification;
-
-    @Override
-    public List<RankingDTO> execute(String idGroup) {
-        return gamification.apply(rankingRepositoryPort.findAllByIdGroup(idGroup)
-                .stream()
-                .map(r -> new RankingDTO(
-                        r.getIdStudent(),
-                        r.getStudentName(),
-                        r.getTotalPoints(),
-                        r.getPosition(),
-                        r.getLevel(),
-                        r.getXpTotal(),
-                        r.getTotalStars(),
-                        r.getCurrentStreak(),
-                        r.getMaxStreak()
-                ))
-                .toList());
-    }
+    @Override @Transactional(readOnly=true)
+    public List<RankingDTO> execute(String idGroup) {return gamification.apply(rankings.classroom(idGroup));}
 }

@@ -33,7 +33,7 @@ public class UserController {
     private final RoleRepositoryPort roleRepositoryPort;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Listar todos los usuarios")
     @ApiResponse(responseCode = "200", description = "Usuarios obtenidos exitosamente")
     public ResponseEntity<List<UserDTO>> getAllUsers() {
@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#userId)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#userId) or (hasRole('TEACHER') and @academicAccess.readStudent(#userId))")
     @Operation(summary = "Obtener usuario por ID")
     @ApiResponse(responseCode = "200", description = "Usuario obtenido exitosamente")
     public ResponseEntity<UserDTO> getUserById(@PathVariable String userId) {

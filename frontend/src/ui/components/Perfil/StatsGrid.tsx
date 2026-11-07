@@ -28,7 +28,7 @@ const statItems = (p: PlayerProfileDTO) => [
   {
     icon: BsBarChartFill,
     value: p.efficiencyAvg === null ? "—" : `${Math.round(p.efficiencyAvg)}%`,
-    label: "Eficiencia",
+    label: "Eficiencia de movimientos",
     color: "var(--primary)",
   },
   {

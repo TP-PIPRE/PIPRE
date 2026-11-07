@@ -10,7 +10,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import com.pipre.backend.application.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,17 +27,19 @@ public class CourseController {
     private final CreateCourseUseCase createCourseUseCase;
     private final UpdateCoursesUseCase updateCoursesUseCase;
     private final DeleteCourseUseCase deleteCourseUseCase;
+    private final com.pipre.backend.infrastructure.security.AcademicAccessPolicy access;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener lista de cursos paginada")
     @ApiResponse(responseCode = "200", description = "Lista paginada obtenida exitosamente")
-    public ResponseEntity<Page<CourseDTO>> getCourses(Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(getCoursesUseCase.execute(pageable));
+    public ResponseEntity<PageResponse<CourseDTO>> getCourses(Pageable pageable) {
+        var ids=access.visibleCourses();
+        return ResponseEntity.ok(PageResponse.from(ids==null?getCoursesUseCase.execute(pageable):getCoursesUseCase.visible(ids,pageable)));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Crear un nuevo curso")
     @ApiResponse(responseCode = "201", description = "Curso creado exitosamente")
     public ResponseEntity<Void> postCourse(@RequestBody RegisterCourseCommand requestDTO) {
@@ -46,7 +48,7 @@ public class CourseController {
     }
 
     @PutMapping("/{idCourse}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Actualizar un curso existente")
     @ApiResponse(responseCode = "204", description = "Curso actualizado exitosamente")
     public ResponseEntity<Void> putCourse(@PathVariable String idCourse,
@@ -56,7 +58,7 @@ public class CourseController {
     }
 
     @DeleteMapping("/{idCourse}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Eliminar un curso existente")
     @ApiResponse(responseCode = "204", description = "Curso eliminado exitosamente")
     public ResponseEntity<Void> deleteCourse(@PathVariable String idCourse) {

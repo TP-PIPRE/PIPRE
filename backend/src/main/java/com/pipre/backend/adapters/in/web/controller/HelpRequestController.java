@@ -25,7 +25,7 @@ public class HelpRequestController {
     private final GetHelpRequestsUseCase getHelpRequestsUseCase;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Crear una nueva petición de ayuda")
     @ApiResponse(responseCode = "201", description = "Petición de ayuda creada exitosamente")
     public ResponseEntity<Void> createHelpRequest(@RequestBody CreateHelpRequestCommand command) {
@@ -34,7 +34,7 @@ public class HelpRequestController {
     }
 
     @GetMapping("/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener todas las peticiones de ayuda de un estudiante")
     @ApiResponse(responseCode = "200", description = "Peticiones de ayuda obtenidas exitosamente")
     public ResponseEntity<List<HelpRequestDTO>> getHelpRequests(@PathVariable String idStudent) {

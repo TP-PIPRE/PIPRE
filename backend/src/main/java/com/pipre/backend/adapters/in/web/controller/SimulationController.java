@@ -24,9 +24,10 @@ public class SimulationController {
 
     private final GetSimulationsUseCase getSimulationsUseCase;
     private final CreateSimulationUseCase createSimulationUseCase;
+    private final com.pipre.backend.application.useCases.IdempotentDeclarationService retries;
 
     @GetMapping("/user/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener todas las simulaciones de un estudiante")
     @ApiResponse(responseCode = "200", description = "Simulaciones obtenidas exitosamente")
     public ResponseEntity<List<SimulationDTO>> getSimulations(@PathVariable String idStudent) {
@@ -34,11 +35,11 @@ public class SimulationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Crear una nueva simulación")
     @ApiResponse(responseCode = "201", description = "Simulación creada exitosamente")
-    public ResponseEntity<Void> createSimulation(@RequestBody CreateSimulationCommand command) {
-        createSimulationUseCase.execute(command);
+    public ResponseEntity<Void> createSimulation(@RequestBody CreateSimulationCommand command,@RequestHeader(value="Idempotency-Key",required=false) String key,org.springframework.security.core.Authentication authentication) {
+        retries.execute(authentication.getName(),"simulation",key,command,()->createSimulationUseCase.execute(command));
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }

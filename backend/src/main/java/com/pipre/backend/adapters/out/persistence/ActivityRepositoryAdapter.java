@@ -22,6 +22,10 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
     private final ActivityJpaRepository activityJpaRepository;
     private final LessonJpaRepository lessonJpaRepository;
     private final ActivityMapper activityMapper;
+    @Override @org.springframework.transaction.annotation.Transactional
+    public Optional<Activity> lockById(String id){return activityJpaRepository.lockById(id).map(activityMapper::toDomain);}
+    @Override @org.springframework.transaction.annotation.Transactional(readOnly=true)
+    public Page<Activity> assignedToGroup(String id,Pageable pageable){return activityJpaRepository.assignedToGroup(id,pageable).map(activityMapper::toDomain);}
 
     @Override
     public List<Activity> findAll() {
@@ -46,8 +50,11 @@ public class ActivityRepositoryAdapter implements ActivityRepositoryPort {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void save(Activity activity) {
         ActivityJpaEntity entity = activityMapper.toJpaEntity(activity);
+        // Simulations are independent history, never a replaceable field of the activity editor.
+        activityJpaRepository.findById(activity.getIdActivity()).ifPresent(existing->entity.setSimulationJpaEntityList(existing.getSimulationJpaEntityList()));
         if (activity.getIdLesson() != null) {
             entity.setLessonJpaEntity(lessonJpaRepository.findById(activity.getIdLesson())
                     .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("La lección no existe.")));

@@ -27,7 +27,7 @@ mvn -B -ntp clean verify
 python scripts/coverage-summary.py
 ```
 
-`test` ejecuta la categoría elegida; sin perfil se ejecutan ambas. `verify` genera el informe completo de cobertura JaCoCo y exige al menos 80 % de líneas en cada una de las 12 clases críticas enumeradas en el POM y en el resumen. Ejecutar la cobertura de aceptación con toda la suite, sin `-Dtest`, sin perfil y sin saltar pruebas. `clean` elimina sólo los artefactos Maven de `target/`.
+`test` ejecuta la categoría elegida; sin perfil se ejecutan ambas. `verify` genera el informe completo de cobertura JaCoCo y exige al menos 80 % de líneas en cada una de las 21 clases críticas enumeradas en el POM y en el resumen. Ejecutar la cobertura de aceptación con toda la suite, sin `-Dtest`, sin perfil y sin saltar pruebas. `clean` elimina sólo los artefactos Maven de `target/`.
 
 ## Ejecución sin instalar Java/Maven en Windows
 
@@ -67,7 +67,7 @@ Un `finally` comprueba las etiquetas antes de retirar los contenedores y la red 
 | `target/api-contract-inventory.json` | Rutas/métodos y expresiones de autorización registradas realmente por Spring |
 | `target/jacoco-postgres.exec` | Cobertura de la integración PostgreSQL, separada del reporte general |
 
-El reporte JaCoCo no excluye DTO, entidades, infraestructura ni clases con baja cobertura. El resumen crítico enumera explícitamente reglas de tableros/logros, sesiones, gamificación, generación/selección diaria, progreso, resultados, cálculo de simulaciones y asignación/retirada de grupos. El filtro de clases sólo se aplica al umbral de aceptación, no al reporte completo. El porcentaje crítico no debe presentarse como cobertura global ni como prueba de todas las ramas.
+El reporte JaCoCo no excluye DTO, entidades, infraestructura ni clases con baja cobertura. El resumen crítico enumera explícitamente reglas de tableros/logros, sesiones, gamificación, generación/selección diaria, progreso, resultados, cálculo de simulaciones y asignación/retirada de grupos, puntos, permisos, PATCH y seguridad operativa. El filtro de clases sólo se aplica al umbral de aceptación, no al reporte completo. El porcentaje crítico no debe presentarse como cobertura global ni como prueba de todas las ramas.
 
 Si se necesita conservar reportes separados de ejecuciones seleccionadas, usar `-Dtest.reportsDirectory=target/surefire-unit` y `-Djacoco.destFile=target/jacoco-unit.exec` (o nombres equivalentes para integración). Una ejecución parcial no sustituye la cobertura de la suite completa.
 

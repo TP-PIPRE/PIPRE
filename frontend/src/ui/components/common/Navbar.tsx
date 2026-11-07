@@ -5,6 +5,7 @@ import { BookOpen, ChartNoAxesCombined, Home, LogOut, Menu, Palette, Trophy, Use
 import { getAuthState } from "../../../infrastructure/store/authStore";
 import { useThemeStore } from "../../../infrastructure/store/themeStore";
 import { apiService } from "../../../infrastructure/api/apiService";
+import { useAchievementStore } from "../../../infrastructure/store/achievementStore";
 import { themes } from "../../../shared/constants/themes";
 import { RobotIcon } from "./RobotIcon";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "../../../components/ui/sheet";
@@ -12,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export const Navbar = () => {
   const { user, isAuthenticated } = getAuthState();
+  const progressRevision=useAchievementStore(state=>state.revisions[user?.id??""]??0);
   const { currentThemeName, setTheme } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,12 +31,14 @@ export const Navbar = () => {
       if (active) setProfileInfo({ level: p.level, stars: p.totalStars });
     }).catch(() => {});
     return () => { active = false; };
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.id, progressRevision]);
   const navLinks = isDocente ? [
     { name: "Dashboard", path: "/docente/dashboard", icon: LayoutDashboard },
     { name: "Métricas", path: "/docente/metricas", icon: ChartNoAxesCombined },
     { name: "Retos", path: "/docente/retos", icon: FlaskConical },
     { name: "Estudiantes", path: "/docente/estudiantes", icon: Users },
+    { name: "Ranking", path: "/ranking", icon: Trophy },
+    ...(user?.role==="admin"?[{name:"Administración",path:"/docente/administracion",icon:Users}]:[]),
   ] : [
     { name: "Inicio", path: "/", icon: Home },
     { name: "Simulador", path: "/simulador", icon: FlaskConical },

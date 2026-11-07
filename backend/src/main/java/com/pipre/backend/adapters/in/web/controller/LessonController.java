@@ -26,7 +26,7 @@ public class LessonController {
     private final CreateLessonUseCase createLessonUseCase;
 
     @GetMapping("/module/{idModule}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.readModule(#idModule)")
     @Operation(summary = "Obtener todas las lecciones de un módulo")
     @ApiResponse(responseCode = "200", description = "Lecciones obtenidas exitosamente")
     public ResponseEntity<List<LessonDTO>> getLessons(@PathVariable String idModule) {
@@ -34,7 +34,7 @@ public class LessonController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.manageModule(#requestDTO.idModule())")
     @Operation(summary = "Crear una nueva lección")
     @ApiResponse(responseCode = "201", description = "Lección creada exitosamente")
     public ResponseEntity<Void> postLesson(@RequestBody CreateLessonCommand requestDTO) {

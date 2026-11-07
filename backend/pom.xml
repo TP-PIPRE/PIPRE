@@ -193,6 +193,15 @@
                                 <include>**/CreateSimulationService.class</include>
                                 <include>**/AddStudentRankingService.class</include>
                                 <include>**/RemoveStudentRankingService.class</include>
+                                <include>**/ExercisePointsRules.class</include>
+                                <include>**/VerifiedExercisePointsService.class</include>
+                                <include>**/GameReferenceMoves.class</include>
+                                <include>**/AcademicAccessPolicy.class</include>
+                                <include>**/IdempotentDeclarationService.class</include>
+                                <include>**/PatchCurriculumService.class</include>
+                                <include>**/LoginAttemptLimiter.class</include>
+                                <include>**/JwtTokenFilter.class</include>
+                                <include>**/ProductionSecurityGuard.class</include>
                             </includes>
                             <rules><rule><element>CLASS</element><limits><limit>
                                 <counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum>

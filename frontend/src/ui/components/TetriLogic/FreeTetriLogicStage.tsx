@@ -5,7 +5,8 @@ import { ArrowLeft, CheckCircle2, RotateCw, RotateCcw, Undo2 } from "lucide-reac
 import type { LevelConfig } from "../../../shared/types/TetriLogic";
 import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 import { createBoard } from "../../../application/usecases/tetrilogic/rules";
-import { createFreePlay, freePlayReducer, isPlaced } from "../../../application/usecases/tetrilogic/freePlay";
+import { freePlayReducer, isPlaced } from "../../../application/usecases/tetrilogic/freePlay";
+import { restoreTetriBoard } from "../../../application/usecases/restoreBoard";
 import type { FreePlayAction } from "../../../application/usecases/tetrilogic/freePlay";
 import type { Piece } from "../../../shared/types/TetriLogic";
 import { useAttemptTrace } from "../common/useAttemptTrace";
@@ -20,14 +21,22 @@ import { Modal } from "../common/Modal";
 import "./tetrilogic.css";
 import "./freePlay.css";
 
-export function FreeTetriLogicStage({ level, levels, index, onLevel, activity, dailyChallengeId }: {
+type Props={
   level: LevelConfig; levels: LevelConfig[]; index: number; onLevel: (index: number) => void; activity?: ActivityResponseDTO; dailyChallengeId?: string;
-}) {
-  const [state, dispatch] = useReducer(freePlayReducer, level, createFreePlay);
-  const [confirmReset, setConfirmReset] = useState(false);
+};
+export function FreeTetriLogicStage(props:Props) {
+  const {level,activity,dailyChallengeId}=props;
   const templateId=activity?.levelTemplate??level.templateId;
   const gameSession=useValidatedGameSession(templateId?{game:"tetrilogic",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
-  const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null);
+  if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"TetriLogic"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
+  return <TetriBoardSession key={gameSession.state?.session?.sessionId??templateId} {...props} gameSession={gameSession}/>;
+}
+function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId,gameSession}:Props&{gameSession:ReturnType<typeof useValidatedGameSession>}) {
+  const [state, dispatch] = useReducer(freePlayReducer,undefined,()=>restoreTetriBoard(level,gameSession.state?.session?.state.pieces));
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [initialTrace]=useState(gameSession.state?.session?.state.pieces??[]);
+  const templateId=activity?.levelTemplate??level.templateId;
+  const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null,initialTrace);
   const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));
   const trackedDispatch=(action:FreePlayAction)=>{
     const next=freePlayReducer(state,action);

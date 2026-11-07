@@ -22,7 +22,7 @@ public class DropoutRiskController {
     private final GetDropoutRiskUseCase getDropoutRiskUseCase;
 
     @GetMapping("/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener el riesgo de deserción analizado para un estudiante")
     @ApiResponse(responseCode = "200", description = "Riesgo de deserción obtenido exitosamente")
     public ResponseEntity<DropoutRiskDTO> getDropoutRisk(@PathVariable String idStudent) {

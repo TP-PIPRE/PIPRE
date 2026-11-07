@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 public class DataSeeder {
     @org.springframework.beans.factory.annotation.Value("${pipre.seed.demo-data:false}")
     private boolean demoData;
+    @org.springframework.beans.factory.annotation.Value("${pipre.seed.access-users:true}")
+    private boolean accessUsers;
 
     private final UserRolesSeederService userSeederService;
     private final CourseSeederService courseSeederService;
@@ -20,9 +22,10 @@ public class DataSeeder {
     @Bean
     CommandLineRunner seed() {
         return args -> {
-            if (!userSeederService.isDatabaseSeeded()) {
+            if (!userSeederService.isDatabaseSeeded() && accessUsers) {
                 userSeederService.seedUsers();
                 if (demoData) {
+                    userSeederService.seedDemoUsers();
                     groupSeederService.seedCourses();
                     additionalDataSeederService.seedAdditionalData();
                 }

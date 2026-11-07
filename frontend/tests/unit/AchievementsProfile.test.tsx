@@ -6,6 +6,7 @@ import { Simulador } from "../../src/ui/pages/Simulador";
 import { ResultadosPage } from "../../src/ui/pages/ResultadosPage";
 import { AchievementNotification } from "../../src/ui/components/common/AchievementNotification";
 import { DailyChallengeCard } from "../../src/ui/components/common/DailyChallengeCard";
+import {HistoryTable} from "../../src/ui/components/Perfil/HistoryTable";
 import { apiService } from "../../src/infrastructure/api/apiService";
 import { gameProgressService } from "../../src/infrastructure/api/gameProgressService";
 import { getAuthState } from "../../src/infrastructure/store/authStore";
@@ -48,6 +49,20 @@ beforeEach(() => {
 afterEach(() => { cleanup(); localStorage.clear(); });
 
 describe("35 confirmed achievements and student profile", () => {
+  it("does not invent a date or XP for incomplete historical records",()=>{
+    render(<HistoryTable history={[{idResult:"old",idActivity:"a",activityName:"Dato histórico",score:null,stars:0,xpEarned:null,efficiency:null,dateAttempted:null,source:"LEGACY_DECLARED"}]}/>);
+    expect(screen.getByText(/Fecha no disponible/)).toBeInTheDocument();expect(screen.getByText("XP no registrado")).toBeInTheDocument();expect(document.body).not.toHaveTextContent("1970");
+  });
+  it("keeps declared historical scores out of verified point and star summaries",async()=>{
+    vi.mocked(apiService.profile.getHistory).mockResolvedValue([
+      {idResult:"verified",idActivity:"",activityName:"Solución validada",score:84,stars:2,xpEarned:0,efficiency:null,dateAttempted:"2026-11-02T12:00:00Z",source:"SERVER_VERIFIED"},
+      {idResult:"legacy",idActivity:"",activityName:"Dato antiguo",score:999999,stars:3,xpEarned:0,efficiency:null,dateAttempted:"2026-10-02",source:"LEGACY_DECLARED"},
+    ]);
+    render(<MemoryRouter><ResultadosPage/></MemoryRouter>);await screen.findByText("Dato antiguo");
+    expect(screen.getByText("Promedio de puntos por intento").parentElement).toHaveTextContent("84");
+    expect(screen.getByText("Estrellas en el historial").parentElement).toHaveTextContent("⭐ 2");
+    expect(screen.getByText("999999 · declarado")).toBeInTheDocument();expect(screen.queryByText("Aprobado")).not.toBeInTheDocument();
+  });
   it("shows all 35 active achievements with readable conditions, categories and Lima unlock dates", async () => {
     vi.mocked(apiService.profile.getAchievements).mockResolvedValue([...catalog(), { ...catalog()[0], idAchievement: "old", code: "OLD_FIRST", name: "Antiguo sin equivalencia", active: false }]);
     openProfile();
@@ -97,11 +112,11 @@ describe("35 confirmed achievements and student profile", () => {
     view.rerender(<MemoryRouter><AchievementNotification /></MemoryRouter>);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
-  it("keeps ungraded verified victories separate from an academic failure in results", async () => {
-    vi.mocked(apiService.profile.getHistory).mockResolvedValue([{idResult:"verified",idActivity:"",activityName:"Partida verificada",score:null,stars:2,xpEarned:0,efficiency:null,dateAttempted:"2026-11-02T12:00:00Z"}]);
+  it("shows an older verified victory without inventing points or an academic grade", async () => {
+    vi.mocked(apiService.profile.getHistory).mockResolvedValue([{idResult:"verified",idActivity:"",activityName:"Partida verificada",score:null,stars:2,xpEarned:0,efficiency:null,dateAttempted:"2026-11-02T12:00:00Z",source:"SERVER_VERIFIED"}]);
     render(<MemoryRouter><ResultadosPage/></MemoryRouter>);
-    await screen.findByText("Partida verificada");
-    expect(screen.getAllByText("Sin nota académica").length).toBeGreaterThan(0);
+    await screen.findAllByText("Partida verificada");
+    expect(screen.getAllByText("Sin puntaje verificado").length).toBeGreaterThan(0);
     expect(screen.queryByText("Requiere refuerzo")).not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("NaN");
   });

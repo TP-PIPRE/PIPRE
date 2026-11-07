@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useAsyncResource } from "../../application/hooks/useAsyncResource";
+import React, { useState } from "react";
 import { apiService } from "../../infrastructure/api/apiService";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { mergeRankings } from "../../application/usecases/mergeRankings";
-import type { RankingDTO, CourseResponseDTO, ModuleResponseDTO } from "../../infrastructure/api/models/apiModels";
+import type { RankingDTO, GroupDTO } from "../../infrastructure/api/models/apiModels";
 
 interface RankingEntry {
   position: number;
@@ -18,157 +19,58 @@ interface RankingEntry {
 
 type Tab = "global" | "course" | "groups";
 
+const loadGroups = () => apiService.groups.getAll();
+const loadCourses = () => apiService.courses.getAll();
+const EMPTY_GROUPS:GroupDTO[]=[];
+const mapFromDto = (data: RankingDTO[], groupName?: string): RankingEntry[] => data.map(dto => ({
+  position:dto.position,studentId:dto.idStudent,studentName:dto.studentName||`Estudiante #${dto.position}`,
+  totalScore:dto.totalPoints,level:dto.level||1,totalStars:dto.totalStars||0,
+  currentStreak:dto.currentStreak||0,maxStreak:dto.maxStreak||0,groupName,
+}));
+
 export const RankingPage: React.FC = () => {
-  const canViewCourseRanking = ["docente", "admin"].includes(getAuthState().user?.role ?? "");
-  const [activeTab, setActiveTab] = useState<Tab>("global");
-  const [rankingData, setRankingData] = useState<RankingEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [groups, setGroups] = useState<{ idGroup: string; groupName: string }[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
-
-  const [courses, setCourses] = useState<CourseResponseDTO[]>([]);
-  const [modules, setModules] = useState<ModuleResponseDTO[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>("");
-  const [selectedModule, setSelectedModule] = useState<string>("");
-
-  const mapFromDto = (data: RankingDTO[], groupName?: string): RankingEntry[] =>
-    data.map((dto) => ({
-      position: dto.position,
-      studentId: dto.idStudent,
-      studentName: dto.studentName || `Estudiante #${dto.position}`,
-      totalScore: dto.totalPoints,
-      level: dto.level || 1,
-      totalStars: dto.totalStars || 0,
-      currentStreak: dto.currentStreak || 0,
-      maxStreak: dto.maxStreak || 0,
-      groupName,
-    }));
-
-  const loadGroups = useCallback(async () => {
-    try {
-      const groupsData = await apiService.groups.getAll();
-      if (groupsData && groupsData.length > 0) {
-        const mapped = groupsData.map((g) => ({ idGroup: g.idGroup, groupName: g.groupName }));
-        setGroups(mapped);
-        return mapped;
-      }
-    } catch {}
-    return [];
-  }, []);
-
-  const loadCourses = useCallback(async () => {
-    try {
-      const data = await apiService.courses.getAll();
-      if (data && data.length > 0) {
-        setCourses(data);
-        return data;
-      }
-    } catch {}
-    return [];
-  }, []);
-
-  const loadModules = useCallback(async (courseId: string) => {
-    if (!courseId) { setModules([]); return; }
-    try {
-      const data = await apiService.modules.getByCourse(courseId);
-      setModules(data || []);
-    } catch {
-      setModules([]);
+  const role=getAuthState().user?.role??"student";
+  const canViewCourseRanking=["docente","admin"].includes(role);
+  const [tabChoice,setActiveTab]=useState<Tab>("global");
+  const [courseChoice,setSelectedCourse]=useState("");
+  const [groupChoice,setSelectedGroup]=useState("");
+  const [selectedModule,setSelectedModule]=useState("");
+  const settings=useAsyncResource(role==="student"?"student-ranking-visibility":undefined,apiService.ranking.getSettings);
+  const hidden=role==="student"&&settings.data?.studentVisibility==="HIDDEN";
+  const activeTab:Tab=role==="student"&&settings.data?.studentVisibility!=="GLOBAL"?"groups":tabChoice;
+  const needsGroups=activeTab==="groups"||activeTab==="global"&&role==="docente";
+  const studentReady=role!=="student"||Boolean(settings.data)&&!hidden;
+  const groupResource=useAsyncResource(needsGroups&&studentReady?"groups":undefined,loadGroups);
+  const courseResource=useAsyncResource(activeTab==="course"?"courses":undefined,loadCourses);
+  const groups=groupResource.data??EMPTY_GROUPS;
+  const courses=courseResource.data??[];
+  const selectedCourse=courses.find(c=>c.idCourse===courseChoice)?.idCourse??courses[0]?.idCourse??"";
+  const selectedGroup=groups.find(g=>g.idGroup===groupChoice)?.idGroup??groups[0]?.idGroup??"";
+  const moduleResource=useAsyncResource(activeTab==="course"&&selectedCourse?selectedCourse:undefined,()=>apiService.modules.getByCourse(selectedCourse));
+  const modules=moduleResource.data??[];
+  const rankingGroups=activeTab==="global"&&role==="docente"?groups:EMPTY_GROUPS;
+  const rankingGroupId=activeTab==="groups"?selectedGroup:"";
+  const rankingCourseId=activeTab==="course"?selectedCourse:"";
+  const rankingModuleId=activeTab==="course"?selectedModule:"";
+  const loadRanking=async()=>{
+    if(activeTab==="global") {
+      if(role!=="docente")return mapFromDto(await apiService.ranking.getGlobalRanking());
+      const rows=await Promise.all(rankingGroups.map(async group=>mapFromDto(await apiService.ranking.getGroupRanking(group.idGroup),group.groupName)));
+      return mergeRankings(rows);
     }
-  }, []);
-
-  const loadGlobalRanking = useCallback(async () => {
-    setIsLoading(true);
-    setRankingData([]);
-    try {
-      const groupsData = await loadGroups();
-      if (groupsData.length === 0) {
-        setIsLoading(false);
-        return;
-      }
-
-      const results = await Promise.allSettled(
-        groupsData.map(async (g) => {
-          const data = await apiService.ranking.getGroupRanking(g.idGroup);
-          return mapFromDto(data, g.groupName);
-        })
-      );
-
-      const merged = mergeRankings(results.filter(r => r.status === "fulfilled").map(r => r.value));
-
-      setRankingData(merged);
-    } catch {
-      setRankingData([]);
-    }
-    setIsLoading(false);
-  }, [loadGroups]);
-
-  const loadCourseRanking = useCallback(async () => {
-    if (!selectedCourse) { setRankingData([]); setIsLoading(false); return; }
-    setIsLoading(true);
-    setRankingData([]);
-    try {
-      const data = selectedModule
-        ? await apiService.ranking.getModuleRanking(selectedModule)
-        : await apiService.ranking.getCourseRanking(selectedCourse);
-      setRankingData(data && data.length > 0 ? mapFromDto(data) : []);
-    } catch {
-      setRankingData([]);
-    }
-    setIsLoading(false);
-  }, [selectedCourse, selectedModule]);
-
-  const loadGroupRanking = useCallback(async (groupId: string) => {
-    if (!groupId) { setRankingData([]); setIsLoading(false); return; }
-    setIsLoading(true);
-    setRankingData([]);
-    try {
-      const data = await apiService.ranking.getGroupRanking(groupId);
-      setRankingData(data && data.length > 0 ? mapFromDto(data) : []);
-    } catch {
-      setRankingData([]);
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Auto-select first option when entering a tab
-  useEffect(() => {
-    if (activeTab === "course") {
-      loadCourses().then((data) => {
-        if (data && data.length > 0 && !selectedCourse) {
-          setSelectedCourse(data[0].idCourse);
-        }
-      });
-    } else if (activeTab === "groups") {
-      loadGroups().then((data) => {
-        if (data && data.length > 0 && !selectedGroup) {
-          setSelectedGroup(data[0].idGroup);
-        }
-      });
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === "global") loadGlobalRanking();
-  }, [activeTab, loadGlobalRanking]);
-
-  useEffect(() => {
-    if (activeTab === "course" && selectedCourse) loadCourseRanking();
-  }, [activeTab, selectedCourse, selectedModule, loadCourseRanking]);
-
-  useEffect(() => {
-    if (activeTab === "groups" && selectedGroup) loadGroupRanking(selectedGroup);
-  }, [activeTab, selectedGroup, loadGroupRanking]);
-
-  useEffect(() => {
-    if (selectedCourse) loadModules(selectedCourse);
-    else setModules([]);
-  }, [selectedCourse, loadModules]);
-
-  useEffect(() => {
-    setSelectedModule("");
-  }, [selectedCourse]);
+    if(activeTab==="groups")return rankingGroupId?mapFromDto(await apiService.ranking.getGroupRanking(rankingGroupId)):[];
+    if(!rankingCourseId)return [];
+    return mapFromDto(rankingModuleId?await apiService.ranking.getModuleRanking(rankingModuleId):await apiService.ranking.getCourseRanking(rankingCourseId));
+  };
+  const ready=studentReady&&(activeTab==="course"?courseResource.data!==undefined:needsGroups?groupResource.data!==undefined:true);
+  const query=ready?JSON.stringify([role,activeTab,rankingGroupId,rankingCourseId,rankingModuleId,rankingGroups.map(group=>[group.idGroup,group.groupName])]):undefined;
+  const rankingResource=useAsyncResource(query,loadRanking);
+  const rankingData=rankingResource.data??[];
+  const error=settings.error||(needsGroups&&groupResource.error)||courseResource.error||moduleResource.error||rankingResource.error;
+  const isLoading=!error&&(settings.loading||(needsGroups&&groupResource.loading)||courseResource.loading||rankingResource.loading);
+  const retry=()=>{settings.retry();groupResource.retry();courseResource.retry();moduleResource.retry();rankingResource.retry();};
+  const tabs:Tab[]=role==="student"&&settings.data?.studentVisibility!=="GLOBAL"?["groups"]:canViewCourseRanking?["global","course","groups"]:["global","groups"];
+  if(hidden)return <main className="lab-shell"><h1>Ranking</h1><p role="status">El administrador ha ocultado el ranking para estudiantes.</p></main>;
 
   const top3 = rankingData.slice(0, 3);
 
@@ -185,7 +87,7 @@ export const RankingPage: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex justify-center gap-8 mb-10">
-        {(["global", ...(canViewCourseRanking ? ["course"] : []), "groups"] as Tab[]).map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             aria-pressed={activeTab === tab}
@@ -196,7 +98,7 @@ export const RankingPage: React.FC = () => {
                 : "text-text-muted hover:text-text"
             }`}
           >
-            {tab === "global" ? "Global" : tab === "course" ? "Por Curso" : "Por Grupos"}
+            {tab === "global" ? (role==="docente"?"Mis aulas":"Global") : tab === "course" ? "Por Curso" : "Por Grupos"}
           </button>
         ))}
       </div>
@@ -255,7 +157,7 @@ export const RankingPage: React.FC = () => {
         </div>
       )}
 
-      {isLoading ? (
+      {error ? <div role="alert" className="rounded-xl border border-danger p-6 text-center"><p>No pudimos cargar el ranking. Comprueba la conexión y vuelve a intentarlo.</p><button className="btn-secondary mt-3" onClick={retry}>Reintentar</button></div> : isLoading ? (
         <div className="text-center py-20 text-text-muted text-xs font-mono uppercase tracking-widest animate-pulse">
           Cargando ranking...
         </div>
@@ -290,7 +192,7 @@ export const RankingPage: React.FC = () => {
                     <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[1].level}</span>
                     <span className="text-xs">⭐ {top3[1].totalStars}</span>
                   </div>
-                  <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[1].totalScore.toLocaleString()} XP</span>
+                  <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[1].totalScore.toLocaleString()} puntos</span>
                 </div>
               </div>
             )}
@@ -308,7 +210,7 @@ export const RankingPage: React.FC = () => {
                     <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[0].level}</span>
                     <span className="text-xs">⭐ {top3[0].totalStars}</span>
                   </div>
-                  <span className="text-sm font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[0].totalScore.toLocaleString()} XP</span>
+                  <span className="text-sm font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[0].totalScore.toLocaleString()} puntos</span>
                 </div>
               </div>
             )}
@@ -325,7 +227,7 @@ export const RankingPage: React.FC = () => {
                     <span className="text-xs font-mono px-2 py-0.5 bg-primary/10 text-primary" style={{ borderRadius: "var(--theme-radius)" }}>Nv.{top3[2].level}</span>
                     <span className="text-xs">⭐ {top3[2].totalStars}</span>
                   </div>
-                  <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[2].totalScore.toLocaleString()} XP</span>
+                  <span className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{top3[2].totalScore.toLocaleString()} puntos</span>
                 </div>
               </div>
             )}
@@ -354,7 +256,7 @@ export const RankingPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{entry.totalScore.toLocaleString()} XP</p>
+                    <p className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>{entry.totalScore.toLocaleString()} puntos</p>
                   </div>
                 </div>
               ))}

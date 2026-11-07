@@ -35,6 +35,25 @@ public class GameSessionsService implements GameSessionsUseCase {
     private final ObjectMapper json;
     private final Clock clock;
     private final ProceduralDailyService procedural;
+    private final VerifiedExercisePointsService points;
+
+    @Override @Transactional
+    public java.util.Optional<GameSessionDTO> active(String studentId,String game,String template,String activityId,String dailyChallengeId) {
+        String canonical=BoardRules.canonicalTemplate(game,template);
+        sessions.lockStudent(studentId);
+        var found=sessions.active(studentId).filter(s->s.game().equals(game)&&s.levelTemplate().equals(canonical)
+            &&Objects.equals(s.activityId(),activityId)&&Objects.equals(s.dailyChallengeId(),dailyChallengeId));
+        if(found.isEmpty())return java.util.Optional.empty();
+        if(ProceduralDailyService.procedural(dailyChallengeId))procedural.config(studentId,dailyChallengeId,game,canonical,true);
+        else if(dailyChallengeId!=null)daily.validate(studentId,dailyChallengeId,game,canonical);
+        if(activityId!=null) {
+            var activity=activities.findById(activityId).orElseThrow(()->new ResourceNotFoundException("La actividad no existe."));
+            if(!game.equals(activity.getEnvironment())||!canonical.equals(BoardRules.canonicalTemplate(activity.getEnvironment(),activity.getLevelTemplate())))
+                return java.util.Optional.empty();
+        }
+        sessionConfig(found.get());
+        return found.map(this::dto);
+    }
 
     @Override @Transactional
     public GameSessionDTO start(StartGameSessionCommand command) {
@@ -102,7 +121,8 @@ public class GameSessionsService implements GameSessionsUseCase {
         var completed=session.change(session.state(),session.revision(),"COMPLETED",now,stars,null);
         sessions.update(completed);
         var awards=victories.execute(new VerifiedVictory(studentId,sessionId,session.game(),session.levelNumber(),session.levelTemplate(),session.activityId(),session.startedAt(),now,stars,session.dailyChallengeId(),session.startedOrder()));
-        var response=new GameCompletionDTO(sessionId,session.game(),session.levelNumber(),stars,awards.bestStars(),now.toString(),Duration.between(session.startedAt(),now).toMillis(),awards.newAchievements(),awards.daily());
+        var score=points.award(completed,config);
+        var response=new GameCompletionDTO(sessionId,session.game(),session.levelNumber(),stars,awards.bestStars(),now.toString(),Duration.between(session.startedAt(),now).toMillis(),awards.newAchievements(),awards.daily(),score);
         sessions.update(completed.change(completed.state(),completed.revision(),completed.status(),now,stars,json.valueToTree(response)));
         return response;
     }

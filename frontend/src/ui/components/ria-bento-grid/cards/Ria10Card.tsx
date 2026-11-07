@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useAsyncResource } from "../../../../application/hooks/useAsyncResource";
 import { aiService } from "../../../../infrastructure/api/aiService";
 import type { RiaStudentData } from "../RiaBentoGrid";
 
@@ -8,15 +9,8 @@ interface Props {
 }
 
 export const Ria10Card = ({ student, studentId }: Props) => {
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!student || !studentId) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
+  const load = useCallback(async () => {
+    if (!student) return null;
     const form = {
       attempts: student.attempts,
       errors: student.errors,
@@ -27,11 +21,12 @@ export const Ria10Card = ({ student, studentId }: Props) => {
       grade: student.grade,
       logical_level: student.logical_level,
     };
-    aiService.recommendPedagogicalRia10(form)
-      .then((apiResult) => setResult(apiResult as Record<string, unknown>))
-      .catch(() => setError("No se pudo cargar este análisis. Vuelve a intentarlo más tarde."))
-      .finally(() => setLoading(false));
-  }, [studentId, student]);
+    const apiResult = await aiService.recommendPedagogicalRia10(form);
+    return apiResult as Record<string, unknown>;
+  }, [student]);
+  const {data:result,loading,error:failure,retry}=useAsyncResource<Record<string,unknown>|null>(
+    student && studentId ? JSON.stringify([studentId,student]) : undefined,load);
+  const error=failure ? "No se pudo cargar este análisis. Vuelve a intentarlo más tarde." : null;
 
   const details = result?.details as Record<string, unknown> | undefined;
   const profile = details?.pedagogical_profile as string | undefined;
@@ -73,7 +68,7 @@ export const Ria10Card = ({ student, studentId }: Props) => {
           <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Analizando...</span>
         </div>
       ) : error ? (
-        <div className="flex-1 flex items-center justify-center text-xs font-mono text-danger text-center px-2" role="status">{error}</div>
+        <div className="flex-1 flex items-center justify-center text-xs font-mono text-danger text-center px-2" role="alert"><span>{error}</span><button type="button" className="btn-secondary ml-2" onClick={retry}>Reintentar</button></div>
       ) : !result ? (
         <div className="flex-1 flex items-center justify-center text-xs font-mono" style={{ color: "var(--text-muted)" }}>Sin datos</div>
       ) : (

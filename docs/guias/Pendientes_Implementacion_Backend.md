@@ -1,47 +1,31 @@
-# Pendientes de implementación y validación del backend
+# Estado de pendientes de implementación del backend
 
-**Revisión: 05/11/2026.** Lista vigente de continuidad de la [auditoría del backend](../informes/Auditoria_Backend_2026_11_05.md). Estos puntos no se presentan como implementados. Las correcciones y pruebas terminadas se describen en el informe, sin mezclar sus resultados con las propuestas siguientes.
+**Actualizado el 07/11/2026.** Continuidad de las auditorías del [05/11](../informes/Auditoria_Backend_2026_11_05.md) y [06/11](../informes/Auditoria_Integral_2026_11_06.md). Las cifras de esos informes son históricas. El [informe de implementación](../informes/Implementacion_Pendientes_2026_11_06.md) contiene la aceptación nueva y los límites pendientes.
 
-## Integridad y reglas funcionales
+## Resolución por identificador
 
-| ID | Prioridad | Qué falta | Evidencia y siguiente paso | Criterio de cierre |
-|---|---|---|---|---|
-| B01 | Alta | Restricciones únicas de pertenencia a grupo y progreso académico por estudiante/módulo. | V3/V5 permiten duplicados; las escrituras de los servicios ahora se serializan, pero una escritura SQL externa puede eludirlas. Consultar duplicados sin alterar datos y acordar su conciliación antes de crear una migración aditiva posterior a la última disponible. No modificar V1–V21 ni borrar historial automáticamente. | Migración probada sobre una copia con duplicados, conservación del historial y pruebas concurrentes con las restricciones activas. |
-| B02 | Alta, requiere definición | Contrato de calificación académica y estados de progreso. | `SaveResultService` admite score declarado y `SaveModuleProgressService` admite estado/porcentaje manual. Son contratos existentes, separados de victorias verificadas y nuevos logros. Falta definir rúbrica, escala máxima, quién puede calificarlos y transiciones permitidas. No convertir estas entradas en evidencia de aprendizaje ni fuente de XP. | Contrato aprobado, validaciones de dominio y pruebas de autorización, límites, transiciones y compatibilidad del consumidor. |
-| B03 | Media | Idempotencia de resultados académicos y simulaciones declaradas. | Sus POST conservan el comportamiento de crear un registro por petición; no hay clave de intento común. No deduplicar por estudiante/actividad: puede haber intentos legítimos distintos. | Definir una clave de reintento, añadir persistencia compatible y demostrar que repetir el mismo intento no lo duplica y otro intento sí se conserva. |
-| B04 | Media, requiere definición | Alcance de lectura y gestión por grupo/curso/docente. | `GroupController`, rankings y CRUD curricular comprueban roles; el esquema actual no representa propiedad docente ni todas las asignaciones curriculares. Las operaciones personales sí comprueban estudiante. | Definir pertenencia/propiedad, modelarla y probar matrices de acceso entre docentes y grupos, sin bloquear el catálogo actual por inferencias. |
-| B05 | Media | Reanudar un tablero parcialmente resuelto. | Las sesiones y acciones se persisten en servidor; el frontend todavía no reconstruye una partida al volver a entrar. Los ejercicios ya completados sí permanecen guardados. | Recuperación autorizada de sesión/estado y reconexión del simulador; pruebas de recarga, cierre de sesión y reintento sin pérdida ni doble recompensa. |
-| B06 | Media, propuesta previa | PATCH explícito y actividades asignadas a grupos. | No son errores nuevos ni endpoints implementados. El PUT de actividad mantiene su edición parcial compatible. | Completar el contrato y la aceptación de [Pendientes de endpoints](Pendientes_Endpoints_Backend.md), con migración nueva sólo si procede. |
-| B11 | Media, requiere definición | Agregados de bloques usados y eficiencia del perfil. | `GetStudentProfileService` devuelve `totalBlocksUsed=0` y `efficiencyAvg=null`: no hay un cálculo verificado de esos agregados. Definir fuente, significado, unidad y representación de «sin datos»; no convertir colocaciones o telemetría en una medida pedagógica por inferencia. | Contrato documentado, agregación con datos de procedencia válida y pruebas con/sin datos; consumidores que distingan ausencia de información de un cero medido. |
-| B12 | Media | Contrato JSON de paginación independiente de clases internas de Spring. | Cursos/actividades devuelven `Page`; Spring Data avisa al serializar `PageImpl` de que su estructura no está garantizada entre versiones. La respuesta actual se conserva para no romper TypeScript. | DTO o adaptación explícita que preserve `content`, totales y demás campos consumidos, con pruebas de esquema y compatibilidad; no activar otro formato global silenciosamente. |
+| ID | Estado | Implementación o acción restante |
+|---|---|---|
+| B01 | Implementado; preflight operativo obligatorio | V25 añade únicos de membresía y progreso por estudiante/módulo. La prueba con una copia duplicada comprueba que la migración se niega sin borrar ni elegir datos. Ejecutar [preflight](../../scripts/preflight-integrity.sql) antes de actualizar una instalación existente; si aparecen duplicados, su conciliación requiere una decisión explícita. No se migró la aplicación local. |
+| B02 | Regla definida e implementada | El usuario descartó nota académica y aprobó puntos verificados, mejor puntaje, incrementos por mejora y 50 XP al completar los cinco diarios. Ranking/perfil usan esa fuente. Los contratos declarativos e históricos se conservan sin conceder puntos/XP ni recalificarlos. [Contrato](Puntaje_Ranking_Acceso.md). |
+| B03 | Implementado | POST de resultados y simulaciones admite `Idempotency-Key` opcional, de 1–128 caracteres alfanuméricos o `._:-`. La misma clave/contenido por actor y operación conserva un único registro; otro contenido devuelve 400. Otra clave conserva otro intento. Sin clave se mantiene el POST anterior. V26 persiste recibos transaccionales. |
+| B04 | Implementado | Asignaciones explícitas docente–aula/curso y aula–curso; política de acceso en backend y administración en frontend. Docentes consultan sólo sus aulas y estudiantes; los cursos no amplían acceso a progreso privado. Roles vigentes y estado activo se comprueban también al usar JWT. |
+| B05 | Implementado para la partida activa | Recuperación autorizada por contexto, reconstrucción de ambos tableros y continuación de la secuencia del servidor. La práctica libre conserva el nivel seleccionado en la URL. Recarga y salida conservan movimientos confirmados; una interrupción puede perder los aún no enviados. Sólo se conserva una partida activa por estudiante, conforme al modelo existente. |
+| B06 | Implementado | PATCH explícito compatible con PUT y asignación paginada/idempotente de actividades a aulas. [Contrato vigente](Pendientes_Endpoints_Backend.md). |
+| B07 | Implementado; validar dominio real al desplegar | CSRF en operaciones de navegador/cookie, token enmascarado, cookie HttpOnly, CORS exacto y cliente compatible. Pruebas de token real, origen no permitido, escrituras y salida. [Operación](Seguridad_Operacion_Produccion.md). |
+| B08 | Implementado; configurar proxy real al desplegar | Ventana móvil atómica en PostgreSQL compartida entre réplicas, expiración, HMAC y Retry-After. X-Forwarded-For se ignora por defecto; CIDR fiables explícitos. Pruebas concurrentes, límite temporal y cabecera manipulada. |
+| B09 | Implementado; aprovisionamiento operativo pendiente | Perfil production sin cuentas demo, secretos predeterminados ni HTTP. Rechaza configuración insegura. Faker sólo se habilita explícitamente en desarrollo. El operador debe configurar secretos, dominio, proxy y primer administrador; no se cambiaron cuentas reales. |
+| B10 | Parcial | Correlación X-Request-ID, contexto de logs y máximo de 100 por página implementados. La política de retención/privacidad, backups, monitorización y presupuesto de carga real requieren definición y validación operativa; no se inventa ni ejecuta una purga de historial. |
+| B11 | Implementado con procedencia explícita | Piezas presentes en victorias y eficiencia de movimientos calculadas de recibos nuevos del servidor. Ausencia de recibos se representa con null. La interfaz los distingue de una nota o medida pedagógica. |
+| B12 | Implementado | PageResponse explícito conserva el esquema consumido por TypeScript, con pruebas de compatibilidad; no se serializa PageImpl en las respuestas paginadas. |
 
-## Operación y seguridad que requieren un lote propio
+## Pendientes que siguen abiertos
 
-La corrección de vulnerabilidades de dependencias permanece pausada por instrucción del usuario. Esta auditoría no cambia credenciales ni configura producción.
+- Ejecutar por primera vez el workflow remoto después de una publicación autorizada. La configuración de CI se valida localmente; no se hicieron commits ni pushes.
+- Ampliar cobertura global y combinaciones de error según JaCoCo. El informe diferencia cobertura global, líneas críticas y ramas; no acredita cobertura total.
+- Resolver los avisos Spring MVC y las vulnerabilidades de imágenes reportadas, evaluando compatibilidad. No se ocultan ni se aplica una migración mayor de framework en este lote.
+- Validar producción, carga sostenida, interrupciones reales, dominio/proxy, política de datos y aprovisionamiento. Las bases y contenedores de aceptación son desechables.
+- Los avisos históricos de mapeo/compilación y los adaptadores de perfiles/logros antiguos requieren revisión específica; no se borran sus desbloqueos ni se reactivan como fuente actual.
+- `data-science/`, modelos, proxy y contenedor permanecen excluidos. SSD integral, evaluación pedagógica y entrenamiento ML requieren otro alcance.
 
-| ID | Prioridad | Qué falta | Evidencia y siguiente paso | Criterio de cierre |
-|---|---|---|---|---|
-| B07 | Alta antes de despliegue | Estrategia CSRF coherente con autenticación mediante cookie. | `SecurityConfig` desactiva CSRF; la cookie es HttpOnly y existe configuración de SameSite/CORS. Revisar los orígenes y el despliegue real antes de cambiar el contrato de autenticación. | Diseño documentado y pruebas con navegador de petición legítima, petición entre sitios y cierre de sesión; conservar el flujo de acceso. |
-| B08 | Alta antes de despliegue | Robustez del limitador de inicio de sesión. | `LoginRateLimiterFilter` confía en `X-Forwarded-For`, conserva un mapa en memoria por instancia y separa la comprobación del contador de su incremento. Falta definir proxies fiables, atomicidad, expiración y comportamiento con varias réplicas. | Pruebas de límite concurrente, IP manipulada, limpieza de memoria y despliegue detrás del proxy acordado. |
-| B09 | Alta antes de despliegue | Aislar las cuentas de arranque y la configuración local respecto a producción. | Revisar los seeders y perfiles existentes; no se cambian cuentas ni secretos reales en este lote. `pipre.seed.demo-data` permanece desactivado. | Producción arranca sin cuentas de demostración ni secretos por defecto, con validación automatizada del perfil y plan de provisión autorizado. |
-| B10 | Media | Observabilidad y límites operativos. | Los fallos inesperados ahora responden 500 con mensaje genérico y se registran; falta política acordada de retención, correlación de solicitudes, límites de colecciones y monitorización. | Política de datos y pruebas de carga/consulta representativas; no registrar credenciales ni atribuir puntuación pedagógica a telemetría declarada. |
-
-## Cobertura y alcance aún no acreditado
-
-- La suite de contratos inventaría rutas y permisos y ejecuta flujos representativos. No equivale a probar todas las combinaciones de campos, filtros y roles de todos los endpoints. Ampliar los casos según el reporte JaCoCo y la matriz de rutas exportada en `backend/target/api-contract-inventory.json`.
-- La cobertura final de líneas es 97,07 % en las 12 clases críticas y 72,44 % global; la de ramas críticas es 75,92 %. Falta ampliar pruebas de comportamiento en controladores (68,25 % de líneas), adaptadores de persistencia (56,93 %), mappers (52,14 %) y seguridad (76,47 %), además de errores/alternativas señalados por JaCoCo. Los seeders tienen 14,60 % y necesitan escenarios de preservación/idempotencia en bases aisladas; no activar datos de demostración en la aplicación para elevar cobertura.
-- Falta automatizar en CI la ejecución completa con Java 21, la integración PostgreSQL aislada y la publicación de reportes. Las instrucciones reproducibles están en [Pruebas del backend](../../backend/TESTING.md).
-- Los avisos del compilador sobre mapeos, API obsoleta y tipos genéricos requieren revisión específica. Comprobar qué campos asignan explícitamente los adaptadores antes de cambiar mappers o suprimir avisos.
-- Los adaptadores históricos `PlayerProfileRepositoryAdapter` y `PlayerAchievementRepositoryAdapter` conservan responsabilidades del esquema anterior y no son la fuente del flujo L01–L35 actual. Revisar sus referencias y consumidores antes de una limpieza de código; no reactivarlos, borrar desbloqueos ni recalcular XP como parte de esa limpieza.
-- Falta verificar la compatibilidad del despliegue remoto, carga sostenida, interrupción/reinicio de procesos y recuperación ante fallos de red reales. Este lote usa bases desechables y no modifica datos ni contenedores de la aplicación local.
-- `data-science/`, sus modelos, endpoints, proxy y contenedor siguen excluidos. Su contrato, pruebas de servicios externos y futura selección de retos mediante IA requieren autorización y trabajo separados; el generador procedural no depende de IA.
-- La auditoría no implementa el SSD integral, una rúbrica pedagógica ni una validación causal del aprendizaje. Consultar también los [pendientes de simuladores/SSD](../simuladores/Pendientes_TetriLogic_SSD.md).
-
-## Orden sugerido para continuar
-
-1. Acordar las reglas pendientes de B02/B04 y el entorno de despliegue de B07–B09.
-2. Revisar duplicados históricos en una copia y preparar B01 con una migración nueva y reversible a nivel de aplicación.
-3. Ampliar cobertura de los módulos con menor evaluación y llevar la suite a CI.
-4. Implementar reanudación e idempotencia de contratos declarativos cuando sus identificadores y comportamiento estén definidos.
-
-Los identificadores de esta lista son referencias de trabajo; no sustituyen las autorizaciones del usuario ni convierten propuestas en requisitos activos de implementación.
+V1–V21 permanecen intactas; las migraciones nuevas son V22–V26. No se atribuyen asignaciones, puntuación ni contexto nuevo a datos antiguos.

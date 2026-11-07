@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useAsyncResource } from "../../../../application/hooks/useAsyncResource";
 import { aiService } from "../../../../infrastructure/api/aiService";
 import type { RiaStudentData } from "../RiaBentoGrid";
 
@@ -8,35 +9,22 @@ interface Props {
 }
 
 export const Ria01Card = ({ student, studentId }: Props) => {
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!student || !studentId) return;
-    setLoading(true);
-    setError(null);
-    setResult(null);
+  const load = useCallback(async () => {
+    if (!student) return null;
     const form = {
       attempts: student.attempts,
       errors: student.errors,
       logical_level: student.logical_level,
       ai_interactions: student.ai_interactions,
     };
-    aiService.predictRia01(form)
-      .then((apiResult) => {
-        const scoreMap: Record<string, number> = { low: 30, medium: 60, high: 90 };
-        const pred = typeof apiResult.result === "string" ? apiResult.result.toLowerCase() : "";
-        setResult({
-          ...apiResult,
-          ...student,
-          score: scoreMap[pred] ?? 50,
-          success_rate: student.success_rate,
-        });
-      })
-      .catch(() => setError("No se pudo cargar este análisis. Vuelve a intentarlo más tarde."))
-      .finally(() => setLoading(false));
-  }, [studentId, student]);
+    const apiResult = await aiService.predictRia01(form);
+    const scoreMap: Record<string, number> = { low: 30, medium: 60, high: 90 };
+    const pred = typeof apiResult.result === "string" ? apiResult.result.toLowerCase() : "";
+    return {...apiResult,...student,score:scoreMap[pred] ?? 50,success_rate:student.success_rate};
+  }, [student]);
+  const {data:result,loading,error:failure,retry}=useAsyncResource<Record<string,unknown>|null>(
+    student && studentId ? JSON.stringify([studentId,student]) : undefined,load);
+  const error=failure ? "No se pudo cargar este análisis. Vuelve a intentarlo más tarde." : null;
 
   const r = result ?? {};
   const scoreMap: Record<string, number> = { low: 30, medium: 60, high: 90 };
@@ -61,7 +49,7 @@ export const Ria01Card = ({ student, studentId }: Props) => {
           <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Analizando...</span>
         </div>
       ) : error ? (
-        <div className="flex-1 flex items-center justify-center text-xs font-mono text-danger text-center px-2" role="status">{error}</div>
+        <div className="flex-1 flex items-center justify-center text-xs font-mono text-danger text-center px-2" role="alert"><span>{error}</span><button type="button" className="btn-secondary ml-2" onClick={retry}>Reintentar</button></div>
       ) : !result ? (
         <div className="flex-1 flex items-center justify-center text-xs font-mono" style={{ color: "var(--text-muted)" }}>Sin datos</div>
       ) : (

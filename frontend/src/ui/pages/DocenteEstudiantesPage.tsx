@@ -1,6 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "../components/common/Modal";
 import { Search as BsSearch, X as BsXLg } from "lucide-react";
+import { getAuthState } from "../../infrastructure/store/authStore";
+import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import { apiService } from "../../infrastructure/api/apiService";
 import type { RankingDTO, GroupDTO, UserResponseDTO } from "../../infrastructure/api/models/apiModels";
 
@@ -26,55 +28,25 @@ export const DocenteEstudiantesPage: React.FC = () => {
   const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string } | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const loadGroups = useCallback(async () => {
-    try {
-      const groupsData = await apiService.groups.getAll();
-      if (!groupsData || groupsData.length === 0) {
-        setGroups([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const groupsWithStudents: GroupWithStudents[] = await Promise.all(
-        groupsData.map(async (g) => {
-          try {
-            const students = await apiService.ranking.getGroupRanking(g.idGroup);
-            const avgScore = students.length > 0
-              ? Math.round(students.reduce((sum, s) => sum + (s.totalPoints || 0), 0) / students.length)
-              : 0;
-            const avgStars = students.length > 0
-              ? Math.round(students.reduce((sum, s) => sum + (s.totalStars || 0), 0) / students.length)
-              : 0;
-            const avgLevel = students.length > 0
-              ? Math.round(students.reduce((sum, s) => sum + (s.level || 1), 0) / students.length)
-              : 1;
-            return { ...g, students, avgScore, avgStars, avgLevel };
-          } catch {
-            return { ...g, students: [], avgScore: 0, avgStars: 0, avgLevel: 1 };
-          }
-        })
-      );
-
-      setGroups(groupsWithStudents);
-    } catch {
-      setGroups([]);
-    }
-    setIsLoading(false);
-  }, []);
-
-  const loadUsers = useCallback(async () => {
-    try {
-      const users = await apiService.users.getAll();
-      setAllUsers(users || []);
-    } catch {
-      setAllUsers([]);
-    }
-  }, []);
-
+  const isAdmin=getAuthState().user?.role==="admin";
+  const [loadRevision,setLoadRevision]=useState(0);
+  const [operationError,setOperationError]=useState("");
   useEffect(() => {
-    loadGroups();
-    loadUsers();
-  }, [loadGroups, loadUsers]);
+    let active=true;
+    const load=async()=>Promise.all((await apiService.groups.getAll()).map(async group=>{
+      const students=await apiService.ranking.getGroupRanking(group.idGroup);
+      return {...group,students,
+        avgScore:students.length?Math.round(students.reduce((sum,row)=>sum+row.totalPoints,0)/students.length):0,
+        avgStars:students.length?Math.round(students.reduce((sum,row)=>sum+(row.totalStars??0),0)/students.length):0,
+        avgLevel:students.length?Math.round(students.reduce((sum,row)=>sum+(row.level??1),0)/students.length):1};
+    }));
+    void load().then(rows=>{if(active)setGroups(rows);})
+      .catch(error=>{if(active)setOperationError(getApiErrorMessage(error,"No se pudieron cargar las aulas."));})
+      .finally(()=>{if(active)setIsLoading(false);});
+    if(isAdmin)void apiService.users.getAll().then(rows=>{if(active)setAllUsers(rows);})
+      .catch(error=>{if(active)setOperationError(getApiErrorMessage(error,"No se pudieron cargar los usuarios."));});
+    return ()=>{active=false;};
+  }, [isAdmin,loadRevision]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -114,7 +86,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
         g.idGroup === groupId ? { ...g, students: updatedStudents, avgScore, avgStars, avgLevel } : g
       ));
     } catch (err) {
-      console.error("Error adding student:", err);
+      setOperationError(getApiErrorMessage(err,"No se pudo agregar el estudiante."));
     }
     setIsAdding(false);
   };
@@ -139,7 +111,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
         g.idGroup === removeConfirm.groupId ? { ...g, students: updatedStudents, avgScore, avgStars, avgLevel } : g
       ));
     } catch (err) {
-      console.error("Error removing student:", err);
+      setOperationError(getApiErrorMessage(err,"No se pudo retirar el estudiante."));
     }
   };
 
@@ -152,6 +124,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
 
   return (
     <main className="flex-1 p-8 max-w-7xl mx-auto w-full animate-fade-in-soft">
+      {operationError && <div role="alert" className="mb-4 border border-danger rounded-lg p-4"><p>{operationError}</p><button className="btn-secondary mt-2" onClick={()=>{setOperationError("");setLoadRevision(value=>value+1);}}>Reintentar</button></div>}
       <header className="mb-12">
         <h1 className="text-3xl font-bold tracking-tight mb-2">
           Gestión de <span className="text-primary">Estudiantes</span>
@@ -257,7 +230,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
 
             <div className="p-8">
               {/* Student search + add */}
-              <div
+              {isAdmin && <div
                 className="relative mb-8 overflow-visible border border-primary/15 bg-[oklch(15%_0.018_250)]/95 p-4 shadow-[0_20px_70px_rgba(5,150,105,0.12)]"
                 ref={searchRef}
                 style={{ borderRadius: "calc(var(--theme-radius) + 10px)" }}
@@ -380,6 +353,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                 </div>
               </div>
 
+              }
               {/* Student Table */}
               {selectedGroup.students.length === 0 ? (
                 <div className="text-center py-16 text-text-muted text-xs">
@@ -435,7 +409,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                             )}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <button
+                            {isAdmin && <button
                               onClick={() => setRemoveConfirm({
                                 groupId: selectedGroup.idGroup,
                                 studentId: student.idStudent,
@@ -445,7 +419,7 @@ export const DocenteEstudiantesPage: React.FC = () => {
                               style={{ borderRadius: "var(--theme-radius)" }}
                             >
                               REMOVER
-                            </button>
+                            </button>}
                           </td>
                         </tr>
                       ))}

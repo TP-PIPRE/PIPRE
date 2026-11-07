@@ -1,105 +1,19 @@
-describe("Data Masiva — Rendimiento con grandes volúmenes", () => {
-  beforeEach(() => {
-    cy.setCookie("pipre_token", "fake-jwt");
-    cy.setCookie("pipre_user", JSON.stringify({ id: "user-massive", name: "Massive", email: "test@test.com", role: "docente" }));
+import {apiFixtures,user,page,course,activity,ranking} from "./ui-fixtures";
+describe("Volúmenes controlados — sólo fixtures de lectura",()=>{
+  beforeEach(()=>{apiFixtures();user();});
+  it("pagina un catálogo de 500 cursos sin perder el último lote",()=>{
+    const courses=Array.from({length:500},(_,i)=>({...course,idCourse:`course-${i}`,name:`Curso volumen ${i}`}));
+    cy.intercept("GET","**/api/v1/courses*",req=>{const n=Number(new URL(req.url).searchParams.get("page")??0);req.reply({content:courses.slice(n*100,(n+1)*100),number:n,size:100,last:n===4,totalPages:5,totalElements:500});});
+    cy.visit("/");cy.contains("Curso volumen 499").should("exist");cy.get('section[aria-label="Cursos disponibles"] button').should("have.length",500);
   });
-
-  it("renderiza +100 simulaciones sin crashear (página de retos)", () => {
-    const massiveSimulations = Array.from({ length: 150 }, (_, i) => ({
-      id_simulation: `S${i}`,
-      result: JSON.stringify({
-        type: "challenge",
-        courseId: "1",
-        title: `Reto Masivo ${i + 1}`,
-        description: `Descripción del reto ${i + 1}`,
-        order: i + 1,
-        difficulty: i % 3 === 0 ? "EASY" : i % 3 === 1 ? "MEDIUM" : "HARD",
-        points: (i + 1) * 10,
-        deleted: false,
-      }),
-    }));
-
-    cy.intercept("GET", "/api/v1/courses", {
-      statusCode: 200,
-      body: [{ idCourse: "1", name: "Curso Masivo", description: "Test", level: "BASIC" }],
-    }).as("getCourses");
-
-    cy.intercept("GET", "/api/v1/simulations/user/user-massive", {
-      statusCode: 200,
-      body: massiveSimulations,
-    }).as("getMassiveSims");
-
-    cy.visit("/docente/retos");
-    cy.wait("@getCourses");
-
-    // Click "Retos" button on the course card to trigger challenge loading
-    cy.contains("button", "Retos").click();
-    cy.wait("@getMassiveSims");
-
-    // Just verify the page rendered without crash
-    cy.contains("Reto Masivo 1").should("be.visible");
+  it("muestra 1000 entradas de ranking sin saldos duplicados",()=>{
+    cy.intercept("GET","**/api/v1/group-students/*",Array.from({length:1000},(_,i)=>({...ranking,idStudent:`student-${i}`,studentName:`Estudiante volumen ${i}`,position:i+1,totalPoints:1000-i})));
+    cy.visit("/ranking");cy.contains("Estudiante volumen 999",{timeout:10000}).should("exist");
   });
-
-  it("renderiza +1000 rankings sin crashear", () => {
-    cy.setCookie("pipre_user", JSON.stringify({ id: "stu1", name: "Test", email: "test@test.com", role: "estudiante" }));
-
-    const massiveRankings = Array.from({ length: 1000 }, (_, i) => ({
-      idStudent: `STU${String(i + 1).padStart(4, "0")}`,
-      totalPoints: Math.floor(Math.random() * 15000) + 500,
-      position: i + 1,
-    }));
-
-    cy.intercept("GET", "/api/v1/group-students/group-1", {
-      statusCode: 200,
-      body: massiveRankings,
-    }).as("getMassiveRanking");
-
-    cy.intercept("GET", "/api/v1/courses", {
-      statusCode: 200,
-      body: [{ idCourse: "1", name: "Curso Test" }],
-    }).as("getCourses");
-
-    cy.visit("/ranking");
-    cy.wait("@getMassiveRanking");
-    cy.wait("@getCourses");
-
-    cy.contains("Comunidad & Ranking").should("be.visible");
-    cy.contains("1000 estudiantes").should("be.visible");
-  });
-
-  it("renderiza +500 retos en CursosPage sin crashear", () => {
-    cy.setCookie("pipre_user", JSON.stringify({ id: "stu1", name: "Test", email: "test@test.com", role: "estudiante" }));
-
-    const massiveChallenges = Array.from({ length: 500 }, (_, i) => ({
-      id_simulation: `S${i}`,
-      result: JSON.stringify({
-        type: "challenge",
-        courseId: "1",
-        title: `Reto ${i + 1}`,
-        order: i + 1,
-        difficulty: "EASY",
-        points: 10,
-      }),
-    }));
-
-    cy.intercept("GET", "/api/v1/courses", {
-      statusCode: 200,
-      body: [{ idCourse: "1", name: "Curso con 500 Retos", description: "Test", level: "BASIC" }],
-    }).as("getCourses");
-
-    cy.intercept("GET", "/api/v1/simulations/user/*", {
-      statusCode: 200,
-      body: massiveChallenges,
-    }).as("getMassiveChallenges");
-
-    cy.visit("/cursos");
-    cy.wait("@getCourses");
-
-    cy.contains("Retos del Curso").click();
-    cy.wait("@getMassiveChallenges");
-
-    cy.contains("500 retos disponibles").should("be.visible");
-    cy.contains("Reto 1").should("be.visible");
-    cy.contains("Reto 500").should("be.visible");
+  it("pagina 100 actividades y accede a la última página",()=>{
+    const activities=Array.from({length:100},(_,i)=>({...activity,idActivity:`activity-${i}`,name:`Actividad volumen ${i}`,displayOrder:i+1}));
+    cy.intercept("GET","**/api/v1/activities/lesson/*",page(activities));cy.visit("/");cy.contains("button","Curso QA").click();
+    for(let i=0;i<9;i++)cy.get('[role="dialog"]').contains("button","Siguiente").click();
+    cy.contains("Actividad volumen 99").scrollIntoView().should("be.visible");cy.contains("Página 10 de 10").should("be.visible");
   });
 });

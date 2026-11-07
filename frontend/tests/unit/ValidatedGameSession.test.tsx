@@ -14,7 +14,7 @@ import type { GameSessionContext, GameSessionDTO, GameVictoryDTO } from "../../s
 import tetriSolutions from "../fixtures/tetrilogicSolutions.json";
 
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
-vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { start: vi.fn(), action: vi.fn(), complete: vi.fn() } }));
+vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn() } }));
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { post: vi.fn().mockResolvedValue({ status: 201 }) } }));
 const sessions = new Map<string, GameSessionDTO>();
 const context = (): GameSessionContext => ({ studentId: getAuthState().user!.id, game: "neonflow", levelTemplate: "neonflow-v2-1" });
@@ -32,6 +32,27 @@ afterEach(async () => { cleanup(); useGameStore.getState().stopGame(); await act
 const openNeon = () => render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} /></MemoryRouter>);
 
 describe("Server-confirmed game sessions", () => {
+  it("uses the selected practice board from the URL when recovering a session",async()=>{
+    const second={...context(),levelTemplate:"neonflow-v2-2"};
+    const saved=sessionDTO(second);saved.levelNumber=2;saved.revision=1;saved.state.pieces=[{type:"MIRROR_90",x:1,y:2,rotation:0}];
+    sessions.set(saved.sessionId,saved);vi.mocked(gameProgressService.active).mockResolvedValueOnce(saved);
+    render(<MemoryRouter initialEntries={["/simulador/neonflow?level=2"]}><NeonFlowStage/></MemoryRouter>);
+    expect(await screen.findByRole("button",{name:/^Rotar espejo, fila 3, columna 2/})).toBeInTheDocument();
+    expect(screen.getByLabelText("Seleccionar nivel")).toHaveValue("1");
+    expect(gameProgressService.active).toHaveBeenCalledWith(second);expect(gameProgressService.start).not.toHaveBeenCalled();
+  });
+  it("restores a saved Neon board and continues at the next acknowledged sequence",async()=>{
+    const saved=sessionDTO(context());saved.revision=7;saved.state={...saved.state,moves:3,pieces:[{type:"MIRROR_90",x:1,y:0,rotation:90}]};
+    sessions.set(saved.sessionId,saved);vi.mocked(gameProgressService.active).mockResolvedValueOnce(saved);
+    openNeon();const mirror=await screen.findByRole("button",{name:/^Rotar espejo, fila 1, columna 2/});
+    expect(gameProgressService.start).not.toHaveBeenCalled();expect(gameProgressService.action).not.toHaveBeenCalled();
+    fireEvent.click(mirror);await waitFor(()=>expect(gameProgressService.action).toHaveBeenCalledWith(saved.sessionId,expect.objectContaining({sequence:8,type:"ROTATE",rotation:180})));
+  });
+  it("keeps the board unavailable when recovery fails instead of replacing the saved attempt",async()=>{
+    vi.mocked(gameProgressService.active).mockRejectedValueOnce(new Error("Sin conexión"));openNeon();await screen.findByRole("alert");
+    expect(gameProgressService.start).not.toHaveBeenCalled();expect(screen.queryByLabelText("Tablero Neon Flow")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button",{name:"Reintentar envío"}));await screen.findByLabelText("Tablero Neon Flow");
+  });
   it("prepares exactly one persisted session in StrictMode before enabling interaction", async () => {
     let resolve!: (session: GameSessionDTO) => void;
     vi.mocked(gameProgressService.start).mockImplementationOnce(() => new Promise(done => { resolve = done; }));

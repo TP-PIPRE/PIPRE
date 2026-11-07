@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import {getAuthState} from "../../infrastructure/store/authStore";
 import { apiService } from "../../infrastructure/api/apiService";
 import type {
   CourseResponseDTO,
@@ -63,8 +64,28 @@ interface ChallengeFormData {
   reward: { type: string; value: number };
 }
 
+async function loadChallengeViews(courseId:string):Promise<ChallengeView[]> {
+  const activities = await loadCourseActivities(courseId);
+  return activities.map((act, i) => ({
+    idActivity: act.idActivity,
+    courseId,
+    title: act.name,
+    idLesson: act.idLesson,
+    complexity: act.complexity as ChallengeView["complexity"],
+    logicLevel: act.logicLevel,
+    type: act.type,
+    simulatorConfig: { environment: act.environment || "neonflow", maxBlocks: 10, missions: act.missions || [], startingPosition: act.startingPosition, targetPosition: act.targetPosition },
+    description: act.description ?? "",
+    order: act.displayOrder ?? i + 1,
+    levelTemplate: act.levelTemplate ?? undefined,
+    difficulty: (act.difficulty || "MEDIUM") as ChallengeView["difficulty"],
+    points: 0,
+  }));
+}
+
 export const DocenteRetosPage: React.FC = () => {
   const location = useLocation();
+  const isAdmin=getAuthState().user?.role==="admin";
   const [operationError, setOperationError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -138,7 +159,6 @@ export const DocenteRetosPage: React.FC = () => {
   // Cargar cursos
   const fetchCourses = async () => {
     try {
-      setIsLoading(true);
       const data = await apiService.courses.getAll();
       if (data && data.length > 0) {
         setCourses(data);
@@ -155,27 +175,8 @@ export const DocenteRetosPage: React.FC = () => {
 
   // Read the curriculum tree; activities are the only source of challenges.
   const fetchChallengesFromActivities = async (courseId: string): Promise<ChallengeView[]> => {
-    try {
-      const activities = await loadCourseActivities(courseId);
-      return activities.map((act, i) => ({
-        idActivity: act.idActivity,
-        courseId,
-        title: act.name,
-        idLesson: act.idLesson,
-        complexity: act.complexity as ChallengeView["complexity"],
-        logicLevel: act.logicLevel,
-        type: act.type,
-        simulatorConfig: { environment: act.environment || "neonflow", maxBlocks: 10, missions: act.missions || [], startingPosition: act.startingPosition, targetPosition: act.targetPosition },
-        description: act.description ?? "",
-        order: act.displayOrder ?? i + 1,
-        levelTemplate: act.levelTemplate ?? undefined,
-        difficulty: (act.difficulty || "MEDIUM") as ChallengeView["difficulty"],
-        points: 0,
-      }));
-    } catch (err) {
-      setOperationError(getApiErrorMessage(err, "No se pudieron cargar los retos."));
-      return [];
-    }
+    try { return await loadChallengeViews(courseId); }
+    catch(error) { setOperationError(getApiErrorMessage(error,"No se pudieron cargar los retos.")); return []; }
   };
 
   // Cargar retos de un curso desde actividades
@@ -186,23 +187,30 @@ export const DocenteRetosPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCourses();
+    let active=true;
+    apiService.courses.getAll().then(rows=>{if(active)setCourses(rows);})
+      .catch(error=>{if(active)setOperationError(getApiErrorMessage(error,"No se pudieron cargar los cursos."));})
+      .finally(()=>{if(active)setIsLoading(false);});
+    return ()=>{active=false;};
   }, []);
 
   // Auto-select course from route state (e.g. edit button in DocenteDashboard)
   useEffect(() => {
     const courseId = (location.state as { courseId?: string })?.courseId;
+    let active = true;
     if (courseId && courses.length > 0) {
       const course = courses.find((c) => c.idCourse === courseId);
       if (course) {
-        setChallengePage(0);
-        setSelectedCourse(course);
-        setSelectedCourseChallenges([]);
-        setIsChallengesModalOpen(true);
-        fetchChallengesByCourse(course.idCourse);
+        void loadChallengeViews(course.idCourse).then(challenges => {
+          if (!active) return;
+          setChallengePage(0);
+          setSelectedCourse(course);
+          setSelectedCourseChallenges(challenges);
+          setIsChallengesModalOpen(true);
+        }).catch(error=>{if(active)setOperationError(getApiErrorMessage(error,"No se pudieron cargar los retos."));});
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { active = false; };
   }, [location.state, courses]);
 
   // Manejar envío de curso
@@ -236,7 +244,6 @@ export const DocenteRetosPage: React.FC = () => {
     if (sim) {
       if (!sim.environment) errors.environment = "Selecciona un entorno";
       if (!sim.maxBlocks || sim.maxBlocks < 1) errors.maxBlocks = "El límite de bloques debe ser ≥ 1";
-      if (sim.missions && sim.missions.length === 0) errors.missions = "Agrega al menos una misión";
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -363,7 +370,7 @@ export const DocenteRetosPage: React.FC = () => {
             Organiza cursos, módulos y retos de aprendizaje.
           </p>
         </div>
-        <button
+        {isAdmin && <button
           onClick={() => {
             setModalType("create");
             setFormData({ name: "", description: "", level: "LOW" });
@@ -372,7 +379,7 @@ export const DocenteRetosPage: React.FC = () => {
           style={{ borderRadius: "var(--theme-radius)" }}
         >
           Crear curso
-        </button>
+        </button>}
       </header>
 
       {/* Modal para Cursos */}
@@ -775,7 +782,7 @@ export const DocenteRetosPage: React.FC = () => {
               // ✅ Formulario integrado (sin fondo negro, mismo estilo que el modal)
               <form onSubmit={handleChallengeSubmit} aria-busy={saving} className="space-y-6">
                 {Object.keys(formErrors).length > 0 && <div ref={errorSummary} tabIndex={-1} role="alert" className="rounded-lg border border-danger p-3 text-sm text-danger">{Object.values(formErrors).join(". ")}</div>}
-                <p className="text-sm text-text-muted">El tablero define el juego del reto. Se guardan descripción, orden, dificultad y misiones. Los puntos y recompensas aún no tienen una regla de calificación configurada.</p>
+                <p className="text-sm text-text-muted">El tablero define el juego del reto. Se guardan descripción, orden, dificultad y misiones. El puntaje se calcula al validar la partida en el servidor; las recompensas no se asignan desde este formulario.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="docenteretospage-field-3" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
@@ -1135,7 +1142,7 @@ export const DocenteRetosPage: React.FC = () => {
                 >
                   <BsTerminal className="text-primary group-hover:text-primary  transition-all" />
                 </div>
-                <div className="flex gap-2">
+                {isAdmin && <div className="flex gap-2">
                   <button aria-label={`Editar curso ${course.name}`}
                     onClick={() => {
                       setModalType("edit");
@@ -1161,7 +1168,7 @@ export const DocenteRetosPage: React.FC = () => {
                   >
                     <BsTrash className="text-base" />
                   </button>
-                </div>
+                </div>}
               </div>
 
               <h3 className="text-lg font-bold mb-3 group-hover:text-primary transition-colors">

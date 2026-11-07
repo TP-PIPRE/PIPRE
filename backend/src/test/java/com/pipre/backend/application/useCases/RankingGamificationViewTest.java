@@ -7,18 +7,17 @@ import com.pipre.backend.application.ports.output.GamificationRepositoryPort;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.*;
+import com.pipre.backend.application.ports.output.RankingMetadataPort;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class RankingGamificationViewTest {
     @Test void keepsRankingPointsAndOrderWhileUsingOneGlobalBalancePerStudent() {
-        var accounts = mock(GamificationRepositoryPort.class);
-        var progress = mock(GetGameProgressUseCase.class);
-        var view = new RankingGamificationView(accounts, progress);
-        when(accounts.account("student")).thenReturn(new GamificationRepositoryPort.Account(450, 2, BigDecimal.ZERO, 0));
-        when(progress.progress("student")).thenReturn(new GameProgressDTO(List.of(), 2, 60, 6, 1, 5));
+        var metadata=mock(RankingMetadataPort.class);
+        var view = new RankingGamificationView(metadata);
+        when(metadata.load(Set.of("student"))).thenReturn(Map.of("student",new RankingMetadataPort.Metadata(2,450,6,1,5)));
         var source = List.of(
                 new RankingDTO("student", "A", new BigDecimal("73.5"), 1, 1, 120, 90, 9, 9),
                 new RankingDTO("student", "A", new BigDecimal("51"), 2, 1, 90, 70, 4, 4));
@@ -28,15 +27,13 @@ class RankingGamificationViewTest {
         assertTrue(result.stream().allMatch(row -> row.xpTotal() == 450 && row.totalStars() == 6
                 && row.currentStreak() == 1 && row.maxStreak() == 5 && row.level() == 2));
         assertEquals(120, source.getFirst().xpTotal()); // Historical input is untouched.
-        verify(accounts, times(1)).account("student");
-        verify(progress, times(1)).progress("student");
-        verifyNoMoreInteractions(accounts, progress);
+        verify(metadata).load(Set.of("student"));
+        verifyNoMoreInteractions(metadata);
     }
 
     @Test void anEmptyRankingDoesNotQueryOrCreateStudentData() {
-        var accounts = mock(GamificationRepositoryPort.class);
-        var progress = mock(GetGameProgressUseCase.class);
-        assertEquals(List.of(), new RankingGamificationView(accounts, progress).apply(List.of()));
-        verifyNoInteractions(accounts, progress);
+        var metadata=mock(RankingMetadataPort.class);
+        assertEquals(List.of(), new RankingGamificationView(metadata).apply(List.of()));
+        verifyNoInteractions(metadata);
     }
 }

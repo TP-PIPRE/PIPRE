@@ -21,7 +21,8 @@ public class AssignRoleService implements AssignRoleUseCase {
     @Override
     @Transactional
     public void execute(AssignRoleCommand command) {
-        User user = userRepositoryPort.findById(command.idUser())
+        roleRepositoryPort.lockAdministration();
+        User user = userRepositoryPort.lockById(command.idUser())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         if(!roleRepositoryPort.existsById(command.idRole())) {

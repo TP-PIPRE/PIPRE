@@ -2,7 +2,9 @@ import { describe, it, expect } from "vitest";
 import type { RankingDTO } from "../../src/infrastructure/api/models/apiModels";
 
 // Replicate the mapFromDto logic from RankingPage to test it in isolation
-function mapFromDto(data: RankingDTO[]): any[] {
+interface FixtureRankingEntry {position:number;studentId:string;studentName:string;totalScore:number;challengesCompleted:number;lastUpdated:string;group?:string}
+interface FixtureResult {studentId:string;courseId?:string;score:number;challengeId:string;completedAt:string}
+function mapFromDto(data: RankingDTO[]): FixtureRankingEntry[] {
   const MOCK_RANKING_SEED: { id: string; name: string; group: string; xp: number }[] = [
     { id: "student-2", name: "Ana Sofía Lopez", group: "Robótica A", xp: 12500 },
     { id: "student-3", name: "Carlos Ruiz", group: "Mecatrónica B", xp: 11800 },
@@ -23,11 +25,11 @@ function mapFromDto(data: RankingDTO[]): any[] {
   });
 }
 
-function getLocalResults(courseId?: string): any[] {
+function getLocalResults(courseId?: string): FixtureRankingEntry[] {
   try {
     const stored = localStorage.getItem("pipre_results");
     if (!stored) return [];
-    const results: any[] = JSON.parse(stored);
+    const results: FixtureResult[] = JSON.parse(stored);
     const filtered = courseId ? results.filter((r) => r.courseId === courseId) : results;
     if (filtered.length === 0) return [];
 

@@ -24,6 +24,11 @@ public class RoleController {
 
     private final AssignRoleUseCase assignRoleUseCase;
     private final GetRolesUseCase getRolesUseCase;
+    private final com.pipre.backend.application.useCases.RemoveRoleService removeRole;
+    @DeleteMapping("/user/{userId}/{roleId}")
+    public ResponseEntity<Void> removeRole(@PathVariable String userId,@PathVariable String roleId) {
+        removeRole.execute(userId,roleId);return ResponseEntity.noContent().build();
+    }
 
     @GetMapping
     @Operation(summary = "Obtener todos los roles")

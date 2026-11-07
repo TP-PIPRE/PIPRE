@@ -19,6 +19,7 @@ export interface DailyChallengeDTO {
   completed: boolean; currentStreak: number; bestStreak: number;
 }
 export interface GameVictoryDTO {
+  score?: {points:number;bestPoints:number;pointsGained:number;totalPoints:number;dailyXpAwarded:number;version:string}|null;
   sessionId: string; game: SimulatorGame; levelNumber: number; stars: number; bestStars: number;
   completedAt: string; durationMs: number; newAchievements: AchievementDTO[]; daily: DailyChallengeDTO | null;
 }

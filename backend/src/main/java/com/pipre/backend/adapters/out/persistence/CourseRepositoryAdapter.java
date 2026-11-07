@@ -20,6 +20,12 @@ public class CourseRepositoryAdapter implements CourseRepositoryPort {
 
     private final CourseJpaRepository courseJpaRepository;
     private final CourseMapper courseMapper;
+    @Override @org.springframework.transaction.annotation.Transactional
+    public Optional<Course> lockById(String id){return courseJpaRepository.lockById(id).map(courseMapper::toDomain);}
+    @Override
+    public Page<Course> findAllByIds(java.util.Set<String> ids,Pageable pageable) {
+        return ids.isEmpty()?Page.empty(pageable):courseJpaRepository.findByIdCourseIn(ids,pageable).map(courseMapper::toDomain);
+    }
 
     @Override
     public List<Course> findAll() {
@@ -36,8 +42,11 @@ public class CourseRepositoryAdapter implements CourseRepositoryPort {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void save(Course course) {
-        CourseJpaEntity entity = courseMapper.toJpaEntity(course);
+        // Updating scalar details must not merge an empty orphan-removal collection.
+        CourseJpaEntity entity = courseJpaRepository.findById(course.getIdCourse()).orElseGet(()->courseMapper.toJpaEntity(course));
+        entity.setName(course.getName());entity.setDescription(course.getDescription());entity.setLevel(course.getLevel().name());
         courseJpaRepository.save(entity);
     }
 

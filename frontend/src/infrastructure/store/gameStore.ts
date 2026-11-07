@@ -27,7 +27,7 @@ interface GameStoreState {
   pistasIa: number;
   tiempoResolucion: number;
   attempts: AttemptMetrics[];
-  startGame: (game: GameId, options?: { telemetry?: boolean }) => void;
+  startGame: (game: GameId, options?: { telemetry?: boolean; restored?:{moves:number;resets:number;helps:number} }) => void;
   resetGame: (options?: { preserveMetrics?: boolean }) => void;
   registerMove: () => void;
   requestHint: () => void;
@@ -67,9 +67,9 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       game,
       legacyTelemetry: options?.telemetry !== false,
       status: 'PLAYING',
-      movimientos: 0,
-      reinicios: 0,
-      pistasIa: 0,
+      movimientos: options?.restored?.moves??0,
+      reinicios: options?.restored?.resets??0,
+      pistasIa: options?.restored?.helps??0,
       tiempoResolucion: 0,
     });
     startTimer(() => {

@@ -2,6 +2,10 @@ import axiosInstance from "./axiosInstance";
 import type { DailySetDTO, DailyChallengeDTO, GameAction, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "./models/gameProgressModels";
 
 export const gameProgressService = {
+  active: async (context:GameSessionContext):Promise<GameSessionDTO|null> => {
+    const response=await axiosInstance.get<GameSessionDTO>("game-sessions/active",{params:context});
+    return response.status===204?null:response.data;
+  },
   start: async (context: GameSessionContext, clientSessionId: string): Promise<GameSessionDTO> =>
     (await axiosInstance.post<GameSessionDTO>("game-sessions", { ...context, clientSessionId })).data,
   action: async (sessionId: string, action: GameAction & { sequence: number }): Promise<GameSessionDTO> =>

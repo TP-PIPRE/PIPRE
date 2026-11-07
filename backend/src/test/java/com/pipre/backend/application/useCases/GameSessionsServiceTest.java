@@ -25,7 +25,7 @@ class GameSessionsServiceTest {
     private final DailyChallengeUseCase daily=mock(DailyChallengeUseCase.class);
     private final RecordVerifiedVictoryUseCase victories=mock(RecordVerifiedVictoryUseCase.class);
     private final MutableClock clock=new MutableClock();
-    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class));
+    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class));
     @BeforeEach void setup() throws Exception {
         JsonNode catalog=json.readTree(getClass().getResourceAsStream("/catalog/neonflow-v2.json"));
         for(JsonNode config:catalog) {
@@ -108,6 +108,7 @@ class GameSessionsServiceTest {
         Map<String,GameSession> rows=new LinkedHashMap<>();Map<String,ActionReceipt> actions=new HashMap<>();List<String> locks=new ArrayList<>();long order=0;
         public void lockStudent(String student){locks.add("student:"+student);}
         public Optional<GameSession> findByClientId(String student,String client){return rows.values().stream().filter(s->s.studentId().equals(student)&&s.clientSessionId().equals(client)).findFirst();}
+        public Optional<GameSession> active(String student){return rows.values().stream().filter(s->s.studentId().equals(student)&&s.status().equals("ACTIVE")).findFirst();}
         public Optional<GameSession> lockSession(String id){locks.add("session:"+id);return Optional.ofNullable(rows.get(id));}
         public void abandonActive(String student,Instant now){new ArrayList<>(rows.values()).stream().filter(s->s.studentId().equals(student)&&s.status().equals("ACTIVE")).forEach(s->update(s.change(s.state(),s.revision(),"ABANDONED",now,null,null)));}
         public GameSession insert(GameSession s){var inserted=new GameSession(s.sessionId(),s.clientSessionId(),s.studentId(),s.game(),s.levelNumber(),s.levelTemplate(),s.activityId(),s.dailyChallengeId(),s.startedAt(),s.completedAt(),s.status(),s.state(),s.revision(),++order,s.stars(),s.completionResponse());rows.put(s.sessionId(),inserted);return inserted;}

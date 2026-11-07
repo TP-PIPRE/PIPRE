@@ -19,6 +19,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class GamificationJdbcAdapter implements GamificationRepositoryPort {
     private final JdbcTemplate jdbc;
+    private final com.fasterxml.jackson.databind.ObjectMapper json;
     private static OffsetDateTime utc(Instant value) { return value.atOffset(ZoneOffset.UTC); }
     private static Instant instant(ResultSet rs,String column) throws SQLException { return rs.getObject(column,OffsetDateTime.class).toInstant(); }
 
@@ -104,21 +105,37 @@ public class GamificationJdbcAdapter implements GamificationRepositoryPort {
     }
     @Override public Account account(String id) {
         return jdbc.queryForObject("""
-            SELECT COALESCE(a.legacy_xp+a.earned_xp,GREATEST(COALESCE(MAX(gs.xp_total),0),0)) xp,
+            SELECT LEAST(2147483647,COALESCE(CAST(a.legacy_xp AS BIGINT)+a.earned_xp,GREATEST(COALESCE(MAX(gs.xp_total),0),0))) xp,
             COALESCE(a.legacy_level,GREATEST(COALESCE(MAX(gs.level),1),1)) legacy_level,
-            COALESCE(MAX(gs.total_points),0) points,COALESCE(MIN(gs.position),0) position
+            (SELECT COALESCE(SUM(s.best_points),0) FROM game_best_scores s WHERE s.student_id=u.id_user) points,0 position
             FROM users u LEFT JOIN gamification_accounts a ON a.student_id=u.id_user
             LEFT JOIN group_students gs ON gs.id_student=u.id_user WHERE u.id_user=?
             GROUP BY u.id_user,a.legacy_xp,a.earned_xp,a.legacy_level
-            """,(rs,n)->new Account(rs.getInt("xp"),rs.getInt("legacy_level"),rs.getBigDecimal("points"),rs.getInt("position")),id);
+            """,(rs,n)->new Account(rs.getInt("xp"),Math.max(rs.getInt("legacy_level"),1+rs.getInt("xp")/500),rs.getBigDecimal("points"),rs.getInt("position")),id);
+    }
+    @Override public ProfileMetrics profileMetrics(String id) {
+        var states=jdbc.queryForList("SELECT gs.state FROM game_sessions gs JOIN game_score_receipts r ON r.session_id=gs.session_id WHERE gs.student_id=? AND gs.status='COMPLETED'",String.class,id);
+        if(states.isEmpty())return new ProfileMetrics(null,null);
+        long pieces=0;for(String state:states)try{pieces+=json.readTree(state).path("pieces").size();}catch(com.fasterxml.jackson.core.JsonProcessingException invalid){throw new IllegalStateException("Estado verificado inválido.",invalid);}
+        Double efficiency=jdbc.queryForObject("SELECT AVG(100.0*reference_moves/GREATEST(reference_moves,moves)) FROM game_score_receipts r JOIN game_sessions gs ON gs.session_id=r.session_id WHERE gs.student_id=?",Double.class,id);
+        return new ProfileMetrics(pieces,efficiency);
+    }
+    @Override public int rankingPosition(String id) {
+        String visibility=jdbc.queryForObject("SELECT student_visibility FROM ranking_settings WHERE setting_id=1",String.class);
+        if("HIDDEN".equals(visibility))return 0;
+        String total="COALESCE(s.points,0)",base=" FROM users u LEFT JOIN (SELECT student_id,SUM(best_points) points FROM game_best_scores GROUP BY student_id) s ON s.student_id=u.id_user ";
+        String ranked="GLOBAL".equals(visibility)?"SELECT u.id_user,ROW_NUMBER() OVER(ORDER BY "+total+" DESC,u.id_user) position"+base+"WHERE "+VerifiedRankingRepositoryAdapter.STUDENTS
+            :"SELECT u.id_user,ROW_NUMBER() OVER(PARTITION BY gs.id_group ORDER BY "+total+" DESC,u.id_user) position"+base+"JOIN group_students gs ON gs.id_student=u.id_user WHERE "+VerifiedRankingRepositoryAdapter.STUDENTS;
+        Integer position=jdbc.queryForObject("SELECT MIN(position) FROM ("+ranked+") ranked WHERE id_user=?",Integer.class,id);
+        return position==null?0:position;
     }
     @Override public List<StudentHistoryDTO> history(String id) {
         var result=new ArrayList<>(jdbc.query("""
-            SELECT v.*,COALESCE((SELECT SUM(amount) FROM achievement_xp_ledger l WHERE l.session_id=v.session_id),0) xp
-            FROM verified_game_victories v WHERE v.student_id=? ORDER BY victory_order DESC
+            SELECT v.*,s.points verified_points,COALESCE((SELECT SUM(amount) FROM achievement_xp_ledger l WHERE l.session_id=v.session_id),0)+COALESCE((SELECT SUM(amount) FROM daily_xp_ledger d WHERE d.session_id=v.session_id),0) xp
+            FROM verified_game_victories v LEFT JOIN game_score_receipts s ON s.session_id=v.session_id WHERE v.student_id=? ORDER BY victory_order DESC
             """,(rs,n)->new StudentHistoryDTO(rs.getString("session_id"),rs.getString("activity_id"),
                 (rs.getString("game").equals("neonflow")?"Neon Flow":"TetriLogic")+" · Nivel "+rs.getInt("level_number"),
-                null,rs.getInt("stars"),rs.getInt("xp"),null,instant(rs,"completed_at").toString()),id));
+                rs.getBigDecimal("verified_points"),rs.getInt("stars"),rs.getInt("xp"),null,instant(rs,"completed_at").toString(),"SERVER_VERIFIED"),id));
         result.addAll(jdbc.query("""
             SELECT r.*,a.name activity_name FROM activity_results r LEFT JOIN activities a ON a.id_activity=r.id_activity
             WHERE r.id_student=? ORDER BY r.date_attempted DESC
