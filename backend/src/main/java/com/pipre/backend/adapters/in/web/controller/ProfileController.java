@@ -34,11 +34,11 @@ public class ProfileController {
     private final ExportAchievementsUseCase exportAchievementsUseCase;
 
     @GetMapping("/{idStudent}/game-progress")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     public GameProgressDTO gameProgress(@PathVariable String idStudent) { return getGameProgressUseCase.progress(idStudent); }
 
     @GetMapping("/{idStudent}/achievements/export")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     public AchievementExportDTO export(@PathVariable String idStudent,
             @RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -46,21 +46,21 @@ public class ProfileController {
     }
 
     @GetMapping("/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener perfil completo del estudiante con estadísticas de gamificación")
     public ResponseEntity<PlayerProfileDTO> getProfile(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentProfileUseCase.execute(idStudent));
     }
 
     @GetMapping("/{idStudent}/achievements")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener logros del estudiante (todos con estado desbloqueado/bloqueado)")
     public ResponseEntity<List<AchievementDTO>> getAchievements(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentAchievementsUseCase.execute(idStudent));
     }
 
     @GetMapping("/{idStudent}/history")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener historial de resultados con estrellas y XP")
     public ResponseEntity<List<StudentHistoryDTO>> getHistory(@PathVariable String idStudent) {
         return ResponseEntity.ok(getStudentHistoryUseCase.execute(idStudent));

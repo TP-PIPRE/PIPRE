@@ -20,7 +20,8 @@ export class ValidatedGameSession {
   private nextSequence = 1;
   private closing = false;
   private readonly context: GameSessionContext;
-  constructor(context: GameSessionContext) { this.context = context; }
+  private readonly forceNew:boolean;
+  constructor(context: GameSessionContext,forceNew=false) { this.context = context;this.forceNew=forceNew; }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private update(patch: Partial<ValidatedSessionState>) {
@@ -39,11 +40,15 @@ export class ValidatedGameSession {
       try {
         if (previousStart) await previousStart;
         // Starting the next board must not abandon a victory still being saved.
-        if (previous && previous !== this && previous.closing && !previous.snapshot.victory) await previous.drain();
-        const session = await gameProgressService.start(this.context, this.clientSessionId);
+        if (!this.forceNew && previous && previous !== this && !previous.snapshot.victory) {
+          await previous.drain();
+          if(previous.snapshot.phase==="error")throw new Error("Guarda los movimientos del tablero anterior antes de continuar.");
+        }
+        const session = (!this.forceNew?await gameProgressService.active(this.context):null) ?? await gameProgressService.start(this.context, this.clientSessionId);
         if (!session?.sessionId || session.game !== this.context.game || session.status !== "ACTIVE") throw new Error("No pudimos preparar el intento. Vuelve a intentarlo.");
         this.nextSequence = session.revision + 1;
         this.update({ session, phase: "ready" });
+        if (this.context.dailyChallengeId?.length === 36) window.dispatchEvent(new CustomEvent("pipre:daily-started", { detail: this.context.studentId }));
       } catch (error) { this.update({ phase: "error", error: getApiErrorMessage(error, "No pudimos preparar el intento. Comprueba tu conexión.") }); }
     }).finally(() => { this.starting = null; });
     return this.starting;

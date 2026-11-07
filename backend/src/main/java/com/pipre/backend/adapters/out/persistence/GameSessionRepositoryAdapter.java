@@ -29,6 +29,9 @@ public class GameSessionRepositoryAdapter implements GameSessionRepositoryPort {
     public Optional<GameSession> findByClientId(String studentId,String clientSessionId) {
         return jdbc.query("SELECT * FROM game_sessions WHERE student_id=? AND client_session_id=?",this::map,studentId,clientSessionId).stream().findFirst();
     }
+    public Optional<GameSession> active(String studentId) {
+        return jdbc.query("SELECT * FROM game_sessions WHERE active_student_id=? AND status='ACTIVE'",this::map,studentId).stream().findFirst();
+    }
     public Optional<GameSession> lockSession(String sessionId) {
         return jdbc.query("SELECT * FROM game_sessions WHERE session_id=? FOR UPDATE",this::map,sessionId).stream().findFirst();
     }

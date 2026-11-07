@@ -14,22 +14,30 @@ import { createNeonGrid, neonSolved } from "../../../application/usecases/neonfl
 import { useAttemptTrace } from "../common/useAttemptTrace";
 import { useValidatedGameSession } from "../common/useValidatedGameSession";
 import { GameSessionFeedback } from "../common/GameSessionFeedback";
+import {restoreNeonBoard} from "../../../application/usecases/restoreBoard";
+import {useBoardSelection} from "../common/useBoardSelection";
 const createGrid=createNeonGrid;
 const snapshot=(grid:Grid)=>grid.cells.filter(c=>c.type==='MIRROR_90'||c.type==='FILTER').map(c=>({type:c.type,x:c.x,y:c.y,...(c.rotation!==undefined?{rotation:c.rotation}:{}),...(c.color?{color:c.color}:{})}));
 
 export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string }) => {
-  const [currentLevelIndex, setCurrentLevelIndex] = useState(0);
-  const [grid, setGrid] = useState<Grid>(() => createGrid(LEVELS[0]));
+  const [currentLevelIndex, setCurrentLevelIndex] = useBoardSelection(LEVELS,!activity&&!dailyChallengeId&&LEVELS.length>1);
+  const level=LEVELS[currentLevelIndex],templateId=activity?.levelTemplate??level.templateId;
+  const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
+  if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"Neon Flow"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
+  return <NeonBoardSession key={gameSession.state?.session?.sessionId??templateId} levels={LEVELS} currentLevelIndex={currentLevelIndex} setCurrentLevelIndex={setCurrentLevelIndex} activity={activity} dailyChallengeId={dailyChallengeId} gameSession={gameSession}/>;
+};
+function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,activity,dailyChallengeId,gameSession}:{levels:NeonFlowLevelConfig[];currentLevelIndex:number;setCurrentLevelIndex:(index:number)=>void;activity?:ActivityResponseDTO;dailyChallengeId?:string;gameSession:ReturnType<typeof useValidatedGameSession>}) {
+  const [initialSession]=useState(gameSession.state?.session);
+  const [grid, setGrid] = useState<Grid>(() => restoreNeonBoard(LEVELS[currentLevelIndex],gameSession.state?.session?.state.pieces));
   const [laserPath, setLaserPath] = useState<Cell[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [staticHints,setStaticHints]=useState(0);
+  const [staticHints,setStaticHints]=useState(gameSession.state?.session?.state.helps??0);
 
   const [selectedComponent, setSelectedComponent] = useState<OpticalComponent | null>(null);
   const level = LEVELS[currentLevelIndex];
   const templateId=activity?.levelTemplate??level.templateId;
-  const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
-  const {record,finish}=useAttemptTrace(templateId?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null);
+  const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null,initialSession?.state.pieces??[]);
 
   const status = useGameStore((s) => s.status);
   const startGame = useGameStore((s) => s.startGame);
@@ -37,11 +45,11 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dail
   const completeGame = useGameStore((s) => s.completeGame);
 
   useEffect(() => {
-    startGame("neonflow", {telemetry:false});
+    startGame("neonflow", {telemetry:false,restored:initialSession?.state});
     return () => {
       useGameStore.getState().stopGame();
     };
-  }, [startGame]);
+  }, [startGame,initialSession]);
 
   const resetForLevel = (index: number) => {
     setGrid(createGrid(LEVELS[index]));
@@ -209,4 +217,4 @@ export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dail
       <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
     </main>
   );
-};
+}

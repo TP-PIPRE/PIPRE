@@ -25,16 +25,16 @@ public class ModuleProgressController {
     private final GetModuleProgressUseCase getModuleProgressUseCase;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#command.idStudent())")
     @Operation(summary = "Registrar o actualizar el progreso de un módulo")
     @ApiResponse(responseCode = "200", description = "Progreso guardado exitosamente")
-    public ResponseEntity<Void> saveModuleProgress(@RequestBody SaveModuleProgressCommand command) {
+    public ResponseEntity<Void> saveModuleProgress(@jakarta.validation.Valid @RequestBody SaveModuleProgressCommand command) {
         saveModuleProgressUseCase.execute(command);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/user/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN') or @securityService.isCurrentUser(#idStudent)")
+    @PreAuthorize("hasRole('ADMIN') or @securityService.isCurrentUser(#idStudent) or (hasRole('TEACHER') and @academicAccess.readStudent(#idStudent))")
     @Operation(summary = "Obtener el progreso en los módulos de un estudiante")
     @ApiResponse(responseCode = "200", description = "Progreso de módulos obtenido exitosamente")
     public ResponseEntity<List<ModuleProgressDTO>> getModuleProgress(@PathVariable String idStudent) {

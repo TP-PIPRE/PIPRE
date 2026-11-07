@@ -1,0 +1,106 @@
+name: PIPRE verification
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - name: Compile, test and check critical coverage
+        working-directory: backend
+        run: mvn -B -ntp verify
+      - name: Summarize unfiltered coverage
+        run: python3 backend/scripts/coverage-summary.py
+      - name: Verify persistence in disposable PostgreSQL
+        shell: pwsh
+        run: ./backend/scripts/test-postgres.ps1
+      - name: Preserve backend test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: backend-reports
+          retention-days: 7
+          path: |
+            backend/target/surefire-reports/
+            backend/target/surefire-postgres/
+            backend/target/site/jacoco/
+            backend/target/coverage-summary.json
+            backend/target/api-contract-inventory.json
+
+  frontend-and-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CYPRESS_INSTALL_BINARY: '0'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Install the project's package manager
+        run: npm install --global pnpm@11.7.0
+      - name: Install locked development dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Check lint, types, coverage and production build
+        working-directory: frontend
+        run: |
+          pnpm run lint
+          pnpm run test:e2e:types
+          pnpm run test:coverage
+          pnpm run build
+      - name: Install browser prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0t64 libgbm1 libnss3 libxss1 libasound2t64 xvfb
+      - name: Install the declared Cypress browser binary
+        working-directory: frontend
+        env:
+          CYPRESS_INSTALL_BINARY: '15.21.1'
+        run: pnpm exec cypress install
+      - name: Start isolated application and run all browser specs
+        shell: pwsh
+        run: |
+          ./scripts/audit-environment.ps1 -Action Start
+          Push-Location frontend
+          try {
+            pnpm run test:e2e:run
+            if ($LASTEXITCODE -ne 0) { throw 'Browser verification failed.' }
+          } finally { Pop-Location }
+      - name: Remove only this run's disposable application
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path frontend/node_modules/.cache/pipre-audit/environment.json) {
+            ./scripts/audit-environment.ps1 -Action Stop
+          }
+      - name: Preserve frontend and browser test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: frontend-browser-reports
+          retention-days: 7
+          path: |
+            frontend/coverage/
+            frontend/test-results/e2e/

@@ -171,6 +171,8 @@ export const apiService = {
     },
   },
   ranking: {
+    getSettings: async () => (await axiosInstance.get<{studentVisibility:"HIDDEN"|"CLASSROOM"|"GLOBAL"}>("rankings/settings")).data,
+    getGlobalRanking: async () => (await axiosInstance.get<RankingDTO[]>("rankings/global")).data,
     getGroupRanking: async (idGroup: string) => {
       const response = await axiosInstance.get<RankingDTO[]>(
         API_ENDPOINTS.GROUP_STUDENTS_BY_ID(idGroup),

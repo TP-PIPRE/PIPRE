@@ -20,7 +20,8 @@ public class GetStudentProfileService implements GetStudentProfileUseCase {
         var user=(idStudent!=null&&idStudent.contains("@")?users.findByEmail(idStudent):users.findById(idStudent))
                 .orElseThrow(()->new BusinessException("El estudiante no existe."));
         var account=repository.account(user.getIdUser()); var progress=progressUseCase.progress(user.getIdUser());
-        return new PlayerProfileDTO(user.getIdUser(),user.getFirstName()+" "+user.getLastName(),account.totalPoints(),account.position(),account.level(),
-                account.xpTotal(),progress.totalStars(),progress.currentStreak(),progress.bestStreak(),progress.completedLevels(),0L,null);
+        var metrics=repository.profileMetrics(user.getIdUser());
+        return new PlayerProfileDTO(user.getIdUser(),user.getFirstName()+" "+user.getLastName(),account.totalPoints(),repository.rankingPosition(user.getIdUser()),account.level(),
+                account.xpTotal(),progress.totalStars(),progress.currentStreak(),progress.bestStreak(),progress.completedLevels(),metrics.totalPiecesInVictories(),metrics.movementEfficiencyPercent());
     }
 }

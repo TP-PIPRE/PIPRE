@@ -49,6 +49,11 @@ public class User {
                 .idRoleList(updateRoles)
                 .build();
     }
+    public User removeRole(String roleId) {
+        if(!idRoleList.contains(roleId))return this;
+        if(idRoleList.size()==1)throw new BusinessException("El usuario debe conservar al menos un rol.");
+        return toBuilder().idRoleList(idRoleList.stream().filter(id->!id.equals(roleId)).toList()).build();
+    }
 
     public Builder toBuilder() {
         return new Builder()

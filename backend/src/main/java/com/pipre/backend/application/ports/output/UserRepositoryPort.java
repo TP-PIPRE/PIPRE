@@ -9,6 +9,7 @@ public interface UserRepositoryPort {
     void save(User user);
     boolean existsByEmail(String email);
     Optional<User> findById(String id);
+    Optional<User> lockById(String id);
     Optional<User> findByEmail(String email);
     int count();
     List<User> findAll();

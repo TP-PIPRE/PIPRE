@@ -1,152 +1,15 @@
 import { Pencil, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {getAuthState} from "../../infrastructure/store/authStore";
 import { apiService } from "../../infrastructure/api/apiService";
-import { RiaBentoGrid, type RiaStudentData } from "../components/ria-bento-grid/RiaBentoGrid";
-import { getAuthState } from "../../infrastructure/store/authStore";
+import { getApiErrorMessage } from "../../infrastructure/api/errors";
+import { useAsyncResource } from "../../application/hooks/useAsyncResource";
+import { loadTeacherDashboard } from "../../application/usecases/loadTeacherDashboard";
+import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
 import { CirclePlus as BsPlusCircleFill, GraduationCap as BsMortarboardFill, Users as BsPeopleFill, TrendingUp as BsGraphUpArrow } from "lucide-react";
-import type { RankingDTO } from "../../infrastructure/api/models/apiModels";
 import { Modal } from "../components/common/Modal";
-
-const deriveFeaturesFromRanking = (id: string, position: number, totalPoints: number): RiaStudentData => {
-  const score = totalPoints ?? 75;
-  const attempts = Math.round(score / 20) + 2;
-  const logical_level = score > 75 ? "alto" : score > 45 ? "medio" : "bajo";
-  return {
-    id,
-    name: `Estudiante #${position}`,
-    attempts,
-    errors: Math.max(0, Math.round(attempts * (1 - score / 100))),
-    logical_level,
-    ai_interactions: Math.round(score / 15),
-    inactive_days: Math.max(0, 7 - Math.round(score / 15)),
-    score,
-    success_rate: score / 100,
-    help_requested: Math.max(0, 5 - Math.round(score / 20)),
-    completed_activities: Math.round(score / 12) + 1,
-    age: 13,
-    grade: 7,
-    rankingPosition: position,
-  };
-};
-
-const fetchRetosFromActivities = async () => {
-  const retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[] = [];
-  try {
-    const courses = await apiService.courses.getAll();
-    if (!courses || courses.length === 0) {
-      console.warn("[Dashboard] No se encontraron cursos en la API, intentando fallback simulations...");
-      return await fetchRetosFromSimulations();
-    }
-    let count = 0;
-    const MAX_RETOS = 10;
-    for (const course of courses.slice(0, 3)) {
-      if (count >= MAX_RETOS) break;
-      const modules = await apiService.modules.getByCourse(course.idCourse).catch(() => []);
-      if (modules.length === 0) {
-        console.warn(`[Dashboard] Sin módulos para curso ${course.idCourse}, usando fallback simulations`);
-        return await fetchRetosFromSimulations();
-      }
-      for (const mod of modules) {
-        if (count >= MAX_RETOS) break;
-        const lessons = await apiService.lessons.getByModule(mod.idModule).catch(() => []);
-        if (lessons.length === 0) continue;
-        for (const lesson of lessons) {
-          if (count >= MAX_RETOS) break;
-          const activities = await apiService.activities.getByLesson(lesson.idLesson).catch(() => []);
-          for (const act of activities) {
-            if (count >= MAX_RETOS) break;
-            retos.push({
-              id: act.idActivity,
-              nombre: act.name,
-              categoria: course.name,
-              courseId: course.idCourse,
-              dificultad: 2,
-              estado: true,
-            });
-            count++;
-          }
-        }
-      }
-    }
-    if (retos.length === 0) {
-      console.warn("[Dashboard] Retos vacíos desde módulos, intentando fallback simulations");
-      return await fetchRetosFromSimulations();
-    }
-  } catch (err) {
-    console.warn("[Dashboard] Error en fetchRetosFromActivities, usando fallback simulations:", err);
-    return await fetchRetosFromSimulations();
-  }
-  return retos;
-};
-
-const fetchRetosFromSimulations = async () => {
-  const retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[] = [];
-  try {
-    const authUser = getAuthState().user;
-    const userId = authUser?.id || "config-store";
-    const sims = await apiService.simulations.getByUser(userId);
-    const courses = await apiService.courses.getAll().catch(() => []);
-    const courseMap = new Map(courses.map((c) => [c.idCourse, c.name]));
-    let count = 0;
-    const MAX_RETOS = 10;
-    for (const s of sims) {
-      if (count >= MAX_RETOS) break;
-      try {
-        const data = JSON.parse(s.result);
-        if (data.type === "challenge" && !data.deleted) {
-          retos.push({
-            id: data.idActivity || s.idSimulation,
-            nombre: data.title || "Reto sin título",
-            categoria: courseMap.get(data.courseId) || `Curso ${data.courseId || "?"}`,
-            courseId: data.courseId || "",
-            dificultad: data.difficulty === "HARD" ? 3 : data.difficulty === "MEDIUM" ? 2 : 1,
-            estado: true,
-          });
-          count++;
-        }
-      } catch {}
-    }
-    console.warn(`[Dashboard] Fallback simulations: ${retos.length} retos encontrados`);
-  } catch (err) {
-    console.warn("[Dashboard] Error en fetchRetosFromSimulations:", err);
-  }
-  return retos;
-};
-
-const loadDashboardMetrics = async () => {
-  try {
-    const groups = await apiService.groups.getAll();
-    const groupCount = groups?.length ?? 0;
-    let studentCount = 0;
-    let courseCount = 0;
-    if (groups && groups.length > 0) {
-      const ranking = await apiService.ranking.getGroupRanking(groups[0].idGroup);
-      studentCount = ranking?.length ?? 0;
-    }
-    try {
-      const courses = await apiService.courses.getAll();
-      courseCount = courses?.length ?? 0;
-    } catch {}
-    return {
-      metricas: [
-        { id: "1", titulo: "Grupos Activos", valor: groupCount, variacion: "", icono: "school" },
-        { id: "2", titulo: "Estudiantes", valor: studentCount, variacion: "", icono: "group" },
-        { id: "3", titulo: "Cursos", valor: courseCount, variacion: "", icono: "trending_up" },
-      ],
-      retos: await fetchRetosFromActivities(),
-    };
-  } catch {
-    return {
-      metricas: [
-        { id: "1", titulo: "Grupos Activos", valor: 0, variacion: "", icono: "school" },
-        { id: "2", titulo: "Estudiantes", valor: 0, variacion: "", icono: "group" },
-        { id: "3", titulo: "Cursos", valor: 0, variacion: "", icono: "trending_up" },
-      ],
-      retos: [],
-    };
-  }
-};
+const EMPTY_RANKING: Awaited<ReturnType<typeof loadTeacherDashboard>>["ranking"]=[];
 
 const renderMetricaIcon = (iconoName: string) => {
   switch (iconoName) {
@@ -162,101 +25,42 @@ const renderMetricaIcon = (iconoName: string) => {
 };
 
 export const DocenteDashboard = () => {
-  const [dashboardMetrics, setDashboardMetrics] = useState<{
-    metricas: { id: string; titulo: string; valor: string | number; variacion: string; icono: string }[];
-    retos: { id: string; nombre: string; categoria: string; courseId: string; dificultad: number; estado: boolean }[];
-    estudiantesDestacados: { id: string; nombre: string; xp: number; variacionXP: number; posicion: number; avatar: string }[];
-  }>({ metricas: [], retos: [], estudiantesDestacados: [] });
-  const [metricsReady, setMetricsReady] = useState(false);
-
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [students, setStudents] = useState<RiaStudentData[]>([]);
-  const [studentsLoading, setStudentsLoading] = useState(true);
-
-  const [rankingModalOpen, setRankingModalOpen] = useState(false);
-  const [modalRankingData, setModalRankingData] = useState<{ position: number; studentId: string; studentName: string; totalScore: number }[]>([]);
-  const [modalIsLoading, setModalIsLoading] = useState(false);
-  const [modalActiveTab, setModalActiveTab] = useState<"global" | "course">("global");
-  const [modalCourses, setModalCourses] = useState<{ id: string; name: string }[]>([]);
-  const [modalSelectedCourse, setModalSelectedCourse] = useState("");
-  const navigate = useNavigate();
-  const [deleteConfirmReto, setDeleteConfirmReto] = useState<{ id: string; nombre: string } | null>(null);
-
-  useEffect(() => {
-    if (!rankingModalOpen) return;
-    setModalIsLoading(true);
-    setModalRankingData([]);
-    const doFetch = async () => {
-      try {
-        const courseData = await apiService.courses.getAll();
-        if (courseData && courseData.length > 0) {
-          setModalCourses(courseData.map((c) => ({ id: c.idCourse, name: c.name })));
-          if (!modalSelectedCourse) setModalSelectedCourse(courseData[0].idCourse);
-        } else {
-          setModalCourses([{ id: "1", name: "Curso principal" }]);
-        }
-      } catch {
-        setModalCourses([{ id: "1", name: "Curso principal" }]);
-      }
-      try {
-        const data = modalActiveTab === "course" && modalSelectedCourse
-          ? await apiService.ranking.getCourseRanking(modalSelectedCourse)
-          : await apiService.groups.getAll().then(async groups => {
-              const rankings = (await Promise.all(groups.map(g => apiService.ranking.getGroupRanking(g.idGroup)))).flat();
-              return [...new Map(rankings.map(entry => [entry.idStudent, entry])).values()].sort((a, b) => b.totalPoints - a.totalPoints).map((entry, i) => ({ ...entry, position: i + 1 }));
-            });
-        setModalRankingData(data.map(dto => ({ position: dto.position, studentId: dto.idStudent, studentName: dto.studentName || `Estudiante #${dto.position}`, totalScore: dto.totalPoints })));
-      } catch { setModalRankingData([]); }
-      setModalIsLoading(false);
-    };
-    doFetch();
-  }, [rankingModalOpen, modalActiveTab, modalSelectedCourse]);
-
-  useEffect(() => {
-    loadDashboardMetrics().then(({ metricas, retos }) => {
-      setDashboardMetrics(prev => ({ ...prev, metricas, retos }));
-      setMetricsReady(true);
-    });
-  }, []);
-
-  useEffect(() => {
-    const loadStudents = async () => {
-      try {
-        const groups = await apiService.groups.getAll();
-        if (!groups || groups.length === 0) throw new Error("No hay grupos");
-        const ranking = await apiService.ranking.getGroupRanking(groups[0].idGroup);
-        if (ranking && ranking.length > 0) {
-          const derived = ranking.map((s: RankingDTO, i: number) =>
-            deriveFeaturesFromRanking(s.idStudent, s.position || i + 1, s.totalPoints ?? 50)
-          );
-          setStudents(derived);
-          const destacados = ranking.slice(0, 3).map((s: RankingDTO, i: number) => ({
-            id: s.idStudent,
-            nombre: s.studentName || `Estudiante #${s.position}`,
-            xp: s.totalPoints,
-            variacionXP: 0,
-            posicion: i + 1,
-            avatar: `https://ui-avatars.com/api/?name=Estudiante+${s.position}&background=random`,
-          }));
-          setDashboardMetrics((prev) => ({ ...prev, estudiantesDestacados: destacados }));
-          if (!selectedStudentId) {
-            setSelectedStudentId(derived[0].id);
-          }
-        }
-      } catch {
-        setStudents([]);
-      } finally {
-        setStudentsLoading(false);
-      }
-    };
-    loadStudents();
-  }, []);
-
+  const resource=useAsyncResource("dashboard",loadTeacherDashboard);
+  const [operationError,setOperationError]=useState("");
+  const [deleting,setDeleting]=useState(false);
+  const [studentChoice,setSelectedStudentId]=useState("");
+  const [rankingModalOpen,setRankingModalOpen]=useState(false);
+  const [modalActiveTab,setModalActiveTab]=useState<"global"|"course">("global");
+  const [courseChoice,setModalSelectedCourse]=useState("");
+  const [deleteConfirmReto,setDeleteConfirmReto]=useState<{id:string;nombre:string}|null>(null);
+  const navigate=useNavigate();
+  const ranking=resource.data?.ranking??EMPTY_RANKING;
+  const students=ranking.map(row=>({id:row.idStudent,name:row.studentName||`Estudiante #${row.position}`}));
+  const selectedStudentId=students.some(row=>row.id===studentChoice)?studentChoice:students[0]?.id??"";
+  const modalCourses=(resource.data?.courses??[]).map(course=>({id:course.idCourse,name:course.name}));
+  const modalSelectedCourse=modalCourses.some(course=>course.id===courseChoice)?courseChoice:modalCourses[0]?.id??"";
+  const loadModal=async()=>modalActiveTab==="course"
+    ?modalSelectedCourse?apiService.ranking.getCourseRanking(modalSelectedCourse):[]
+    :ranking;
+  const modal=useAsyncResource(rankingModalOpen?JSON.stringify([modalActiveTab,modalSelectedCourse,modalActiveTab==="global"?ranking:null]):undefined,loadModal);
+  const modalRankingData=(modal.data??[]).map(row=>({position:row.position,studentId:row.idStudent,studentName:row.studentName||`Estudiante #${row.position}`,totalScore:row.totalPoints}));
+  const modalIsLoading=modal.loading;
+  const studentsLoading=resource.loading;
+  const metricsReady=Boolean(resource.data);
+  const dashboardMetrics={
+    metricas:[
+      {id:"1",titulo:"Grupos Activos",valor:resource.data?.groups.length??"—",variacion:"",icono:"school"},
+      {id:"2",titulo:"Estudiantes",valor:resource.data?ranking.length:"—",variacion:"",icono:"group"},
+      {id:"3",titulo:"Cursos",valor:resource.data?.courses.length??"—",variacion:"",icono:"trending_up"},
+    ],
+    retos:resource.data?.challenges??[],
+    estudiantesDestacados:ranking.slice(0,3).map(row=>({id:row.idStudent,nombre:row.studentName||`Estudiante #${row.position}`,xp:row.totalPoints,variacionXP:0,posicion:row.position,avatar:""})),
+  };
   const handleStudentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedStudentId(e.target.value);
   };
 
-  if (!metricsReady && studentsLoading)
+  if (!metricsReady && studentsLoading && !resource.error)
     return (
       <div
         className="flex-1 flex items-center justify-center font-mono text-xs"
@@ -271,6 +75,7 @@ export const DocenteDashboard = () => {
       className="flex-1 flex flex-col p-6 max-w-[1280px] mx-auto w-full"
       style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
     >
+      {(resource.error || operationError && !deleteConfirmReto) && <div role="alert" className="mb-4 border border-danger rounded-lg p-4"><p>{operationError || "No pudimos cargar el panel. Comprueba la conexión y reintenta."}</p><button className="btn-secondary mt-2" onClick={()=>{setOperationError("");resource.retry();}}>Reintentar</button></div>}
       {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -421,7 +226,7 @@ export const DocenteDashboard = () => {
                           <Pencil size={18} aria-hidden="true" />
                         </button>
                         <button
-                          aria-label={`Eliminar ${r.nombre}`} onClick={() => setDeleteConfirmReto({ id: r.id, nombre: r.nombre })}
+                          aria-label={`Eliminar ${r.nombre}`} onClick={() => {setOperationError("");setDeleteConfirmReto({ id: r.id, nombre: r.nombre });}}
                           className="text-text-muted hover:text-danger transition-colors duration-300 rounded-full p-1"
                         >
                           <Trash2 size={18} aria-hidden="true" />
@@ -489,7 +294,7 @@ export const DocenteDashboard = () => {
                       className="text-xs font-mono transition-colors duration-300"
                       style={{ color: "var(--text-muted)" }}
                     >
-                      {e.xp} XP
+                      {e.xp} puntos
                     </span>
                   </div>
                 </div>
@@ -553,8 +358,9 @@ export const DocenteDashboard = () => {
         </div>
       </div>
 
+      <p className="mb-4 text-sm text-text-muted">El puntaje del ranking no permite inferir errores, edad o rendimiento. Los análisis requieren datos verificados y no se calculan a partir del puntos.</p>
       <RiaBentoGrid
-        student={students.find((s) => s.id === selectedStudentId) ?? null}
+        student={null}
         studentId={selectedStudentId}
       />
 
@@ -570,6 +376,7 @@ export const DocenteDashboard = () => {
           <p className="text-sm font-mono mb-6" style={{ color: "var(--text-muted)" }}>
             ¿Estás seguro de eliminar <strong style={{ color: "var(--text)" }}>{deleteConfirmReto?.nombre}</strong>?
           </p>
+          {operationError && <p role="alert" className="mb-3 text-danger">{operationError}</p>}
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setDeleteConfirmReto(null)}
@@ -578,13 +385,15 @@ export const DocenteDashboard = () => {
               Cancelar
             </button>
             <button
-              onClick={() => {
-                if (!deleteConfirmReto) return;
-                setDashboardMetrics((prev) => ({
-                  ...prev,
-                  retos: prev.retos.filter((r) => r.id !== deleteConfirmReto.id),
-                }));
-                setDeleteConfirmReto(null);
+              disabled={deleting}
+              onClick={async () => {
+                if (!deleteConfirmReto || deleting) return;
+                setDeleting(true);
+                try {
+                  await apiService.activities.delete(deleteConfirmReto.id);
+                  setDeleteConfirmReto(null);resource.retry();
+                } catch(error) {setOperationError(getApiErrorMessage(error,"No se pudo eliminar el reto."));}
+                finally {setDeleting(false);}
               }}
               className="px-6 py-3 text-xs font-mono font-bold uppercase tracking-wider bg-red-500 text-white hover:bg-red-600 transition-all rounded-lg"
             >
@@ -611,7 +420,7 @@ export const DocenteDashboard = () => {
                   : "text-text-muted hover:text-text"
               }`}
             >
-              Global
+              {getAuthState().user?.role==="admin"?"Global":"Mis aulas"}
             </button>
             <button
               onClick={() => setModalActiveTab("course")}
@@ -639,7 +448,7 @@ export const DocenteDashboard = () => {
             </div>
           )}
 
-          {modalIsLoading ? (
+          {modal.error ? <div role="alert"><p>No pudimos cargar el ranking.</p><button className="btn-secondary" onClick={modal.retry}>Reintentar</button></div> : modalIsLoading ? (
             <div className="text-center py-16 text-text-muted text-xs font-mono uppercase tracking-widest animate-pulse">
               Cargando ranking...
             </div>
@@ -675,7 +484,7 @@ export const DocenteDashboard = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-mono font-bold" style={{ color: "var(--primary)" }}>
-                        {entry.totalScore.toLocaleString()} XP
+                        {entry.totalScore.toLocaleString()} puntos
                       </p>
                     </div>
                   </div>

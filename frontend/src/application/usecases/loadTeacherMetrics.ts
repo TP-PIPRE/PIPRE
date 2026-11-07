@@ -18,13 +18,15 @@ export function summarizeModule(module: AcademicModule, students: StudentMetrics
     return latest ? [latest] : [];
   });
   const results = students.flatMap(s => s.results.filter(r => module.activityIds.includes(r.idActivity)));
+  const scoredResults=results.filter(result=>result.score!==null&&result.score!==undefined&&Number.isFinite(Number(result.score)));
   return {
     ...module,
     recordedStudents: progress.length,
     completedStudents: progress.filter(p => Number(p.percentage) >= 100).length,
     averageProgress: progress.length ? Math.round(progress.reduce((sum, p) => sum + Number(p.percentage), 0) / progress.length) : null,
-    averageScore: results.length ? Math.round(results.reduce((sum, r) => sum + Number(r.score), 0) / results.length) : null,
+    averageScore: scoredResults.length ? Math.round(scoredResults.reduce((sum, r) => sum + Number(r.score), 0) / scoredResults.length) : null,
     resultCount: results.length,
+    scoredResultCount: scoredResults.length,
   };
 }
 

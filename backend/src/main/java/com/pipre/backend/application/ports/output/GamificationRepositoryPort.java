@@ -13,6 +13,9 @@ public interface GamificationRepositoryPort {
     record Daily(LocalDate date,String game,int levelNumber,String levelTemplate) {}
     record Unlock(String achievementId, String unlockedAt, Instant verifiedAt) {}
     record Account(int xpTotal,int level,BigDecimal totalPoints,int position) {}
+    record ProfileMetrics(Long totalPiecesInVictories,Double movementEfficiencyPercent) {}
+    default ProfileMetrics profileMetrics(String studentId){return new ProfileMetrics(null,null);}
+    default int rankingPosition(String studentId){return 0;}
     void lockStudent(String studentId);
     boolean recordVictory(VerifiedVictory victory);
     void improveProgress(VerifiedVictory victory);

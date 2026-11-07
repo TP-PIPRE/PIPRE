@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage --maxWorkers=2 && node scripts/check-coverage.mjs",
+    "test:e2e:types": "tsc --project cypress/tsconfig.json --noEmit",
     "test:e2e": "cypress open",
     "test:e2e:run": "cypress run",
     "preinstall": "node scripts/require-pnpm.mjs"
@@ -42,6 +44,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "4.1.12",
     "cypress": "^15.21.1",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",

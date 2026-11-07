@@ -50,6 +50,11 @@ public class UserRolesSeederService {
                 "Docente", "Prueba", "docente@pipre.com", "123", "N/A", 42, List.of(teacherId)
         ));
 
+    }
+
+    @Transactional
+    public void seedDemoUsers() {
+        String studentId=getRoleIdByName("STUDENT");
         for (int i = 0; i < 10; i++) {
             registerUserUseCase.execute(generateFakeUser(studentId, 12, 18));
         }

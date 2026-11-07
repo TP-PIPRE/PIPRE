@@ -11,7 +11,7 @@ export function useValidatedGameSession(context: Omit<GameSessionContext, "stude
   const [round, setRound] = useState(0);
   const controller = useMemo(() => {
     void round;
-    return key === "null" ? null : new ValidatedGameSession(JSON.parse(key));
+    return key === "null" ? null : new ValidatedGameSession(JSON.parse(key),round>0);
   }, [key, round]);
   useEffect(() => { if (controller) void controller.start(); }, [controller]);
   const state = useSyncExternalStore(controller?.subscribe ?? (() => () => {}), controller?.getSnapshot ?? (() => null));

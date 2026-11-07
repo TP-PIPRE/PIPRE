@@ -27,7 +27,7 @@ class GamificationServiceTest {
         var clock=mock(Clock.class);when(clock.withZone(any())).thenAnswer(i->Clock.fixed(now.get(),i.getArgument(0)));
         var achievements=new ArrayList<Achievement>();for(int n=1;n<=35;n++)achievements.add(Achievement.builder().idAchievement("ach-L%02d".formatted(n)).code("L%02d".formatted(n)).name("Logro "+n).active(true).unlockCondition("Condición "+n).xpReward(100).build());
         achievements.add(Achievement.builder().idAchievement("old").code("PRIMER_RETO").name("Histórico").active(false).xpReward(999).build());
-        when(catalog.findAll()).thenReturn(achievements);service=new GamificationService(repository,catalog,users,clock);
+        when(catalog.findAll()).thenReturn(achievements);service=new GamificationService(repository,catalog,users,clock,mock(ProceduralDailyService.class));
     }
     private VerifiedVictory victory(String id,String game,int n,int stars) {return new VerifiedVictory("student",id,game,n,game+"-v2-"+n,null,now.get().minusSeconds(20),now.get(),stars,null,repository.victories.size()+1);}
     @Test void loneNeonDoesNotUnlockPairedAchievement() {assertTrue(service.execute(victory("n","neonflow",1,2)).newAchievements().isEmpty());}
@@ -49,7 +49,7 @@ class GamificationServiceTest {
     }
     @Test void laterServiceInstanceReadsSamePersistedProgressAndUnlocks() {
         service.execute(victory("n","neonflow",1,3));service.execute(victory("t","tetrilogic",1,2));
-        var reloaded=new GamificationService(repository,catalog,users,Clock.fixed(base,ZoneOffset.UTC));
+        var reloaded=new GamificationService(repository,catalog,users,Clock.fixed(base,ZoneOffset.UTC),mock(ProceduralDailyService.class));
         assertEquals(2,reloaded.progress("student").completedLevels());assertEquals(1,reloaded.export("student",LocalDate.of(2026,11,1),LocalDate.of(2026,11,3)).unlockedTotal());
     }
     @Test void activeCatalogExportHasExactly35StableBinaryColumns() {
@@ -76,12 +76,12 @@ class GamificationServiceTest {
         assertThrows(BusinessException.class,()->service.validate("student","2020-01-01",daily.game(),daily.levelTemplate()));
         assertThrows(BusinessException.class,()->service.validate("student",daily.id(),daily.game(),"tetrilogic-v2-99"));
     }
-    @Test void oneValidDailyCreditPerStudentDay() {
+    @Test void legacySingleBoardCannotBypassFullSetCompletion() {
         var daily=service.today("student");for(int n=0;n<2;n++) {
             var v=victory("daily"+n,daily.game(),daily.levelNumber(),2);
             service.execute(new VerifiedVictory(v.studentId(),v.sessionId(),v.game(),v.levelNumber(),v.levelTemplate(),null,v.startedAt(),v.completedAt(),v.stars(),daily.id(),v.startedOrder()));
         }
-        assertEquals(1,repository.days.size());assertEquals(1,service.today("student").currentStreak());assertTrue(service.today("student").completed());
+        assertTrue(repository.days.isEmpty());assertFalse(service.today("student").completed());
     }
     @Test void completingOldDailyAfterMidnightKeepsNormalProgressWithoutDailyCredit() {
         now.set(Instant.parse("2026-11-02T04:59:59Z"));var daily=service.today("student");Instant started=now.get();
@@ -89,17 +89,17 @@ class GamificationServiceTest {
         service.execute(new VerifiedVictory("student","midnight",daily.game(),daily.levelNumber(),daily.levelTemplate(),null,started,now.get(),2,daily.id(),1));
         assertEquals(1,service.progress("student").completedLevels());assertTrue(repository.days.isEmpty());
     }
-    @Test void serverCompletionBeforeMidnightKeepsItsCreditWhenCallbackRunsJustAfterMidnight() {
+    @Test void legacySingleBoardCannotCreditEvenWhenCompletedBeforeMidnight() {
         now.set(Instant.parse("2026-11-02T04:59:50Z"));var daily=service.today("student");
         Instant started=Instant.parse("2026-11-02T04:59:40Z"),completed=Instant.parse("2026-11-02T04:59:59.999Z");
         now.set(Instant.parse("2026-11-02T05:00:00.010Z"));
         service.execute(new VerifiedVictory("student","before-midnight",daily.game(),daily.levelNumber(),daily.levelTemplate(),null,started,completed,2,daily.id(),1));
-        assertEquals(Set.of(LocalDate.of(2026,11,1)),repository.days);
-        var today=service.today("student");assertEquals("2026-11-02",today.date());assertFalse(today.completed());assertEquals(1,today.currentStreak());
+        assertTrue(repository.days.isEmpty());
+        var today=service.today("student");assertEquals("2026-11-02",today.date());assertFalse(today.completed());assertEquals(0,today.currentStreak());
     }
     @Test void tenDailyCompletionsAwardBothThresholdsAndNoInactiveDayIsInvented() {
         for(int day=0;day<10;day++) {
-            now.set(base.plus(Duration.ofDays(day)));var daily=service.today("student");
+            now.set(base.plus(Duration.ofDays(day)));repository.days.add(now.get().atZone(GamificationService.DAILY_ZONE).toLocalDate());var daily=service.today("student");
             service.execute(new VerifiedVictory("student","daily"+day,daily.game(),daily.levelNumber(),daily.levelTemplate(),null,now.get().minusSeconds(10),now.get(),1,daily.id(),day+1));
         }
         assertTrue(repository.unlocks.containsKey("ach-L31"));assertTrue(repository.unlocks.containsKey("ach-L34"));

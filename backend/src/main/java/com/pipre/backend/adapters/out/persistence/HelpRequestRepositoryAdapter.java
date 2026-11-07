@@ -38,8 +38,8 @@ public class HelpRequestRepositoryAdapter implements HelpRequestRepositoryPort {
         HelpRequestJpaEntity entity = helpRequestMapper.toJpaEntity(helpRequest);
         
         if (helpRequest.getIdStudent() != null) {
-            userJpaRepository.findById(helpRequest.getIdStudent())
-                    .ifPresent(entity::setStudentJpaEntity);
+            entity.setStudentJpaEntity(userJpaRepository.findById(helpRequest.getIdStudent())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El estudiante no existe.")));
         }
         
         helpRequestJpaRepository.save(entity);

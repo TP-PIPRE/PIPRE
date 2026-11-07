@@ -9,7 +9,7 @@ public record CreateActivityCommand(
         String name,
         String complexity,
         String difficulty,
-        Integer logicLevel,
+        @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(3) Integer logicLevel,
         String type,
         String environment,
         List<MissionDTO> missions,

@@ -19,4 +19,12 @@ describe("Verified game API contract", () => {
     await gameProgressService.daily("student");
     expect(axiosInstance.get).toHaveBeenCalledWith("daily-challenges/today", { params: { studentId: "student" }, signal: undefined });
   });
+  it("passes cancellation when reading the persisted daily set",async()=>{
+    const controller=new AbortController();await gameProgressService.dailySet("student",controller.signal);
+    expect(axiosInstance.get).toHaveBeenCalledWith("daily-challenges/today/set",{params:{studentId:"student"},signal:controller.signal});
+  });
+  it("encodes identifiers when reading personal progress",async()=>{
+    await gameProgressService.progress("student/other?role=admin");
+    expect(axiosInstance.get).toHaveBeenCalledWith("profile/student%2Fother%3Frole%3Dadmin/game-progress");
+  });
 });

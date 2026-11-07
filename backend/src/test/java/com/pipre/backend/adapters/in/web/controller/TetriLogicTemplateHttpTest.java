@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.jpa.show-sql=false"
 })
 @AutoConfigureMockMvc
+@org.junit.jupiter.api.Tag("integration")
 class TetriLogicTemplateHttpTest {
     @Autowired private MockMvc mvc;
     @Autowired private TestRestTemplate http;
@@ -47,6 +48,9 @@ class TetriLogicTemplateHttpTest {
         assertNotNull(cookie);
         var headers = new HttpHeaders();
         headers.add(HttpHeaders.COOKIE, cookie.split(";", 2)[0]);
+        var csrf=http.exchange("/api/v1/auth/csrf",HttpMethod.GET,new HttpEntity<>(headers),Map.class);
+        headers.add(HttpHeaders.COOKIE,csrf.getHeaders().getFirst(HttpHeaders.SET_COOKIE).split(";",2)[0]);
+        headers.add(String.valueOf(csrf.getBody().get("headerName")),String.valueOf(csrf.getBody().get("token")));
         headers.setContentType(MediaType.APPLICATION_JSON);
         var path = "/api/v1/tetrilogic/templates/tetrilogic-v2-30";
         var rejected = http.exchange(path, HttpMethod.POST, new HttpEntity<>("{}", headers), Map.class);
@@ -76,7 +80,7 @@ class TetriLogicTemplateHttpTest {
 
     @Test void authenticatedStudentReadsPersistedBoardAndThirtyOfficialActivities() throws Exception {
         var cookie = studentSession();
-        mvc.perform(get("/api/v1/tetrilogic/templates/tetrilogic-v2-30").cookie(cookie))
+        mvc.perform(get("/api/v1/tetrilogic/templates/tetrilogic-v2-30").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateId").value("tetrilogic-v2-30"))
                 .andExpect(jsonPath("$.version").value(2))
@@ -86,7 +90,7 @@ class TetriLogicTemplateHttpTest {
                 .andExpect(jsonPath("$.config.inventory.length()").value(3))
                 .andExpect(jsonPath("$.config.placements").doesNotExist())
                 .andExpect(jsonPath("$.config.solution").doesNotExist());
-        mvc.perform(get("/api/v1/activities/lesson/les-c002-r1?size=50").cookie(cookie))
+        mvc.perform(get("/api/v1/activities/lesson/les-c002-r1?size=50").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(30))
                 .andExpect(jsonPath("$.content.length()").value(30));
@@ -94,21 +98,21 @@ class TetriLogicTemplateHttpTest {
 
     @Test void unknownBoardRemainsAbsentAndNoWriteEndpointIsExposed() throws Exception {
         var cookie = studentSession();
-        mvc.perform(get("/api/v1/tetrilogic/templates/tetrilogic-v2-31").cookie(cookie))
+        mvc.perform(get("/api/v1/tetrilogic/templates/tetrilogic-v2-31").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie))
                 .andExpect(status().isNotFound());
-        mvc.perform(post("/api/v1/tetrilogic/templates/tetrilogic-v2-30").cookie(cookie)
+        mvc.perform(post("/api/v1/tetrilogic/templates/tetrilogic-v2-30").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie)
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isMethodNotAllowed());
     }
 
     @Test void neonFlowCatalogIsPersistedAndConnectedWithoutSolutionsInResponses() throws Exception {
         var cookie=studentSession();
-        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-30").cookie(cookie))
+        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-30").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie))
             .andExpect(status().isOk()).andExpect(jsonPath("$.config.width").value(6))
             .andExpect(jsonPath("$.config.solution").doesNotExist());
-        mvc.perform(get("/api/v1/activities/lesson/les-c001-l1?size=100").cookie(cookie))
+        mvc.perform(get("/api/v1/activities/lesson/les-c001-l1?size=100").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie))
             .andExpect(status().isOk()).andExpect(jsonPath("$.totalElements").value(30));
-        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-31").cookie(cookie)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-31").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(cookie)).andExpect(status().isNotFound());
         mvc.perform(get("/api/v1/neonflow/templates/neonflow-v2-30")).andExpect(status().isUnauthorized());
     }
 }

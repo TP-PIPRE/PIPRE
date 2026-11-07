@@ -17,6 +17,8 @@ public interface ActivityRepositoryPort {
     void save(Activity newActivity);
 
     Optional<Activity> findById(String idActivity);
+    Optional<Activity> lockById(String idActivity);
+    Page<Activity> assignedToGroup(String group,Pageable pageable);
 
     void deleteById(String idActivity);
 }

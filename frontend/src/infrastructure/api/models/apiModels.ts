@@ -125,9 +125,9 @@ export interface ActivityResultResponse {
   idResult: string;
   idStudent: string;
   idActivity: string;
-  score: number;
+  score: number | null;
   attempts: number;
-  date: string;
+  dateAttempted: string;
 }
 
 export interface RankingDTO {
@@ -262,7 +262,7 @@ export interface PlayerProfileDTO {
   currentStreak: number;
   maxStreak: number;
   challengesCompleted: number;
-  totalBlocksUsed: number;
+  totalBlocksUsed: number | null;
   efficiencyAvg: number | null;
 }
 
@@ -282,14 +282,15 @@ export interface AchievementDTO {
 }
 
 export interface StudentHistoryDTO {
+  source?:"SERVER_VERIFIED"|"LEGACY_DECLARED";
   idResult: string;
   idActivity: string;
   activityName: string;
   score: number | null;
   stars: number;
-  xpEarned: number;
+  xpEarned: number | null;
   efficiency: number | null;
-  dateAttempted: string;
+  dateAttempted: string | null;
 }
 
 export interface PageActivityDTO {

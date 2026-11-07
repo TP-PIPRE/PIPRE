@@ -19,6 +19,7 @@ export interface DailyChallengeDTO {
   completed: boolean; currentStreak: number; bestStreak: number;
 }
 export interface GameVictoryDTO {
+  score?: {points:number;bestPoints:number;pointsGained:number;totalPoints:number;dailyXpAwarded:number;version:string}|null;
   sessionId: string; game: SimulatorGame; levelNumber: number; stars: number; bestStars: number;
   completedAt: string; durationMs: number; newAchievements: AchievementDTO[]; daily: DailyChallengeDTO | null;
 }
@@ -35,3 +36,10 @@ export function isOfficialGameTemplate(game: SimulatorGame, template: string | u
   const canonical = new RegExp(`^${game}-v2-([1-9]|[12]\\d|30)$`);
   return canonical.test(template) || (game === "neonflow" && /^neonflow-([3-9]|[12]\d|30)$/.test(template));
 }
+
+export interface GeneratedDailyChallengeDTO {
+ id: string; date: string; slot: number; game: SimulatorGame; levelNumber: number; levelTemplate: string; difficulty: "easy" | "medium" | "hard";
+ config: import("../../../shared/types/TetriLogic").LevelConfig | import("../../../shared/types/NeonFlow").NeonFlowLevelConfig;
+ completedAt: string | null; bestStars: number; startedAt?: string | null; status?: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+}
+export interface DailySetDTO { date: string; timeZone: string; expiresAt: string; challenges: GeneratedDailyChallengeDTO[]; }

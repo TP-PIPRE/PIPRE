@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.flyway.placeholders.telemetry_fk_validation="
 })
 @AutoConfigureMockMvc
+@org.junit.jupiter.api.Tag("integration")
 class GameSessionHttpTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
@@ -36,25 +37,25 @@ class GameSessionHttpTest {
         return new Login(json.readTree(response.getContentAsString()).path("user").path("idUser").asText(),new Cookie("jwt",header.split(";",2)[0].split("=",2)[1]));
     }
     private JsonNode start(Login owner,int level) throws Exception {
-        var response=mvc.perform(post("/api/v1/game-sessions").cookie(owner.cookie()).contentType(MediaType.APPLICATION_JSON)
+        var response=mvc.perform(post("/api/v1/game-sessions").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()).contentType(MediaType.APPLICATION_JSON)
             .content(json.writeValueAsString(Map.of("studentId",owner.id(),"clientSessionId",UUID.randomUUID().toString(),"game","neonflow","levelTemplate","neonflow-v2-"+level))))
             .andExpect(status().isOk()).andReturn().getResponse();
         return json.readTree(response.getContentAsString());
     }
     @Test void actualJwtJpaJdbcAndMigratedDatabaseValidateVictoryAndExactRetry() throws Exception {
         var owner=login("alumno@pipre.com","123");var session=start(owner,2);String id=session.path("sessionId").asText();
-        mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").cookie(owner.cookie())).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie())).andExpect(status().isBadRequest());
         for(int i=0;i<2;i++) {
             var body=Map.of("sequence",i+1,"type","PLACE","x",1,"y",i==0?2:0,"rotation",0,"component","MIRROR_90");
-            var first=mvc.perform(post("/api/v1/game-sessions/"+id+"/actions").cookie(owner.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)))
+            var first=mvc.perform(post("/api/v1/game-sessions/"+id+"/actions").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.revision").value(i+1)).andExpect(jsonPath("$.state.lastActionRejected").value(false)).andReturn().getResponse().getContentAsString();
-            var retry=mvc.perform(post("/api/v1/game-sessions/"+id+"/actions").cookie(owner.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)))
+            var retry=mvc.perform(post("/api/v1/game-sessions/"+id+"/actions").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(body)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertEquals(json.readTree(first),json.readTree(retry));
         }
-        var first=mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").cookie(owner.cookie()))
+        var first=mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()))
             .andExpect(status().isOk()).andExpect(jsonPath("$.stars").value(2)).andExpect(jsonPath("$.levelNumber").value(2)).andReturn().getResponse().getContentAsString();
-        var retry=mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").cookie(owner.cookie()))
+        var retry=mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertEquals(json.readTree(first),json.readTree(retry));
         assertEquals(1,jdbc.queryForObject("SELECT count(*) FROM verified_game_victories WHERE session_id=?",Integer.class,id));
@@ -67,8 +68,8 @@ class GameSessionHttpTest {
             "firstName","QA","lastName","Session","email",marker,"passwordHash","Session-123-test","age",18,"grade","QA"))))
             .andExpect(status().isCreated());
         var other=login(marker,"Session-123-test");
-        mvc.perform(post("/api/v1/game-sessions/"+session.path("sessionId").asText()+"/complete").cookie(other.cookie())).andExpect(status().isForbidden());
-        mvc.perform(post("/api/v1/game-sessions").cookie(other.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+        mvc.perform(post("/api/v1/game-sessions/"+session.path("sessionId").asText()+"/complete").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(other.cookie())).andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/game-sessions").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(other.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
             "studentId",owner.id(),"clientSessionId",UUID.randomUUID().toString(),"game","neonflow","levelTemplate","neonflow-v2-1"))))
             .andExpect(status().isForbidden());
         assertEquals("ACTIVE",jdbc.queryForObject("SELECT status FROM game_sessions WHERE session_id=?",String.class,session.path("sessionId").asText()));
@@ -76,7 +77,7 @@ class GameSessionHttpTest {
     @Test void authenticationAndStaffPreviewCannotCreateStudentProgress() throws Exception {
         mvc.perform(post("/api/v1/game-sessions").contentType(MediaType.APPLICATION_JSON).content("{}" )).andExpect(status().isUnauthorized());
         var staff=login("docente@pipre.com","123");
-        mvc.perform(post("/api/v1/game-sessions").cookie(staff.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
+        mvc.perform(post("/api/v1/game-sessions").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(staff.cookie()).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(
             "studentId",staff.id(),"clientSessionId",UUID.randomUUID().toString(),"game","neonflow","levelTemplate","neonflow-v2-1"))))
             .andExpect(status().isForbidden());
     }

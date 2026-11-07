@@ -1,18 +1,20 @@
-import React from "react";
+import React, {lazy,Suspense} from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Navbar } from "../components/common/Navbar";
-import { PaginaInicio } from "../pages/PaginaInicio";
-import { Simulador } from "../pages/Simulador";
-import { LoginPage } from "../pages/LoginPage";
-import { DocenteDashboard } from "../pages/DocenteDashboard";
-import { DocenteMetricasPage } from "../pages/DocenteMetricasPage";
-import { DocenteRetosPage } from "../pages/DocenteRetosPage";
-import { DocenteEstudiantesPage } from "../pages/DocenteEstudiantesPage";
-import { ResultadosPage } from "../pages/ResultadosPage";
-import { RankingPage } from "../pages/RankingPage";
-import { PerfilPage } from "../pages/PerfilPage";
+const PaginaInicio=lazy(()=>import("../pages/PaginaInicio").then(module=>({default:module.PaginaInicio})));
+const Simulador=lazy(()=>import("../pages/Simulador").then(module=>({default:module.Simulador})));
+const LoginPage=lazy(()=>import("../pages/LoginPage").then(module=>({default:module.LoginPage})));
+const DocenteDashboard=lazy(()=>import("../pages/DocenteDashboard").then(module=>({default:module.DocenteDashboard})));
+const DocenteMetricasPage=lazy(()=>import("../pages/DocenteMetricasPage").then(module=>({default:module.DocenteMetricasPage})));
+const DocenteRetosPage=lazy(()=>import("../pages/DocenteRetosPage").then(module=>({default:module.DocenteRetosPage})));
+const DocenteEstudiantesPage=lazy(()=>import("../pages/DocenteEstudiantesPage").then(module=>({default:module.DocenteEstudiantesPage})));
+const ResultadosPage=lazy(()=>import("../pages/ResultadosPage").then(module=>({default:module.ResultadosPage})));
+const RankingPage=lazy(()=>import("../pages/RankingPage").then(module=>({default:module.RankingPage})));
+const PerfilPage=lazy(()=>import("../pages/PerfilPage").then(module=>({default:module.PerfilPage})));
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { AchievementNotification } from "../components/common/AchievementNotification";
+
+const AdministracionPage=lazy(()=>import("../pages/AdministracionPage").then(module=>({default:module.AdministracionPage})));
 
 // Componente para rutas protegidas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,7 +47,7 @@ const DocenteRoute = ({ children }: { children: React.ReactNode }) => {
 
 export const AppRouter = () => {
   return (
-    <Routes>
+    <Suspense fallback={<main className="lab-shell"><p role="status">Cargando página…</p></main>}><Routes>
       {/* Ruta pública para el Login */}
       <Route path="/login" element={<LoginPage />} />
 
@@ -108,6 +110,7 @@ export const AppRouter = () => {
             <DocenteRoute>
               <AppLayout>
                 <Routes>
+                  <Route path="administracion" element={getAuthState().user?.role==="admin"?<AdministracionPage/>:<Navigate to="/docente/dashboard" replace/>}/>
                   <Route path="dashboard" element={<DocenteDashboard />} />
                   <Route path="metricas" element={<DocenteMetricasPage />} />
                   <Route path="retos" element={<DocenteRetosPage />} />
@@ -115,6 +118,7 @@ export const AppRouter = () => {
                     path="estudiantes"
                     element={<DocenteEstudiantesPage />}
                   />
+                  <Route path="*" element={<Navigate to="/docente/dashboard" replace />} />
                 </Routes>
               </AppLayout>
             </DocenteRoute>
@@ -124,6 +128,6 @@ export const AppRouter = () => {
 
       {/* Redirigir a /login si la ruta no existe */}
       <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    </Routes></Suspense>
   );
 };

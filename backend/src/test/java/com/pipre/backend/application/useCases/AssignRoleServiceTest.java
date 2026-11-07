@@ -48,7 +48,7 @@ class AssignRoleServiceTest {
                 .build();
 
         // Configuramos el comportamiento de los Mocks
-        when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepositoryPort.lockById(userId)).thenReturn(Optional.of(user));
         when(roleRepositoryPort.existsById(roleId)).thenReturn(true);
 
         // Act (Acción)
@@ -72,7 +72,7 @@ class AssignRoleServiceTest {
 
         User user = new User.Builder().idUser(userId).email("a@a.com").build();
 
-        when(userRepositoryPort.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepositoryPort.lockById(userId)).thenReturn(Optional.of(user));
         when(roleRepositoryPort.existsById(roleId)).thenReturn(false);
 
         // Act & Assert

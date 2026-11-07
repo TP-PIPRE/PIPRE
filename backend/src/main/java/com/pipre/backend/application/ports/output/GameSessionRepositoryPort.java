@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface GameSessionRepositoryPort {
     void lockStudent(String studentId);
     Optional<GameSession> findByClientId(String studentId, String clientSessionId);
+    Optional<GameSession> active(String studentId);
     Optional<GameSession> lockSession(String sessionId);
     void abandonActive(String studentId, Instant now);
     GameSession insert(GameSession session);

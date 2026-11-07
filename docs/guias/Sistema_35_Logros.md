@@ -65,6 +65,8 @@ Para L33 se revisan también los inicios persistidos entre las tres victorias. S
 
 ## Reto diario y calendario
 
+**Actualización del 05/11/2026:** la interfaz actual usa [cinco ejercicios procedurales persistidos por estudiante y fecha](Retos_Diarios_Procedurales.md), que deben validarse **todos (5/5)** para completar el diario y acreditar la fecha para L31/L34. El endpoint `/today` y la selección única descritos a continuación se conservan para compatibilidad de lectura/práctica; resolver ese tablero aislado ya no acredita una nueva fecha diaria. El conjunto se consulta en `/today/set`. Las variantes no conceden progreso de sus bases oficiales ni L33. La guía enlazada detalla la generación, validación y persistencia vigentes; el historial anterior se conserva.
+
 El servidor publica un reto identificable para cada fecha en **`America/Lima`**, reutilizando el catálogo oficial con solución comprobada. No acepta una fecha arbitraria del navegador. Sólo una finalización por estudiante y fecha cuenta para la racha.
 
 La racha actual continúa si la última fecha completada es hoy o ayer; un día omitido la interrumpe. La mejor racha conserva el máximo histórico. Abrir la plataforma no equivale a completar un reto. Una victoria después de la medianoche puede conservar el progreso del nivel, pero no se traslada automáticamente al reto diario de otra fecha.

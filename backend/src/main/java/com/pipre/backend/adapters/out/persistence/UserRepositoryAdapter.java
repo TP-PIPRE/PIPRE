@@ -21,6 +21,8 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     private final UserJpaRepository jpaRepository;
     private final RoleJpaRepository roleJpaRepository;
     private final UserMapper userMapper;
+    @Override @Transactional
+    public Optional<User> lockById(String id) {return jpaRepository.lockById(id).map(userMapper::toDomain);}
 
     @Override
     public void save(User user) {

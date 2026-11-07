@@ -19,12 +19,13 @@ class StudentOwnershipContractTest {
     @Configuration @EnableMethodSecurity
     static class Config {
         @Bean SecurityService securityService() { return mock(SecurityService.class); }
+        @Bean(name="academicAccess") com.pipre.backend.infrastructure.security.AcademicAccessPolicy academicAccess() {return mock(com.pipre.backend.infrastructure.security.AcademicAccessPolicy.class);}
         @Bean SaveAttemptUseCase attempts() { return mock(SaveAttemptUseCase.class); }
         @Bean TelemetryController telemetry(SaveAttemptUseCase attempts) { return new TelemetryController(attempts); }
         @Bean ProfileController profile() { return new ProfileController(mock(GetStudentProfileUseCase.class), mock(GetStudentAchievementsUseCase.class), mock(GetStudentHistoryUseCase.class),mock(GetGameProgressUseCase.class),mock(ExportAchievementsUseCase.class)); }
-        @Bean DailyChallengeController daily() { return new DailyChallengeController(mock(DailyChallengeUseCase.class)); }
-        @Bean ResultController results() { return new ResultController(mock(GetStudentResultUseCase.class), mock(SaveResultUseCase.class)); }
-        @Bean SimulationController simulations() { return new SimulationController(mock(GetSimulationsUseCase.class), mock(CreateSimulationUseCase.class)); }
+        @Bean DailyChallengeController daily() { return new DailyChallengeController(mock(DailyChallengeUseCase.class), mock(com.pipre.backend.application.useCases.ProceduralDailyService.class)); }
+        @Bean ResultController results() { return new ResultController(mock(GetStudentResultUseCase.class), mock(SaveResultUseCase.class),mock(com.pipre.backend.application.useCases.IdempotentDeclarationService.class)); }
+        @Bean SimulationController simulations() { return new SimulationController(mock(GetSimulationsUseCase.class), mock(CreateSimulationUseCase.class),mock(com.pipre.backend.application.useCases.IdempotentDeclarationService.class)); }
         @Bean ModuleProgressController progress() { return new ModuleProgressController(mock(SaveModuleProgressUseCase.class), mock(GetModuleProgressUseCase.class)); }
         @Bean HelpRequestController help() { return new HelpRequestController(mock(CreateHelpRequestUseCase.class), mock(GetHelpRequestsUseCase.class)); }
     }
@@ -33,6 +34,7 @@ class StudentOwnershipContractTest {
         context = new AnnotationConfigApplicationContext(Config.class);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("student@test.local", null, List.of(new SimpleGrantedAuthority("ROLE_STUDENT"))));
         when(context.getBean(SecurityService.class).isCurrentUser("mine")).thenReturn(true);
+        when(context.getBean(com.pipre.backend.infrastructure.security.AcademicAccessPolicy.class).readStudent("assigned")).thenReturn(true);
     }
     @AfterEach void cleanup() { SecurityContextHolder.clearContext(); context.close(); }
     private SaveAttemptRequestDTO attempt(String id) { return new SaveAttemptRequestDTO(id, "neonflow", "SUCCESS", 10, 2, 0, 0, "2026-10-23T20:00:00Z"); }
@@ -55,26 +57,28 @@ class StudentOwnershipContractTest {
         assertThrows(AccessDeniedException.class,()->context.getBean(ProfileController.class).getAchievements("other"));
         assertThrows(AccessDeniedException.class,()->context.getBean(ProfileController.class).export("other",day,day));
         assertThrows(AccessDeniedException.class,()->context.getBean(DailyChallengeController.class).today("other"));
+        assertThrows(AccessDeniedException.class,()->context.getBean(DailyChallengeController.class).set("other"));
     }
     @Test void acceptsOwnProgressDailyAndAchievementExport() {
         var day=java.time.LocalDate.of(2026,11,2);
         assertDoesNotThrow(()->context.getBean(ProfileController.class).gameProgress("mine"));
         assertDoesNotThrow(()->context.getBean(ProfileController.class).export("mine",day,day));
         assertDoesNotThrow(()->context.getBean(DailyChallengeController.class).today("mine"));
+        assertDoesNotThrow(()->context.getBean(DailyChallengeController.class).set("mine"));
     }
-    @Test void teacherCanReadStudentsAchievementExportAndProgress() {
+    @Test void teacherCanReadAssignedStudentsAchievementExportAndProgress() {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("teacher@test.local",null,List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))));
         var day=java.time.LocalDate.of(2026,11,2);
-        assertDoesNotThrow(()->context.getBean(ProfileController.class).gameProgress("other"));
-        assertDoesNotThrow(()->context.getBean(ProfileController.class).export("other",day,day));
+        assertDoesNotThrow(()->context.getBean(ProfileController.class).gameProgress("assigned"));
+        assertDoesNotThrow(()->context.getBean(ProfileController.class).export("assigned",day,day));
     }
     @Test void rejectsWritesForAnotherStudentAcrossAllStudentResources() {
         var result = mock(SaveResultCommand.class); when(result.idStudent()).thenReturn("other");
         var simulation = mock(CreateSimulationCommand.class); when(simulation.idStudent()).thenReturn("other");
         var progress = mock(SaveModuleProgressCommand.class); when(progress.idStudent()).thenReturn("other");
         var help = mock(CreateHelpRequestCommand.class); when(help.idStudent()).thenReturn("other");
-        assertThrows(AccessDeniedException.class, () -> context.getBean(ResultController.class).saveResult(result));
-        assertThrows(AccessDeniedException.class, () -> context.getBean(SimulationController.class).createSimulation(simulation));
+        assertThrows(AccessDeniedException.class, () -> context.getBean(ResultController.class).saveResult(result,null,SecurityContextHolder.getContext().getAuthentication()));
+        assertThrows(AccessDeniedException.class, () -> context.getBean(SimulationController.class).createSimulation(simulation,null,SecurityContextHolder.getContext().getAuthentication()));
         assertThrows(AccessDeniedException.class, () -> context.getBean(ModuleProgressController.class).saveModuleProgress(progress));
         assertThrows(AccessDeniedException.class, () -> context.getBean(HelpRequestController.class).createHelpRequest(help));
     }
@@ -83,8 +87,8 @@ class StudentOwnershipContractTest {
         var simulation = mock(CreateSimulationCommand.class); when(simulation.idStudent()).thenReturn("mine");
         var progress = mock(SaveModuleProgressCommand.class); when(progress.idStudent()).thenReturn("mine");
         var help = mock(CreateHelpRequestCommand.class); when(help.idStudent()).thenReturn("mine");
-        assertEquals(201, context.getBean(ResultController.class).saveResult(result).getStatusCode().value());
-        assertEquals(201, context.getBean(SimulationController.class).createSimulation(simulation).getStatusCode().value());
+        assertEquals(201, context.getBean(ResultController.class).saveResult(result,null,SecurityContextHolder.getContext().getAuthentication()).getStatusCode().value());
+        assertEquals(201, context.getBean(SimulationController.class).createSimulation(simulation,null,SecurityContextHolder.getContext().getAuthentication()).getStatusCode().value());
         assertEquals(200, context.getBean(ModuleProgressController.class).saveModuleProgress(progress).getStatusCode().value());
         assertEquals(201, context.getBean(HelpRequestController.class).createHelpRequest(help).getStatusCode().value());
     }

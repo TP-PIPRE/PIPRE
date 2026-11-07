@@ -11,10 +11,12 @@ public interface CourseRepositoryPort {
     List<Course> findAll();
 
     Page<Course> findAll(Pageable pageable);
+    Page<Course> findAllByIds(java.util.Set<String> ids,Pageable pageable);
 
     void save(Course course);
 
     Optional<Course> findById(String idCourse);
+    Optional<Course> lockById(String idCourse);
 
     void deleteById(String idCourse);
 }

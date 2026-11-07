@@ -1,6 +1,6 @@
 # Documentación de PIPRE
 
-Reorganizada el 30/10 y actualizada el **02/11/2026** para los 35 logros. Este índice distingue documentación vigente, evidencias de una entrega y antecedentes históricos.
+Reorganizada el 30/10 y actualizada el **06/11/2026** para la auditoría integral backend/frontend. Este índice distingue documentación vigente, evidencias de una entrega y antecedentes históricos.
 
 ## Por dónde empezar
 
@@ -14,9 +14,17 @@ Reorganizada el 30/10 y actualizada el **02/11/2026** para los 35 logros. Este �
 | Entender cada simulador | [TetriLogic](simuladores/TetriLogic_Filas_Columnas.md) · [Neon Flow](simuladores/NeonFlow.md) |
 | Entender los 35 logros, estrellas y reto diario | [Sistema de logros](guias/Sistema_35_Logros.md) · [Informe del 02/11](informes/Implementacion_35_Logros_2026_11_02.md) |
 | Revisar las dependencias corregidas y preparar su PR | [Actualización pnpm del 02/11](informes/Actualizacion_Dependencias_Pnpm_2026_11_02.md) · [PR preparado](informes/PR_Dependencias_Pnpm.md) |
+| Consultar la revisión de seguridad actual y los avisos pendientes | [Auditoría frontend y corrección Maven del 04/11](informes/Revision_Seguridad_2026_11_04.md) |
+| Generar y jugar los cinco retos diarios sin IA | [Contrato procedural del diario](guias/Retos_Diarios_Procedurales.md) |
+| Revisar correcciones, pruebas y cobertura del backend | [Auditoría del 05/11](informes/Auditoria_Backend_2026_11_05.md) · [Ejecución de pruebas](../backend/TESTING.md) |
+| Revisar la auditoría integral y repetir pruebas UI/API/DB | [Informe del 06/11](informes/Auditoria_Integral_2026_11_06.md) · [Inventario](informes/Inventario_Auditoria_Integral_2026_11_06.md) · [Guía de pruebas](guias/Pruebas_Integrales.md) |
+| Revisar puntos verificados, XP y permisos aprobados | [Contrato actual](guias/Puntaje_Ranking_Acceso.md) · [Implementación y validación](informes/Implementacion_Pendientes_2026_11_06.md) |
+| Preparar producción sin credenciales de desarrollo | [Seguridad operativa y aprovisionamiento](guias/Seguridad_Operacion_Produccion.md) |
+| Continuar los pendientes de la auditoría integral | [Pendientes frontend/backend, seguridad y validación](guias/Pendientes_Auditoria_Integral.md) |
+| Continuar los pendientes concretos de implementación backend | [Pendientes del backend](guias/Pendientes_Implementacion_Backend.md) |
 | Consultar logros actuales y nuevos dentro de la intervención | [Contrato y exportación](guias/Sistema_35_Logros.md#consulta-para-la-investigación) · [SQL de sólo lectura](Consultas_35_Logros.sql) |
 | Continuar el trabajo pendiente | [Pendientes del SSD](simuladores/Pendientes_TetriLogic_SSD.md) |
-| Revisar los dos bloques pendientes de endpoints backend | [PATCH y asignación de actividades a grupos](guias/Pendientes_Endpoints_Backend.md) |
+| Revisar PATCH y actividades asignadas a aulas | [PATCH y asignación de actividades a grupos](guias/Pendientes_Endpoints_Backend.md) |
 | Contrastar endpoints IA con sus datos y consumidores | [Requisitos IA y agregación](req-ia-endpoints.md) |
 | Preparar ML antes de modificar el servicio de IA | [Plan gradual de implementación ML](guias/Plan_Implementacion_ML.md) |
 | Consultar las pruebas de integración del 30/10 | [Informe de integración y preparación ML](informes/Integracion_TetriLogic_NeonFlow_ML.md) |

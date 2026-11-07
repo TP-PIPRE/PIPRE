@@ -1,34 +1,10 @@
-describe("Métricas — Dashboard Docente", () => {
-  beforeEach(() => {
-    cy.setCookie("pipre_token", "fake-jwt");
-    cy.setCookie("pipre_user", JSON.stringify({ id: "docente-1", name: "Docente", email: "docente@test.com", role: "docente" }));
-
-    cy.intercept("GET", "/api/v1/courses", {
-      statusCode: 200,
-      body: [{ idCourse: "1", name: "Robótica Nivel 1" }],
-    }).as("getCourses");
-  });
-
-  it("carga la página de dashboard docente", () => {
-    cy.visit("/docente/dashboard");
-
-    cy.contains("Retos Activos").should("be.visible");
-    cy.contains("Estudiantes").should("be.visible");
-  });
-
-  it("carga la página de métricas", () => {
-    cy.intercept("GET", "/api/v1/dropout-risk/*", {
-      statusCode: 200,
-      body: { risk_level: "low", performance: "good", motivation_level: "high" },
-    }).as("getRisk");
-
-    cy.intercept("GET", "/api/v1/help-requests/*", {
-      statusCode: 200,
-      body: { times_requested: 5, ai_interactions: 3 },
-    }).as("getHelp");
-
-    cy.visit("/docente/metricas");
-
-    cy.contains("Métricas", { matchCase: false }).should("be.visible");
+import {apiFixtures,user} from "./ui-fixtures";
+describe("Paneles docentes — sin métricas inventadas",()=>{
+  beforeEach(()=>{apiFixtures();user("docente");});
+  it("abre el dashboard y mantiene la gestión accesible",()=>{cy.visit("/docente/dashboard");cy.get("h1").should("be.visible");cy.contains("Estudiantes").should("exist");});
+  it("muestra puntaje y XP separados de los niveles verificados",()=>{cy.visit("/docente/metricas");cy.contains("Puntajes y progreso verificados").should("be.visible");cy.contains("0/30").should("exist");});
+  it("conserva los contratos históricos sin usarlos como puntaje del ranking",()=>{
+    cy.intercept("GET","**/api/v1/activity-results/user/*",[{idResult:"r1",idActivity:"a1",score:999999}]).as("legacyGrades");
+    cy.visit("/docente/metricas");cy.contains("Puntajes y progreso verificados").should("be.visible");cy.get("@legacyGrades.all").should("have.length",0);cy.contains("999999").should("not.exist");
   });
 });

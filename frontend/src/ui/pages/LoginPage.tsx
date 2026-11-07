@@ -46,8 +46,9 @@ export const LoginPage: React.FC = () => {
         setIsLogin(true);
       }
     } catch (err) {
-      console.error("Error in auth/reg:", err);
-      setRegError(getApiErrorMessage(err, "No pudimos completar la solicitud."));
+      const message=getApiErrorMessage(err, "No pudimos completar la solicitud.");
+      console.error("No pudimos completar el acceso:",message);
+      setRegError(message);
     } finally {
       setIsLoading(false);
     }

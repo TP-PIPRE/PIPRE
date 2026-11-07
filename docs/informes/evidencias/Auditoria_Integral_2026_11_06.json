@@ -1,0 +1,191 @@
+{
+  "date": "2026-11-06",
+  "scope": "Local disposable QA; production data, migrations V1-V21, catalogs and data-science unchanged",
+  "tests": {
+    "backend": {
+      "tests": 272,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "postgresqlRepeatedSubset": {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frontend": {
+      "baselinePassed": 345,
+      "passed": 375,
+      "files": 37,
+      "failed": 0
+    },
+    "e2e": {
+      "startedTestsAt": "2026-11-06T19:10:52.294Z",
+      "totalTests": 33,
+      "totalPassed": 33,
+      "totalFailed": 0,
+      "totalSkipped": 0,
+      "totalPending": 0,
+      "totalDuration": 244624,
+      "browserName": "electron",
+      "browserVersion": "138.0.7204.251",
+      "realApplicationCases": 10,
+      "httpFixtureCases": 23,
+      "specs": 8
+    }
+  },
+  "coverage": {
+    "backendGlobal": {
+      "INSTRUCTION": {
+        "covered": 15269,
+        "missed": 5021,
+        "percent": 75.25
+      },
+      "BRANCH": {
+        "covered": 1042,
+        "missed": 665,
+        "percent": 61.04
+      },
+      "LINE": {
+        "covered": 2497,
+        "missed": 950,
+        "percent": 72.44
+      },
+      "COMPLEXITY": {
+        "covered": 1062,
+        "missed": 799,
+        "percent": 57.07
+      },
+      "METHOD": {
+        "covered": 761,
+        "missed": 243,
+        "percent": 75.8
+      },
+      "CLASS": {
+        "covered": 229,
+        "missed": 37,
+        "percent": 86.09
+      }
+    },
+    "backendCritical": {
+      "LINE": {
+        "covered": 464,
+        "missed": 14,
+        "percent": 97.07
+      },
+      "BRANCH": {
+        "covered": 514,
+        "missed": 163,
+        "percent": 75.92
+      }
+    },
+    "frontendGlobal": {
+      "lines": {
+        "total": 2579,
+        "covered": 1618,
+        "skipped": 0,
+        "pct": 62.73
+      },
+      "statements": {
+        "total": 3396,
+        "covered": 2168,
+        "skipped": 0,
+        "pct": 63.83
+      },
+      "functions": {
+        "total": 1104,
+        "covered": 645,
+        "skipped": 0,
+        "pct": 58.42
+      },
+      "branches": {
+        "total": 2767,
+        "covered": 1747,
+        "skipped": 0,
+        "pct": 63.13
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "frontendCritical": {
+      "lines": {
+        "covered": 570,
+        "total": 598,
+        "pct": 95.32
+      },
+      "branches": {
+        "covered": 589,
+        "total": 718,
+        "pct": 82.03
+      },
+      "functions": {
+        "covered": 213,
+        "total": 238,
+        "pct": 89.5
+      },
+      "statements": {
+        "covered": 750,
+        "total": 836,
+        "pct": 89.71
+      }
+    },
+    "backendCriticalClasses": 12,
+    "frontendCriticalFiles": 28
+  },
+  "lint": {
+    "baseline": {
+      "errors": 25,
+      "warnings": 2
+    },
+    "final": {
+      "errors": 14,
+      "warnings": 1
+    }
+  },
+  "dependencies": {
+    "frontend": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0
+      },
+      "dependencies": 85,
+      "devDependencies": 401,
+      "optionalDependencies": 51,
+      "totalDependencies": 536
+    },
+    "backend": {
+      "resolvedCoordinates": 121,
+      "advisories": [
+        {
+          "id": "GHSA-j9f9-w8pj-32f8",
+          "severity": "CRITICAL",
+          "aliases": [
+            "CVE-2026-47890"
+          ]
+        },
+        {
+          "id": "GHSA-pc63-qcmh-9cmg",
+          "severity": "CRITICAL",
+          "aliases": [
+            "CVE-2026-47884"
+          ]
+        }
+      ]
+    }
+  },
+  "docker": {
+    "applicationImagesBuilt": true,
+    "backendAndPostgresHealthy": true,
+    "cleanup": "verified",
+    "remainingOwnedContainers": 0,
+    "remainingOwnedNetworks": 0
+  }
+}

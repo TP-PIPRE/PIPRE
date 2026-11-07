@@ -28,9 +28,10 @@ public class RankingController {
     private final GetGroupRankingUseCase getGroupRankingUseCase;
     private final AddStudentRankingUseCase addStudentRankingUseCase;
     private final RemoveStudentRankingUseCase removeStudentRankingUseCase;
+    private final com.pipre.backend.application.useCases.AcademicAdministrationService administration;
 
     @GetMapping("/{idGroup}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.rankGroup(#idGroup)")
     @Operation(summary = "Obtener el ranking del grupo ordenado por posición")
     @ApiResponse(responseCode = "200", description = "Ranking obtenido exitosamente")
     public ResponseEntity<List<RankingDTO>> getGroupRanking(@PathVariable String idGroup) {
@@ -38,16 +39,17 @@ public class RankingController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Asignar un estudiante a un grupo y registrar su ranking inicial")
     @ApiResponse(responseCode = "201", description = "Estudiante asignado y ranking creado/actualizado exitosamente")
-    public ResponseEntity<Void> assignGroupStudent(@RequestBody AddStudentRankingCommand command) {
+    public ResponseEntity<Void> assignGroupStudent(@jakarta.validation.Valid @RequestBody AddStudentRankingCommand command) {
+        administration.requireStudent(command.idStudent());
         addStudentRankingUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/{idGroup}/{idStudent}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Remover un estudiante de un grupo")
     @ApiResponse(responseCode = "204", description = "Estudiante removido exitosamente")
     public ResponseEntity<Void> removeGroupStudent(@PathVariable String idGroup, @PathVariable String idStudent) {

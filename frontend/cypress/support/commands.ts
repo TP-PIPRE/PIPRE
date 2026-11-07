@@ -1,8 +1,14 @@
 Cypress.Commands.add("login", (email: string, password: string) => {
   cy.visit("/login");
-  cy.get('[data-testid="login-email"]').type(email);
-  cy.get('[data-testid="login-password"]').type(password);
-  cy.get('[data-testid="login-submit"]').click();
+  cy.get('input[name="email"]').type(email);
+  cy.get('input[name="password"]').type(password, { log: false });
+  cy.get('button[type="submit"]').click();
+});
+
+Cypress.Commands.add("csrfRequest", (options:Partial<Cypress.RequestOptions>) => {
+  const target=new URL(String(options.url));
+  return cy.request<{token:string;headerName:string}>(`${target.origin}/api/v1/auth/csrf`).then(response=>
+    cy.request({...options,headers:{...options.headers,[response.body.headerName]:response.body.token}}));
 });
 
 Cypress.Commands.add("register", (data: {
@@ -14,12 +20,12 @@ Cypress.Commands.add("register", (data: {
   grade: string;
 }) => {
   cy.visit("/login");
-  cy.get('[data-testid="toggle-register"]').click();
-  cy.get('[data-testid="register-firstName"]').type(data.firstName);
-  cy.get('[data-testid="register-lastName"]').type(data.lastName);
-  cy.get('[data-testid="register-email"]').type(data.email);
-  cy.get('[data-testid="register-password"]').type(data.password);
-  cy.get('[data-testid="register-age"]').type(String(data.age));
-  cy.get('[data-testid="register-grade"]').type(data.grade);
-  cy.get('[data-testid="register-submit"]').click();
+  cy.contains('button', 'Regístrate aquí').click();
+  cy.get('input[name="firstName"]').type(data.firstName);
+  cy.get('input[name="lastName"]').type(data.lastName);
+  cy.get('input[name="email"]').type(data.email);
+  cy.get('input[name="password"]').type(data.password, { log: false });
+  cy.get('input[name="age"]').type(String(data.age));
+  cy.get('input[name="grade"]').type(data.grade);
+  cy.get('button[type="submit"]').click();
 });

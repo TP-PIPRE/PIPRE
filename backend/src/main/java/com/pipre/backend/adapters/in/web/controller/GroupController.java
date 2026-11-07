@@ -25,17 +25,19 @@ public class GroupController {
 
     private final GetGroupsUseCase getGroupsUseCase;
     private final GetGroupUseCase getGroupUseCase;
+    private final com.pipre.backend.infrastructure.security.AcademicAccessPolicy access;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
     @Operation(summary = "Obtener todos los grupos")
     @ApiResponse(responseCode = "200", description = "Grupos obtenidos exitosamente")
     public ResponseEntity<List<GroupDTO>> getGroups() {
-        return ResponseEntity.ok(getGroupsUseCase.execute());
+        var visible=access.visibleGroups();
+        return ResponseEntity.ok(getGroupsUseCase.execute().stream().filter(group->visible==null||visible.contains(group.idGroup())).toList());
     }
 
     @GetMapping("/{idGroup}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.readGroup(#idGroup)")
     @Operation(summary = "Obtener un grupo por su ID")
     @ApiResponse(responseCode = "200", description = "Grupo obtenido exitosamente")
     public ResponseEntity<GroupDTO> getGroupById(@PathVariable String idGroup) {

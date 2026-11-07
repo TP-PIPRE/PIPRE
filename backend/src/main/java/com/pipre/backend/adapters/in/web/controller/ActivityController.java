@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import com.pipre.backend.application.dto.PageResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,15 +30,15 @@ public class ActivityController {
     private final DeleteActivityUseCase deleteActivityUseCase;
 
     @GetMapping("/lesson/{idLesson}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.readLesson(#idLesson)")
     @Operation(summary = "Obtener actividades por lección paginadas")
     @ApiResponse(responseCode = "200", description = "Actividades obtenidas exitosamente")
-    public ResponseEntity<Page<ActivityDTO>> getActivities(@PathVariable String idLesson, Pageable pageable) {
-        return ResponseEntity.ok(getActivitiesUseCase.execute(idLesson, pageable));
+    public ResponseEntity<PageResponse<ActivityDTO>> getActivities(@PathVariable String idLesson, Pageable pageable) {
+        return ResponseEntity.ok(PageResponse.from(getActivitiesUseCase.execute(idLesson, pageable)));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.readActivity(#id)")
     @Operation(summary = "Obtener detalle técnico de una actividad específica")
     @ApiResponse(responseCode = "200", description = "Actividad obtenida exitosamente")
     public ResponseEntity<ActivityDTO> getActivity(@PathVariable String id) {
@@ -46,25 +46,25 @@ public class ActivityController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.manageLesson(#requestDTO.idLesson())")
     @Operation(summary = "Crear una nueva actividad")
     @ApiResponse(responseCode = "201", description = "Actividad creada exitosamente")
-    public ResponseEntity<Void> postActivity(@RequestBody CreateActivityCommand requestDTO) {
+    public ResponseEntity<Void> postActivity(@jakarta.validation.Valid @RequestBody CreateActivityCommand requestDTO) {
         createActivityUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.manageActivity(#id) and (#requestDTO.idLesson()==null or @academicAccess.manageLesson(#requestDTO.idLesson()))")
     @Operation(summary = "Actualizar parámetros y misiones de una actividad")
     @ApiResponse(responseCode = "200", description = "Actividad actualizada exitosamente")
-    public ResponseEntity<Void> putActivity(@PathVariable String id, @RequestBody CreateActivityCommand requestDTO) {
+    public ResponseEntity<Void> putActivity(@PathVariable String id, @jakarta.validation.Valid @RequestBody CreateActivityCommand requestDTO) {
         updateActivityUseCase.execute(id, requestDTO);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    @PreAuthorize("@academicAccess.manageActivity(#id)")
     @Operation(summary = "Eliminar una actividad existente")
     @ApiResponse(responseCode = "204", description = "Actividad eliminada exitosamente")
     public ResponseEntity<Void> deleteActivity(@PathVariable String id) {

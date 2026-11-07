@@ -38,7 +38,7 @@ public class Simulation {
         if (codeUsage != null && codeUsage < 0) {
             throw new BusinessException("El uso de código no puede ser negativo.");
         }
-        if (sensorError != null && sensorError < 0) {
+        if (sensorError != null && (!Double.isFinite(sensorError) || sensorError < 0)) {
             throw new BusinessException("El error de sensor no puede ser negativo.");
         }
         if (resolutionTime != null && resolutionTime < 0) {

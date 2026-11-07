@@ -24,6 +24,14 @@ async function openList() {
   await screen.findByText("Reto existente");
 }
 describe("Challenge editor contract", () => {
+  it("preserves valid empty missions when editing an existing activity",async()=>{
+    vi.mocked(apiService.activities.getByLesson).mockResolvedValue([{...activity,missions:[]}]);
+    await openList();fireEvent.click(screen.getByRole("button",{name:"Editar",exact:true}));
+    await waitFor(()=>expect(screen.getByLabelText("Lección",{exact:true})).toHaveValue("l1"));
+    fireEvent.change(screen.getByLabelText("Título",{exact:true}),{target:{value:"Edited without invented missions"}});
+    fireEvent.click(screen.getByRole("button",{name:/^guardar cambios$/i}));
+    await waitFor(()=>expect(apiService.activities.update).toHaveBeenCalledWith("a1",expect.objectContaining({name:"Edited without invented missions",missions:[]})));
+  });
   it("offers and persists the thirtieth versioned TetriLogic template", async () => {
     vi.mocked(apiService.activities.getByLesson).mockResolvedValue([{ ...activity, environment: "tetrilogic", levelTemplate: "tetrilogic-v2-1" }]);
     await openList();

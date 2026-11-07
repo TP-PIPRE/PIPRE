@@ -5,6 +5,7 @@ import com.pipre.backend.domain.entities.ranking.Ranking;
 import java.util.List;
 
 public interface RankingRepositoryPort {
+    void lockGroup(String idGroup);
     List<Ranking> findAllByIdGroup(String idGroup);
     void save(Ranking ranking);
     void sortRanking(String idGroup);

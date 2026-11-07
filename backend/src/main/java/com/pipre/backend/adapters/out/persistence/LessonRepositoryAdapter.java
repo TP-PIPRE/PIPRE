@@ -31,8 +31,8 @@ public class LessonRepositoryAdapter implements LessonRepositoryPort {
     public void save(Lesson lesson) {
         LessonJpaEntity entity = lessonMapper.toJpaEntity(lesson);
         if (lesson.getIdModule() != null) {
-            moduleJpaRepository.findById(lesson.getIdModule())
-                    .ifPresent(entity::setModuleJpaEntity);
+            entity.setModuleJpaEntity(moduleJpaRepository.findById(lesson.getIdModule())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El módulo no existe.")));
         }
         lessonJpaRepository.save(entity);
     }

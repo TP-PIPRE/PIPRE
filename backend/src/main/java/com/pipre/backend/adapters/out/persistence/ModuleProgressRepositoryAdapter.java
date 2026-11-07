@@ -21,6 +21,10 @@ public class ModuleProgressRepositoryAdapter implements ModuleProgressRepository
     private final ModuleJpaRepository moduleJpaRepository;
     private final ModuleProgressMapper moduleProgressMapper;
 
+    @Override public void lockStudent(String idStudent) {
+        userJpaRepository.lockById(idStudent).orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El estudiante no existe."));
+    }
+
     @Override
     public Optional<ModuleProgress> findById(String idProgress) {
         return moduleProgressJpaRepository.findById(idProgress)
@@ -46,13 +50,13 @@ public class ModuleProgressRepositoryAdapter implements ModuleProgressRepository
         ModuleProgressJpaEntity entity = moduleProgressMapper.toJpaEntity(moduleProgress);
         
         if (moduleProgress.getIdStudent() != null) {
-            userJpaRepository.findById(moduleProgress.getIdStudent())
-                    .ifPresent(entity::setStudentJpaEntity);
+            entity.setStudentJpaEntity(userJpaRepository.findById(moduleProgress.getIdStudent())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El estudiante no existe.")));
         }
         
         if (moduleProgress.getIdModule() != null) {
-            moduleJpaRepository.findById(moduleProgress.getIdModule())
-                    .ifPresent(entity::setModuleJpaEntity);
+            entity.setModuleJpaEntity(moduleJpaRepository.findById(moduleProgress.getIdModule())
+                    .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El módulo no existe.")));
         }
         
         moduleProgressJpaRepository.save(entity);

@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 		"spring.datasource.password=",
 		"spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
 })
+@org.junit.jupiter.api.Tag("integration")
 class BackendApplicationTests {
 
 	@Test

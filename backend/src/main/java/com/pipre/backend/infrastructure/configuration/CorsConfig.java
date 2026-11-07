@@ -17,8 +17,9 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins(properties.getAllowedOrigins().toArray(String[]::new))
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
+                        .exposedHeaders("X-Request-ID","Retry-After")
                         .allowCredentials(true);
             }
         };

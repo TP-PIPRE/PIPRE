@@ -11,14 +11,11 @@ interface ResultRow {
   date: string;
   status: string;
   type: string;
+  verified:boolean;
 }
 
 const deriveStatus = (score: number | null): string => {
-  if (score === null) return "Sin nota académica";
-  if (score >= 90) return "Excelente";
-  if (score >= 70) return "Aprobado";
-  if (score >= 50) return "En progreso";
-  return "Requiere refuerzo";
+  return score===null?"Sin puntaje verificado":"Validado";
 };
 
 const statusColor = (status: string): string => {
@@ -62,8 +59,9 @@ export const ResultadosPage: React.FC = () => {
               score: h.score,
               stars: h.stars,
               date: h.dateAttempted || "Fecha no disponible",
-              status: deriveStatus(h.score),
-              type: "Actividad",
+              status: h.source==="SERVER_VERIFIED"?deriveStatus(h.score):"Registro histórico",
+              type: h.source==="SERVER_VERIFIED"?"Partida verificada":"Declarado",
+              verified:h.source==="SERVER_VERIFIED",
             }))
           );
         } else {
@@ -78,9 +76,9 @@ export const ResultadosPage: React.FC = () => {
     load();
   }, []);
 
-  const scores = results.flatMap(result => result.score === null ? [] : [result.score]);
+  const scores = results.flatMap(result => !result.verified||result.score === null ? [] : [result.score]);
   const avgScore = scores.length ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
-  const totalStars = results.reduce((sum, r) => sum + r.stars, 0);
+  const totalStars = results.reduce((sum, r) => sum + (r.verified?r.stars:0), 0);
   const maxScore = scores.length ? Math.max(...scores) : null;
 
   return (
@@ -97,13 +95,13 @@ export const ResultadosPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
         <div className="border rounded-lg p-6 flex flex-col justify-between transition-all duration-200 hover:shadow-xl bg-card text-card-foreground">
           <span className="text-xs font-mono font-bold uppercase tracking-widest mb-2 text-muted-foreground">
-            Promedio General
+            Promedio de puntos por intento
           </span>
           <span className="text-3xl font-mono font-bold text-primary">
-            {loading ? "--" : avgScore ?? "Sin nota"}
+            {loading ? "--" : avgScore ?? "Sin puntaje"}
           </span>
           <span className="text-xs mt-2 font-mono text-muted-foreground">
-            {results.length} actividad(es) registrada(s)
+            Sólo partidas verificadas; el ranking suma los mejores puntajes.
           </span>
         </div>
 
@@ -127,7 +125,7 @@ export const ResultadosPage: React.FC = () => {
             {loading ? "--" : results.length}
           </span>
           <span className="text-xs mt-2 font-mono text-muted-foreground">
-            {loading ? "" : maxScore === null ? "Sin nota académica" : `Mejor puntaje: ${maxScore}`}
+            {loading ? "" : maxScore === null ? "Sin puntaje verificado" : `Mejor puntaje: ${maxScore}`}
           </span>
         </div>
 
@@ -136,7 +134,7 @@ export const ResultadosPage: React.FC = () => {
             Mejor Resultado
           </span>
           <span className="text-3xl font-mono font-bold">
-            {loading ? "--" : maxScore ?? "Sin nota"}
+            {loading ? "--" : maxScore ?? "Sin puntaje"}
           </span>
           <span className="text-xs mt-2 font-mono text-muted-foreground">
             {loading ? "" : deriveStatus(maxScore)}
@@ -171,7 +169,7 @@ export const ResultadosPage: React.FC = () => {
                   <th className="px-6 py-4 font-normal">Actividad</th>
                   <th className="px-6 py-4 font-normal">Tipo</th>
                   <th className="px-6 py-4 font-normal">Fecha</th>
-                  <th className="px-6 py-4 font-normal">Calificación</th>
+                  <th className="px-6 py-4 font-normal">Puntos del intento</th>
                   <th className="px-6 py-4 font-normal">Estrellas</th>
                   <th className="px-6 py-4 font-normal text-right">Estatus</th>
                 </tr>
@@ -186,11 +184,11 @@ export const ResultadosPage: React.FC = () => {
                     <td className="px-6 py-4 text-muted-foreground">{res.type}</td>
                     <td className="px-6 py-4 text-muted-foreground">{res.date}</td>
                     <td className="px-6 py-4">
-                      {res.score === null ? <span className="text-muted-foreground">Sin nota académica</span> : <div className="flex items-center gap-2">
+                      {!res.verified ? <span className="text-muted-foreground">{res.score??"Sin puntaje"} · declarado</span> : res.score === null ? <span className="text-muted-foreground">Sin puntaje verificado</span> : <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden" style={{ width: "120px" }}>
                           <div
                             className="h-full transition-all duration-500 rounded-full"
-                            style={{ width: `${res.score}%`, backgroundColor: "var(--primary)" }}
+                            style={{ width: `${Math.max(0,Math.min(100,res.score))}%`, backgroundColor: "var(--primary)" }}
                           />
                         </div>
                         <span className="font-bold text-primary">{res.score}</span>

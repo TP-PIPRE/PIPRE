@@ -17,7 +17,9 @@ public class SaveModuleProgressService implements SaveModuleProgressUseCase {
     private final ModuleProgressRepositoryPort moduleProgressRepositoryPort;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public String execute(SaveModuleProgressCommand command) {
+        moduleProgressRepositoryPort.lockStudent(command.idStudent());
         // Verificar si ya existe progreso para este alumno y módulo
         ModuleProgress progress = moduleProgressRepositoryPort.findByStudentAndModule(command.idStudent(), command.idModule())
                 .map(existing -> ModuleProgress.builder()

@@ -55,6 +55,11 @@ export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch
   }
   function begin(event: PointerEvent<HTMLButtonElement>, id: string, cell?: Cell) {
     if (event.button !== 0 || pickup.current) return;
+    const pending = state.pieces.find(piece => piece.id === state.selectedId && !isPlaced(piece));
+    // A valid tray placement takes precedence over picking up the piece at its empty origin.
+    if (cell && pending && canPlaceFreely(state.size, state.pieces, {
+      ...pending, position: { x: cell.x - grip.current.x, y: cell.y - grip.current.y },
+    })) return;
     const piece = state.pieces.find(p => p.id === id);
     if (!piece) return;
     const hit = (event.target as HTMLElement).closest<HTMLElement>("[data-piece-x]");
@@ -135,7 +140,12 @@ export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch
   }
   function activateCell(event: MouseEvent<HTMLButtonElement>, cell: Cell, id?: string) {
     if (ignoreClick(event)) return;
-    if (id) {
+    const selectedPiece=state.pieces.find(piece=>piece.id===state.selectedId);
+    const position={x:cell.x-grip.current.x,y:cell.y-grip.current.y};
+    // The bounding-box origin can be occupied while every actual cell of J/S/T is free.
+    if(selectedPiece&&!isPlaced(selectedPiece)&&canPlaceFreely(state.size,state.pieces,{...selectedPiece,position})) {
+      dispatch({type:"place",id:selectedPiece.id,position});
+    } else if (id) {
       const piece = state.pieces.find(p => p.id === id)!;
       choose(id, { x: cell.x - piece.position.x, y: cell.y - piece.position.y });
     } else if (state.selectedId) dispatch({ type: "place", id: state.selectedId,

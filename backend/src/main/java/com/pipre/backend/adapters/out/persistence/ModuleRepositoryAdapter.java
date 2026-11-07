@@ -52,8 +52,8 @@ public class ModuleRepositoryAdapter implements ModuleRepositoryPort {
         ModuleJpaEntity entity = moduleMapper.toJpaEntity(newModule);
 
         if (newModule.getIdCourse() != null) {
-           courseJpaRepository.findById(newModule.getIdCourse())
-                   .ifPresent(entity::setCourseJpaEntity);
+           entity.setCourseJpaEntity(courseJpaRepository.findById(newModule.getIdCourse())
+                   .orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El curso no existe.")));
         }
 
         moduleJpaRepository.save(entity);

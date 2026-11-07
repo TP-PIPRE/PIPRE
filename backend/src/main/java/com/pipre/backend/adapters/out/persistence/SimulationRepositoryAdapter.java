@@ -15,6 +15,8 @@ import java.util.List;
 public class SimulationRepositoryAdapter implements SimulationRepositoryPort {
     private final SimulationJpaRepository simulationJpaRepository;
     private final SimulationMapper simulationMapper;
+    private final com.pipre.backend.adapters.out.persistence.jpaRepositories.UserJpaRepository users;
+    private final com.pipre.backend.adapters.out.persistence.jpaRepositories.ActivityJpaRepository activities;
 
     @Override
     public List<Simulation> getAllByStudentId(String idStudent) {
@@ -27,6 +29,8 @@ public class SimulationRepositoryAdapter implements SimulationRepositoryPort {
     @Override
     public void save(Simulation simulation) {
         SimulationJpaEntity entity = simulationMapper.toJpaEntity(simulation);
+        entity.setStudentJpaEntity(users.findById(simulation.getIdStudent()).orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("El estudiante no existe.")));
+        entity.setActivityJpaEntity(activities.findById(simulation.getIdActivity()).orElseThrow(()->new com.pipre.backend.domain.exceptions.ResourceNotFoundException("La actividad no existe.")));
         simulationJpaRepository.save(entity);
     }
 }

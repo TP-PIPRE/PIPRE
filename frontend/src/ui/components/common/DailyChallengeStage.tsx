@@ -1,28 +1,38 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { gameProgressService } from "../../../infrastructure/api/gameProgressService";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getAuthState } from "../../../infrastructure/store/authStore";
-import type { DailyChallengeDTO } from "../../../infrastructure/api/models/gameProgressModels";
-import { LEVEL_TEMPLATES } from "../../../application/usecases/activityLevels";
-import { PersistedNeonFlowStage } from "../NeonFlow/PersistedNeonFlowStage";
-import { PersistedTetriLogicStage } from "../TetriLogic/PersistedTetriLogicStage";
+import { useDailySet } from "./useDailySet";
+import { DailyProgress } from "./DailyProgress";
+import { NeonFlowStage } from "../NeonFlow/NeonFlowStage";
+import { TetriLogicStage } from "../TetriLogic/TetriLogicStage";
+import type { NeonFlowLevelConfig } from "../../../shared/types/NeonFlow";
+import type { LevelConfig } from "../../../shared/types/TetriLogic";
+import type { DailySetDTO } from "../../../infrastructure/api/models/gameProgressModels";
 
 export function DailyChallengeStage() {
   const user = getAuthState().user;
   const studentId = user?.role === "student" ? user.id : "";
-  const [retry, setRetry] = useState(0);
-  const [state, setState] = useState<{ studentId?:string; daily?: DailyChallengeDTO; error?: boolean }>({});
-  useEffect(() => {
-    if (!studentId) return;
-    let active = true;
-    const controller = new AbortController();
-    gameProgressService.daily(studentId, controller.signal).then(daily => { if (active) setState({ studentId, daily }); }).catch(() => { if (active) setState({ studentId, error: true }); });
-    return () => { active = false; controller.abort(); };
-  }, [studentId, retry]);
-  if (!studentId) return <main className="lab-shell"><h1>Reto diario</h1><p className="my-4">El reto diario está disponible para estudiantes.</p><Link to="/" className="btn-secondary">Ver mis cursos</Link></main>;
-  const daily = state.studentId===studentId?state.daily:undefined;
-  const template = daily && LEVEL_TEMPLATES.find(item => item.id === daily.levelTemplate && item.game === daily.game && item.config.version === 2 && item.config.level === daily.levelNumber);
-  if ((state.studentId===studentId&&state.error) || (daily && !template)) return <main className="lab-shell"><h1>Reto diario</h1><p role="alert" className="my-4">No pudimos cargar el reto de hoy. Reintenta para consultar su tablero.</p><button className="btn-secondary" onClick={() => { setState({}); setRetry(value => value + 1); }}>Reintentar</button></main>;
-  if (!daily || !template) return <p role="status" className="p-8 text-center">Cargando reto diario…</p>;
-  return <div><div className="mx-auto mb-2 max-w-[1120px] px-4 text-sm text-text-muted">Reto diario · <time dateTime={daily.date}>{daily.date}</time> · America/Lima{daily.completed ? " · Completado hoy" : ""}</div>{template.game === "neonflow" ? <PersistedNeonFlowStage key={daily.id} config={template.config} dailyChallengeId={daily.id} /> : <PersistedTetriLogicStage key={daily.id} config={template.config} dailyChallengeId={daily.id} />}</div>;
+  const { daily, error, retry } = useDailySet(studentId);
+  if (!studentId) return <main className="lab-shell"><h1>Reto diario</h1><p>Disponible para estudiantes.</p></main>;
+  if (error || (daily && daily.challenges.length !== 5)) return <main className="lab-shell"><p role="alert">No pudimos cargar los ejercicios de hoy.</p><button className="btn-secondary" onClick={retry}>Reintentar</button></main>;
+  if (!daily) return <p role="status" className="p-8">Cargando reto diario…</p>;
+  return <DailyExerciseFlow key={`${studentId}:${daily.date}`} daily={daily} retry={retry} />;
+}
+
+function DailyExerciseFlow({ daily, retry }: { daily: DailySetDTO; retry: () => void }) {
+  const [params, setParams] = useSearchParams();
+  const pending = daily.challenges.find(c => !c.completedAt);
+  const [activeId, setActiveId] = useState(() => {
+    const requested = daily.challenges.find(c => c.id === params.get("challenge"));
+    return requested && pending && requested.slot <= pending.slot ? requested.id : pending?.id;
+  });
+  const selected = daily.challenges.find(c => c.id === activeId) ?? pending;
+  return <div><section className="lab-shell mb-4"><h1>Reto diario</h1><p><time>{daily.date}</time> · America/Lima</p><DailyProgress daily={daily} />
+    {!pending ? <p role="status" className="font-semibold text-success">Reto diario completado: los cinco ejercicios fueron validados.</p> : selected?.completedAt ? <div><p role="status">Ejercicio validado. Tu progreso está guardado.</p><button className="btn-premium mt-3" onClick={() => { setActiveId(pending.id); setParams({ daily: "true", challenge: pending.id }); }}>Continuar con el siguiente ejercicio</button></div> : <h2 className="text-lg font-semibold">Ejercicio {selected?.slot} de 5 · {selected?.game === "neonflow" ? "Neon Flow" : "TetriLogic"}</h2>}
+    {selected && !selected.completedAt && <p className="mt-2 text-sm text-text-muted">{selected.status === "IN_PROGRESS" ? "En progreso" : "Pendiente"}</p>}
+  </section>
+    {pending && selected && !selected.completedAt && (selected.config.templateId !== selected.levelTemplate || selected.config.level !== selected.levelNumber || selected.config.version !== 2
+      ? <section className="lab-shell"><p role="alert">El tablero diario no es compatible.</p><button className="btn-secondary" onClick={retry}>Reintentar</button></section>
+      : selected.game === "neonflow" ? <NeonFlowStage key={selected.id} levels={[selected.config as NeonFlowLevelConfig]} dailyChallengeId={selected.id} /> : <TetriLogicStage key={selected.id} levels={[selected.config as LevelConfig]} dailyChallengeId={selected.id} />)}
+  </div>;
 }

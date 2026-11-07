@@ -6,4 +6,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface GetCoursesUseCase {
     Page<CourseDTO> execute(Pageable pageable);
+    default Page<CourseDTO> visible(java.util.Set<String> ids,Pageable pageable) {throw new UnsupportedOperationException("Scoped catalog not implemented");}
 }

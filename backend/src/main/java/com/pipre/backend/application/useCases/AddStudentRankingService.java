@@ -22,9 +22,12 @@ public class AddStudentRankingService implements AddStudentRankingUseCase {
     @Override
     @Transactional
     public void execute(AddStudentRankingCommand command) {
+        rankingRepositoryPort.lockGroup(command.idGroup());
+        if(rankingRepositoryPort.findAllByIdGroup(command.idGroup()).stream().anyMatch(row->command.idStudent().equals(row.getIdStudent())))return;
         BigDecimal totalPoints = resultRepositoryPort.findByIdStudent(command.idStudent())
                 .stream()
                 .map(Result::getScore)
+                .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Ranking ranking = RankingFactory.createNewRanking(

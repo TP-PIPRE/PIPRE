@@ -16,5 +16,12 @@ export default defineConfig({
     include: ["tests/unit/**/*.{test,spec}.{ts,tsx}"],
     setupFiles: ["tests/unit/setup.ts"],
     css: true,
+    maxWorkers: 4,
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      reporter: ["text-summary", "json-summary", "html", "lcov"],
+      reportsDirectory: "coverage",
+    },
   },
 });
