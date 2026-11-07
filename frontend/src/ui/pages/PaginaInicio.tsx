@@ -9,6 +9,8 @@ import { loadCourseActivities } from "../../application/usecases/loadCourseActiv
 import { activityDisplayName, resolveActivityLevel } from "../../application/usecases/activityLevels";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import { DailyChallengeCard } from "../components/common/DailyChallengeCard";
+import { gameProgressService } from "../../infrastructure/api/gameProgressService";
+import { getAuthState } from "../../infrastructure/store/authStore";
 
 interface ChallengeView {
   id: string;
@@ -18,6 +20,8 @@ interface ChallengeView {
   difficulty: string;
   description: string;
   playable: boolean;
+  locked: boolean;
+  levelNumber: number;
   countChallenge: boolean;
 }
 
@@ -62,9 +66,18 @@ export const PaginaInicio = () => {
 
   const fetchChallengesFromActivities = async (courseId: string): Promise<ChallengeView[]> => {
       const activities = await loadCourseActivities(courseId);
+      const officialCourse = courseId === "c001" || courseId === "c002";
+      const studentId = getAuthState().user?.id;
+      const progress = officialCourse && studentId
+        ? await gameProgressService.progress(studentId).catch(() => null)
+        : null;
       return activities.map((act, i) => {
         const template = resolveActivityLevel(act);
         const countChallenge = template?.game === "tetrilogic";
+        const levelNumber = template?.config.level ?? act.displayOrder ?? i + 1;
+        const previousCompleted = levelNumber <= 1 || Boolean(progress?.levels.some(
+          level => level.game === template?.game && level.levelNumber === levelNumber - 1 && level.completed,
+        ));
         return {
         id: act.idActivity,
         idActivity: act.idActivity,
@@ -73,6 +86,8 @@ export const PaginaInicio = () => {
         difficulty: act.difficulty || "MEDIUM",
         description: countChallenge ? `${template.config.boardSize.cols} × ${template.config.boardSize.rows} · Iguala los objetivos de filas y columnas.` : act.description ?? "",
         playable: Boolean(template),
+        locked: officialCourse && Boolean(template) && !previousCompleted,
+        levelNumber,
         countChallenge,
       }; });
   };
@@ -126,8 +141,8 @@ export const PaginaInicio = () => {
       <Modal isOpen={isChallengeModalOpen} onClose={() => setIsChallengeModalOpen(false)} maxWidth="max-w-2xl" height="min(80vh, 640px)" title={`${allCounts ? "Retos" : "Actividades"} de ${selectedCourseName}`}>
         <div className="flex flex-col h-full">
           <header className="p-6 pr-16 border-b border-border"><p className="page-eyebrow mb-2">{allCounts ? "Elige un reto de filas y columnas" : "Elige tu próxima actividad"}</p><h2 className="text-xl font-bold">{selectedCourseName}</h2><p className="text-sm text-text-muted mt-2">{loadingChallenges ? "Buscando actividades…" : availableLabel}</p></header>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3" aria-busy={loadingChallenges}>
-            {loadingChallenges ? <p role="status" className="py-12 text-center text-text-muted">Cargando actividades…</p> : challengeError ? <p role="alert" className="p-4 text-danger">{challengeError}</p> : paginatedChallenges.length ? paginatedChallenges.map(challenge => <div key={challenge.id} className="flex flex-wrap items-center justify-between gap-3 p-4 border border-border rounded-lg"><div className="flex-1 min-w-0"><p className="font-semibold break-words">{challenge.title}</p><p className="text-sm text-text-muted mt-1">{challenge.countChallenge ? `Reto ${challenge.order + 1} · Filas y columnas` : `Reto ${challenge.order + 1} · ${challenge.difficulty}`}</p>{challenge.description && <p className="mt-2 text-sm text-text-muted">{challenge.description}</p>}</div><button disabled={!challenge.playable} onClick={() => navigate(`/simulador/${selectedCourseId}?activity=${encodeURIComponent(challenge.idActivity)}`)} className="btn-secondary px-4">{challenge.playable ? "Iniciar" : "Tablero pendiente"} <BsChevronRight aria-hidden="true" /></button></div>) : <p className="py-12 text-center text-text-muted">No hay actividades disponibles para este curso.</p>}
+           <div className="flex-1 overflow-y-auto p-4 space-y-3" aria-busy={loadingChallenges}>
+             {loadingChallenges ? <p role="status" className="py-12 text-center text-text-muted">Cargando actividades…</p> : challengeError ? <p role="alert" className="p-4 text-danger">{challengeError}</p> : paginatedChallenges.length ? paginatedChallenges.map(challenge => <div key={challenge.id} className={`flex flex-wrap items-center justify-between gap-3 p-4 border border-border rounded-lg ${challenge.locked ? "opacity-60" : ""}`}><div className="flex-1 min-w-0"><p className="font-semibold break-words">{challenge.title}</p><p className="text-sm text-text-muted mt-1">{selectedCourseId === "c001" || selectedCourseId === "c002" ? `Nivel ${challenge.levelNumber}` : `Reto ${challenge.order + 1}`} · {challenge.countChallenge ? "Filas y columnas" : challenge.difficulty}</p>{challenge.description && <p className="mt-2 text-sm text-text-muted">{challenge.description}</p>}</div><button disabled={!challenge.playable || challenge.locked} onClick={() => navigate(`/simulador/${selectedCourseId}?activity=${encodeURIComponent(challenge.idActivity)}`)} className="btn-secondary px-4">{challenge.locked ? "Bloqueado" : challenge.playable ? "Iniciar" : "Tablero pendiente"} <BsChevronRight aria-hidden="true" /></button></div>) : <p className="py-12 text-center text-text-muted">No hay actividades disponibles para este curso.</p>}
           </div>
           {totalPages > 1 && <footer className="flex flex-wrap items-center justify-between gap-3 p-4 border-t border-border"><span className="text-sm text-text-muted">Página {challengePage + 1} de {totalPages}</span><div className="flex gap-2"><button disabled={challengePage === 0} onClick={() => setChallengePage(p => p - 1)} className="btn-secondary px-3">Anterior</button><button disabled={challengePage >= totalPages - 1} onClick={() => setChallengePage(p => p + 1)} className="btn-secondary px-3">Siguiente</button></div></footer>}
         </div>

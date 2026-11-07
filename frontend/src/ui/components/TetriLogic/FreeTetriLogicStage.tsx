@@ -22,7 +22,7 @@ import "./tetrilogic.css";
 import "./freePlay.css";
 
 type Props={
-  level: LevelConfig; levels: LevelConfig[]; index: number; onLevel: (index: number) => void; activity?: ActivityResponseDTO; dailyChallengeId?: string;
+  level: LevelConfig; levels: LevelConfig[]; index: number; onLevel: (index: number) => void; activity?: ActivityResponseDTO; dailyChallengeId?: string; onNext?: () => void;
 };
 export function FreeTetriLogicStage(props:Props) {
   const {level,activity,dailyChallengeId}=props;
@@ -31,7 +31,7 @@ export function FreeTetriLogicStage(props:Props) {
   if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"TetriLogic"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
   return <TetriBoardSession key={gameSession.state?.session?.sessionId??templateId} {...props} gameSession={gameSession}/>;
 }
-function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId,gameSession}:Props&{gameSession:ReturnType<typeof useValidatedGameSession>}) {
+function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId,onNext,gameSession}:Props&{gameSession:ReturnType<typeof useValidatedGameSession>}) {
   const [state, dispatch] = useReducer(freePlayReducer,undefined,()=>restoreTetriBoard(level,gameSession.state?.session?.state.pieces));
   const [confirmReset, setConfirmReset] = useState(false);
   const [initialTrace]=useState(gameSession.state?.session?.state.pieces??[]);
@@ -102,7 +102,8 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
         <p className="tetri-free-shortcuts"><kbd>R</kbd> girar <span aria-hidden="true">·</span> <kbd>Esc</kbd> cancelar</p>
       </footer>
     </section>
-    <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
+     <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
+     {gameSession.state?.victory && onNext && <button type="button" className="btn-premium" onClick={onNext}>Siguiente reto</button>}
     {preview && createPortal(<div className="tetri-free-preview-layer" aria-hidden="true"><div className="tetri-free-preview"
       data-valid={preview.valid} data-over-board={Boolean(preview.position)} data-over-tray={preview.overTray}
       style={{ left: preview.left, top: preview.top }}><PieceGhost piece={preview.piece} cellSize={preview.cell} /></div></div>, document.body)}

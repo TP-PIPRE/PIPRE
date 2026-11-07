@@ -11,6 +11,8 @@ import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { DailyChallengeStage } from "../components/common/DailyChallengeStage";
+import { gameProgressService } from "../../infrastructure/api/gameProgressService";
+import type { GameProgressDTO } from "../../infrastructure/api/models/gameProgressModels";
 
 const NEONFLOW_IDS = new Set(["1", "neonflow", "logica"]);
 const TETRILOGIC_IDS = new Set(["2", "tetrilogic", "patrones"]);
@@ -20,15 +22,21 @@ export const Simulador = () => {
   const [search, setSearch] = useSearchParams();
   const [retry, setRetry] = useState(0);
   const daily = search.get("daily") === "true";
-  const [data, setData] = useState<{ courseId: string; activities: ActivityResponseDTO[]; error: string } | null>(null);
+  const [data, setData] = useState<{ courseId: string; activities: ActivityResponseDTO[]; progress: GameProgressDTO | null; error: string } | null>(null);
   const normalized = courseId.trim().toLowerCase();
   const legacy = NEONFLOW_IDS.has(normalized) || TETRILOGIC_IDS.has(normalized);
   useEffect(() => {
     if (daily || legacy || !courseId) return;
     let active = true;
-    loadCourseActivities(courseId).then(activities => {
-      if (active) setData({ courseId, activities, error: "" });
-    }).catch(e => { if (active) setData({ courseId, activities: [], error: getApiErrorMessage(e, "No se pudo cargar el curso.") }); });
+    const officialCourse = courseId === "c001" || courseId === "c002";
+    const studentId = getAuthState().user?.id;
+    const load = officialCourse && studentId
+      ? Promise.all([loadCourseActivities(courseId), gameProgressService.progress(studentId).catch(() => null)])
+          .then(([activities, progress]) => ({ activities, progress }))
+      : loadCourseActivities(courseId).then(activities => ({ activities, progress: null }));
+    load.then(({ activities, progress }) => {
+      if (active) setData({ courseId, activities, progress, error: "" });
+    }).catch(e => { if (active) setData({ courseId, activities: [], progress: null, error: getApiErrorMessage(e, "No se pudo cargar el curso.") }); });
     return () => { active = false; };
   }, [courseId, legacy, retry, daily]);
 
@@ -39,15 +47,36 @@ export const Simulador = () => {
   if (courseId && data?.courseId !== courseId) return <p role="status" className="p-8 text-center">Cargando retos del curso…</p>;
   const courseData = courseId && data?.courseId === courseId ? data : null;
   const activityId = search.get("activity");
-  const activity = activityId ? courseData?.activities.find(a => a.idActivity === activityId) : courseData?.activities.find(a => resolveActivityLevel(a));
+  const officialCourse = courseId === "c001" || courseId === "c002";
+  const availableActivities = courseData?.activities.filter(item => {
+    const itemTemplate = resolveActivityLevel(item);
+    if (!officialCourse || !itemTemplate) return true;
+    const levelNumber = itemTemplate.config.level;
+    return levelNumber <= 1 || Boolean(courseData.progress?.levels.some(level =>
+      level.game === itemTemplate.game && level.levelNumber === levelNumber - 1 && level.completed,
+    ));
+  }) ?? [];
+  const requestedActivity = activityId ? courseData?.activities.find(a => a.idActivity === activityId) : undefined;
+  const activity = activityId
+    ? availableActivities.find(a => a.idActivity === activityId)
+    : availableActivities.find(a => resolveActivityLevel(a));
   const template = activity && resolveActivityLevel(activity);
+  const activityIndex = activity && courseData ? courseData.activities.findIndex(item => item.idActivity === activity.idActivity) : -1;
+  const nextActivity = activityIndex >= 0 && courseData
+    ? courseData.activities.slice(activityIndex + 1).find(item => Boolean(resolveActivityLevel(item)))
+    : undefined;
+  const goToNextActivity = nextActivity
+    ? () => setSearch({ activity: nextActivity.idActivity })
+    : undefined;
   const role = getAuthState().user?.role;
   const canManage = role === "docente" || role === "admin";
   const showConfigure = canManage && Boolean(courseId) && !courseData?.error && (!activityId || Boolean(activity));
   const notice = courseData?.error
       ? { title: "No pudimos cargar los retos", message: courseData.error }
-      : activityId && !activity
-        ? { title: "No encontramos este reto", message: "El reto ya no está disponible o no pertenece a este curso. Vuelve a tus cursos y selecciona otro." }
+      : activityId && !activity && requestedActivity && officialCourse
+        ? { title: "Nivel bloqueado", message: "Completa el nivel anterior para desbloquear este reto." }
+        : activityId && !activity
+          ? { title: "No encontramos este reto", message: "El reto ya no está disponible o no pertenece a este curso. Vuelve a tus cursos y selecciona otro." }
         : !courseData?.activities.length
           ? { title: "Este curso aún no tiene retos", message: canManage ? "Añade un reto y asígnale un tablero desde la gestión del curso para habilitar la práctica." : "Tu docente todavía no ha añadido retos a este curso. Mientras tanto, puedes explorar otros cursos." }
           : { title: activity ? "Este reto aún no está listo para jugar" : "Este curso aún no tiene retos listos para jugar", message: canManage ? "Abre el curso en Retos, edita la actividad y selecciona Tablero del reto. Guarda los cambios para habilitarla." : "El tablero aún está pendiente de configuración por parte de tu docente. Mientras lo prepara, puedes elegir otro reto desde Mis cursos." };
@@ -56,16 +85,16 @@ export const Simulador = () => {
       <label htmlFor="simulator-activity">{template?.game === "tetrilogic" ? "Tablero del curso" : "Reto del curso"}</label>
       <select id="simulator-activity" value={activity?.idActivity ?? ""} onChange={e => setSearch({ activity: e.target.value })}>
         {!activity && <option value="" disabled>Selecciona un reto</option>}
-        {courseData.activities.map(a => <option key={a.idActivity} value={a.idActivity}>{activityDisplayName(a)}{resolveActivityLevel(a) ? "" : " · tablero pendiente"}</option>)}
+         {availableActivities.map(a => <option key={a.idActivity} value={a.idActivity}>{activityDisplayName(a)}{resolveActivityLevel(a) ? "" : " · tablero pendiente"}</option>)}
       </select>
     </div> : null}
     {activity && template ? template.game === "neonflow"
       ? template.config.version === 2
-        ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
-        : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+         ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNextActivity} />
+         : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} onNext={goToNextActivity} />
       : template.config.version === 2
-        ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
-        : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+         ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNextActivity} />
+         : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} onNext={goToNextActivity} />
       : <div className="mx-auto max-w-2xl rounded-xl border border-border bg-surface p-8 text-center space-y-4">
         <h1 className="text-xl font-bold">{notice.title}</h1>
         <p role={courseData?.error ? "alert" : "status"} className="text-text-muted">{notice.message}</p>

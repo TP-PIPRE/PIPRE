@@ -20,7 +20,7 @@ describe("Persisted TetriLogic configuration",()=>{
       const config=TETRILOGIC_LEVELS.find(l=>url.endsWith(l.templateId!))!;
       return {data:{templateId:config.templateId,version:2,config}};
     });
-    render(<MemoryRouter initialEntries={["/simulador/c002?activity=a30"]}><Routes><Route path="/simulador/:courseId" element={<Simulador/>}/></Routes></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/simulador/course-uuid?activity=a30"]}><Routes><Route path="/simulador/:courseId" element={<Simulador/>}/></Routes></MemoryRouter>);
     expect(await screen.findByRole("heading",{name:"Reto 30"})).toBeInTheDocument();
     expect(axiosInstance.get).toHaveBeenCalledWith("tetrilogic/templates/tetrilogic-v2-30", {signal:expect.any(AbortSignal)});
     expect(screen.getAllByRole("button",{name:/^Celda/})).toHaveLength(36);
