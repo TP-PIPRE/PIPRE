@@ -10,6 +10,7 @@ import {PersistedTetriLogicStage} from "../../src/ui/components/TetriLogic/Persi
 import {useGameStore} from "../../src/infrastructure/store/gameStore";
 vi.mock("../../src/application/usecases/loadCourseActivities",()=>({loadCourseActivities:vi.fn()}));
 vi.mock("../../src/infrastructure/api/axiosInstance",()=>({default:{get:vi.fn(),post:vi.fn().mockResolvedValue({status:201})}}));
+vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: () => ({ user: { id: "teacher", role: "docente" } }) }));
 afterEach(()=>{cleanup();useGameStore.getState().stopGame();vi.clearAllMocks();});
 const activity={idActivity:"a",name:"Reto elegido",environment:"tetrilogic",levelTemplate:"tetrilogic-v2-30"};
 describe("Persisted TetriLogic configuration",()=>{

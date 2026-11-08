@@ -7,7 +7,9 @@ import com.pipre.backend.application.dto.*;
 import com.pipre.backend.application.ports.input.*;
 import com.pipre.backend.application.ports.output.*;
 import com.pipre.backend.domain.entities.activity.NeonFlowTemplate;
+import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.game.*;
+import com.pipre.backend.domain.entities.gamification.AchievementRules.LevelProgress;
 import com.pipre.backend.domain.exceptions.BusinessException;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
@@ -24,8 +26,10 @@ class GameSessionsServiceTest {
     private final ActivityRepositoryPort activities=mock(ActivityRepositoryPort.class);
     private final DailyChallengeUseCase daily=mock(DailyChallengeUseCase.class);
     private final RecordVerifiedVictoryUseCase victories=mock(RecordVerifiedVictoryUseCase.class);
+    private final AcademicAccessRepositoryPort academicAccess=mock(AcademicAccessRepositoryPort.class);
+    private final GamificationRepositoryPort gamification=mock(GamificationRepositoryPort.class);
     private final MutableClock clock=new MutableClock();
-    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class));
+    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification);
     @BeforeEach void setup() throws Exception {
         JsonNode catalog=json.readTree(getClass().getResourceAsStream("/catalog/neonflow-v2.json"));
         for(JsonNode config:catalog) {
@@ -35,6 +39,24 @@ class GameSessionsServiceTest {
         when(victories.execute(any())).thenReturn(new VictoryAwardsDTO(3,List.of(),null));
     }
     private StartGameSessionCommand command(int level) { return new StartGameSessionCommand("student",UUID.randomUUID().toString(),"neonflow","neonflow-v2-"+level,null,null); }
+    @Test void requiresThePreviousVerifiedLevelOfTheSameGameBeforeStartingACourseActivity() {
+        var practice = service.start(command(2));
+        var request = new StartGameSessionCommand("student",UUID.randomUUID().toString(),"neonflow","neonflow-v2-2","activity-2",null);
+        var activity = mock(Activity.class);
+        when(activity.getEnvironment()).thenReturn("neonflow");
+        when(activity.getLevelTemplate()).thenReturn("neonflow-v2-2");
+        when(activities.findById("activity-2")).thenReturn(Optional.of(activity));
+        when(academicAccess.activityCourse("activity-2")).thenReturn("c001");
+        when(gamification.progress("student")).thenReturn(List.of(new LevelProgress("tetrilogic",1,3,clock.now,clock.now)));
+
+        assertThrows(BusinessException.class, () -> service.start(request));
+        assertEquals(practice.sessionId(), repository.active("student").orElseThrow().sessionId());
+
+        when(gamification.progress("student")).thenReturn(List.of(new LevelProgress("neonflow",1,3,clock.now,clock.now)));
+        var started = service.start(request);
+        assertEquals(2, started.levelNumber());
+        assertEquals(started, service.active("student","neonflow","neonflow-v2-2","activity-2",null).orElseThrow());
+    }
     @Test void usesServerTimeAndNeverAcceptsClientOutcomeStarsOrDuration() {
         var started=service.start(command(1));clock.now=clock.now.plusSeconds(179);
         var completed=service.complete("student",started.sessionId());

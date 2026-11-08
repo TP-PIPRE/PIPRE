@@ -6,6 +6,7 @@ import com.pipre.backend.application.commands.*;
 import com.pipre.backend.application.dto.*;
 import com.pipre.backend.application.ports.input.*;
 import com.pipre.backend.application.ports.output.*;
+import com.pipre.backend.domain.entities.course.Course;
 import com.pipre.backend.domain.entities.game.*;
 import com.pipre.backend.domain.exceptions.BusinessException;
 import com.pipre.backend.domain.exceptions.IncompleteGameBoardException;
@@ -36,6 +37,8 @@ public class GameSessionsService implements GameSessionsUseCase {
     private final Clock clock;
     private final ProceduralDailyService procedural;
     private final VerifiedExercisePointsService points;
+    private final AcademicAccessRepositoryPort academicAccess;
+    private final GamificationRepositoryPort gamification;
 
     @Override @Transactional
     public java.util.Optional<GameSessionDTO> active(String studentId,String game,String template,String activityId,String dailyChallengeId) {
@@ -50,6 +53,7 @@ public class GameSessionsService implements GameSessionsUseCase {
             var activity=activities.findById(activityId).orElseThrow(()->new ResourceNotFoundException("La actividad no existe."));
             if(!game.equals(activity.getEnvironment())||!canonical.equals(BoardRules.canonicalTemplate(activity.getEnvironment(),activity.getLevelTemplate())))
                 return java.util.Optional.empty();
+            requireUnlocked(studentId, game, found.get().levelNumber(), activityId);
         }
         sessionConfig(found.get());
         return found.map(this::dto);
@@ -58,6 +62,7 @@ public class GameSessionsService implements GameSessionsUseCase {
     @Override @Transactional
     public GameSessionDTO start(StartGameSessionCommand command) {
         String canonical=BoardRules.canonicalTemplate(command.game(),command.levelTemplate());
+        int level=Integer.parseInt(canonical.substring(canonical.lastIndexOf('-')+1));
         String clientId=uuid(command.clientSessionId());
         sessions.lockStudent(command.studentId());
         var existing=sessions.findByClientId(command.studentId(),clientId);
@@ -66,6 +71,9 @@ public class GameSessionsService implements GameSessionsUseCase {
             if(!previous.game().equals(command.game())||!previous.levelTemplate().equals(canonical)
                     ||!Objects.equals(previous.activityId(),command.activityId())||!Objects.equals(previous.dailyChallengeId(),command.dailyChallengeId()))
                 throw new BusinessException("El identificador de sesión ya corresponde a otra solicitud.");
+            if ("ACTIVE".equals(previous.status()) && previous.activityId() != null) {
+                requireUnlocked(command.studentId(), command.game(), level, previous.activityId());
+            }
             return dto(previous); // Never resurrect a completed or abandoned session.
         }
         if(ProceduralDailyService.procedural(command.dailyChallengeId())) {
@@ -76,14 +84,23 @@ public class GameSessionsService implements GameSessionsUseCase {
             var activity=activities.findById(command.activityId()).orElseThrow(()->new ResourceNotFoundException("La actividad no existe."));
             if(!command.game().equals(activity.getEnvironment())||!canonical.equals(BoardRules.canonicalTemplate(activity.getEnvironment(),activity.getLevelTemplate())))
                 throw new BusinessException("La actividad no corresponde al tablero solicitado.");
+            requireUnlocked(command.studentId(), command.game(), level, command.activityId());
         }
         if(command.dailyChallengeId()!=null&&!ProceduralDailyService.procedural(command.dailyChallengeId()))daily.validate(command.studentId(),command.dailyChallengeId(),command.game(),canonical);
         Instant now=clock.instant();sessions.abandonActive(command.studentId(),now);
         if(ProceduralDailyService.procedural(command.dailyChallengeId()))procedural.start(command.dailyChallengeId(),now);
-        int level=Integer.parseInt(canonical.substring(canonical.lastIndexOf('-')+1));
         return dto(sessions.insert(new GameSession(UUID.randomUUID().toString(),clientId,command.studentId(),command.game(),level,canonical,
             command.activityId(),command.dailyChallengeId(),now,null,"ACTIVE",BoardRules.initialState(),0,0,null,null)));
     }
+
+    private void requireUnlocked(String studentId, String game, int level, String activityId) {
+        if (level <= 1 || !Course.isOfficial(academicAccess.activityCourse(activityId))) return;
+        if (gamification.progress(studentId).stream().noneMatch(previous ->
+                previous.game().equals(game) && previous.levelNumber() == level - 1)) {
+            throw new BusinessException("Completa el nivel anterior para jugar este reto.");
+        }
+    }
+
     @Override @Transactional
     public GameSessionDTO action(String studentId,String sessionId,GameSessionAction action) {
         var session=owned(studentId,sessionId);

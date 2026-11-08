@@ -14,7 +14,7 @@ import { Modal } from "../components/common/Modal";
 import { CourseStructure } from "../components/common/CourseStructure";
 import { LEVEL_TEMPLATES } from "../../application/usecases/activityLevels";
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
-import { Trash2 as BsTrashFill, Trash2 as BsTrash, ChevronDown as BsChevronDown, Terminal as BsTerminal, Pencil as BsPencil, Plus as BsPlusLg } from "lucide-react";
+import { ChevronDown as BsChevronDown, Terminal as BsTerminal, Pencil as BsPencil } from "lucide-react";
 
 interface ChallengeView {
   idActivity: string;
@@ -92,9 +92,7 @@ export const DocenteRetosPage: React.FC = () => {
   // Estados para cursos
   const [courses, setCourses] = useState<CourseResponseDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [modalType, setModalType] = useState<
-    "create" | "edit" | "delete" | null
-  >(null);
+  const [courseDetailsOpen, setCourseDetailsOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] =
     useState<CourseResponseDTO | null>(null);
   const [formData, setFormData] = useState<Omit<CourseRequestDTO, "idCourse">>(
@@ -216,17 +214,11 @@ export const DocenteRetosPage: React.FC = () => {
   // Manejar envío de curso
   const handleCourseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin || !selectedCourse) return;
     setSaving(true); setOperationError("");
     try {
-      if (modalType === "create") {
-        await apiService.courses.create(formData as CourseRequestDTO);
-      } else if (modalType === "edit" && selectedCourse) {
-        await apiService.courses.update({
-          ...formData,
-          idCourse: selectedCourse.idCourse,
-        } as CourseRequestDTO & { idCourse: string });
-      }
-      setModalType(null);
+      await apiService.courses.update({ ...formData, idCourse: selectedCourse.idCourse });
+      setCourseDetailsOpen(false);
       fetchCourses();
     } catch (err) {
       setOperationError(getApiErrorMessage(err, "No se pudo guardar el curso."));
@@ -323,22 +315,6 @@ export const DocenteRetosPage: React.FC = () => {
     finally { setSaving(false); }
   };
 
-  // Eliminar curso
-  const handleDeleteCourse = async () => {
-    if (selectedCourse) {
-      try {
-        await apiService.courses.delete(selectedCourse.idCourse);
-        setCourses((prev) =>
-          prev.filter((c) => c.idCourse !== selectedCourse.idCourse),
-        );
-      } catch (err) {
-        setOperationError(getApiErrorMessage(err, "No se pudo eliminar el curso."));
-        return;
-      }
-      setModalType(null);
-    }
-  };
-
   // Eliminar reto mediante la API de actividades.
   const handleDeleteChallenge = async (idActivity: string) => {
     try {
@@ -370,171 +346,120 @@ export const DocenteRetosPage: React.FC = () => {
             Organiza cursos, módulos y retos de aprendizaje.
           </p>
         </div>
-        {isAdmin && <button
-          onClick={() => {
-            setModalType("create");
-            setFormData({ name: "", description: "", level: "LOW" });
-          }}
-          className="btn-premium px-8 py-3.5 text-xs tracking-[0.2em] font-black active:scale-95 transition-all shadow-xl hover:shadow-primary/10"
-          style={{ borderRadius: "var(--theme-radius)" }}
-        >
-          Crear curso
-        </button>}
       </header>
 
       {/* Modal para Cursos */}
       <Modal
-        title={modalType === "delete" ? "Eliminar curso" : modalType === "create" ? "Crear curso" : "Editar curso"}
-        isOpen={modalType !== null}
-        onClose={() => setModalType(null)}
-        maxWidth={modalType === "delete" ? "max-w-lg" : "max-w-2xl"}
+        title={isAdmin ? "Editar curso" : "Detalles del curso"}
+        isOpen={courseDetailsOpen}
+        onClose={() => setCourseDetailsOpen(false)}
+        maxWidth="max-w-2xl"
       >
         <div className="flex flex-col">
-          {modalType !== "delete" && (
-            <div className="relative h-32 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border">
-              <div className="absolute inset-0 opacity-10 pointer-events-none">
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(var(--theme-primary) 1px, transparent 1px)",
-                    backgroundSize: "15px 15px",
-                  }}
-                />
-              </div>
-              <div className="relative text-center">
-                <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-2 block animate-fade-in-soft">
-                  {modalType === "create"
-                    ? "Crear curso"
-                    : "Configuración del curso"}
-                </span>
-                <h2 className="text-2xl font-bold tracking-tight">
-                  {modalType === "create"
-                    ? "Nuevo curso"
-                    : "Editar curso"}
-                </h2>
-              </div>
+          <div className="relative h-32 bg-primary/10 overflow-hidden flex items-center justify-center border-b border-border">
+            <div className="absolute inset-0 opacity-10 pointer-events-none">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(var(--theme-primary) 1px, transparent 1px)",
+                  backgroundSize: "15px 15px",
+                }}
+              />
             </div>
-          )}
+            <div className="relative text-center">
+              <span className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-2 block animate-fade-in-soft">
+                Configuración del curso
+              </span>
+              <h2 className="text-2xl font-bold tracking-tight">
+                {isAdmin ? "Editar curso" : "Detalles del curso"}
+              </h2>
+            </div>
+          </div>
 
           <div className="p-10">
             {operationError && <p role="alert" className="mb-4 text-sm text-danger">{operationError}</p>}
-            {modalType === "delete" ? (
-              <div className="text-center py-6">
-                <div className="w-20 h-20 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mx-auto mb-8 rotate-3 hover:rotate-0 transition-transform duration-500">
-                  <BsTrashFill className="text-4xl" />
-                </div>
-                <h2 className="text-2xl font-bold mb-3">
-                  ¿Confirmar Eliminación?
-                </h2>
-                <p className="text-sm text-text-muted mb-10 px-6 leading-relaxed">
-                  Esta acción eliminará el curso{" "}
-                  <span className="text-text font-bold">
-                    "{selectedCourse?.name}"
-                  </span>
-                  . Esta operación es irreversible.
-                </p>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setModalType(null)}
-                    className="flex-1 btn-secondary py-4 text-xs font-bold uppercase tracking-widest"
-                  >
-                    CANCELAR
-                  </button>
-                  <button
-                    onClick={handleDeleteCourse}
-                    className="flex-1 bg-danger text-white hover:brightness-110 py-4 text-xs font-bold uppercase tracking-widest shadow-xl shadow-danger/20 transition-all active:scale-95"
+            <form onSubmit={handleCourseSubmit} aria-busy={saving} className="space-y-8">
+              <fieldset disabled={!isAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2 md:col-span-2">
+                  <label htmlFor="docenteretospage-field-1" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
+                    Nombre del curso
+                  </label>
+                  <input id="docenteretospage-field-1"
+                    required
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
                     style={{ borderRadius: "var(--theme-radius)" }}
-                  >
-                    ELIMINAR CURSO
-                  </button>
+                    placeholder="Nombre del curso oficial"
+                  />
                 </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label htmlFor="course-complexity" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
+                    Nivel de Complejidad
+                  </label>
+                  <div className="relative">
+                    <select id="course-complexity"
+                      value={formData.level}
+                      onChange={(e) =>
+                        setFormData({ ...formData, level: e.target.value as CourseRequestDTO["level"] })
+                      }
+                      className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all appearance-none cursor-pointer"
+                      style={{ borderRadius: "var(--theme-radius)" }}
+                    >
+                      <option value="LOW">
+                        Básico (Fundamentos)
+                      </option>
+                      <option value="MEDIUM">
+                        Intermedio (Control)
+                      </option>
+                      <option value="HIGH">
+                        Avanzado (Sistemas)
+                      </option>
+                    </select>
+                    <BsChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted" />
+                  </div>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label htmlFor="docenteretospage-field-2" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
+                    Descripción Técnica
+                  </label>
+                  <textarea id="docenteretospage-field-2"
+                    required
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        description: e.target.value,
+                      })
+                    }
+                    className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all min-h-[140px] placeholder:opacity-30 resize-none"
+                    style={{ borderRadius: "var(--theme-radius)" }}
+                    placeholder="Define los objetivos y alcances del curso..."
+                  />
+                </div>
+              </fieldset>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setCourseDetailsOpen(false)}
+                  className="flex-1 btn-secondary py-5 text-xs font-black tracking-widest"
+                >
+                  DESCARTAR
+                </button>
+                {isAdmin && <button
+                  type="submit" disabled={saving}
+                  className="flex-[2] btn-premium py-5 text-xs font-black tracking-[0.3em] shadow-xl shadow-primary/20"
+                >
+                  GUARDAR CAMBIOS
+                </button>}
               </div>
-            ) : (
-              <form onSubmit={handleCourseSubmit} aria-busy={saving} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2 md:col-span-2">
-                    <label htmlFor="docenteretospage-field-1" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
-                      Nombre del curso
-                    </label>
-                    <input id="docenteretospage-field-1"
-                      required
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all placeholder:opacity-30"
-                      style={{ borderRadius: "var(--theme-radius)" }}
-                      placeholder="Ej: Robótica Autónoma v2"
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <label htmlFor="course-complexity" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
-                      Nivel de Complejidad
-                    </label>
-                    <div className="relative">
-                      <select id="course-complexity"
-                        value={formData.level}
-                        onChange={(e) =>
-                          setFormData({ ...formData, level: e.target.value as CourseRequestDTO["level"] })
-                        }
-                        className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all appearance-none cursor-pointer"
-                        style={{ borderRadius: "var(--theme-radius)" }}
-                      >
-                        <option value="LOW">
-                          Básico (Fundamentos)
-                        </option>
-                        <option value="MEDIUM">
-                          Intermedio (Control)
-                        </option>
-                        <option value="HIGH">
-                          Avanzado (Sistemas)
-                        </option>
-                      </select>
-                      <BsChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <label htmlFor="docenteretospage-field-2" className="text-xs uppercase tracking-widest text-text-muted font-black ml-1">
-                      Descripción Técnica
-                    </label>
-                    <textarea id="docenteretospage-field-2"
-                      required
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      className="w-full bg-bg/50 border border-border px-6 py-4 text-sm focus:border-primary outline-none transition-all min-h-[140px] placeholder:opacity-30 resize-none"
-                      style={{ borderRadius: "var(--theme-radius)" }}
-                      placeholder="Define los objetivos y alcances del curso..."
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setModalType(null)}
-                    className="flex-1 btn-secondary py-5 text-xs font-black tracking-widest"
-                  >
-                    DESCARTAR
-                  </button>
-                  <button
-                    type="submit" disabled={saving}
-                    className="flex-[2] btn-premium py-5 text-xs font-black tracking-[0.3em] shadow-xl shadow-primary/20"
-                  >
-                    {modalType === "create"
-                      ? "CREAR CURSO"
-                      : "GUARDAR CAMBIOS"}
-                  </button>
-                </div>
-              </form>
-            )}
+            </form>
           </div>
         </div>
       </Modal>
@@ -642,8 +567,7 @@ export const DocenteRetosPage: React.FC = () => {
                                   <span>{challenge.levelTemplate ? "Tablero configurado" : "Falta configurar el tablero"}</span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-
+                              <div className="flex flex-wrap items-center gap-2">
                                 <button
                                   onClick={() => {
                                     setChallengeModalType("edit");
@@ -1145,7 +1069,7 @@ export const DocenteRetosPage: React.FC = () => {
                 {isAdmin && <div className="flex gap-2">
                   <button aria-label={`Editar curso ${course.name}`}
                     onClick={() => {
-                      setModalType("edit");
+                      setCourseDetailsOpen(true);
                       setSelectedCourse(course);
                       setFormData({
                         name: course.name,
@@ -1157,16 +1081,6 @@ export const DocenteRetosPage: React.FC = () => {
                     style={{ borderRadius: "var(--theme-radius)" }}
                   >
                     <BsPencil className="text-base" />
-                  </button>
-                  <button aria-label={`Eliminar curso ${course.name}`}
-                    onClick={() => {
-                      setModalType("delete");
-                      setSelectedCourse(course);
-                    }}
-                    className="w-11 h-11 flex items-center justify-center bg-bg/40 border border-border hover:border-danger/40 hover:text-danger transition-all active:scale-90"
-                    style={{ borderRadius: "var(--theme-radius)" }}
-                  >
-                    <BsTrash className="text-base" />
                   </button>
                 </div>}
               </div>
@@ -1197,7 +1111,7 @@ export const DocenteRetosPage: React.FC = () => {
                 >
                   Retos
                 </button>
-                <button onClick={() => { setSelectedCourse(course); setFormData({ name: course.name, description: course.description || "", level: course.level || "LOW" }); setModalType("edit"); }}
+                <button onClick={() => { setSelectedCourse(course); setFormData({ name: course.name, description: course.description || "", level: course.level || "LOW" }); setCourseDetailsOpen(true); }}
                   className="flex-1 text-xs font-black uppercase tracking-widest py-3 border border-border hover:border-primary/30 transition-all active:scale-95"
                   style={{ borderRadius: "var(--theme-radius)" }}
                 >
@@ -1208,22 +1122,6 @@ export const DocenteRetosPage: React.FC = () => {
           </div>
         ))}
 
-        {/* CARD DE AGREGAR RÁPIDO */}
-        <button type="button"
-          onClick={() => {
-            setModalType("create");
-            setFormData({ name: "", description: "", level: "LOW" });
-          }}
-          className="border-2 border-dashed border-border p-8 flex flex-col items-center justify-center gap-5 text-text-muted hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer group"
-          style={{ borderRadius: "var(--theme-radius)" }}
-        >
-          <div className="w-16 h-16 rounded-full border border-dashed border-border flex items-center justify-center  group-hover:border-primary/30 transition-all duration-500">
-            <BsPlusLg className="text-4xl" />
-          </div>
-          <span className="text-xs font-bold uppercase tracking-[0.3em] opacity-60 group-hover:opacity-100 transition-opacity">
-            Añadir curso
-          </span>
-        </button>
       </div>
     </main>
   );

@@ -19,14 +19,14 @@ import {useBoardSelection} from "../common/useBoardSelection";
 const createGrid=createNeonGrid;
 const snapshot=(grid:Grid)=>grid.cells.filter(c=>c.type==='MIRROR_90'||c.type==='FILTER').map(c=>({type:c.type,x:c.x,y:c.y,...(c.rotation!==undefined?{rotation:c.rotation}:{}),...(c.color?{color:c.color}:{})}));
 
-export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string }) => {
+export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId, onNext }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string; onNext?: () => void }) => {
   const [currentLevelIndex, setCurrentLevelIndex] = useBoardSelection(LEVELS,!activity&&!dailyChallengeId&&LEVELS.length>1);
   const level=LEVELS[currentLevelIndex],templateId=activity?.levelTemplate??level.templateId;
   const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
   if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"Neon Flow"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
-  return <NeonBoardSession key={gameSession.state?.session?.sessionId??templateId} levels={LEVELS} currentLevelIndex={currentLevelIndex} setCurrentLevelIndex={setCurrentLevelIndex} activity={activity} dailyChallengeId={dailyChallengeId} gameSession={gameSession}/>;
+  return <NeonBoardSession key={gameSession.state?.session?.sessionId??templateId} levels={LEVELS} currentLevelIndex={currentLevelIndex} setCurrentLevelIndex={setCurrentLevelIndex} activity={activity} dailyChallengeId={dailyChallengeId} onNext={onNext} gameSession={gameSession}/>;
 };
-function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,activity,dailyChallengeId,gameSession}:{levels:NeonFlowLevelConfig[];currentLevelIndex:number;setCurrentLevelIndex:(index:number)=>void;activity?:ActivityResponseDTO;dailyChallengeId?:string;gameSession:ReturnType<typeof useValidatedGameSession>}) {
+function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,activity,dailyChallengeId,onNext,gameSession}:{levels:NeonFlowLevelConfig[];currentLevelIndex:number;setCurrentLevelIndex:(index:number)=>void;activity?:ActivityResponseDTO;dailyChallengeId?:string;onNext?:()=>void;gameSession:ReturnType<typeof useValidatedGameSession>}) {
   const [initialSession]=useState(gameSession.state?.session);
   const [grid, setGrid] = useState<Grid>(() => restoreNeonBoard(LEVELS[currentLevelIndex],gameSession.state?.session?.state.pieces));
   const [laserPath, setLaserPath] = useState<Cell[]>([]);
@@ -189,11 +189,15 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
             <span className="text-sm font-bold text-primary">
               {activity ? "¡Reto completado!" : "¡Curso Completado!"}
             </span>
-            <Link
+            {activity && onNext && gameSession.state?.victory ? <button type="button"
+              onClick={onNext}
+              className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+              Siguiente reto
+            </button> : <Link
               to="/"
               className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
               Volver a mis cursos
-            </Link>
+            </Link>}
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-green-500/10 border border-green-500 px-4 py-2">

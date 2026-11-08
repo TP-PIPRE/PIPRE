@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { NeonFlowStage } from "../../src/ui/components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../../src/ui/components/TetriLogic/TetriLogicStage";
 import { NEONFLOW_LEVELS, LEGACY_NEONFLOW_LEVELS, TETRILOGIC_LEVELS } from "../../src/shared/constants/levelConfigs";
@@ -10,12 +10,16 @@ import { gameProgressService } from "../../src/infrastructure/api/gameProgressSe
 import { useGameStore } from "../../src/infrastructure/store/gameStore";
 import { useAchievementStore } from "../../src/infrastructure/store/achievementStore";
 import { ValidatedGameSession } from "../../src/infrastructure/store/validatedGameSession";
-import type { GameSessionContext, GameSessionDTO, GameVictoryDTO } from "../../src/infrastructure/api/models/gameProgressModels";
+import type { GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "../../src/infrastructure/api/models/gameProgressModels";
+import { Simulador } from "../../src/ui/pages/Simulador";
+import { loadCourseActivities } from "../../src/application/usecases/loadCourseActivities";
+import axiosInstance from "../../src/infrastructure/api/axiosInstance";
 import tetriSolutions from "../fixtures/tetrilogicSolutions.json";
 
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
-vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn() } }));
-vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { post: vi.fn().mockResolvedValue({ status: 201 }) } }));
+vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn(), progress: vi.fn() } }));
+vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { get: vi.fn(), post: vi.fn().mockResolvedValue({ status: 201 }) } }));
+vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 const sessions = new Map<string, GameSessionDTO>();
 const context = (): GameSessionContext => ({ studentId: getAuthState().user!.id, game: "neonflow", levelTemplate: "neonflow-v2-1" });
 const sessionDTO = (value: GameSessionContext, id = crypto.randomUUID()): GameSessionDTO => ({ sessionId: id, game: value.game, levelNumber: 1, levelTemplate: value.levelTemplate, ruleset: "test-rules", startedAt: "2026-11-02T12:00:00Z", status: "ACTIVE", revision: 0, state: { pieces: [], moves: 0, resets: 0, helps: 0, failedChecks: 0, rejections: 0 } });
@@ -30,6 +34,89 @@ beforeEach(() => {
 });
 afterEach(async () => { cleanup(); useGameStore.getState().stopGame(); await act(async () => {}); });
 const openNeon = () => render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} /></MemoryRouter>);
+const progressView = (levels: GameProgressDTO["levels"] = []): GameProgressDTO => ({
+  levels, completedLevels: levels.length, totalLevels: 60, totalStars: levels.length, currentStreak: 0, bestStreak: 0,
+});
+function openCourse(path: string) {
+  render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/simulador/:courseId" element={<Simulador />} /></Routes></MemoryRouter>);
+}
+function mockCourse(game: "neonflow" | "tetrilogic", levels: number[]) {
+  vi.mocked(loadCourseActivities).mockResolvedValue(levels.map(level => ({
+    idActivity: `a${level}`, name: `Reto ${level}`, description: "Objetivo del reto", environment: game, levelTemplate: `${game}-v2-${level}`,
+  })));
+  vi.mocked(axiosInstance.get).mockImplementation(async url => {
+    const config = (game === "neonflow" ? NEONFLOW_LEVELS : TETRILOGIC_LEVELS).find(level => url.endsWith(level.templateId!))!;
+    return { data: { templateId: config.templateId, version: 2, config } };
+  });
+}
+function solveTetriLevelOne() {
+  for (const placement of tetriSolutions[0].placements) {
+    const piece = TETRILOGIC_LEVELS[0].inventory!.find(value => value.id === placement.id)!;
+    fireEvent.click(screen.getByRole("button", { name: `Seleccionar pieza ${piece.type} (${piece.id})` }));
+    for (let angle = 0; angle < placement.rotation; angle += 90) fireEvent.click(screen.getByRole("button", { name: "Rotar pieza" }));
+    fireEvent.click(screen.getByRole("button", { name: `Celda vacía, fila ${placement.position.y + 1}, columna ${placement.position.x + 1}` }));
+  }
+}
+
+describe("Official course progression and access", () => {
+  it.each([["neonflow", "c001", "Neon Flow"], ["tetrilogic", "c002", "TetriLogic"]] as const)(
+    "refreshes confirmed %s progress and opens the next unlocked level", async (game, course, label) => {
+      mockCourse(game, [1, 3, 2]);
+      let finishRefresh!: (value: GameProgressDTO) => void;
+      vi.mocked(gameProgressService.progress).mockResolvedValueOnce(progressView())
+        .mockImplementationOnce(() => new Promise(resolve => { finishRefresh = resolve; }));
+      openCourse(`/simulador/${course}?activity=a1`);
+      await screen.findByLabelText(`Tablero ${label}`);
+      if (game === "tetrilogic") solveTetriLevelOne();
+      else fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+      await screen.findByText("Resultado guardado");
+      expect(screen.getByText("Consultando progreso…")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Siguiente reto" })).not.toBeInTheDocument();
+      await act(async () => finishRefresh(progressView([{ game, levelNumber: 1, completed: true, bestStars: 3 }])));
+      fireEvent.click(await screen.findByRole("button", { name: "Siguiente reto" }));
+      await screen.findByRole("heading", { name: "Reto 2" });
+      await waitFor(() => expect(gameProgressService.start).toHaveBeenLastCalledWith(
+        expect.objectContaining({ activityId: "a2", levelTemplate: `${game}-v2-2` }), expect.any(String),
+      ));
+      expect(screen.queryByRole("heading", { name: "Nivel bloqueado" })).not.toBeInTheDocument();
+    },
+  );
+
+  it("reports progress errors separately and does not load locked boards", async () => {
+    mockCourse("neonflow", [1, 2]);
+    vi.mocked(gameProgressService.progress).mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(progressView());
+    openCourse("/simulador/c001?activity=a2");
+    expect(await screen.findByText(/No pudimos verificar tu progreso/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Progreso por confirmar" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Nivel bloqueado" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar progreso" }));
+    await screen.findByRole("heading", { name: "Nivel bloqueado" });
+    expect(screen.getByRole("option", { name: /Reto 2 · bloqueado/ })).toBeDisabled();
+    expect(axiosInstance.get).not.toHaveBeenCalled();
+    expect(gameProgressService.active).not.toHaveBeenCalled();
+    expect(gameProgressService.start).not.toHaveBeenCalled();
+  });
+
+  it("opens a playable board directly and offers no next action on the last level", async () => {
+    mockCourse("neonflow", [1]);
+    vi.mocked(gameProgressService.progress).mockResolvedValue(progressView());
+    openCourse("/simulador/c001?activity=a1");
+    await screen.findByLabelText("Tablero Neon Flow");
+    fireEvent.click(screen.getByRole("button", { name: "Comprobar" }));
+    await screen.findByText("Resultado guardado");
+    await waitFor(() => expect(screen.queryByText("Consultando progreso…")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "Siguiente reto" })).not.toBeInTheDocument();
+  });
+
+  it.each(["docente", "admin"] as const)("lets %s try a higher level locally without requiring student progress", async role => {
+    mockCourse("tetrilogic", [2]);
+    vi.mocked(getAuthState).mockReturnValue({ user: { id: "teacher", name: "Docente", email: "teacher@example.com", role }, isAuthenticated: true });
+    openCourse("/simulador/c002?activity=a2");
+    expect(await screen.findByLabelText("Tablero TetriLogic")).toBeInTheDocument();
+    expect(gameProgressService.progress).not.toHaveBeenCalled();
+    expect(gameProgressService.start).not.toHaveBeenCalled();
+  });
+});
 
 describe("Server-confirmed game sessions", () => {
   it("uses the selected practice board from the URL when recovering a session",async()=>{
@@ -121,12 +208,7 @@ describe("Server-confirmed game sessions", () => {
   it("confirms TetriLogic through accepted placements while keeping row and column rules", async () => {
     render(<MemoryRouter><TetriLogicStage levels={[TETRILOGIC_LEVELS[0]]} /></MemoryRouter>);
     await screen.findByLabelText("Tablero TetriLogic");
-    for(const placement of tetriSolutions[0].placements){
-      const piece=TETRILOGIC_LEVELS[0].inventory!.find(value=>value.id===placement.id)!;
-      fireEvent.click(screen.getByRole("button",{name:`Seleccionar pieza ${piece.type} (${piece.id})`}));
-      for(let angle=0;angle<placement.rotation;angle+=90)fireEvent.click(screen.getByRole("button",{name:"Rotar pieza"}));
-      fireEvent.click(screen.getByRole("button",{name:`Celda vacía, fila ${placement.position.y+1}, columna ${placement.position.x+1}`}));
-    }
+    solveTetriLevelOne();
     await waitFor(() => expect(gameProgressService.action).toHaveBeenCalledWith(expect.any(String), { type: "PLACE", pieceId: "o1", x: 0, y: 2, rotation: 0, sequence: 4 }));
     expect(screen.getByText("Reto completado.")).toBeInTheDocument();
     await screen.findByText("Resultado guardado");

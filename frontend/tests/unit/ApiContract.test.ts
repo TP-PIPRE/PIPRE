@@ -9,9 +9,9 @@ describe("REST contracts", () => {
     await expect(apiService.activities.create({ idLesson: "l1", name: "Espejos" })).resolves.toBeUndefined();
     expect(axiosInstance.post).toHaveBeenCalledWith("/activities", { idLesson: "l1", name: "Espejos" });
   });
-  it("reads every page when callers request all courses", async () => {
-    vi.mocked(axiosInstance.get).mockResolvedValueOnce({ data: { content: [{ idCourse: "c1" }], number: 0, totalPages: 2 } }).mockResolvedValueOnce({ data: { content: [{ idCourse: "c2" }], number: 1, totalPages: 2 } });
-    expect(await apiService.courses.getAll()).toEqual([{ idCourse: "c1" }, { idCourse: "c2" }]);
+  it("reads every page and exposes only the official courses", async () => {
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({ data: { content: [{ idCourse: "c001" }, { idCourse: "legacy" }], number: 0, totalPages: 2 } }).mockResolvedValueOnce({ data: { content: [{ idCourse: "c002" }], number: 1, totalPages: 2 } });
+    expect(await apiService.courses.getAll()).toEqual([{ idCourse: "c001" }, { idCourse: "c002" }]);
     expect(axiosInstance.get).toHaveBeenNthCalledWith(2, "/courses", { params: { page: 1, size: 100 } });
   });
   it("preserves explicit page and sort parameters", async () => {

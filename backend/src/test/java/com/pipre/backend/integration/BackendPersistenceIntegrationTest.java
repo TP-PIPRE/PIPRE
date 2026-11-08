@@ -46,7 +46,6 @@ class BackendPersistenceIntegrationTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired JwtUtils jwt;
     @Autowired RegisterUserService users;
-    @Autowired CreateCourseService courses;
     @Autowired CreateModuleService modules;
     @Autowired CreateLessonService lessons;
     @Autowired SaveModuleProgressService progress;
@@ -64,7 +63,7 @@ class BackendPersistenceIntegrationTest {
         email="audit-"+UUID.randomUUID()+"@test.invalid";
         String role=jdbc.queryForObject("SELECT id_role FROM roles WHERE name='STUDENT'",String.class);
         student=users.execute(new RegisterUserCommand("Audit","Student",email,"Audit-test-only","QA",18,List.of(role)));
-        course=courses.execute(new RegisterCourseCommand("Audit course","isolated fixture","LOW"));
+        course=insertCourseFixture("Audit course");
         module=modules.execute(new CreateModuleCommand(course,"Audit module"));lesson=lessons.execute(new CreateLessonCommand(module,"Audit lesson"));
         group=UUID.randomUUID().toString();jdbc.update("INSERT INTO groups(id_group,group_name) VALUES (?,?)",group,"Audit group");
         owner=new Cookie("jwt",jwt.createToken(email,List.of("ROLE_STUDENT")));
@@ -77,6 +76,11 @@ class BackendPersistenceIntegrationTest {
         jdbc.update("INSERT INTO teacher_courses(id_teacher,id_course) VALUES (?,?)",teacherId,course);
         jdbc.update("INSERT INTO teacher_groups(id_teacher,id_group) VALUES (?,?)",teacherId,group);
     }
+    private String insertCourseFixture(String name) {
+        String id = UUID.randomUUID().toString();
+        jdbc.update("INSERT INTO courses(id_course,name,description,level,created_at) VALUES (?,?,'isolated fixture','LOW',CURRENT_TIMESTAMP)",id,name);
+        return id;
+    }
     @AfterEach void cleanup() {
         // Only fixtures created by this test, in the dedicated in-memory/container database.
         if(student!=null)jdbc.update("DELETE FROM users WHERE id_user=? AND email=?",student,email);
@@ -84,6 +88,18 @@ class BackendPersistenceIntegrationTest {
         if(adminId!=null)jdbc.update("DELETE FROM users WHERE id_user=? AND email=?",adminId,adminEmail);
         if(group!=null)jdbc.update("DELETE FROM groups WHERE id_group=? AND group_name='Audit group'",group);
         if(course!=null)jdbc.update("DELETE FROM courses WHERE id_course=? AND name='Audit course'",course);
+    }
+    @Test void closedCatalogRejectsCreatingCoursesAndDeletingOfficialOnes() throws Exception {
+        Integer before = jdbc.queryForObject("SELECT count(*) FROM courses",Integer.class);
+        mvc.perform(post("/api/v1/courses").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(administrator)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Curso adicional\",\"level\":\"LOW\"}"))
+            .andExpect(status().isBadRequest());
+        for (String official : List.of("c001","c002")) {
+            mvc.perform(delete("/api/v1/courses/"+official).with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(administrator))
+                .andExpect(status().isBadRequest());
+        }
+        assertEquals(before,jdbc.queryForObject("SELECT count(*) FROM courses",Integer.class));
+        assertEquals(2,jdbc.queryForObject("SELECT count(*) FROM courses WHERE id_course IN ('c001','c002')",Integer.class));
     }
     @Test void curriculumCrudPaginationRolesAndPartialUpdatePreserveBoard() throws Exception {
         var body=new HashMap<String,Object>();body.put("idLesson",lesson);body.put("name","Audit board");body.put("environment","neonflow");body.put("levelTemplate","neonflow-v2-2");body.put("logicLevel",2);
@@ -352,7 +368,7 @@ class BackendPersistenceIntegrationTest {
     @Test void movingAnAssignedActivityDoesNotExposeAnotherCourseThroughTheClassroom() throws Exception {
         String activity=createTestActivity();administration.groupCourse(group,course,true);administration.groupActivity(group,activity,true);
         rankings.execute(new AddStudentRankingCommand(group,student));
-        String destination=courses.execute(new RegisterCourseCommand("Audit destination","isolated fixture","LOW"));
+        String destination=insertCourseFixture("Audit destination");
         try {
             String targetModule=modules.execute(new CreateModuleCommand(destination,"Destination module")),targetLesson=lessons.execute(new CreateLessonCommand(targetModule,"Destination lesson"));
             mvc.perform(patch("/api/v1/activities/"+activity).with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(administrator).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of("idLesson",targetLesson)))).andExpect(status().isOk());

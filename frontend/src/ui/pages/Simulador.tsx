@@ -1,79 +1,135 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { LockKeyhole } from "lucide-react";
 import { PersistedNeonFlowStage } from "../components/NeonFlow/PersistedNeonFlowStage";
 import { NeonFlowStage } from "../components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../components/TetriLogic/TetriLogicStage";
 import { PersistedTetriLogicStage } from "../components/TetriLogic/PersistedTetriLogicStage";
-
+import { CourseProgressFeedback } from "../components/common/CourseProgressFeedback";
+import { DailyChallengeStage } from "../components/common/DailyChallengeStage";
+import { useCourseProgress } from "../components/common/useCourseProgress";
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
-import { activityDisplayName, resolveActivityLevel } from "../../application/usecases/activityLevels";
+import { activityDisplayName, challengeAccess, resolveActivityLevel } from "../../application/usecases/activityLevels";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
+import { isOfficialGameTemplate } from "../../infrastructure/api/models/gameProgressModels";
 import { getAuthState } from "../../infrastructure/store/authStore";
-import { DailyChallengeStage } from "../components/common/DailyChallengeStage";
+import { isOfficialCourse } from "../../shared/constants/officialCourses";
 
 const NEONFLOW_IDS = new Set(["1", "neonflow", "logica"]);
 const TETRILOGIC_IDS = new Set(["2", "tetrilogic", "patrones"]);
+const noticeClass = "mx-auto max-w-2xl rounded-xl border border-border bg-surface p-8 text-center space-y-4";
 
 export const Simulador = () => {
   const { courseId = "" } = useParams<{ courseId?: string }>();
-  const [search, setSearch] = useSearchParams();
-  const [retry, setRetry] = useState(0);
-  const daily = search.get("daily") === "true";
-  const [data, setData] = useState<{ courseId: string; activities: ActivityResponseDTO[]; error: string } | null>(null);
+  const [search] = useSearchParams();
   const normalized = courseId.trim().toLowerCase();
-  const legacy = NEONFLOW_IDS.has(normalized) || TETRILOGIC_IDS.has(normalized);
+
+  if (search.get("daily") === "true") return <DailyChallengeStage />;
+  if (!search.has("activity")) {
+    if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage />;
+    if (!courseId || TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
+  }
+  if (!isOfficialCourse(courseId)) return <section className={noticeClass}>
+    <h1 className="text-xl font-bold">Este curso ya no está disponible</h1>
+    <Link to="/" className="btn-secondary">Ver mis cursos</Link>
+  </section>;
+
+  const user = getAuthState().user;
+  return <CourseSimulator key={`${courseId}:${user?.id}:${user?.role}`} courseId={courseId}
+    studentId={user?.role === "student" ? user.id : undefined}
+    canManage={user?.role === "docente" || user?.role === "admin"} />;
+};
+
+function CourseSimulator({ courseId, studentId, canManage }: { courseId: string; studentId?: string; canManage: boolean }) {
+  const [search, setSearch] = useSearchParams();
+  const [attempt, setAttempt] = useState(0);
+  const [result, setResult] = useState<{ attempt: number; activities: ActivityResponseDTO[]; error?: string }>();
+  const progress = useCourseProgress(studentId);
+
   useEffect(() => {
-    if (daily || legacy || !courseId) return;
     let active = true;
     loadCourseActivities(courseId).then(activities => {
-      if (active) setData({ courseId, activities, error: "" });
-    }).catch(e => { if (active) setData({ courseId, activities: [], error: getApiErrorMessage(e, "No se pudo cargar el curso.") }); });
+      if (active) setResult({ attempt, activities });
+    }).catch(error => {
+      if (active) setResult({ attempt, activities: [], error: getApiErrorMessage(error, "No se pudo cargar el curso.") });
+    });
     return () => { active = false; };
-  }, [courseId, legacy, retry, daily]);
+  }, [courseId, attempt]);
 
-  if (daily) return <DailyChallengeStage />;
-  if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage />;
-  if (!courseId || TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
+  if (result?.attempt !== attempt) return <p role="status" className="p-8 text-center">Cargando retos del curso…</p>;
+  if (result.error) return <section className={noticeClass}>
+    <h1 className="text-xl font-bold">No pudimos cargar los retos</h1>
+    <p role="alert">{result.error}</p>
+    <button className="btn-secondary" onClick={() => setAttempt(value => value + 1)}>Reintentar</button>
+    <Link to="/" className="btn-secondary">Ver mis cursos</Link>
+  </section>;
 
-  if (courseId && data?.courseId !== courseId) return <p role="status" className="p-8 text-center">Cargando retos del curso…</p>;
-  const courseData = courseId && data?.courseId === courseId ? data : null;
   const activityId = search.get("activity");
-  const activity = activityId ? courseData?.activities.find(a => a.idActivity === activityId) : courseData?.activities.find(a => resolveActivityLevel(a));
-  const template = activity && resolveActivityLevel(activity);
-  const role = getAuthState().user?.role;
-  const canManage = role === "docente" || role === "admin";
-  const showConfigure = canManage && Boolean(courseId) && !courseData?.error && (!activityId || Boolean(activity));
-  const notice = courseData?.error
-      ? { title: "No pudimos cargar los retos", message: courseData.error }
-      : activityId && !activity
-        ? { title: "No encontramos este reto", message: "El reto ya no está disponible o no pertenece a este curso. Vuelve a tus cursos y selecciona otro." }
-        : !courseData?.activities.length
-          ? { title: "Este curso aún no tiene retos", message: canManage ? "Añade un reto y asígnale un tablero desde la gestión del curso para habilitar la práctica." : "Tu docente todavía no ha añadido retos a este curso. Mientras tanto, puedes explorar otros cursos." }
-          : { title: activity ? "Este reto aún no está listo para jugar" : "Este curso aún no tiene retos listos para jugar", message: canManage ? "Abre el curso en Retos, edita la actividad y selecciona Tablero del reto. Guarda los cambios para habilitarla." : "El tablero aún está pendiente de configuración por parte de tu docente. Mientras lo prepara, puedes elegir otro reto desde Mis cursos." };
+  const challenges = result.activities.map(activity => {
+    const template = resolveActivityLevel(activity);
+    const access = canManage && template ? "available" : challengeAccess(template, progress.levels, progress.pending || Boolean(progress.error));
+    return { activity, template, access };
+  });
+  const selected = activityId
+    ? challenges.find(({ activity }) => activity.idActivity === activityId)
+    : challenges.find(({ template }) => template?.config.level === 1)
+      ?? challenges.find(({ template }) => template) ?? challenges[0];
+  const activity = selected?.activity;
+  const template = selected?.template;
+  const locked = selected?.access === "locked";
+  const unconfirmed = selected?.access === "unconfirmed";
+  const available = selected?.access === "available";
+  const next = available && studentId && template && isOfficialGameTemplate(template.game, template.id)
+    ? challenges.filter(candidate => candidate.template && candidate.template.game === template.game
+        && candidate.template.config.level > template.config.level
+        && isOfficialGameTemplate(candidate.template.game, candidate.template.id) && candidate.access === "available")
+      .sort((a, b) => a.template!.config.level - b.template!.config.level)[0]
+    : undefined;
+  const goToNext = next ? () => setSearch({ activity: next.activity.idActivity }) : undefined;
+  const manage = canManage && (!activityId || activity)
+    ? <Link to="/docente/retos" state={{ courseId }} className="btn-secondary">{challenges.length ? "Configurar tablero" : "Crear un reto"}</Link>
+    : null;
+
   return <div>
-    {courseData?.activities.length ? <div className="simulator-course-picker">
+    <CourseProgressFeedback {...progress} />
+    {challenges.length > 0 && <div className="simulator-course-picker">
       <label htmlFor="simulator-activity">{template?.game === "tetrilogic" ? "Tablero del curso" : "Reto del curso"}</label>
-      <select id="simulator-activity" value={activity?.idActivity ?? ""} onChange={e => setSearch({ activity: e.target.value })}>
+      <select id="simulator-activity" value={activity?.idActivity ?? ""} onChange={event => setSearch({ activity: event.target.value })}>
         {!activity && <option value="" disabled>Selecciona un reto</option>}
-        {courseData.activities.map(a => <option key={a.idActivity} value={a.idActivity}>{activityDisplayName(a)}{resolveActivityLevel(a) ? "" : " · tablero pendiente"}</option>)}
+        {challenges.map(item => <option key={item.activity.idActivity} value={item.activity.idActivity}
+          disabled={item.access === "locked" || item.access === "unconfirmed"}>
+          {activityDisplayName(item.activity)}{item.access === "pending" ? " · tablero pendiente" : item.access === "locked" ? " · bloqueado" : item.access === "unconfirmed" ? " · progreso por confirmar" : ""}
+        </option>)}
       </select>
-    </div> : null}
-    {activity && template ? template.game === "neonflow"
-      ? template.config.version === 2
-        ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
-        : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
-      : template.config.version === 2
-        ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} />
-        : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
-      : <div className="mx-auto max-w-2xl rounded-xl border border-border bg-surface p-8 text-center space-y-4">
-        <h1 className="text-xl font-bold">{notice.title}</h1>
-        <p role={courseData?.error ? "alert" : "status"} className="text-text-muted">{notice.message}</p>
-        <div className="flex flex-wrap justify-center gap-3">
-          {courseData?.error && <button className="btn-secondary" onClick={() => setRetry(r => r + 1)}>Reintentar</button>}
-          {showConfigure && <Link to="/docente/retos" state={{ courseId }} className="btn-premium">{courseData?.activities.length ? "Configurar tablero" : "Crear un reto"}</Link>}
-          <Link to="/" className="btn-secondary">Ver mis cursos</Link>
-        </div>
-      </div>}
+    </div>}
+    {activity && template && available
+      ? template.game === "neonflow"
+        ? template.config.version === 2
+          ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} />
+          : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+        : template.config.version === 2
+          ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} />
+          : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+      : locked || unconfirmed ? <section className={noticeClass}>
+        <h1 className="flex items-center justify-center gap-2 text-xl font-bold">
+          {locked && <LockKeyhole size={20} aria-hidden="true" />}
+          {locked ? "Nivel bloqueado" : "Progreso por confirmar"}
+        </h1>
+        {locked && <p className="text-text-muted">Completa el nivel anterior para jugar este reto.</p>}
+        <Link to="/" className="btn-secondary">Ver mis cursos</Link>
+      </section> : <section className={noticeClass}>
+      <h1 className="text-xl font-bold">{activity
+        ? "Este reto aún no está listo para jugar"
+        : activityId ? "No encontramos este reto" : "Este curso aún no tiene retos"}</h1>
+      <p role="status" className="text-text-muted">{activity
+        ? canManage ? "Edita la actividad y selecciona Tablero del reto." : "El tablero aún está pendiente de configuración por parte de tu docente."
+        : activityId ? "El reto ya no está disponible o no pertenece a este curso." : canManage ? "Añade un reto y asígnale un tablero." : "Tu docente todavía no ha añadido retos a este curso."}</p>
+      {activity && <p>{activityDisplayName(activity)}{activity.description && ` · ${activity.description}`}</p>}
+      <div className="flex flex-wrap justify-center gap-3">
+        {manage}
+        <Link to="/" className="btn-secondary">Ver mis cursos</Link>
+      </div>
+    </section>}
   </div>;
-};
+}

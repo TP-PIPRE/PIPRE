@@ -1,46 +1,15 @@
 package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.commands.RegisterCourseCommand;
-import com.pipre.backend.application.ports.output.CourseRepositoryPort;
-import com.pipre.backend.domain.entities.course.CourseLevel;
-
-import org.junit.jupiter.api.DisplayName;
+import com.pipre.backend.domain.exceptions.BusinessException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ExtendWith(MockitoExtension.class)
 class CreateCourseServiceTest {
-
-    @Mock
-    private CourseRepositoryPort courseRepositoryPort;
-
-    @InjectMocks
-    private CreateCourseService createCourseService;
-
     @Test
-    @DisplayName("Debería crear un curso exitosamente")
-    void shouldCreateCourseSuccessfully() {
-        // Arrange
-        RegisterCourseCommand cmd = new RegisterCourseCommand(
-                "Robótica Educativa",
-                "Descripción del curso",
-                "low");
-
-        // Act
-        String courseId = createCourseService.execute(cmd);
-
-        // Assert
-        assertNotNull(courseId);
-
-        // Verificamos que se guardó un objeto Course con los datos correctos
-        verify(courseRepositoryPort, times(1)).save(argThat(course -> course.getName().equals("Robótica Educativa") &&
-                course.getLevel() == CourseLevel.LOW &&
-                course.getIdCourse().equals(courseId)));
+    void rejectsCreatingCoursesOutsideTheOfficialCatalog() {
+        var request = new RegisterCourseCommand("Robótica Educativa", "Descripción del curso", "LOW");
+        assertThrows(BusinessException.class, () -> new CreateCourseService().execute(request));
     }
 }

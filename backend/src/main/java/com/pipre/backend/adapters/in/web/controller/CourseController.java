@@ -40,8 +40,8 @@ public class CourseController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Crear un nuevo curso")
-    @ApiResponse(responseCode = "201", description = "Curso creado exitosamente")
+    @Operation(summary = "Solicitud de creación de curso (catálogo cerrado)")
+    @ApiResponse(responseCode = "400", description = "El catálogo solo admite los cursos oficiales")
     public ResponseEntity<Void> postCourse(@RequestBody RegisterCourseCommand requestDTO) {
         createCourseUseCase.execute(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -61,6 +61,7 @@ public class CourseController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Eliminar un curso existente")
     @ApiResponse(responseCode = "204", description = "Curso eliminado exitosamente")
+    @ApiResponse(responseCode = "400", description = "El curso es parte del catálogo oficial")
     public ResponseEntity<Void> deleteCourse(@PathVariable String idCourse) {
         deleteCourseUseCase.execute(idCourse);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
