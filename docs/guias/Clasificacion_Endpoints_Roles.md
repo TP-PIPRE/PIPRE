@@ -26,7 +26,8 @@ La regla pública `/api/v1/auth/**` no implica que exista cualquier endpoint baj
 | Método / recurso | STUDENT | TEACHER | ADMIN |
 |---|---|---|---|
 | GET `/courses` | Sí | Asignados | Sí |
-| POST `/courses`; PUT/PATCH/DELETE `/courses/{idCourse}` | No | No | Sí |
+| PUT/PATCH `/courses/{idCourse}` | No | No | Sí |
+| POST `/courses`; DELETE `/courses/{idCourse}` | No | No | La API rechaza crear cursos o eliminar los oficiales |
 | GET `/modules/course/{idCourse}` | Sí | Asignado | Sí |
 | POST `/modules`; DELETE `/modules/{idModule}` | No | Asignado | Sí |
 | GET `/lessons/module/{idModule}` | Sí | Asignado | Sí |

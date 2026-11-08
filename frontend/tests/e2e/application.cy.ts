@@ -160,6 +160,8 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
           const course=game==="neonflow"?"c001":"c002",activity=game==="neonflow"?"act-c001-v2-1":"act-c002-1";
           cy.visit(`/simulador/${course}?activity=${activity}`);
           cy.task<Placement[]>("officialWitness",game).then(placements=>completeBoard(game,placements));
+          cy.contains("button","Siguiente reto").click();
+          cy.location("search").should("eq",game==="neonflow"?"?activity=act-c001-v2-2":"?activity=act-c002-2");
         }
         cy.task<Snapshot>("databaseSnapshot",id).then(after=>{
           expect(after.levels).to.eq(before.levels+2);expect(after.xp).to.eq(before.xp+100);expect(after.xpEntries).to.eq(before.xpEntries+1);
@@ -229,7 +231,7 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
         cy.intercept("POST","**/api/v1/game-sessions/*/complete",request=>{
           if(++completions===1)request.headers["x-xsrf-token"]="stale-audit-token";
         }).as("completeTetri");
-        cy.visit("/simulador/c002?activity=act-c002-7");
+        cy.visit("/simulador?level=7");
         cy.task<Placement[]>("officialWitness",{game:"tetrilogic",levelNumber:7}).then(placements=>completeBoard("tetrilogic",placements));
         cy.wait("@completeTetri").its("response.body.code").should("eq","CSRF_INVALID");
         cy.wait("@completeTetri").its("response.statusCode").should("eq",200);
@@ -251,7 +253,7 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
         cy.visit("/simulador");
         cy.get('select[aria-label="Seleccionar tablero"]').select("1");
         cy.location("search").should("eq","?level=2");
-      } else cy.visit("/simulador/c001?activity=act-c001-v2-2");
+      } else cy.visit("/simulador/neonflow?level=2");
       cy.wait(`@${recovery}`);
       cy.task<Placement[]>("officialWitness",{game,levelNumber:2}).then(placements=>{
         const first=placements[0];

@@ -2,6 +2,8 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.ports.input.DeleteCourseUseCase;
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
+import com.pipre.backend.domain.entities.course.Course;
+import com.pipre.backend.domain.exceptions.BusinessException;
 import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,9 @@ public class DeleteCourseService implements DeleteCourseUseCase {
     @Override
     @Transactional
     public void execute(String idCourse) {
+        if (Course.isOfficial(idCourse)) {
+            throw new BusinessException("Los cursos oficiales no se pueden eliminar.");
+        }
         courseRepositoryPort.findById(idCourse)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró el curso con ID: " + idCourse));
         courseRepositoryPort.deleteById(idCourse);

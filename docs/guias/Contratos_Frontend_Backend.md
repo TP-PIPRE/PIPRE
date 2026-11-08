@@ -17,8 +17,11 @@ Las colecciones paginadas se recorren al pedir todos sus elementos. No asumir qu
 | `levelTemplate` | Identidad de una configuración implementada y registrada en ambas capas. |
 | `description`, `displayOrder`, `missions` | Se guardan y recargan; el orden, si se proporciona, es entero positivo. Los campos omitidos en actualización parcial se preservan. |
 | `startingPosition`, `targetPosition`, misiones | Metadatos del contrato existente; no configuran por sí solos la geometría del simulador. |
-| POST cursos/módulos/lecciones/actividades | Conservan respuestas 201 sin cuerpo donde están implementadas; recargar para recuperar los IDs. Registro de usuario tiene su propio contrato de respuesta. |
+| POST módulos/lecciones/actividades | Conservan respuestas 201 sin cuerpo donde están implementadas; recargar para recuperar los IDs. |
+| Catálogo de cursos | V27 conserva Neon Flow (`c001`) y TetriLogic (`c002`). La API rechaza la creación de cursos y la eliminación de los oficiales con 400. El administrador puede editar sus metadatos. |
 | `/simulador/:courseId?activity=:idActivity` | Comprueba pertenencia al curso y resuelve esa actividad. |
+
+El catálogo señala los niveles bloqueados con un candado. Para jugar una actividad de curso de nivel superior a 1, el estudiante debe tener una victoria verificada en el nivel anterior del mismo juego. El simulador vuelve a consultar ese progreso después de una victoria confirmada y ofrece el siguiente nivel disponible. La práctica independiente, el diario y la prueba local de docentes y administradores tienen sus propios flujos.
 
 Las plantillas oficiales son `neonflow-v2-1`…`30` y `tetrilogic-v2-1`…`30`. Los alias/prototipos se detallan en el [estado actual](../ESTADO_ACTUAL.md) y no cuentan como otros retos. Una plantilla desconocida no recibe un tablero alternativo por defecto.
 
@@ -65,7 +68,7 @@ El canal anterior conserva su naturaleza declarativa. Desde el 02/11 existe adem
 | GET `/profile/{id}/achievements` | Exactamente 35 logros activos, condición, estado y fecha; excluye el catálogo histórico. |
 | GET `/profile/{id}/achievements/export?from=...&to=...` | 35 estados binarios actuales y nuevos dentro del periodo inclusivo en Lima. |
 
-Las tres escrituras de sesión sólo admiten al estudiante propietario. Las lecturas personales admiten propietario, administrador o docente con estudiante asignado. Los usuarios con roles de gestión permanecen en vista previa y no reciben recompensas estudiantiles. Ninguna ruta permite asignar un logro arbitrario. Ver campos, errores, rúbrica e idempotencia en [Sistema de 35 logros](Sistema_35_Logros.md); los DTO TypeScript están en [gameProgressModels.ts](../../frontend/src/infrastructure/api/models/gameProgressModels.ts).
+Las tres escrituras de sesión sólo admiten al estudiante propietario. Las lecturas personales admiten propietario, administrador o docente con estudiante asignado. Los usuarios con roles de gestión pueden probar los tableros localmente y no reciben recompensas estudiantiles. Ninguna ruta permite asignar un logro arbitrario. Ver campos, errores, rúbrica e idempotencia en [Sistema de 35 logros](Sistema_35_Logros.md); los DTO TypeScript están en [gameProgressModels.ts](../../frontend/src/infrastructure/api/models/gameProgressModels.ts).
 
 El historial diferencia `SERVER_VERIFIED` y `LEGACY_DECLARED`. Los recibos nuevos incluyen puntos calculados por el servidor; una victoria anterior sin recibo conserva score nulo, sin recalificarla. Fecha, XP y eficiencia desconocidos conservan null. `dateAttempted`, cuando existe, es una cadena ISO; los registros verificados incluyen `Z`, los anteriores conservan su fecha local sin atribuir una zona nueva. Las estrellas y XP nuevos proceden del recibo/ledger servidor. El ranking suma los mejores puntos verificados por ejercicio y se ordena por esa suma; los datos declarados antiguos no lo alimentan. XP, estrellas y rachas no se multiplican por membresías. [Fórmula, identidades y bono diario](Puntaje_Ranking_Acceso.md).
 

@@ -1,5 +1,6 @@
 import axiosInstance from "./axiosInstance";
 import { API_ENDPOINTS } from "./endpoints";
+import { isOfficialCourse } from "../../shared/constants/officialCourses";
 import type {
   UserRequestDTO,
   UserResponseDTO,
@@ -96,16 +97,11 @@ export const apiService = {
   },
   courses: {
     getAll: async (pageable?: Pageable) => {
-      return readCollection<CourseResponseDTO>(API_ENDPOINTS.COURSES, pageable);
-    },
-    create: async (data: CourseRequestDTO) => {
-      await axiosInstance.post(API_ENDPOINTS.COURSES, data);
+      const courses = await readCollection<CourseResponseDTO>(API_ENDPOINTS.COURSES, pageable);
+      return courses.filter(course => isOfficialCourse(course.idCourse));
     },
     update: async (data: CourseRequestDTO & { idCourse: string }) => {
       await axiosInstance.put(API_ENDPOINTS.COURSE_BY_ID(data.idCourse), data);
-    },
-    delete: async (id: string) => {
-      await axiosInstance.delete(API_ENDPOINTS.COURSE_BY_ID(id));
     },
   },
   modules: {

@@ -2,6 +2,7 @@ package com.pipre.backend.application.useCases;
 
 import com.pipre.backend.application.ports.output.CourseRepositoryPort;
 import com.pipre.backend.domain.entities.course.Course;
+import com.pipre.backend.domain.exceptions.BusinessException;
 import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,13 @@ class DeleteCourseServiceTest {
 
     @InjectMocks
     private DeleteCourseService deleteCourseService;
+
+    @Test
+    void rejectsDeletingEitherOfficialCourse() {
+        assertThrows(BusinessException.class, () -> deleteCourseService.execute("c001"));
+        assertThrows(BusinessException.class, () -> deleteCourseService.execute("c002"));
+        verifyNoInteractions(courseRepositoryPort);
+    }
 
     @Test
     @DisplayName("Debería eliminar un curso si existe")

@@ -1,5 +1,6 @@
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 import { NEONFLOW_LEVELS, LEGACY_NEONFLOW_LEVELS, TETRILOGIC_LEVELS, LEGACY_TETRILOGIC_LEVELS } from "../../shared/constants/levelConfigs";
+import type { LevelProgressDTO } from "../../infrastructure/api/models/gameProgressModels";
 
 export const LEVEL_TEMPLATES = [
   ...NEONFLOW_LEVELS.map(config => ({ id: config.templateId!, game: "neonflow" as const, label: `Neon Flow · ${config.level}. ${config.width} × ${config.height}`, config })),
@@ -13,6 +14,20 @@ export const LEVEL_TEMPLATES = [
 
 export function resolveActivityLevel(activity: ActivityResponseDTO) {
   return LEVEL_TEMPLATES.find(t => t.id === activity.levelTemplate && t.game === activity.environment);
+}
+
+export function challengeAccess(template: ReturnType<typeof resolveActivityLevel>, levels?: LevelProgressDTO[], checking = false) {
+  if (!template) return "pending";
+  if (template.config.level === 1) return "available";
+  if (!levels) return "unconfirmed";
+  if (levels.some(level => level.game === template.game && level.levelNumber === template.config.level - 1 && level.completed)) return "available";
+  return checking ? "unconfirmed" : "locked";
+}
+
+export function activityDescription(activity: ActivityResponseDTO, template: ReturnType<typeof resolveActivityLevel>) {
+  if (template?.game !== "tetrilogic") return activity.description ?? "";
+  const { cols, rows } = template.config.boardSize;
+  return `${cols} × ${rows} · Iguala los objetivos de filas y columnas.`;
 }
 
 export function activityDisplayName(activity: ActivityResponseDTO) {

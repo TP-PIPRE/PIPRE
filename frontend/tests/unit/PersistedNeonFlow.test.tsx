@@ -10,6 +10,7 @@ import { useGameStore } from "../../src/infrastructure/store/gameStore";
 
 vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { get: vi.fn(), post: vi.fn().mockResolvedValue({ status: 201 }) } }));
+vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: () => ({ user: { id: "teacher", role: "docente" } }) }));
 afterEach(() => { cleanup(); useGameStore.getState().stopGame(); vi.clearAllMocks(); });
 const activity = { idActivity: "neon30", name: "Neon elegido", environment: "neonflow", levelTemplate: "neonflow-v2-30" };
 const envelope = (config: (typeof NEONFLOW_LEVELS)[number]) => ({ data: { templateId: config.templateId, version: 2, config } });
@@ -87,7 +88,7 @@ describe("Persisted Neon Flow integration", () => {
     ]);
     vi.mocked(axiosInstance.get).mockImplementation(async url => url.startsWith("neonflow/")
       ? envelope(neon) : { data: { templateId: tetri.templateId, version: 2, config: tetri } });
-    render(<MemoryRouter initialEntries={["/simulador/mixed-course?activity=neon30"]}><Routes><Route path="/simulador/:courseId" element={<Simulador />} /></Routes></MemoryRouter>);
+    render(<MemoryRouter initialEntries={["/simulador/c001?activity=neon30"]}><Routes><Route path="/simulador/:courseId" element={<Simulador />} /></Routes></MemoryRouter>);
     await screen.findByRole("heading", { name: activity.name });
     expect(axiosInstance.get).toHaveBeenCalledWith("neonflow/templates/neonflow-v2-30", { signal: expect.any(AbortSignal) });
     fireEvent.change(screen.getByLabelText("Reto del curso"), { target: { value: "tetri1" } });

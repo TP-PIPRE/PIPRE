@@ -8,6 +8,10 @@ import java.util.Objects;
 
 public class Course {
 
+    public static boolean isOfficial(String idCourse) {
+        return "c001".equals(idCourse) || "c002".equals(idCourse);
+    }
+
     private final String idCourse;
     private final String name;
     private final String description;
