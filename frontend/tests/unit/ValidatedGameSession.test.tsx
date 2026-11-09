@@ -17,7 +17,7 @@ import axiosInstance from "../../src/infrastructure/api/axiosInstance";
 import tetriSolutions from "../fixtures/tetrilogicSolutions.json";
 
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
-vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn(), progress: vi.fn() } }));
+vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn(), hint: vi.fn(), progress: vi.fn() } }));
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { get: vi.fn(), post: vi.fn().mockResolvedValue({ status: 201 }) } }));
 vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 const sessions = new Map<string, GameSessionDTO>();
@@ -31,6 +31,7 @@ beforeEach(() => {
   vi.mocked(gameProgressService.start).mockImplementation(async value => { const session = sessionDTO(value); sessions.set(session.sessionId, session); return session; });
   vi.mocked(gameProgressService.action).mockImplementation(async (id, action) => { const session = { ...sessions.get(id)!, revision: action.sequence }; sessions.set(id, session); return session; });
   vi.mocked(gameProgressService.complete).mockImplementation(async id => victoryDTO(id));
+  vi.mocked(gameProgressService.hint).mockResolvedValue({ requestId: crypto.randomUUID(), hintId: crypto.randomUUID(), revision: 0, source: "RULE_BASED", hintLevel: 1, type: "COLOR_HINT", message: "Observa el filtro del haz.", targetCell: { x: 1, y: 1 } });
 });
 afterEach(async () => { cleanup(); useGameStore.getState().stopGame(); await act(async () => {}); });
 const openNeon = () => render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} /></MemoryRouter>);
@@ -119,6 +120,15 @@ describe("Official course progression and access", () => {
 });
 
 describe("Server-confirmed game sessions", () => {
+  it("requests a contextual hint at the confirmed revision and queues one HELP action", async () => {
+    openNeon();
+    await screen.findByLabelText("Tablero Neon Flow");
+    fireEvent.click(screen.getByRole("button", { name: "Pista" }));
+    await screen.findByText("Observa el filtro del haz.");
+    expect(gameProgressService.hint).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ revision: 0, locale: "es" }));
+    await waitFor(() => expect(gameProgressService.action).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ type: "HELP", hintId: expect.any(String), sequence: 1 })));
+  });
+
   it("uses the selected practice board from the URL when recovering a session",async()=>{
     const second={...context(),levelTemplate:"neonflow-v2-2"};
     const saved=sessionDTO(second);saved.levelNumber=2;saved.revision=1;saved.state.pieces=[{type:"MIRROR_90",x:1,y:2,rotation:0}];

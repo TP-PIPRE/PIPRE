@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
-import type { DailySetDTO, DailyChallengeDTO, GameAction, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "./models/gameProgressModels";
+import type { DailySetDTO, DailyChallengeDTO, GameAction, GameHintRequest, GameHintResponse, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "./models/gameProgressModels";
 
 export const gameProgressService = {
   active: async (context:GameSessionContext):Promise<GameSessionDTO|null> => {
@@ -10,6 +10,8 @@ export const gameProgressService = {
     (await axiosInstance.post<GameSessionDTO>("game-sessions", { ...context, clientSessionId })).data,
   action: async (sessionId: string, action: GameAction & { sequence: number }): Promise<GameSessionDTO> =>
     (await axiosInstance.post<GameSessionDTO>(`game-sessions/${encodeURIComponent(sessionId)}/actions`, action)).data,
+  hint: async (sessionId: string, request: GameHintRequest): Promise<GameHintResponse> =>
+    (await axiosInstance.post<GameHintResponse>(`game-sessions/${encodeURIComponent(sessionId)}/hints`, request, { timeout: 1500 })).data,
   complete: async (sessionId: string): Promise<GameVictoryDTO> =>
     (await axiosInstance.post<GameVictoryDTO>(`game-sessions/${encodeURIComponent(sessionId)}/complete`)).data,
   dailySet: async (studentId: string, signal?: AbortSignal): Promise<DailySetDTO> =>

@@ -11,6 +11,7 @@ import com.pipre.backend.domain.entities.activity.Activity;
 import com.pipre.backend.domain.entities.game.*;
 import com.pipre.backend.domain.entities.gamification.AchievementRules.LevelProgress;
 import com.pipre.backend.domain.exceptions.BusinessException;
+import com.pipre.backend.infrastructure.configuration.TutorPilotProperties;
 import org.junit.jupiter.api.*;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,8 +29,10 @@ class GameSessionsServiceTest {
     private final RecordVerifiedVictoryUseCase victories=mock(RecordVerifiedVictoryUseCase.class);
     private final AcademicAccessRepositoryPort academicAccess=mock(AcademicAccessRepositoryPort.class);
     private final GamificationRepositoryPort gamification=mock(GamificationRepositoryPort.class);
+    private final GameSessionHintRepositoryPort hintReceipts=mock(GameSessionHintRepositoryPort.class);
+    private final TutorPilotProperties tutorProperties=new TutorPilotProperties();
     private final MutableClock clock=new MutableClock();
-    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification);
+    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification,hintReceipts,tutorProperties);
     @BeforeEach void setup() throws Exception {
         JsonNode catalog=json.readTree(getClass().getResourceAsStream("/catalog/neonflow-v2.json"));
         for(JsonNode config:catalog) {

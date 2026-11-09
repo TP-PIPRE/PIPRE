@@ -1,10 +1,13 @@
 package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.application.commands.GameSessionAction;
+import com.pipre.backend.application.commands.RequestGameHintCommand;
 import com.pipre.backend.application.commands.StartGameSessionCommand;
 import com.pipre.backend.application.dto.GameCompletionDTO;
+import com.pipre.backend.application.dto.GameHintDTO;
 import com.pipre.backend.application.dto.GameSessionDTO;
 import com.pipre.backend.application.ports.input.GameSessionsUseCase;
+import com.pipre.backend.application.ports.input.RequestGameHintUseCase;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class GameSessionController {
     private final GameSessionsUseCase sessions;
+    private final RequestGameHintUseCase hints;
     private final UserRepositoryPort users;
 
     @GetMapping("/active")
@@ -42,6 +46,13 @@ public class GameSessionController {
     @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER')")
     public ResponseEntity<GameCompletionDTO> complete(@PathVariable String sessionId,Authentication authentication) {
         return ResponseEntity.ok(sessions.complete(current(authentication),sessionId));
+    }
+    @PostMapping("/{sessionId}/hints")
+    @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER')")
+    public ResponseEntity<GameHintDTO> hint(@PathVariable String sessionId,
+                                            @Valid @RequestBody RequestGameHintCommand request,
+                                            Authentication authentication) {
+        return ResponseEntity.ok(hints.execute(current(authentication), sessionId, request));
     }
     private String current(Authentication authentication) {
         return users.findByEmail(authentication.getName()).orElseThrow(()->new AccessDeniedException("Inicia sesión como estudiante.")).getIdUser();

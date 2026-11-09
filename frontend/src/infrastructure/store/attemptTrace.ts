@@ -4,7 +4,7 @@ import { getAuthState } from './authStore';
 
 export type TraceState = Array<{id?:string;type:string;x:number;y:number;rotation?:number;color?:string}>;
 export type TraceAction = 'SELECT'|'PLACE'|'ROTATE'|'RETURN'|'RESET'|'CHECK'|'HELP'|'REJECT'|'CANCEL'|'COMPLETE'|'ABANDON';
-export type TraceData = Partial<{pieceId:string;pieceType:string;x:number;y:number;rotation:number;component:string;color:string;errorCode:string;source:string;matched:boolean}>;
+export type TraceData = Partial<{pieceId:string;pieceType:string;x:number;y:number;rotation:number;component:string;color:string;errorCode:string;source:string;hintId:string;hintLevel:number;type:string;matched:boolean}>;
 export interface TraceContext { game:'neonflow'|'tetrilogic'; activityId?:string; levelTemplate:string; templateVersion:number; ruleset:string }
 export interface TracePayload {
   studentId:string;game:string;result:'SUCCESS'|'FAILED'|'ABANDONED';tiempoResolucion:number;movimientos:number;reinicios:number;pistasIa:number;completedAt:string;
@@ -12,16 +12,23 @@ export interface TracePayload {
 }
 const storageKey='pipre.attempt-outbox.v1';
 const pending=new Map<string,TracePayload>();
-let restored=false, flushing=false;
+let restored=false, flushing=false, flushQueued=false;
 let pageExiting=false;
 export function markTracePageExit(value:boolean) { pageExiting=value; }
-function persist() { try { sessionStorage.setItem(storageKey,JSON.stringify([...pending])); } catch { /* In-memory retry remains available if storage is full/disabled. */ } }
+function persist() {
+  try { localStorage.setItem(storageKey,JSON.stringify([...pending])); }
+  catch { try { sessionStorage.setItem(storageKey,JSON.stringify([...pending])); } catch { /* In-memory retry remains available if storage is unavailable. */ } }
+}
 function restore() {
   if(restored)return;restored=true;
-  try { const entries:unknown=JSON.parse(sessionStorage.getItem(storageKey)??'[]');if(Array.isArray(entries))for(const entry of entries)if(Array.isArray(entry)&&typeof entry[0]==='string'&&entry[1]?.trace?.clientAttemptId)pending.set(entry[0],entry[1]); } catch { /* Invalid local cache never changes a game. */ }
+  try {
+    const raw=localStorage.getItem(storageKey)??sessionStorage.getItem(storageKey)??'[]';
+    const entries:unknown=JSON.parse(raw);
+    if(Array.isArray(entries))for(const entry of entries)if(Array.isArray(entry)&&typeof entry[0]==='string'&&entry[1]?.trace?.clientAttemptId)pending.set(entry[0],entry[1]);
+  } catch { /* Invalid local cache never changes a game. */ }
 }
 export async function flushAttemptOutbox() {
-  restore();if(flushing)return;flushing=true;
+  restore();if(flushing){flushQueued=true;return;}flushing=true;
   try {
     for(const [key,payload] of pending) {
       const user=getAuthState().user;if(user?.id!==payload.studentId||user.role!=='student')continue;
@@ -35,7 +42,10 @@ export async function flushAttemptOutbox() {
         break; // Offline, server or session failure: retry the same request later.
       }
     }
-  } finally { flushing=false; }
+  } finally {
+    flushing=false;
+    if(flushQueued){flushQueued=false;window.setTimeout(()=>void flushAttemptOutbox(),1000);}
+  }
 }
 function enqueue(payload:TracePayload) { restore();pending.set(`${payload.studentId}:${payload.trace.clientAttemptId}`,payload);persist();void flushAttemptOutbox(); }
 
@@ -60,7 +70,7 @@ export class AttemptTrace {
     const {game,...context}=this.context;
     this.send({studentId:this.studentId,game,result,tiempoResolucion:Math.floor(elapsed/1000),
       movimientos:this.events.filter(e=>['PLACE','ROTATE','RETURN'].includes(e.type)).length,
-      reinicios:this.events.filter(e=>e.type==='RESET').length,pistasIa:this.events.filter(e=>e.type==='HELP'&&e.data.source==='AI').length,
+       reinicios:this.events.filter(e=>e.type==='RESET').length,pistasIa:this.events.filter(e=>e.type==='HELP').length,
       completedAt:new Date(this.startedAt+elapsed).toISOString(),trace:{...context,clientAttemptId:this.id,startedAt:new Date(this.startedAt).toISOString(),initialState:this.initial,finalState:this.current,droppedEvents:this.dropped,events:structuredClone(this.events)}});
   }
 }

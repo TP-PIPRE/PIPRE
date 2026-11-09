@@ -39,6 +39,7 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
   const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null,initialTrace);
   const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));
   const trackedDispatch=(action:FreePlayAction)=>{
+    if((gameSession.verifying || gameSession.state?.victory) && action.type !== 'reset')return;
     const next=freePlayReducer(state,action);
     if(action.type==='select')record('SELECT',action.id?{pieceId:action.id}:{});
     else if(action.type==='reset'){record('RESET',{},snapshot(state.pieces),snapshot(next.pieces));gameSession.reset();}
@@ -64,10 +65,13 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
   const pieceNumbers = Object.fromEntries(state.pieces.map((p, i) => [p.id, i + 1]));
   const selected = state.pieces.find(p => p.id === state.selectedId);
   const changed = state.pieces.some(p => isPlaced(p) || p.rotation !== 0);
-  const completed = lineGoalsMet(level, state.pieces);
-  useEffect(()=>{if(completed)finish('SUCCESS');},[completed,finish]);
-  const confirmVictory=gameSession.complete;
-  useEffect(()=>{if(completed)confirmVictory();},[completed,confirmVictory]);
+   const completed = lineGoalsMet(level, state.pieces);
+   const confirmVictory=gameSession.complete;
+   useEffect(()=>{
+     if(!completed)return;
+     if(!gameSession.enabled){finish('SUCCESS');return;}
+     void confirmVictory().then(victory=>{if(victory)finish('SUCCESS');});
+   },[completed,confirmVictory,finish,gameSession.enabled]);
   if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"TetriLogic"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
   return <main className="lab-shell tetri-free" {...rootEvents} onKeyDown={event => {
     if (!confirmReset) rootEvents.onKeyDown(event);

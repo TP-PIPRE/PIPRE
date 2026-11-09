@@ -115,6 +115,61 @@ public final class BoardRules {
     public static boolean isSolved(String game,JsonNode config,JsonNode state) {
         return game.equals("tetrilogic")?solvedTetri(config,state.path("pieces")):solvedNeon(config,state.path("pieces"));
     }
+
+    public static NeonHintDiagnosis diagnoseNeon(JsonNode config, JsonNode state) {
+        if (solvedNeon(config, state.path("pieces"))) {
+            return new NeonHintDiagnosis("SOLVED", "RULE_HINT", null, null, true);
+        }
+        int width = config.path("width").asInt();
+        int height = config.path("height").asInt();
+        Map<Integer, JsonNode> cells = new HashMap<>();
+        for (JsonNode block : config.path("blocked")) {
+            cells.put(block.path("y").asInt() * width + block.path("x").asInt(), JSON.objectNode().put("type", "BLOCK"));
+        }
+        for (JsonNode receptor : config.path("receptors")) {
+            cells.put(receptor.path("position").path("y").asInt() * width + receptor.path("position").path("x").asInt(),
+                    JSON.objectNode().put("type", "RECEPTOR").put("color", receptor.path("color").asText()));
+        }
+        for (JsonNode piece : state.path("pieces")) {
+            cells.put(piece.path("y").asInt() * width + piece.path("x").asInt(), piece);
+        }
+        JsonNode emitter = config.path("emitter");
+        String color = emitter.path("color").asText();
+        int x = emitter.path("position").path("x").asInt();
+        int y = emitter.path("position").path("y").asInt();
+        int dx = emitter.path("direction").path("dx").asInt();
+        int dy = emitter.path("direction").path("dy").asInt();
+        Set<String> visited = new HashSet<>();
+        for (int step = 0; step < width * height * 4; step++) {
+            if (x < 0 || y < 0 || x >= width || y >= height) break;
+            if (!visited.add(x + ":" + y + ":" + dx + ":" + dy)) {
+                return new NeonHintDiagnosis("CYCLIC_PATH", "POSITION_HINT", x, y, false);
+            }
+            JsonNode current = cells.get(y * width + x);
+            if (current != null) {
+                String type = current.path("type").asText();
+                if (type.equals("BLOCK")) return new NeonHintDiagnosis("BLOCKED_PATH", "POSITION_HINT", x, y, false);
+                if (type.equals("FILTER") && !current.path("color").asText().equals(color)) {
+                    return new NeonHintDiagnosis("FILTER_COLOR_MISMATCH", "COLOR_HINT", x, y, false);
+                }
+                if (type.equals("RECEPTOR")) {
+                    return new NeonHintDiagnosis("UNLIT_RECEPTOR", "POSITION_HINT", x, y, false);
+                }
+                if (type.equals("MIRROR_90")) {
+                    boolean slash = current.path("rotation").asInt() % 180 == 0;
+                    int nextX = slash ? -dy : dy;
+                    dy = slash ? -dx : dx;
+                    dx = nextX;
+                }
+            }
+            x += dx;
+            y += dy;
+        }
+        JsonNode firstReceptor = config.path("receptors").isEmpty() ? null : config.path("receptors").get(0).path("position");
+        return new NeonHintDiagnosis("UNLIT_RECEPTOR", "POSITION_HINT",
+                firstReceptor == null ? null : firstReceptor.path("x").asInt(),
+                firstReceptor == null ? null : firstReceptor.path("y").asInt(), false);
+    }
     private static int[][] shape(String type,int rotation) {
         int[][] definition=SHAPES.get(type);if(definition==null)return null;
         int[][] shape=Arrays.stream(definition).map(int[]::clone).toArray(int[][]::new);

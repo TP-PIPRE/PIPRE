@@ -12,7 +12,12 @@ export interface GameSessionDTO {
 }
 export interface GameAction {
   type: "PLACE" | "ROTATE" | "RETURN" | "RESET" | "HELP" | "CHECK" | "REJECT";
-  pieceId?: string; x?: number; y?: number; rotation?: number; component?: string; color?: string; source?: string;
+  pieceId?: string; x?: number; y?: number; rotation?: number; component?: string; color?: string; source?: string; hintId?: string;
+}
+export interface GameHintRequest { requestId: string; revision: number; locale: string; }
+export interface GameHintResponse {
+  requestId: string; hintId: string; revision: number; source: "RULE_BASED" | "GENERATIVE" | "STATIC";
+  hintLevel: 1 | 2 | 3; type: string; message: string; targetCell?: { x: number; y: number } | null;
 }
 export interface DailyChallengeDTO {
   id: string; date: string; timeZone: "America/Lima"; game: SimulatorGame; levelNumber: number; levelTemplate: string;

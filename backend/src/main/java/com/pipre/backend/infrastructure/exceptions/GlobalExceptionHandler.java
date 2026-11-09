@@ -1,6 +1,7 @@
 package com.pipre.backend.infrastructure.exceptions;
 
 import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
+import com.pipre.backend.domain.exceptions.GameHintStaleException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +33,15 @@ public class GlobalExceptionHandler {
         body.put("message", ex.getMessage());
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(GameHintStaleException.class)
+    public ResponseEntity<Map<String, Object>> handleStaleGameHint(GameHintStaleException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "code", "HINT_STALE",
+                "message", ex.getMessage(),
+                "requestedRevision", ex.getRequestedRevision(),
+                "currentRevision", ex.getCurrentRevision()));
     }
 
     @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,

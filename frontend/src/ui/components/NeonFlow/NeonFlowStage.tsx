@@ -85,6 +85,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
   };
 
   const handleComponentDrop = (cell: Cell, component: OpticalComponent) => {
+    if(gameSession.verifying || gameSession.state?.victory)return;
     if(cell.x===level.emitter.position.x&&cell.y===level.emitter.position.y){record('REJECT',{errorCode:'EMITTER_RESERVED'});gameSession.action({type:"REJECT"});return;}
     if(status!=='PLAYING')startGame('neonflow',{telemetry:false});
     const patch=component.type==='MIRROR_90'?{type:'MIRROR_90' as const,rotation:0 as const}:{type:'FILTER' as const,color:component.color};
@@ -101,6 +102,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
   };
 
   const handleRotateComponent = (cell: Cell) => {
+    if(gameSession.verifying || gameSession.state?.victory)return;
     if(status!=='PLAYING')startGame('neonflow',{telemetry:false});
     const rotation=(((cell.rotation??0)+90)%360) as RotationAngle;
     const next={...grid,cells:grid.cells.map(c=>c.x===cell.x&&c.y===cell.y?{...c,rotation}:c)};
@@ -113,6 +115,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
   };
 
   const handleCheck = () => {
+    if(gameSession.verifying || gameSession.state?.victory)return;
     const path = raycast(
       grid,
       level.emitter.position,
@@ -126,9 +129,12 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
     gameSession.action({type:"CHECK"});
     setFeedback(allLit ? "¡Todos los receptores están iluminados!" : "El haz aún no llega a todos los receptores. Revisa los espejos y vuelve a comprobar.");
     if (allLit) {
-      completeGame("SUCCESS");
-      finish("SUCCESS");
-      gameSession.complete();
+      void (async () => {
+        const victory = gameSession.enabled ? await gameSession.complete() : true;
+        if (!victory) return;
+        completeGame("SUCCESS");
+        finish("SUCCESS");
+      })();
     }
   };
 
@@ -181,7 +187,20 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
           resetForLevel(currentLevelIndex);
         }}
         hintKind="static" hintCount={staticHints}
-        onHint={() => {record("HELP",{source:"STATIC"});gameSession.action({type:"HELP",source:"STATIC"});setStaticHints(n=>n+1);setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");}}
+         onHint={() => {
+           const fallback = () => {
+             record("HELP",{source:"STATIC"});
+             gameSession.action({type:"HELP",source:"STATIC"});
+             setStaticHints(n=>n+1);
+             setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");
+           };
+           if (!gameSession.enabled) { fallback(); return; }
+           void gameSession.requestHint("es").then(response => {
+             if (!response) { fallback(); return; }
+             record("HELP",{source:response.source,hintId:response.hintId,hintLevel:response.hintLevel,type:response.type});
+             setHint(response.message);
+           });
+         }}
       />
       {status === "SUCCESS" &&
         (currentLevelIndex === LEVELS.length - 1 ? (

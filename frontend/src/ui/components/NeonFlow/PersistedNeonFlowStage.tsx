@@ -4,12 +4,14 @@ import type { ActivityResponseDTO } from "../../../infrastructure/api/models/api
 import { apiService } from "../../../infrastructure/api/apiService";
 import { sameConfig } from "../../../application/usecases/tetrilogic/rules";
 import { NeonFlowStage } from "./NeonFlowStage";
+import { useGameStore } from "../../../infrastructure/store/gameStore";
 
 export function PersistedNeonFlowStage({ config, activity, dailyChallengeId, onNext }: { config: NeonFlowLevelConfig; activity?: ActivityResponseDTO; dailyChallengeId?:string; onNext?: () => void }) {
   const [state,setState] = useState<{expected?:NeonFlowLevelConfig;config?:NeonFlowLevelConfig; error?:boolean}>({});
   const [retry,setRetry] = useState(0);
   useEffect(() => {
     let active = true;
+    useGameStore.getState().stopGame();
     const controller = new AbortController();
     apiService.neonflow.getTemplate(config.templateId!, controller.signal).then(data => {
       if (data?.templateId!==config.templateId || data?.version!==2 || !sameConfig(config,data?.config)) throw new Error("Incompatible template");
