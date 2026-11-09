@@ -14,7 +14,7 @@ La primera fase cubre **partidas verificadas de actividades oficiales de Neon Fl
 
 - Admitir sesiones `ACTIVE` de estudiantes propietarios, con una actividad oficial del curso `c001` y su plantilla canónica de Neon Flow. El backend cruza la actividad, el curso, el juego y la plantilla persistidos con el [catálogo oficial](../ESTADO_ACTUAL.md#catálogo-y-conexión). El piloto excluye práctica independiente, prototipos, retos diarios y pruebas de docentes o administradores. Esos flujos conservan la ayuda disponible en cada caso.
 - Aplicar las reglas de raycast vigentes y utilizar solo los hechos del tablero confirmado. La ayuda puede orientar una comprobación. Los movimientos, la verificación de la victoria, la progresión, la fórmula de estrellas, los puntos y el XP conservan sus contratos.
-- Mantener la opción de pista estática. La consulta contextual tiene un límite de tiempo, un máximo configurable por intento y una sola solicitud en curso por tablero. El piloto queda desactivado por defecto. El backend valida que esté habilitado para la sesión y, fuera del piloto, el botón usa la ayuda actual.
+- Mantener la opción de pista estática. La consulta contextual tiene un límite de tiempo, un [cupo configurable por intento](#cupo-de-ayuda-contextual) y una sola solicitud en curso por tablero. El piloto queda desactivado por defecto. El backend valida que esté habilitado para la sesión y, fuera del piloto, el botón usa la ayuda actual.
 - Proteger las escrituras con sesión autenticada, autorización de propietario y CSRF. Validar en servidor los identificadores, la revisión, el idioma, el tipo de ayuda y las coordenadas. Registrar solo datos técnicos necesarios y aplicar la política de acceso y retención acordada para el piloto.
 - El piloto usa Spring, PostgreSQL y el frontend existente. La integración de un proveedor, los cambios en `data-science` y la personalización mediante ML quedan fuera de esta etapa. Si la persistencia exige una migración, usar la siguiente versión Flyway disponible y preservar las migraciones publicadas.
 
@@ -86,6 +86,16 @@ Una entrega contextual vigente cuenta como una sola `HELP` bajo la rúbrica actu
 
 Si el servidor no dispone de un diagnóstico seguro o la consulta falla, usar la ayuda estática de Neon Flow cuando la partida siga vigente. El respaldo funciona sin coordenadas, por ejemplo «Sigue el haz desde el emisor y comprueba cómo lo afectan los espejos y filtros». Si en una fase posterior falla solo la redacción generativa, usar la plantilla contextual del diagnóstico. Registrar únicamente la ayuda que se entrega, incluso cuando se activa un respaldo.
 
+### Cupo de ayuda contextual
+
+El valor inicial propuesto de `max-hints` es **3 pistas contextuales confirmadas por intento**. Cada `HELP` contextual aceptado por el servidor consume una unidad del cupo de su `sessionId`. Las solicitudes sin entrega, los recibos sin consumir, los reintentos, los descartes y el respaldo estático no consumen cupo. Una pista estática entregada sigue registrándose como `HELP` para la rúbrica vigente.
+
+El cupo se mantiene al recargar o restablecer el tablero dentro de la misma sesión. El backend busca primero el recibo de un reintento idéntico y verifica el cupo antes de emitir un recibo nuevo. Al aceptar el `HELP`, comprueba el cupo de nuevo en la misma transacción que consume el recibo. Si ya se agotó, acusa el descarte sin incrementar `helps` y permite continuar la secuencia. La interfaz informa del límite y permite al estudiante pedir la pista estática. La frecuencia y la concurrencia de las solicitudes se limitan por separado.
+
+### Origen de la ayuda contextual
+
+`RULE_BASED` es un dato del recibo emitido por el servidor. Para confirmar una pista contextual, el cliente envía una acción `HELP` con `sequence` y `hintId`, y omite `source`. El backend valida el recibo y toma de él el origen para el registro. Si el cliente declara `RULE_BASED` en una acción, el backend la rechaza. La acción que aplica `BoardRules` usa el `HELP` existente sin introducir un origen nuevo en su lista de valores admitidos. Las ayudas estáticas conservan `source=STATIC` y su contrato actual.
+
 ## Piloto y criterios de aceptación
 
 Comparar pista estática y contextual en retos oficiales seleccionados. Definir antes del piloto qué cuenta como siguiente acción pertinente y usar después un reto equivalente sin ayuda. Medir por separado la acción pertinente, la resolución autónoma posterior y la frecuencia de fallos o respaldos. El registro de partidas y pistas permite observar el proceso. Atribuir una mejora de aprendizaje requiere un diseño de evaluación acordado con docentes.
@@ -97,7 +107,8 @@ Antes del piloto, comprobar:
 - El mensaje corresponde a un estado reproducible del tablero, respeta su grado y usa coordenadas válidas cuando las incluye.
 - Una sesión ajena, finalizada o fuera del alcance no puede solicitar pistas contextuales.
 - Cambiar el tablero, reiniciar o salir descarta las respuestas antiguas y conserva la jugabilidad.
-- Una solicitud repetida, una respuesta obsoleta o una falla sin entrega producen los efectos de registro previstos. Una pista de respaldo entregada cuenta una vez.
+- Una solicitud repetida, una respuesta obsoleta o una falla sin entrega producen los efectos de registro previstos. Una pista de respaldo entregada cuenta una vez para `HELP` y deja intacto el cupo contextual.
+- La tercera entrega contextual agota el cupo inicial. Un reintento devuelve el mismo resultado y una nueva entrega contextual no incrementa el contador. Una acción con `RULE_BASED` declarado por el cliente se rechaza.
 - El servidor sigue validando el resultado de la partida con las reglas y la rúbrica vigentes.
 
 ## Pasos de implementación en Neon Flow
