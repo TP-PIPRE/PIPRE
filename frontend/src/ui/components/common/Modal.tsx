@@ -25,10 +25,6 @@ export const Modal: React.FC<ModalProps> = ({
   const closeRef = useRef(onClose);
   useEffect(() => { closeRef.current = onClose; }, [onClose]);
   useEffect(() => {
-    if (isOpen && panelRef.current && !panelRef.current.contains(document.activeElement)) panelRef.current.focus();
-  });
-
-  useEffect(() => {
     if (!isOpen) return;
     const previous = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
@@ -52,6 +48,9 @@ export const Modal: React.FC<ModalProps> = ({
       previous?.focus();
     };
   }, [isOpen]);
+  useEffect(() => {
+    if (isOpen && panelRef.current && !panelRef.current.contains(document.activeElement)) panelRef.current.focus();
+  });
 
   if (!isOpen) return null;
 

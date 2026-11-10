@@ -53,6 +53,7 @@ class BackendPersistenceIntegrationTest {
     @Autowired ProceduralDailyService daily;
     @Autowired ProceduralDailyGenerator generator;
     @Autowired GameSessionsService sessions;
+    @Autowired com.pipre.backend.application.ports.output.TutorPilotAccessPort tutorPilotAccess;
     @Autowired com.pipre.backend.infrastructure.security.LoginAttemptLimiter loginLimiter;
     @Autowired AcademicAdministrationService administration;
     @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mapping;
@@ -364,6 +365,14 @@ class BackendPersistenceIntegrationTest {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM group_activities WHERE id_group=?",Integer.class,group));
         administration.groupCourse(group,course,false);
         assertThrows(com.pipre.backend.domain.exceptions.BusinessException.class,()->administration.groupActivity(group,activity,true));
+    }
+    @Test void tutorPilotRequiresTheExplicitActivityAssignmentForTheStudentGroup() throws Exception {
+        String activity=createTestActivity();
+        administration.groupCourse(group,course,true);
+        rankings.execute(new AddStudentRankingCommand(group,student));
+        assertFalse(tutorPilotAccess.isStudentAssignedToActivity(student,activity,Set.of(group)));
+        administration.groupActivity(group,activity,true);
+        assertTrue(tutorPilotAccess.isStudentAssignedToActivity(student,activity,Set.of(group)));
     }
     @Test void movingAnAssignedActivityDoesNotExposeAnotherCourseThroughTheClassroom() throws Exception {
         String activity=createTestActivity();administration.groupCourse(group,course,true);administration.groupActivity(group,activity,true);

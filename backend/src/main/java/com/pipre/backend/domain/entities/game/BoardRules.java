@@ -46,7 +46,7 @@ public final class BoardRules {
             throw new BusinessException("El giro debe ser 0, 90, 180 o 270 grados.");
         if (action.source()!=null && !Set.of("DRAFT","STATIC").contains(action.source()))
             throw new BusinessException("Origen de acción no admitido.");
-        ObjectNode next=(ObjectNode)current.deepCopy();next.put("lastActionRejected",false);
+        ObjectNode next=(ObjectNode)current.deepCopy();next.put("lastActionRejected",false);next.remove("lastActionRejectionCode");
         switch(action.type()) {
             case "RESET" -> { next.set("pieces",JSON.arrayNode());increment(next,"resets");return next; }
             case "HELP" -> { increment(next,"helps");return next; }
@@ -113,7 +113,14 @@ public final class BoardRules {
     }
     private static boolean at(JsonNode value,int x,int y) { return value.path("x").asInt(-1)==x&&value.path("y").asInt(-1)==y; }
     public static boolean isSolved(String game,JsonNode config,JsonNode state) {
-        return game.equals("tetrilogic")?solvedTetri(config,state.path("pieces")):solvedNeon(config,state.path("pieces"));
+        return game.equals("tetrilogic")?solvedTetri(config,state.path("pieces")):traceNeon(config,state.path("pieces")).solved();
+    }
+
+    public static NeonHintDiagnosis diagnoseNeon(JsonNode config, JsonNode state) {
+        NeonTrace trace = traceNeon(config, state.path("pieces"));
+        if (trace.solved()) return new NeonHintDiagnosis("SOLVED", "RULE_HINT", null, null, true);
+        String type = trace.key().equals("FILTER_COLOR_MISMATCH") ? "COLOR_HINT" : "POSITION_HINT";
+        return new NeonHintDiagnosis(trace.key(), type, trace.x(), trace.y(), false);
     }
     private static int[][] shape(String type,int rotation) {
         int[][] definition=SHAPES.get(type);if(definition==null)return null;
@@ -142,18 +149,37 @@ public final class BoardRules {
         return true;
     }
     private static boolean solvedTetri(JsonNode config,JsonNode pieces) {
-        if(!pieces.isArray()||!legalTetri(config,pieces)||config.path("constraints").isEmpty())return false;
+        return inspectTetri(config, pieces).solved();
+    }
+
+    public record TetriHintDiagnosis(String axis, int index, int occupied, int target) {}
+    private record TetriInspection(boolean solved, TetriHintDiagnosis difference) {}
+
+    public static Optional<TetriHintDiagnosis> diagnoseTetri(JsonNode config, JsonNode state) {
+        return Optional.ofNullable(inspectTetri(config, state.path("pieces")).difference());
+    }
+
+    private static TetriInspection inspectTetri(JsonNode config, JsonNode pieces) {
+        if(!pieces.isArray()||!legalTetri(config,pieces)||config.path("constraints").isEmpty())return new TetriInspection(false, null);
         int[] rows=new int[config.path("boardSize").path("rows").asInt()],cols=new int[config.path("boardSize").path("cols").asInt()];
         for(JsonNode piece:pieces)for(int[] offset:shape(piece.path("type").asText(),piece.path("rotation").asInt())) {
             rows[piece.path("y").asInt()+offset[1]]++;cols[piece.path("x").asInt()+offset[0]]++;
         }
+        TetriHintDiagnosis firstDifference = null;
         for(JsonNode goal:config.path("constraints")) {
-            int[] counts=goal.path("orientation").asText().equals("row")?rows:cols;
-            if(counts[goal.path("line").asInt()]!=goal.path("targetCount").asInt())return false;
+            String axis = goal.path("orientation").asText();
+            int[] counts = switch (axis) { case "row" -> rows; case "column" -> cols; default -> null; };
+            int line = goal.path("line").asInt(-1);
+            int target = goal.path("targetCount").asInt(-1);
+            if (counts == null || line < 0 || line >= counts.length || target < 0) return new TetriInspection(false, null);
+            if (firstDifference == null && counts[line] != target) {
+                firstDifference = new TetriHintDiagnosis(axis, line, counts[line], target);
+            }
         }
-        return true;
+        return new TetriInspection(firstDifference == null, firstDifference);
     }
-    private static boolean solvedNeon(JsonNode config,JsonNode pieces) {
+    private record NeonTrace(boolean solved, String key, Integer x, Integer y) {}
+    private static NeonTrace traceNeon(JsonNode config, JsonNode pieces) {
         int width=config.path("width").asInt(),height=config.path("height").asInt();
         Map<Integer,JsonNode> cells=new HashMap<>();
         for(JsonNode block:config.path("blocked"))cells.put(block.path("y").asInt()*width+block.path("x").asInt(),JSON.objectNode().put("type","BLOCK"));
@@ -162,27 +188,32 @@ public final class BoardRules {
         int x=emitter.path("position").path("x").asInt(),y=emitter.path("position").path("y").asInt();
         for(JsonNode piece:pieces) {
             int px=piece.path("x").asInt(-1),py=piece.path("y").asInt(-1),key=py*width+px;
-            if(px<0||py<0||px>=width||py>=height||cells.containsKey(key)||(px==x&&py==y))return false;
-            if(!Set.of("MIRROR_90","FILTER").contains(piece.path("type").asText()))return false;
-            if(piece.path("type").asText().equals("MIRROR_90")&&!Set.of(0,90,180,270).contains(piece.path("rotation").asInt(-1)))return false;
+            if(px<0||py<0||px>=width||py>=height||cells.containsKey(key)||(px==x&&py==y))return new NeonTrace(false,"UNLIT_RECEPTOR",null,null);
+            if(!Set.of("MIRROR_90","FILTER").contains(piece.path("type").asText()))return new NeonTrace(false,"UNLIT_RECEPTOR",px,py);
+            if(piece.path("type").asText().equals("MIRROR_90")&&!Set.of(0,90,180,270).contains(piece.path("rotation").asInt(-1)))return new NeonTrace(false,"UNLIT_RECEPTOR",px,py);
             cells.put(key,piece);
         }
+        if(config.path("receptors").isEmpty())return new NeonTrace(false,"UNLIT_RECEPTOR",null,null);
         int dx=emitter.path("direction").path("dx").asInt(),dy=emitter.path("direction").path("dy").asInt();
-        Set<Integer> lit=new HashSet<>();
+        Set<Integer> lit=new HashSet<>();Set<String> visited=new HashSet<>();
         for(int step=0;step<width*height*4;step++) {
             if(x<0||y<0||x>=width||y>=height)break;
+            if(!visited.add(x+":"+y+":"+dx+":"+dy))return new NeonTrace(false,"CYCLIC_PATH",x,y);
             int key=y*width+x;JsonNode cell=cells.get(key);
             if(cell!=null) {
                 String type=cell.path("type").asText();
-                if(type.equals("BLOCK")||type.equals("FILTER")&&!cell.path("color").asText().equals(color))break;
+                if(type.equals("BLOCK"))return new NeonTrace(false,"BLOCKED_PATH",x,y);
+                if(type.equals("FILTER")&&!cell.path("color").asText().equals(color))return new NeonTrace(false,"FILTER_COLOR_MISMATCH",x,y);
                 if(type.equals("RECEPTOR")){if(cell.path("color").asText().equals(color))lit.add(key);break;}
                 if(type.equals("MIRROR_90")){boolean slash=cell.path("rotation").asInt()%180==0;int nx=slash?-dy:dy;dy=slash?-dx:dx;dx=nx;}
             }
             x+=dx;y+=dy;
         }
-        if(config.path("receptors").isEmpty())return false;
-        for(JsonNode receptor:config.path("receptors"))if(!lit.contains(receptor.path("position").path("y").asInt()*width+receptor.path("position").path("x").asInt()))return false;
-        return true;
+        for(JsonNode receptor:config.path("receptors")) {
+            int rx=receptor.path("position").path("x").asInt(),ry=receptor.path("position").path("y").asInt();
+            if(!lit.contains(ry*width+rx))return new NeonTrace(false,"UNLIT_RECEPTOR",rx,ry);
+        }
+        return new NeonTrace(true,"SOLVED",null,null);
     }
     public static int stars(String game,JsonNode config,JsonNode state) {
         int budget=game.equals("tetrilogic")?4*config.path("inventory").size():2*(config.path("width").asInt()+config.path("height").asInt());

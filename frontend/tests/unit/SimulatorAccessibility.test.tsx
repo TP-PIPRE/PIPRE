@@ -27,6 +27,14 @@ describe("Accessible simulator interactions", () => {
     expect(useGameStore.getState().movimientos).toBe(1);
   });
 
+  it("leaves a cell empty when the dragged filter has an unsupported color", () => {
+    render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
+    const cell = screen.getByRole("button", { name: "Celda vacía, fila 2, columna 2" });
+    fireEvent.drop(cell, { dataTransfer: { getData: () => JSON.stringify({ type: "FILTER", color: "purple" }) } });
+    expect(cell).toBeInTheDocument();
+    expect(useGameStore.getState().movimientos).toBe(0);
+  });
+
   it("places and rotates an optical component without dragging, then resets the board", () => {
     render(<MemoryRouter><NeonFlowStage /></MemoryRouter>);
     fireEvent.click(screen.getByRole("button", { name: "Espejo 90°" }));
@@ -77,5 +85,27 @@ describe("Accessible simulator interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Restablecer", exact: true }));
     fireEvent.click(screen.getByRole("button", { name: "Restablecer tablero", exact: true }));
     expect(screen.getByRole("button", { name: "Seleccionar pieza O (o1)" })).toBeInTheDocument();
+  });
+
+  it("preserves Ctrl+R and keeps board focus when closing reset or returning a piece", () => {
+    render(<MemoryRouter><TetriLogicStage levels={LEGACY_TETRILOGIC_LEVELS} /></MemoryRouter>);
+    const piece = screen.getByRole("button", { name: "Seleccionar pieza I (i1)" });
+    piece.focus();
+    expect(fireEvent.keyDown(piece, { key: "r", ctrlKey: true })).toBe(true);
+    expect(piece).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(piece);
+    fireEvent.click(screen.getByRole("button", { name: "Celda vacía, fila 1, columna 1" }));
+    const reset = screen.getByRole("button", { name: "Restablecer", exact: true });
+    reset.focus();
+    fireEvent.click(reset);
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(reset).toHaveFocus();
+    const returnPiece = screen.getByRole("button", { name: "Devolver pieza" });
+    returnPiece.focus();
+    fireEvent.click(returnPiece);
+    const rotate = screen.getByRole("button", { name: "Rotar pieza" });
+    expect(rotate).toHaveFocus();
+    fireEvent.keyDown(rotate, { key: "r" });
+    expect(screen.getByRole("button", { name: "Seleccionar pieza I (i1)" }).querySelector('[data-piece-y="3"]')).not.toBeNull();
   });
 });

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.pipre.backend.infrastructure.configuration.TutorPilotProperties;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;
@@ -39,6 +40,9 @@ public class GameSessionsService implements GameSessionsUseCase {
     private final VerifiedExercisePointsService points;
     private final AcademicAccessRepositoryPort academicAccess;
     private final GamificationRepositoryPort gamification;
+    private final GameSessionHintRepositoryPort hintReceipts;
+    private final TutorPilotProperties tutorProperties;
+    private final TutorPilotPolicy tutorPilot;
 
     @Override @Transactional
     public java.util.Optional<GameSessionDTO> active(String studentId,String game,String template,String activityId,String dailyChallengeId) {
@@ -104,21 +108,55 @@ public class GameSessionsService implements GameSessionsUseCase {
     @Override @Transactional
     public GameSessionDTO action(String studentId,String sessionId,GameSessionAction action) {
         var session=owned(studentId,sessionId);
+        if (action.hintId() != null && !"HELP".equals(action.type()))
+            throw new BusinessException("hintId solo puede acompañar una acción HELP.");
+        if (action.hintId() != null && action.source() != null)
+            throw new BusinessException("Una ayuda contextual no puede declarar su origen.");
         JsonNode payload=json.valueToTree(action);String hash=fingerprint(payload);
         var receipt=sessions.findAction(sessionId,action.sequence());
         if(receipt.isPresent()) {
-            if(!hash.equals(receipt.get().hash()))throw new BusinessException("La secuencia ya contiene otra acción.");
+            if(!hash.equals(receipt.get().hash()) && !compactActionHash(payload).equals(receipt.get().hash()))
+                throw new BusinessException("La secuencia ya contiene otra acción.");
             return json.convertValue(receipt.get().response(),GameSessionDTO.class);
         }
         if(!session.status().equals("ACTIVE"))throw new BusinessException("La sesión ya terminó. Inicia otra partida para registrar progreso.");
         if(action.sequence()<1||action.sequence()!=session.revision()+1)throw new BusinessException("La secuencia de acciones no es consecutiva.");
         if(action.sequence()>20000)throw new BusinessException("Se alcanzó el límite de acciones. Inicia otra sesión.");
-        var state=BoardRules.apply(session.game(),sessionConfig(session),session.state(),
-            new BoardAction(action.type(),action.pieceId(),action.x(),action.y(),action.rotation(),action.component(),action.color(),action.source()));
+        JsonNode config=sessionConfig(session);
+        JsonNode state;
+        if ("HELP".equals(action.type()) && action.hintId() != null) {
+            String rejection = validateHintReceipt(session, action);
+            if (rejection == null) {
+                var groups = tutorPilot.allowedGroups(session);
+                if (groups.isEmpty()) rejection = "HINT_SCOPE";
+                else if (!hintReceipts.consume(action.hintId(), session.sessionId(), session.revision(), tutorProperties.getMaxHints(), clock.instant(),
+                        session.studentId(), session.activityId(), groups)) rejection = "HINT_QUOTA_EXCEEDED";
+            }
+            if (rejection != null) {
+                var rejected = BoardRules.apply(session.game(), config, session.state(),
+                        new BoardAction("REJECT", null, null, null, null, null, null, null));
+                rejected.put("lastActionRejectionCode", rejection);
+                state = rejected;
+            } else {
+                state = BoardRules.apply(session.game(), config, session.state(),
+                        new BoardAction("HELP", null, null, null, null, null, null, null));
+            }
+        } else {
+            state=BoardRules.apply(session.game(), config, session.state(),
+                    new BoardAction(action.type(),action.pieceId(),action.x(),action.y(),action.rotation(),action.component(),action.color(),action.source()));
+        }
         var changed=session.change(state,action.sequence(),"ACTIVE",null,null,null);
         sessions.update(changed);var response=dto(changed);
         sessions.saveAction(sessionId,action.sequence(),hash,payload,clock.instant(),json.valueToTree(response));
         return response;
+    }
+    private String validateHintReceipt(GameSession session, GameSessionAction action) {
+        var receipt = hintReceipts.findById(action.hintId())
+                .orElseThrow(() -> new ResourceNotFoundException("La pista contextual no existe."));
+        if (!receipt.sessionId().equals(session.sessionId())) throw new AccessDeniedException("La pista contextual no pertenece a esta sesión.");
+        if (receipt.revision() != session.revision()) return "HINT_STALE";
+        if (receipt.consumedAt() != null) return "HINT_ALREADY_CONSUMED";
+        return null;
     }
     @Override @Transactional(noRollbackFor=IncompleteGameBoardException.class)
     public GameCompletionDTO complete(String studentId,String sessionId) {
@@ -168,5 +206,14 @@ public class GameSessionsService implements GameSessionsUseCase {
     private String fingerprint(JsonNode value) {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(TelemetryFingerprint.canonical(value).getBytes(StandardCharsets.UTF_8))); }
         catch(java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+    }
+
+    // The original tutor branch omitted null fields when hashing action receipts.
+    private String compactActionHash(JsonNode payload) {
+        var compact = json.createObjectNode();
+        payload.properties().forEach(field -> {
+            if (!field.getValue().isNull()) compact.set(field.getKey(), field.getValue());
+        });
+        return fingerprint(compact);
     }
 }

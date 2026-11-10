@@ -100,7 +100,7 @@ public class SaveAttemptService implements SaveAttemptUseCase {
         if (!events.isArray() || events.isEmpty() || events.size() > 5000) throw new BusinessException("La secuencia de eventos no es válida.");
         long previous = -1;
         Set<String> types = Set.of("SELECT", "PLACE", "ROTATE", "RETURN", "RESET", "CHECK", "HELP", "REJECT", "CANCEL", "COMPLETE", "ABANDON");
-        Set<String> keys = Set.of("pieceId", "pieceType", "x", "y", "rotation", "component", "color", "errorCode", "source", "matched");
+        Set<String> keys = Set.of("pieceId", "pieceType", "x", "y", "rotation", "component", "color", "errorCode", "source", "hintId", "hintLevel", "type", "matched");
         for (int i=0; i<events.size(); i++) {
             JsonNode event = events.get(i);
             long elapsed = event.path("elapsedMs").asLong(-1);
@@ -116,7 +116,8 @@ public class SaveAttemptService implements SaveAttemptUseCase {
                 if (Set.of("x","y").contains(key) && (!value.isIntegralNumber() || !value.canConvertToInt() || value.asInt() < -1 || value.asInt()>32)) throw new BusinessException("Coordenada no válida.");
                 if (key.equals("rotation") && (!value.isIntegralNumber() || !value.canConvertToInt() || !Set.of(0,90,180,270).contains(value.asInt()))) throw new BusinessException("Giro no válido.");
                 if (key.equals("matched")&&!value.isBoolean())throw new BusinessException("Estado de comprobación no válido.");
-                if (Set.of("pieceId","pieceType","component","color","errorCode","source").contains(key) && (!value.isTextual()||!value.asText().matches("[A-Za-z0-9_-]{1,40}")))throw new BusinessException("Identificador de evento no válido.");
+                if (Set.of("pieceId","pieceType","component","color","errorCode","source","hintId","type").contains(key) && (!value.isTextual()||!value.asText().matches("[A-Za-z0-9_-]{1,80}")))throw new BusinessException("Identificador de evento no válido.");
+                if (key.equals("hintLevel") && (!value.isIntegralNumber() || !value.canConvertToInt() || value.asInt() < 1 || value.asInt() > 3)) throw new BusinessException("Grado de pista no válido.");
             }
         }
         for (String name : Set.of("initialState", "finalState")) {

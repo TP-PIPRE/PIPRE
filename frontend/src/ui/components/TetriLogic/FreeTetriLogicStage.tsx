@@ -1,8 +1,9 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, RotateCw, RotateCcw, Undo2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lightbulb, RotateCw, RotateCcw, Undo2 } from "lucide-react";
 import type { LevelConfig } from "../../../shared/types/TetriLogic";
+import { TETRILOGIC_TIPS } from "../../../shared/constants/boardTips";
 import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 import { createBoard } from "../../../application/usecases/tetrilogic/rules";
 import { freePlayReducer, isPlaced } from "../../../application/usecases/tetrilogic/freePlay";
@@ -11,6 +12,8 @@ import type { FreePlayAction } from "../../../application/usecases/tetrilogic/fr
 import type { Piece } from "../../../shared/types/TetriLogic";
 import { useAttemptTrace } from "../common/useAttemptTrace";
 import { useValidatedGameSession } from "../common/useValidatedGameSession";
+import { useBoardHint } from "../common/useBoardHint";
+import { HintToast } from "../common/HintToast";
 import { GameSessionFeedback } from "../common/GameSessionFeedback";
 import { lineGoalsMet } from "../../../application/usecases/tetrilogic/lineGoals";
 import { Board } from "./Board";
@@ -34,18 +37,28 @@ export function FreeTetriLogicStage(props:Props) {
 function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId,onNext,gameSession}:Props&{gameSession:ReturnType<typeof useValidatedGameSession>}) {
   const [state, dispatch] = useReducer(freePlayReducer,undefined,()=>restoreTetriBoard(level,gameSession.state?.session?.state.pieces));
   const [confirmReset, setConfirmReset] = useState(false);
+  const hintButton = useRef<HTMLButtonElement>(null);
+  const hintNotice = useRef<HTMLDivElement>(null);
+  const rotateButton = useRef<HTMLButtonElement>(null);
+  const returnButton = useRef<HTMLButtonElement>(null);
   const [initialTrace]=useState(gameSession.state?.session?.state.pieces??[]);
   const templateId=activity?.levelTemplate??level.templateId;
   const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null,initialTrace);
+  const hint = useBoardHint(gameSession, record, TETRILOGIC_TIPS);
   const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));
   const trackedDispatch=(action:FreePlayAction)=>{
     const next=freePlayReducer(state,action);
     if(action.type==='select')record('SELECT',action.id?{pieceId:action.id}:{});
-    else if(action.type==='reset'){record('RESET',{},snapshot(state.pieces),snapshot(next.pieces));gameSession.reset();}
+    else if(action.type==='reset'){record('RESET',{},snapshot(state.pieces),snapshot(next.pieces));hint.reset();gameSession.reset();}
     else if(['place','rotate','return'].includes(action.type)&&'id' in action) {
       const piece=next.pieces.find(p=>p.id===action.id);
       if(next.pieces===state.pieces){record('REJECT',{pieceId:action.id,errorCode:'BOUNDS_OR_COLLISION'});gameSession.action({type:"REJECT",pieceId:action.id});}
       else if(piece){
+        if (action.type !== 'rotate' || isPlaced(piece)) {
+          if (hintNotice.current?.contains(document.activeElement)) rotateButton.current?.focus({ preventScroll: true });
+          hint.close();
+        }
+        if (action.type === 'return' && document.activeElement === returnButton.current) rotateButton.current?.focus();
         const type=action.type==='place'?'PLACE':action.type==='rotate'?'ROTATE':'RETURN';
         record(type,{pieceId:piece.id,pieceType:piece.type,x:piece.position.x,y:piece.position.y,rotation:piece.rotation},snapshot(state.pieces),snapshot(next.pieces));
         gameSession.action(type==="RETURN"?{type,pieceId:piece.id}:{type,pieceId:piece.id,x:piece.position.x,y:piece.position.y,rotation:piece.rotation});
@@ -92,17 +105,33 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
         <PieceTray pieces={available} slots={state.pieces} pieceNumbers={pieceNumbers} selectedPieceId={state.selectedId}
           pointerInteraction onRotatePiece={rotatePiece} onPiecePointerDown={begin} onPieceActivate={activateTray} />
         <div className="tetri-free-piece-tools">
-          <button type="button" className="btn-secondary" aria-label="Rotar pieza" title="Girar (R)" disabled={!selected} onClick={() => rotatePiece()}><RotateCw size={18} aria-hidden="true" />Girar <kbd aria-hidden="true">R</kbd></button>
-          <button type="button" className="btn-secondary" aria-label="Devolver pieza" title="Devolver a la bandeja (Supr)" disabled={!selected || !isPlaced(selected)} onClick={returnPiece}><Undo2 size={18} aria-hidden="true" />Devolver</button>
+          <button ref={rotateButton} type="button" className="btn-secondary" aria-label="Rotar pieza" title="Girar (R)" disabled={!selected} onClick={() => rotatePiece()}><RotateCw size={18} aria-hidden="true" />Girar <kbd aria-hidden="true">R</kbd></button>
+          <button ref={returnButton} type="button" className="btn-secondary" aria-label="Devolver pieza" title="Devolver a la bandeja (Supr)" disabled={!selected || !isPlaced(selected)} onClick={returnPiece}><Undo2 size={18} aria-hidden="true" />Devolver</button>
         </div>
       </aside>
       <footer className="tetri-free-footer">
         <p role="status" aria-live="polite" className="tetri-goal-feedback" data-complete={completed}>{completed ? <><CheckCircle2 size={18} aria-hidden="true" /><span><strong>Reto completado.</strong> Todas las filas y columnas coinciden.</span></> : state.message || "Iguala los conteos de filas y columnas: ocupadas / objetivo."}</p>
-        <button type="button" className="tetri-free-reset" disabled={(!changed&&!gameSession.state?.victory)||gameSession.verifying} onClick={() => setConfirmReset(true)}><RotateCcw size={16} aria-hidden="true" />Restablecer</button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button ref={hintButton} type="button" className="btn-secondary aria-disabled:opacity-50"
+            aria-describedby="tetri-hint-count" aria-disabled={hint.busy || undefined}
+            disabled={completed || gameSession.verifying || Boolean(gameSession.state?.victory)}
+            onClick={() => { if (!hint.busy) void hint.request(); }}>
+            <Lightbulb size={16} aria-hidden="true" />Pista
+          </button>
+          <button type="button" className="tetri-free-reset" disabled={(!changed&&!gameSession.state?.victory)||gameSession.verifying} onClick={() => setConfirmReset(true)}><RotateCcw size={16} aria-hidden="true" />Restablecer</button>
+        </div>
         <p className="tetri-free-shortcuts"><kbd>R</kbd> girar <span aria-hidden="true">·</span> <kbd>Esc</kbd> cancelar</p>
+        <div className="col-span-full space-y-2">
+          <p id="tetri-hint-count" className="text-sm text-text-muted">{gameSession.enabled && "Usar pistas puede afectar las estrellas. "}Pistas usadas: {hint.count}.</p>
+          {hint.busy && <p role="status">Consultando pista…</p>}
+          {hint.message && <div ref={hintNotice}><HintToast message={hint.message} onClose={() => {
+              hintButton.current?.focus({ preventScroll: true });
+              hint.close();
+            }} /></div>}
+        </div>
       </footer>
     </section>
-    <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
+    <GameSessionFeedback state={gameSession.state} retry={hint.retry} onNewAttempt={gameSession.restart}/>
     {gameSession.state?.victory && onNext && <button type="button" className="btn-premium" onClick={onNext}>Siguiente reto</button>}
     {preview && createPortal(<div className="tetri-free-preview-layer" aria-hidden="true"><div className="tetri-free-preview"
       data-valid={preview.valid} data-over-board={Boolean(preview.position)} data-over-tray={preview.overTray}

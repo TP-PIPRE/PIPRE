@@ -50,7 +50,7 @@ El servidor verifica existencia, identidad, juego/plantilla, versión y correspo
 
 El mismo estudiante/UUID de cliente/contenido se acepta idempotentemente, incluidos envíos simultáneos. Reutilizar ese identificador con contenido diferente se rechaza. Reintentar una traza ya aceptada funciona tras editar la actividad; una traza todavía no aceptada puede quedar incompatible si el docente cambió su plantilla.
 
-Los clientes anteriores sin `trace` siguen aceptándose con contexto nulo; no se inventa su actividad ni se extiende retroactivamente la idempotencia nueva a esos requests. Las pistas estáticas llevan `source=STATIC` y no incrementan `pistasIa`. El campo heredado no prueba que una consulta IA haya ocurrido históricamente.
+Los clientes anteriores sin `trace` siguen aceptándose con contexto nulo; no se inventa su actividad ni se extiende retroactivamente la idempotencia nueva a esos requests. Las pistas estáticas llevan `source=STATIC`, se registran como `HELP` en la rúbrica vigente y no consumen el cupo contextual. El campo heredado no prueba que una consulta IA haya ocurrido históricamente.
 
 ## Sesiones verificadas, logros y diario
 
@@ -61,6 +61,7 @@ El canal anterior conserva su naturaleza declarativa. Desde el 02/11 existe adem
 | GET `/game-sessions/active` | Recupera la partida activa propia que coincide con juego/plantilla/actividad/diario; 204 si no hay coincidencia. |
 | POST `/game-sessions` | Estudiante propio, UUID de cliente, juego, plantilla, actividad/diario opcionales; devuelve inicio UTC, estado y revisión. |
 | POST `/game-sessions/{id}/actions` | Acción tipada, secuencia creciente y campos planos; reintento idéntico devuelve el recibo original. |
+| POST `/game-sessions/{id}/hints` | Solicitud contextual de Neon Flow o TetriLogic. Exige sesión activa para emitir un recibo nuevo, revisión, locale `es`, actividad y grupo del piloto y `requestId` idempotente. La respuesta puede señalar `targetCell` en Neon Flow o `targetLine` (`axis`, `index` desde cero) en TetriLogic. |
 | POST `/game-sessions/{id}/complete` | Valida el tablero persistido; devuelve estrellas, mejor resultado, tiempo, logros nuevos, estado diario y recibo de puntaje/XP. No recibe éxito ni calificación autoritativos. |
 | GET `/daily-challenges/today?studentId=...` | Fecha servidor en Lima, tablero oficial del día, finalización y rachas. |
 | GET `/daily-challenges/today/set?studentId=...` | Conjunto persistido de cinco ejercicios procedurales; progreso confirmado 0–100 y finalización únicamente al validar 5/5. |
@@ -68,7 +69,7 @@ El canal anterior conserva su naturaleza declarativa. Desde el 02/11 existe adem
 | GET `/profile/{id}/achievements` | Exactamente 35 logros activos, condición, estado y fecha; excluye el catálogo histórico. |
 | GET `/profile/{id}/achievements/export?from=...&to=...` | 35 estados binarios actuales y nuevos dentro del periodo inclusivo en Lima. |
 
-Las tres escrituras de sesión sólo admiten al estudiante propietario. Las lecturas personales admiten propietario, administrador o docente con estudiante asignado. Los usuarios con roles de gestión pueden probar los tableros localmente y no reciben recompensas estudiantiles. Ninguna ruta permite asignar un logro arbitrario. Ver campos, errores, rúbrica e idempotencia en [Sistema de 35 logros](Sistema_35_Logros.md); los DTO TypeScript están en [gameProgressModels.ts](../../frontend/src/infrastructure/api/models/gameProgressModels.ts).
+Las cuatro escrituras de sesión sólo admiten al estudiante propietario. Las lecturas personales admiten propietario, administrador o docente con estudiante asignado. Los usuarios con roles de gestión pueden probar los tableros localmente y no reciben recompensas estudiantiles. Ninguna ruta permite asignar un logro arbitrario. Ver campos, errores, rúbrica e idempotencia en [Sistema de 35 logros](Sistema_35_Logros.md); los DTO TypeScript están en [gameProgressModels.ts](../../frontend/src/infrastructure/api/models/gameProgressModels.ts).
 
 El historial diferencia `SERVER_VERIFIED` y `LEGACY_DECLARED`. Los recibos nuevos incluyen puntos calculados por el servidor; una victoria anterior sin recibo conserva score nulo, sin recalificarla. Fecha, XP y eficiencia desconocidos conservan null. `dateAttempted`, cuando existe, es una cadena ISO; los registros verificados incluyen `Z`, los anteriores conservan su fecha local sin atribuir una zona nueva. Las estrellas y XP nuevos proceden del recibo/ledger servidor. El ranking suma los mejores puntos verificados por ejercicio y se ordena por esa suma; los datos declarados antiguos no lo alimentan. XP, estrellas y rachas no se multiplican por membresías. [Fórmula, identidades y bono diario](Puntaje_Ranking_Acceso.md).
 
@@ -91,7 +92,7 @@ Ver [auditoría y pruebas](../informes/Auditoria_Backend_2026_11_05.md) y [pendi
 
 V17 amplía `telemetry_attempts`; no crea otra entidad de intento. Las FK y la compatibilidad histórica se documentan en [arquitectura](../sistema/02_Arquitectura_del_Sistema.md). Telemetría, resultados, simulaciones y progreso no son contratos equivalentes.
 
-V18/V19 añaden progreso/logros y sesiones verificadas sin convertir trazas antiguas en victorias. V20/V21 añaden conjuntos diarios y el inicio de cada ejercicio. V1…V21 ya se aplicaron localmente y no se reescriben. V22–V26 añaden asignaciones, puntos/XP, limitador compartido, únicos y recibos de reintento. Se probaron en bases desechables; no se aplicaron a la aplicación local. El navegador ya reconstruye la partida activa desde el estado confirmado del servidor.
+V18/V19 añaden progreso/logros y sesiones verificadas sin convertir trazas antiguas en victorias. V20/V21 añaden conjuntos diarios y el inicio de cada ejercicio. V1…V21 ya se aplicaron localmente y no se reescriben. V22–V27 añaden asignaciones, puntos/XP, limitador compartido, únicos, recibos de reintento y conservación del catálogo oficial. V28 añade recibos del tutor contextual, V29 su índice de solicitudes pendientes y V30 el eje y el índice opcionales de las pistas de TetriLogic. Las migraciones se probaron en bases desechables. El navegador reconstruye la partida activa desde el estado confirmado del servidor.
 
 La cola por estudiante usa almacenamiento de sesión y envío de mejor esfuerzo. No garantiza entrega ante corte de luz/cierre sin conexión, no reconstruye por sí misma el tablero ni actualiza calificaciones. La recuperación procede del canal separado de sesiones verificadas, sin reenviar los movimientos aceptados. Datos de cliente no son una validación antifraude de la solución.
 

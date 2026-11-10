@@ -48,6 +48,15 @@ pipre:
     cookie-same-site: ${PIPRE_COOKIE_SAME_SITE:Lax}
     allowed-origins: ${PIPRE_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173}
     trusted-proxies: ${PIPRE_TRUSTED_PROXIES:}
+  tutor:
+    enabled: ${PIPRE_TUTOR_ENABLED:false}
+    max-hints: ${PIPRE_TUTOR_MAX_HINTS:3}
+    allowed-activity-ids: ${PIPRE_TUTOR_ACTIVITY_IDS:}
+    allowed-group-ids: ${PIPRE_TUTOR_GROUP_IDS:}
+    tetrilogic:
+      enabled: ${PIPRE_TUTOR_TETRILOGIC_ENABLED:false}
+      allowed-activity-ids: ${PIPRE_TUTOR_TETRILOGIC_ACTIVITY_IDS:}
+      allowed-group-ids: ${PIPRE_TUTOR_TETRILOGIC_GROUP_IDS:}
 
 server:
   forward-headers-strategy: none

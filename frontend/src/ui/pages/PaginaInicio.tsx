@@ -129,6 +129,9 @@ export const PaginaInicio = () => {
                   {access === "available" && <button type="button" className="btn-secondary" onClick={() => navigate(path)}>
                     {user?.role === "student" ? "Iniciar" : "Probar tablero"} <BsChevronRight aria-hidden="true" />
                   </button>}
+                  {(locked || access === "unconfirmed") && <button type="button" className="btn-secondary" onClick={() => navigate(path)}>
+                    Vista previa <BsChevronRight aria-hidden="true" />
+                  </button>}
                 </div>;
               }) : <p className="py-12 text-center text-text-muted">No hay actividades disponibles para este curso.</p>}
           </div>
