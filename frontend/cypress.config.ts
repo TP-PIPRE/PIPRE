@@ -7,10 +7,12 @@ import { randomUUID } from "node:crypto";
 const manifestPath = resolve("node_modules/.cache/pipre-audit/environment.json");
 const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8").replace(/^\uFEFF/, "")) : null;
 const reportDirectory=resolve(`test-results/e2e/${manifest?.runId??"unstarted"}/${Date.now()}`);
+const tutorGroupId="00000000-0000-4000-8000-000000000029";
 
 function auditSql(sql:string) {
   if (!manifest || !/^[a-f0-9]{32}$/.test(manifest.runId)) throw new Error("Only isolated audit fixtures may be inspected.");
-  const label = execFileSync("docker", ["inspect", "--format", '{{index .Config.Labels "pipre.audit.run"}}', manifest.dbContainer], { encoding: "utf8", windowsHide: true }).trim();
+   const labels = JSON.parse(execFileSync("docker", ["inspect", "--format", "{{json .Config.Labels}}", manifest.dbContainer], { encoding: "utf8", windowsHide: true }).trim());
+   const label = labels["pipre.audit.run"];
   if (label !== manifest.runId) throw new Error("Database is not this audit's disposable container.");
   return execFileSync("docker", ["exec", manifest.dbContainer, "psql", "-U", "audit", "-d", "pipre_audit", "-v", "ON_ERROR_STOP=1", "-tAc", sql], { encoding: "utf8", windowsHide: true });
 }
@@ -53,6 +55,16 @@ export default defineConfig({
           const idGroup=randomUUID(),groupName=`QA group ${idGroup.slice(0,8)}`;
           auditSql(`INSERT INTO groups(id_group,group_name) VALUES ('${idGroup}','${groupName}')`);
           return {idGroup,groupName};
+        },
+        configureTutorPilot(studentId:string) {
+          if(!/^[A-Za-z0-9-]{1,36}$/.test(studentId))throw new Error("Invalid tutor fixture student");
+          const rankingId=randomUUID();
+          auditSql(`INSERT INTO groups(id_group,group_name) VALUES ('${tutorGroupId}','Tutor audit group') ON CONFLICT (id_group) DO NOTHING; INSERT INTO group_courses(id_group,id_course) VALUES ('${tutorGroupId}','c001') ON CONFLICT DO NOTHING; INSERT INTO group_activities(id_group,id_activity) VALUES ('${tutorGroupId}','act-c001-v2-1') ON CONFLICT DO NOTHING; INSERT INTO group_students(id_ranking,id_group,id_student,total_points,position) VALUES ('${rankingId}','${tutorGroupId}','${studentId}',0,1) ON CONFLICT DO NOTHING;`);
+          return tutorGroupId;
+        },
+        tutorSnapshot(studentId:string) {
+          if(!/^[A-Za-z0-9-]{1,36}$/.test(studentId))throw new Error("Invalid tutor fixture student");
+          return JSON.parse(auditSql(`SELECT json_build_object('receipts',(SELECT count(*) FROM game_session_hints h JOIN game_sessions s ON s.session_id=h.session_id WHERE s.student_id='${studentId}'),'consumed',(SELECT count(*) FROM game_session_hints h JOIN game_sessions s ON s.session_id=h.session_id WHERE s.student_id='${studentId}' AND h.consumed_at IS NOT NULL),'ruleBased',(SELECT count(*) FROM game_session_hints h JOIN game_sessions s ON s.session_id=h.session_id WHERE s.student_id='${studentId}' AND h.source='RULE_BASED' AND h.consumed_at IS NOT NULL))`));
         },
         membershipCount({studentId,groupId}) {
           if(![studentId,groupId].every(id=>typeof id==='string'&&/^[A-Za-z0-9-]{1,36}$/.test(id)))throw new Error("Invalid fixture identifiers");

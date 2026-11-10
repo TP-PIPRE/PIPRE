@@ -10,6 +10,7 @@ import { gameProgressService } from "../../src/infrastructure/api/gameProgressSe
 import { useGameStore } from "../../src/infrastructure/store/gameStore";
 import { useAchievementStore } from "../../src/infrastructure/store/achievementStore";
 import { ValidatedGameSession } from "../../src/infrastructure/store/validatedGameSession";
+import type { ActivityResponseDTO } from "../../src/infrastructure/api/models/apiModels";
 import type { GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "../../src/infrastructure/api/models/gameProgressModels";
 import { Simulador } from "../../src/ui/pages/Simulador";
 import { loadCourseActivities } from "../../src/application/usecases/loadCourseActivities";
@@ -23,6 +24,8 @@ vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCour
 const sessions = new Map<string, GameSessionDTO>();
 const context = (): GameSessionContext => ({ studentId: getAuthState().user!.id, game: "neonflow", levelTemplate: "neonflow-v2-1" });
 const sessionDTO = (value: GameSessionContext, id = crypto.randomUUID()): GameSessionDTO => ({ sessionId: id, game: value.game, levelNumber: 1, levelTemplate: value.levelTemplate, ruleset: "test-rules", startedAt: "2026-11-02T12:00:00Z", status: "ACTIVE", revision: 0, state: { pieces: [], moves: 0, resets: 0, helps: 0, failedChecks: 0, rejections: 0 } });
+const officialActivity: ActivityResponseDTO = { idActivity: "activity-1", name: "Reto oficial", environment: "neonflow", levelTemplate: "neonflow-v2-1" };
+const officialContext = (): GameSessionContext => ({ ...context(), activityId: officialActivity.idActivity });
 const victoryDTO = (id: string): GameVictoryDTO => ({ sessionId: id, game: sessions.get(id)?.game ?? "neonflow", levelNumber: 1, stars: 2, bestStars: 3, completedAt: "2026-11-02T12:01:00Z", durationMs: 60000, newAchievements: [], daily: null });
 beforeEach(() => {
   vi.clearAllMocks(); sessions.clear();
@@ -31,7 +34,7 @@ beforeEach(() => {
   vi.mocked(gameProgressService.start).mockImplementation(async value => { const session = sessionDTO(value); sessions.set(session.sessionId, session); return session; });
   vi.mocked(gameProgressService.action).mockImplementation(async (id, action) => { const session = { ...sessions.get(id)!, revision: action.sequence }; sessions.set(id, session); return session; });
   vi.mocked(gameProgressService.complete).mockImplementation(async id => victoryDTO(id));
-  vi.mocked(gameProgressService.hint).mockResolvedValue({ requestId: crypto.randomUUID(), hintId: crypto.randomUUID(), revision: 0, source: "RULE_BASED", hintLevel: 1, type: "COLOR_HINT", message: "Observa el filtro del haz.", targetCell: { x: 1, y: 1 } });
+  vi.mocked(gameProgressService.hint).mockImplementation(async (_sessionId, request) => ({ requestId: request.requestId, hintId: crypto.randomUUID(), revision: request.revision, source: "RULE_BASED", hintLevel: 1, type: "COLOR_HINT", message: "Observa el filtro del haz.", targetCell: { x: 1, y: 1 } }));
 });
 afterEach(async () => { cleanup(); useGameStore.getState().stopGame(); await act(async () => {}); });
 const openNeon = () => render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} /></MemoryRouter>);
@@ -121,12 +124,104 @@ describe("Official course progression and access", () => {
 
 describe("Server-confirmed game sessions", () => {
   it("requests a contextual hint at the confirmed revision and queues one HELP action", async () => {
-    openNeon();
+    render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} activity={officialActivity} courseId="c001" /></MemoryRouter>);
     await screen.findByLabelText("Tablero Neon Flow");
     fireEvent.click(screen.getByRole("button", { name: "Pista" }));
     await screen.findByText("Observa el filtro del haz.");
     expect(gameProgressService.hint).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ revision: 0, locale: "es" }));
     await waitFor(() => expect(gameProgressService.action).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ type: "HELP", hintId: expect.any(String), sequence: 1 })));
+  });
+
+  it("keeps the same requestId and avoids static HELP when contextual delivery is uncertain", async () => {
+    const controller = new ValidatedGameSession(officialContext());
+    await controller.start();
+    vi.mocked(gameProgressService.hint).mockRejectedValueOnce(new Error("Sin conexión"));
+
+    const first = await controller.requestHint();
+
+    expect(first.status).toBe("PENDING");
+    expect(gameProgressService.action).not.toHaveBeenCalled();
+    const requestId = vi.mocked(gameProgressService.hint).mock.calls[0][1].requestId;
+    vi.mocked(gameProgressService.hint).mockImplementationOnce(async (_sessionId, request) => ({
+      requestId: request.requestId, hintId: crypto.randomUUID(), revision: request.revision, source: "RULE_BASED", hintLevel: 1,
+      type: "COLOR_HINT", message: "Observa el filtro del haz.", targetCell: { x: 1, y: 1 },
+    }));
+
+    const second = await controller.requestHint();
+
+    expect(second.status).toBe("DELIVERED");
+    expect(vi.mocked(gameProgressService.hint).mock.calls[1][1].requestId).toBe(requestId);
+    expect(vi.mocked(gameProgressService.action).mock.calls).toHaveLength(1);
+  });
+
+  it("retries a failed contextual action with the same hint and sequence", async () => {
+    const controller = new ValidatedGameSession(officialContext());
+    await controller.start();
+    vi.mocked(gameProgressService.action).mockRejectedValueOnce(new Error("Sin conexión"));
+
+    const first = await controller.requestHint();
+
+    expect(first.status).toBe("PENDING");
+    const failedAction = vi.mocked(gameProgressService.action).mock.calls[0][1];
+    const second = await controller.requestHint();
+
+    expect(second.status).toBe("DELIVERED");
+    expect(vi.mocked(gameProgressService.action).mock.calls[1][1]).toEqual(failedAction);
+  });
+
+  it("returns the delivered hint through the generic retry action", async () => {
+    const controller = new ValidatedGameSession(officialContext());
+    await controller.start();
+    vi.mocked(gameProgressService.action).mockRejectedValueOnce(new Error("Sin conexión"));
+
+    expect((await controller.requestHint()).status).toBe("PENDING");
+    const result = await controller.retry();
+
+    expect(result?.status).toBe("DELIVERED");
+  });
+
+  it("does not send a pending hint after the session is disposed", async () => {
+    const controller = new ValidatedGameSession(officialContext());
+    await controller.start();
+    let resolveHint!: (value: Awaited<ReturnType<typeof gameProgressService.hint>>) => void;
+    vi.mocked(gameProgressService.hint).mockImplementationOnce(() => new Promise(resolve => { resolveHint = resolve; }));
+
+    const pending = controller.requestHint();
+    await waitFor(() => expect(gameProgressService.hint).toHaveBeenCalledTimes(1));
+    controller.dispose();
+    resolveHint({ requestId: vi.mocked(gameProgressService.hint).mock.calls[0][1].requestId, hintId: crypto.randomUUID(), revision: 0, source: "RULE_BASED", hintLevel: 1, type: "COLOR_HINT", message: "Observa el filtro del haz." });
+
+    expect((await pending).status).toBe("STALE");
+    expect(gameProgressService.action).not.toHaveBeenCalled();
+  });
+
+  it("guards static fallback against same-tick duplicate clicks", async () => {
+    openNeon();
+    await screen.findByLabelText("Tablero Neon Flow");
+    const hintButton=screen.getByRole("button",{name:"Pista"});
+    fireEvent.click(hintButton);
+    fireEvent.click(hintButton);
+
+    await waitFor(() => expect(gameProgressService.action).toHaveBeenCalledTimes(1));
+    expect(gameProgressService.action).toHaveBeenCalledWith(expect.any(String),expect.objectContaining({type:"HELP",source:"STATIC",sequence:1}));
+  });
+
+  it("discards a contextual response after the confirmed revision changes", async () => {
+    const controller = new ValidatedGameSession(officialContext());
+    await controller.start();
+    let resolveHint!: (value: Awaited<ReturnType<typeof gameProgressService.hint>>) => void;
+    vi.mocked(gameProgressService.hint).mockImplementationOnce(() => new Promise(resolve => { resolveHint = resolve; }));
+
+    const pending = controller.requestHint();
+    await waitFor(() => expect(gameProgressService.hint).toHaveBeenCalledTimes(1));
+    controller.action({ type: "CHECK" });
+    await waitFor(() => expect(gameProgressService.action).toHaveBeenCalledWith(expect.any(String), { type: "CHECK", sequence: 1 }));
+    resolveHint({ requestId: vi.mocked(gameProgressService.hint).mock.calls[0][1].requestId, hintId: crypto.randomUUID(), revision: 0, source: "RULE_BASED", hintLevel: 1, type: "COLOR_HINT", message: "Observa el filtro del haz." });
+
+    const result = await pending;
+
+    expect(result.status).toBe("STALE");
+    expect(vi.mocked(gameProgressService.action).mock.calls).toHaveLength(1);
   });
 
   it("uses the selected practice board from the URL when recovering a session",async()=>{

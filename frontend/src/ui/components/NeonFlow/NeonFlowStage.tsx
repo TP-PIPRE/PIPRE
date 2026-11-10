@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Cell, Grid, NeonFlowLevelConfig, OpticalComponent, RotationAngle } from "../../../shared/types/NeonFlow";
 import { NEONFLOW_LEVELS } from "../../../shared/constants/levelConfigs";
@@ -19,25 +19,28 @@ import {useBoardSelection} from "../common/useBoardSelection";
 const createGrid=createNeonGrid;
 const snapshot=(grid:Grid)=>grid.cells.filter(c=>c.type==='MIRROR_90'||c.type==='FILTER').map(c=>({type:c.type,x:c.x,y:c.y,...(c.rotation!==undefined?{rotation:c.rotation}:{}),...(c.color?{color:c.color}:{})}));
 
-export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId, onNext }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string; onNext?: () => void }) => {
+export const NeonFlowStage = ({ levels: LEVELS = NEONFLOW_LEVELS, activity, dailyChallengeId, courseId, onNext }: { levels?: NeonFlowLevelConfig[]; activity?: ActivityResponseDTO; dailyChallengeId?:string; courseId?: string; onNext?: () => void }) => {
   const [currentLevelIndex, setCurrentLevelIndex] = useBoardSelection(LEVELS,!activity&&!dailyChallengeId&&LEVELS.length>1);
   const level=LEVELS[currentLevelIndex],templateId=activity?.levelTemplate??level.templateId;
   const gameSession=useValidatedGameSession(templateId?{game:"neonflow",levelTemplate:templateId,activityId:activity?.idActivity,dailyChallengeId}:null);
   if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"Neon Flow"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
-  return <NeonBoardSession key={gameSession.state?.session?.sessionId??templateId} levels={LEVELS} currentLevelIndex={currentLevelIndex} setCurrentLevelIndex={setCurrentLevelIndex} activity={activity} dailyChallengeId={dailyChallengeId} onNext={onNext} gameSession={gameSession}/>;
+  return <NeonBoardSession key={gameSession.state?.session?.sessionId??templateId} levels={LEVELS} currentLevelIndex={currentLevelIndex} setCurrentLevelIndex={setCurrentLevelIndex} activity={activity} dailyChallengeId={dailyChallengeId} courseId={courseId} onNext={onNext} gameSession={gameSession}/>;
 };
-function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,activity,dailyChallengeId,onNext,gameSession}:{levels:NeonFlowLevelConfig[];currentLevelIndex:number;setCurrentLevelIndex:(index:number)=>void;activity?:ActivityResponseDTO;dailyChallengeId?:string;onNext?:()=>void;gameSession:ReturnType<typeof useValidatedGameSession>}) {
+function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,activity,dailyChallengeId,courseId,onNext,gameSession}:{levels:NeonFlowLevelConfig[];currentLevelIndex:number;setCurrentLevelIndex:(index:number)=>void;activity?:ActivityResponseDTO;dailyChallengeId?:string;courseId?:string;onNext?:()=>void;gameSession:ReturnType<typeof useValidatedGameSession>}) {
   const [initialSession]=useState(gameSession.state?.session);
   const [grid, setGrid] = useState<Grid>(() => restoreNeonBoard(LEVELS[currentLevelIndex],gameSession.state?.session?.state.pieces));
   const [laserPath, setLaserPath] = useState<Cell[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [staticHints,setStaticHints]=useState(gameSession.state?.session?.state.helps??0);
+  const [hintBusy,setHintBusy]=useState(false);
+  const hintGuard=useRef(false);
 
   const [selectedComponent, setSelectedComponent] = useState<OpticalComponent | null>(null);
   const level = LEVELS[currentLevelIndex];
   const templateId=activity?.levelTemplate??level.templateId;
   const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null,initialSession?.state.pieces??[]);
+  const contextualHintsEnabled=gameSession.contextualHintsEnabled && courseId === "c001";
 
   const status = useGameStore((s) => s.status);
   const startGame = useGameStore((s) => s.startGame);
@@ -138,6 +141,46 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
     }
   };
 
+  const fallbackHint = async () => {
+    if (gameSession.enabled && !await gameSession.submitAction({type:"HELP",source:"STATIC"})) return;
+    record("HELP",{source:"STATIC"});
+    setStaticHints(n=>n+1);
+    setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");
+  };
+
+  const presentHintResult = async (result: Awaited<ReturnType<typeof gameSession.requestHint>>) => {
+    if (result.status === "FALLBACK_ALLOWED") { await fallbackHint(); return; }
+    if (result.status === "DELIVERED") {
+      record("HELP",{source:result.hint.source,hintId:result.hint.hintId,hintLevel:result.hint.hintLevel,type:result.hint.type});
+      setHint(result.hint.message);
+      return;
+    }
+    if (result.status === "PENDING") {
+      setHint("No pudimos confirmar la pista. Pulsa Pista para reintentar sin duplicarla.");
+      return;
+    }
+    setHint("El tablero cambió mientras se consultaba la pista. Pide una nueva ayuda.");
+  };
+
+  const handleHint = () => {
+    if (hintGuard.current) return;
+    hintGuard.current=true;
+    setHintBusy(true);
+    if (!contextualHintsEnabled) {
+      void presentHintResult({status:"FALLBACK_ALLOWED",reason:"UNAVAILABLE"})
+        .finally(() => { hintGuard.current=false; setHintBusy(false); });
+      return;
+    }
+    void gameSession.requestHint("es")
+      .then(presentHintResult)
+      .catch(() => setHint("No pudimos confirmar la pista. Puedes intentarlo nuevamente."))
+      .finally(() => { hintGuard.current=false; setHintBusy(false); });
+  };
+
+  const handleSessionRetry = () => {
+    void gameSession.retry().then(result => { if (result) presentHintResult(result); });
+  };
+
   if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"Neon Flow"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
   return (
     <main className="lab-shell neon-flow-stage">
@@ -175,7 +218,8 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
       <ControlPanel
         onCheck={handleCheck}
         allowResetAfterCompletion
-        resetDisabled={gameSession.verifying}
+         resetDisabled={gameSession.verifying}
+         hintDisabled={hintBusy || gameSession.hintBusy}
         onReset={() => {
           record("RESET",{},snapshot(grid),[]);
           gameSession.reset();
@@ -186,21 +230,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
           setStaticHints(0);
           resetForLevel(currentLevelIndex);
         }}
-        hintKind="static" hintCount={staticHints}
-         onHint={() => {
-           const fallback = () => {
-             record("HELP",{source:"STATIC"});
-             gameSession.action({type:"HELP",source:"STATIC"});
-             setStaticHints(n=>n+1);
-             setHint("Pista: sigue la dirección del haz y comprueba cada giro. Los filtros sólo dejan pasar su mismo color.");
-           };
-           if (!gameSession.enabled) { fallback(); return; }
-           void gameSession.requestHint("es").then(response => {
-             if (!response) { fallback(); return; }
-             record("HELP",{source:response.source,hintId:response.hintId,hintLevel:response.hintLevel,type:response.type});
-             setHint(response.message);
-           });
-         }}
+         hintKind="static" hintCount={Math.max(staticHints,gameSession.state?.session?.state.helps??0)} onHint={handleHint}
       />
       {status === "SUCCESS" &&
         (currentLevelIndex === LEVELS.length - 1 ? (
@@ -237,7 +267,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
         </div>
       )}
       </section>
-      <GameSessionFeedback state={gameSession.state} retry={gameSession.retry}/>
+       <GameSessionFeedback state={gameSession.state} retry={handleSessionRetry}/>
     </main>
   );
 }

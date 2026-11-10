@@ -1,8 +1,8 @@
 import { Timer, Move, RotateCcw, Lightbulb, CircleCheck } from "lucide-react";
 import { useGameStore } from "../../../infrastructure/store/gameStore";
-export interface ControlPanelProps { onCheck: () => void; onReset?: () => void; onHint?: () => void; hintKind?: 'static'|'ai'; hintCount?: number; allowResetAfterCompletion?: boolean; resetDisabled?:boolean; }
+export interface ControlPanelProps { onCheck: () => void; onReset?: () => void; onHint?: () => void; hintKind?: 'static'|'ai'; hintCount?: number; allowResetAfterCompletion?: boolean; resetDisabled?:boolean; hintDisabled?: boolean; }
 const formatTime = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-export const ControlPanel = ({ onCheck, onReset, onHint, hintKind='ai', hintCount, allowResetAfterCompletion=false, resetDisabled=false }: ControlPanelProps) => {
+export const ControlPanel = ({ onCheck, onReset, onHint, hintKind='ai', hintCount, allowResetAfterCompletion=false, resetDisabled=false, hintDisabled=false }: ControlPanelProps) => {
   const status = useGameStore(s => s.status);
   const time = useGameStore(s => s.tiempoResolucion);
   const moves = useGameStore(s => s.movimientos);
@@ -15,7 +15,7 @@ export const ControlPanel = ({ onCheck, onReset, onHint, hintKind='ai', hintCoun
     <div className="flex flex-wrap justify-center gap-3">
       <button onClick={onCheck} disabled={!playing} className="btn-premium"><CircleCheck size={18} aria-hidden="true" />Comprobar</button>
       <button onClick={() => { resetGame(); onReset?.(); }} disabled={resetDisabled||(!playing && !(allowResetAfterCompletion && (status === "SUCCESS" || status === "FAILED")))} className="btn-secondary"><RotateCcw size={18} aria-hidden="true" />Reiniciar</button>
-      <button onClick={() => { if(hintKind==='ai')requestHint(); onHint?.(); }} disabled={!playing} className="btn-secondary"><Lightbulb size={18} aria-hidden="true" />Pista</button>
+      <button onClick={() => { if(hintKind==='ai')requestHint(); onHint?.(); }} disabled={!playing || hintDisabled} className="btn-secondary"><Lightbulb size={18} aria-hidden="true" />Pista</button>
     </div>
     <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 text-center">
       {[[Timer, "Tiempo", formatTime(time)], [Move, "Movimientos", moves], [RotateCcw, "Reinicios", resets], [Lightbulb, "Pistas", hintCount??hints]].map(([Icon, label, value]) => {

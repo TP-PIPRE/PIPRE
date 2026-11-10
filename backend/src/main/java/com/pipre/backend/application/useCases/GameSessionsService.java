@@ -42,6 +42,7 @@ public class GameSessionsService implements GameSessionsUseCase {
     private final GamificationRepositoryPort gamification;
     private final GameSessionHintRepositoryPort hintReceipts;
     private final TutorPilotProperties tutorProperties;
+    private final TutorPilotAccessPort tutorPilotAccess;
 
     @Override @Transactional
     public java.util.Optional<GameSessionDTO> active(String studentId,String game,String template,String activityId,String dailyChallengeId) {
@@ -107,8 +108,14 @@ public class GameSessionsService implements GameSessionsUseCase {
     @Override @Transactional
     public GameSessionDTO action(String studentId,String sessionId,GameSessionAction action) {
         var session=owned(studentId,sessionId);
-        if ("HELP".equals(action.type()) && action.hintId() != null && action.source() != null)
-            throw new BusinessException("Una ayuda contextual no puede declarar su origen.");
+        if (action.hintId() != null && !"HELP".equals(action.type()))
+            throw new BusinessException("hintId solo puede acompañar una acción HELP.");
+        if ("HELP".equals(action.type())) {
+            if (action.hintId() != null && action.source() != null)
+                throw new BusinessException("Una ayuda contextual no puede declarar su origen.");
+            if (action.hintId() == null && !"STATIC".equals(action.source()))
+                throw new BusinessException("Una ayuda estática debe declarar source=STATIC.");
+        }
         JsonNode payload=json.valueToTree(action);String hash=fingerprint(payload);
         var receipt=sessions.findAction(sessionId,action.sequence());
         if(receipt.isPresent()) {
@@ -128,7 +135,8 @@ public class GameSessionsService implements GameSessionsUseCase {
                 rejected.put("lastActionRejectionCode", rejection);
                 state = rejected;
             } else {
-                if (!hintReceipts.consume(action.hintId(), session.sessionId(), session.revision(), tutorProperties.getMaxHints(), clock.instant())) {
+                if (!hintReceipts.consume(action.hintId(), session.sessionId(), session.revision(), tutorProperties.getMaxHints(), clock.instant(),
+                        session.studentId(), session.activityId(), java.util.Set.copyOf(tutorProperties.getAllowedGroupIds()))) {
                     var rejected = BoardRules.apply(session.game(), config, session.state(),
                             new BoardAction("REJECT", null, null, null, null, null, null, null));
                     rejected.put("lastActionRejectionCode", "HINT_QUOTA_EXCEEDED");
@@ -148,12 +156,27 @@ public class GameSessionsService implements GameSessionsUseCase {
         return response;
     }
     private String validateHintReceipt(GameSession session, GameSessionAction action) {
-        var receipt=hintReceipts.findById(action.hintId()).orElse(null);
-        if(receipt==null||!receipt.sessionId().equals(session.sessionId()))return "HINT_NOT_FOUND";
-        if(receipt.revision()!=session.revision())return "HINT_STALE";
-        if(receipt.consumedAt()!=null)return "HINT_ALREADY_CONSUMED";
-        return null;
-    }
+          var receipt=hintReceipts.findById(action.hintId()).orElse(null);
+          if(receipt==null)throw new ResourceNotFoundException("La pista contextual no existe.");
+          if(!receipt.sessionId().equals(session.sessionId()))throw new AccessDeniedException("La pista contextual no pertenece a esta sesión.");
+         if(receipt.revision()!=session.revision())return "HINT_STALE";
+         if(receipt.consumedAt()!=null)return "HINT_ALREADY_CONSUMED";
+         if (!tutorProperties.isEnabled() || session.dailyChallengeId() != null || session.activityId() == null
+                 || !tutorProperties.getAllowedActivityIds().contains(session.activityId())
+                 || tutorProperties.getAllowedGroupIds().isEmpty()
+                 || !"neonflow".equals(session.game())
+                 || !"c001".equals(academicAccess.activityCourse(session.activityId()))) return "HINT_SCOPE";
+         var activity = activities.findById(session.activityId()).orElse(null);
+         if (activity == null || !"neonflow".equals(activity.getEnvironment())
+                 || !canonicalTutorTemplate(session, activity)
+                 || !tutorPilotAccess.isStudentAssignedToActivity(session.studentId(), session.activityId(), java.util.Set.copyOf(tutorProperties.getAllowedGroupIds()))) return "HINT_SCOPE";
+         return null;
+     }
+     private boolean canonicalTutorTemplate(GameSession session, com.pipre.backend.domain.entities.activity.Activity activity) {
+         if (activity.getLevelTemplate() == null) return false;
+         try { return session.levelTemplate().equals(BoardRules.canonicalTemplate("neonflow", activity.getLevelTemplate())); }
+         catch (BusinessException error) { return false; }
+     }
     @Override @Transactional(noRollbackFor=IncompleteGameBoardException.class)
     public GameCompletionDTO complete(String studentId,String sessionId) {
         var session=owned(studentId,sessionId);

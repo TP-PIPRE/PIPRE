@@ -172,6 +172,35 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
     });
   });
 
+  it("solicita una pista contextual real, registra HELP y completa Neon Flow",()=>{
+    login();
+    studentId().then(id=>{
+      cy.task("configureTutorPilot",id);
+      cy.intercept("POST",`${api}/game-sessions/*/hints`).as("contextualHint");
+      cy.intercept("POST",`${api}/game-sessions/*/actions`).as("verifiedAction");
+      cy.visit("/simulador/c001?activity=act-c001-v2-1");
+      cy.get('button[aria-label="Celda vacía, fila 3, columna 2"]',{timeout:15000}).should("be.visible");
+      cy.contains("button","Filtro green").click();
+      cy.get('button[aria-label="Celda vacía, fila 3, columna 2"]').click();
+      cy.contains("button","Pista").click();
+      cy.wait("@contextualHint").then(({request,response})=>{
+        expect(response?.statusCode).to.eq(200);
+        expect(request.headers).to.have.property("x-xsrf-token").and.not.be.empty;
+        expect(response?.body).to.include({source:"RULE_BASED",type:"COLOR_HINT",revision:1});
+      });
+      cy.contains("Los filtros dejan pasar el haz",{timeout:15000}).should("be.visible");
+      cy.task<{receipts:number;consumed:number;ruleBased:number}>("tutorSnapshot",id).should(snapshot=>{
+        expect(snapshot.receipts).to.eq(1);
+        expect(snapshot.consumed).to.eq(1);
+        expect(snapshot.ruleBased).to.eq(1);
+      });
+      cy.contains("button","Reiniciar").click();
+      cy.contains("button",/^Comprobar$/).click();
+      cy.contains("Resultado guardado",{timeout:15000}).should("be.visible");
+      cy.wait("@verifiedAction",{timeout:15000});
+    });
+  });
+
   it("completa cinco diarios, conserva 2/5 tras salir y acredita sólo el quinto",()=>{
     login();cy.visit("/");
     studentId().then(id=>{

@@ -8,7 +8,7 @@ export interface GameSessionContext {
 export interface GameSessionDTO {
   sessionId: string; game: SimulatorGame; levelNumber: number; levelTemplate: string; ruleset: string;
   startedAt: string; status: "ACTIVE" | "COMPLETED" | "ABANDONED"; revision: number;
-  state: { pieces: GamePieceState[]; moves: number; resets: number; helps: number; failedChecks: number; rejections: number; lastActionRejected?: boolean };
+  state: { pieces: GamePieceState[]; moves: number; resets: number; helps: number; failedChecks: number; rejections: number; lastActionRejected?: boolean; lastActionRejectionCode?: string };
 }
 export interface GameAction {
   type: "PLACE" | "ROTATE" | "RETURN" | "RESET" | "HELP" | "CHECK" | "REJECT";
@@ -19,6 +19,11 @@ export interface GameHintResponse {
   requestId: string; hintId: string; revision: number; source: "RULE_BASED" | "GENERATIVE" | "STATIC";
   hintLevel: 1 | 2 | 3; type: string; message: string; targetCell?: { x: number; y: number } | null;
 }
+export type GameHintResult =
+  | { status: "DELIVERED"; hint: GameHintResponse }
+  | { status: "FALLBACK_ALLOWED"; reason: "UNAVAILABLE" | "REJECTED" }
+  | { status: "PENDING"; requestId: string }
+  | { status: "STALE" };
 export interface DailyChallengeDTO {
   id: string; date: string; timeZone: "America/Lima"; game: SimulatorGame; levelNumber: number; levelTemplate: string;
   completed: boolean; currentStreak: number; bestStreak: number;

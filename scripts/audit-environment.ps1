@@ -13,7 +13,9 @@ function Assert-AuditContainers($manifest) {
     if ($manifest.project -notmatch '^pipre-audit-[a-f0-9]{32}$' -or $manifest.runId -notmatch '^[a-f0-9]{32}$') { throw 'Invalid audit manifest.' }
     $ids = @(Invoke-AuditDocker @('ps','-aq','--filter',"label=com.docker.compose.project=$($manifest.project)"))
     foreach ($id in $ids) {
-        $label = Invoke-AuditDocker @('inspect','--format','{{index .Config.Labels "pipre.audit.run"}}',$id)
+        $rawLabels = Invoke-AuditDocker @('inspect','--format','{{json .Config.Labels}}',$id)
+        $labels = ($rawLabels -join "`n") | ConvertFrom-Json
+        $label = $labels.'pipre.audit.run'
         if ($label -ne $manifest.runId) { throw 'Refusing to change a container without this audit label.' }
     }
 }

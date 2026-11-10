@@ -18,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import java.time.*;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class GameSessionsServiceTest {
@@ -30,9 +31,10 @@ class GameSessionsServiceTest {
     private final AcademicAccessRepositoryPort academicAccess=mock(AcademicAccessRepositoryPort.class);
     private final GamificationRepositoryPort gamification=mock(GamificationRepositoryPort.class);
     private final GameSessionHintRepositoryPort hintReceipts=mock(GameSessionHintRepositoryPort.class);
+    private final TutorPilotAccessPort tutorPilotAccess=mock(TutorPilotAccessPort.class);
     private final TutorPilotProperties tutorProperties=new TutorPilotProperties();
     private final MutableClock clock=new MutableClock();
-    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification,hintReceipts,tutorProperties);
+    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification,hintReceipts,tutorProperties,tutorPilotAccess);
     @BeforeEach void setup() throws Exception {
         JsonNode catalog=json.readTree(getClass().getResourceAsStream("/catalog/neonflow-v2.json"));
         for(JsonNode config:catalog) {
@@ -99,6 +101,26 @@ class GameSessionsServiceTest {
         assertEquals(2,service.action("student",session.sessionId(),new GameSessionAction(2,"CHECK",null,null,null,null,null,null,null)).revision());
         assertEquals(1,repository.rows.get(session.sessionId()).state().path("rejections").asInt());
     }
+    @Test void rejectsAmbiguousHelpActionsBeforeAdvancingTheSession() {
+        var session=service.start(command(1));
+        assertThrows(BusinessException.class,()->service.action("student",session.sessionId(),new GameSessionAction(1,"HELP",null,null,null,null,null,null,null,null)));
+        assertThrows(BusinessException.class,()->service.action("student",session.sessionId(),new GameSessionAction(1,"CHECK",null,null,null,null,null,null,null,"foreign-hint")));
+        assertEquals(0,repository.rows.get(session.sessionId()).revision());
+    }
+    @Test void rejectsMissingHintReceiptsWithoutAdvancingTheSession() {
+        var session=service.start(command(1));
+        assertThrows(com.pipre.backend.domain.exceptions.ResourceNotFoundException.class,()->service.action("student",session.sessionId(),new GameSessionAction(1,"HELP",null,null,null,null,null,null,null,"missing-hint")));
+        assertEquals(0,repository.rows.get(session.sessionId()).revision());
+        verify(hintReceipts).findById("missing-hint");
+    }
+    @Test void replaysAnAcceptedActionReceiptAfterCompletionWithoutReapplyingIt() {
+        var session=service.start(command(1));
+        var action=new GameSessionAction(1,"CHECK",null,null,null,null,null,null,null);
+        var accepted=service.action("student",session.sessionId(),action);
+        repository.update(repository.rows.get(session.sessionId()).change(repository.rows.get(session.sessionId()).state(),1,"COMPLETED",clock.now,1,null));
+
+        assertEquals(accepted,service.action("student",session.sessionId(),action));
+    }
     @Test void serverCountersReduceStarsAndClockRegressionCannotProduceAFastVictory() {
         var session=service.start(command(1));
         service.action("student",session.sessionId(),new GameSessionAction(1,"HELP",null,null,null,null,null,null,"STATIC"));
@@ -106,6 +128,21 @@ class GameSessionsServiceTest {
         clock.now=clock.now.minusSeconds(1);
         assertThrows(BusinessException.class,()->service.complete("student",session.sessionId()));verifyNoInteractions(victories);
         clock.now=clock.now.plusSeconds(2);assertEquals(2,service.complete("student",session.sessionId()).stars());
+    }
+    @Test void rechecksContextualHintScopeBeforeConsumingAReceipt() {
+        var session=new GameSession("hint-session",UUID.randomUUID().toString(),"student","neonflow",1,"neonflow-v2-1","activity-1",null,clock.now,null,"ACTIVE",BoardRules.initialState(),0,1,null,null);
+        repository.insert(session);
+        tutorProperties.setEnabled(true);tutorProperties.setAllowedActivityIds(List.of("activity-1"));tutorProperties.setAllowedGroupIds(List.of("group-1"));
+        when(hintReceipts.findById("hint")).thenReturn(Optional.of(new GameSessionHintRepositoryPort.HintReceipt("hint","hint-session","request","hash","key",0,"es","RULE_BASED",1,"COLOR_HINT","Observa el filtro.",1,1,clock.now,null)));
+        when(academicAccess.activityCourse("activity-1")).thenReturn("c001");
+        var activity=mock(Activity.class);when(activity.getEnvironment()).thenReturn("neonflow");when(activity.getLevelTemplate()).thenReturn("neonflow-v2-1");
+        when(activities.findById("activity-1")).thenReturn(Optional.of(activity));
+        when(tutorPilotAccess.isStudentAssignedToActivity("student","activity-1",Set.of("group-1"))).thenReturn(false);
+
+        var rejected=service.action("student","hint-session",new GameSessionAction(1,"HELP",null,null,null,null,null,null,null,"hint"));
+
+        assertEquals("HINT_SCOPE",rejected.state().path("lastActionRejectionCode").asText());
+        verify(hintReceipts,never()).consume(any(),any(),anyInt(),anyInt(),any(),any(),any(),anySet());
     }
     @Test void validatesDailyAssignmentOnStartAndRetainsCanonicalLevelIdentity() {
         var request=new StartGameSessionCommand("student",UUID.randomUUID().toString(),"neonflow","neonflow-3",null,"2026-11-02");

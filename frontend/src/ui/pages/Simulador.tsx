@@ -106,8 +106,8 @@ function CourseSimulator({ courseId, studentId, canManage }: { courseId: string;
     {activity && template && available
       ? template.game === "neonflow"
         ? template.config.version === 2
-          ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} />
-          : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+           ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} courseId={courseId} onNext={goToNext} />
+           : <NeonFlowStage key={activity.idActivity} activity={activity} courseId={courseId} levels={[template.config]} />
         : template.config.version === 2
           ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} />
           : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />

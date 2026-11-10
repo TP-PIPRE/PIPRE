@@ -10,6 +10,7 @@ import com.pipre.backend.domain.entities.game.GameSession;
 import com.pipre.backend.domain.entities.lesson.Lesson;
 import com.pipre.backend.domain.entities.module.Module;
 import com.pipre.backend.domain.exceptions.BusinessException;
+import com.pipre.backend.domain.exceptions.GameHintPendingException;
 import com.pipre.backend.infrastructure.configuration.TutorPilotProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,6 +97,27 @@ class RequestGameHintServiceTest {
 
         assertEquals("hint", response.hintId());
         verifyNoInteractions(templates);
+    }
+
+    @Test
+    void countsPendingReceiptsOnlyForTheRequestedRevision() {
+        when(hints.countPending(eq("session"), eq(0))).thenReturn(1L);
+
+        assertThrows(GameHintPendingException.class, () -> service.execute(
+                "student", "session", new RequestGameHintCommand(UUID.randomUUID().toString(), 0, "es")));
+        verify(hints).countPending(eq("session"), eq(0));
+    }
+
+    @Test
+    void rejectsDailySessionsBeforeLoadingPilotActivityData() {
+        GameSession daily = new GameSession(
+                "daily", "client", "student", "neonflow", 1, "neonflow-v2-1", "activity", "2026-11-09",
+                Instant.parse("2026-11-08T00:00:00Z"), null, "ACTIVE", BoardRules.initialState(), 0, 1, null, null);
+        when(sessions.lockSession("daily")).thenReturn(Optional.of(daily));
+
+        assertThrows(BusinessException.class, () -> service.execute(
+                "student", "daily", new RequestGameHintCommand(UUID.randomUUID().toString(), 0, "es")));
+        verifyNoInteractions(activities, templates);
     }
 
     private Activity activity() {

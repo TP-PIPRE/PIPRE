@@ -12,7 +12,7 @@ Docker Desktop en ejecución, PowerShell, Node compatible con el proyecto y pnpm
 | Backend integración | Mismo árbol, etiqueta `integration` | Spring, repositorios y H2/Flyway |
 | Backend PostgreSQL | `BackendPersistenceIntegrationTest` | PostgreSQL 16 desechable creado por su script |
 | Frontend unitario/componentes | `frontend/tests/unit/` | Vitest, Testing Library, jsdom; adaptadores HTTP controlados |
-| E2E de aplicación | `frontend/tests/e2e/application.cy.ts` | Navegador, frontend y backend reales, PostgreSQL desechable |
+| E2E de aplicación | `frontend/tests/e2e/application.cy.ts` | Navegador, frontend y backend reales, PostgreSQL desechable; incluye el flujo contextual Neon Flow, CSRF, recibo `RULE_BASED`, `HELP` y victoria |
 | E2E de contratos UI | Otros siete `*.cy.ts` y `ui-fixtures.ts` | Navegador real, respuestas HTTP explícitamente interceptadas |
 
 Las pruebas de UI con fixtures comprueban estados y contratos; no sustituyen la integración real. No se arrancan modelos, proxy ni contenedor `data-science`, ni se llaman servicios externos de IA. Los testigos de solución de los tableros son datos locales del catálogo: el navegador coloca las piezas y el servidor valida las acciones.

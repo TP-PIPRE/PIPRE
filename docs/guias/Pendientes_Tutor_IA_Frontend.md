@@ -1,8 +1,8 @@
 # Pendientes del tutor contextual en frontend
 
-**Estado:** vigente, pendiente de corrección.  
-**Fecha de revisión:** 09/11/2026.  
-**Alcance:** integración frontend del tutor contextual de Neon Flow y los contratos backend que afectan su entrega.  
+**Estado:** vigente, correcciones aplicadas localmente; piloto aún no habilitado.
+**Fecha de revisión:** 09/11/2026.
+**Alcance:** integración frontend del tutor contextual de Neon Flow y los contratos backend que afectan su entrega.
 **Rama revisada:** `feature/neonflow-contextual-tutor`.
 
 Esta guía registra errores encontrados durante la auditoría de la primera implementación del tutor contextual. No acredita que el piloto esté listo ni sustituye la especificación funcional de [`Tutor_IA_Simulador.md`](Tutor_IA_Simulador.md).
@@ -22,10 +22,10 @@ La pista contextual y la ayuda estática tienen ciclos distintos:
 
 | ID | Severidad | Estado | Área |
 |---|---|---|---|
-| TUTOR-FE-001 | P1 | Pendiente | Fallback y doble `HELP` |
-| TUTOR-FE-002 | P1 | Pendiente | Recibos y revisiones obsoletas |
-| TUTOR-FE-003 | P1 | Pendiente | Alcance del piloto |
-| TUTOR-FE-004 | P2 | Pendiente | Cobertura de pruebas de integración |
+| TUTOR-FE-001 | P1 | Corregido | Fallback y doble `HELP` |
+| TUTOR-FE-002 | P1 | Corregido | Recibos y revisiones obsoletas |
+| TUTOR-FE-003 | P1 | Corregido | Alcance del piloto |
+| TUTOR-FE-004 | P2 | Parcial | Cobertura de pruebas de integración |
 
 ## TUTOR-FE-001: doble `HELP` después de un timeout
 
@@ -55,27 +55,29 @@ Además, dos clics rápidos comparten la promesa `hintWorking`, pero cada callba
 - Un rechazo explícito que confirma que no hubo entrega puede activar una sola ayuda estática.
 - Dos clics concurrentes producen una sola solicitud lógica y, como máximo, una acción `HELP`.
 
-### Corrección pendiente
+### Corrección aplicada
 
-- Reemplazar el resultado nullable de `requestHint()` por un resultado explícito que distinga `DELIVERED`, `FALLBACK_ALLOWED`, `PENDING`, `STALE` y `REJECTED`.
-- Mantener el `requestId` de la solicitud lógica mientras se reintenta por red.
-- Conservar el `hintId` cuando la respuesta llegó pero la confirmación de la acción falló.
-- No activar fallback si existe un recibo o una acción contextual pendiente de reconciliación.
-- Exponer un estado de consulta al botón `Pista` y bloquear clics concurrentes.
-- Hacer que el fallback estático sea idempotente dentro de una solicitud de ayuda.
+- `requestHint()` distingue `DELIVERED`, `FALLBACK_ALLOWED`, `PENDING` y `STALE`.
+- Los reintentos de red conservan `requestId`; los reintentos de acción conservan `hintId` y secuencia.
+- Una entrega incierta no activa el fallback estático.
+- `hintBusy` deshabilita el botón durante la consulta contextual.
+- La ruta estática solo se ejecuta una vez por resultado que autoriza fallback.
+- Un guard síncrono evita dos fallbacks estáticos en el mismo ciclo de eventos.
+- Una sesión desmontada invalida la respuesta pendiente y no envía nuevas acciones.
+- El botón de retry puede presentar y registrar la pista contextual confirmada.
 
 ## TUTOR-FE-002: recibos pendientes de revisiones antiguas
 
 ### Ubicación
 
 - [`RequestGameHintService.java`](../../backend/src/main/java/com/pipre/backend/application/useCases/RequestGameHintService.java), conteo de solicitudes pendientes.
-- [`GameSessionHintRepositoryPort.java`](../../backend/src/main/java/com/pipre/backend/application/ports/output/GameSessionHintRepositoryPort.java), `countPendingSince()`.
+- [`GameSessionHintRepositoryPort.java`](../../backend/src/main/java/com/pipre/backend/application/ports/output/GameSessionHintRepositoryPort.java), `countPending()`.
 - [`GameSessionHintRepositoryAdapter.java`](../../backend/src/main/java/com/pipre/backend/adapters/out/persistence/GameSessionHintRepositoryAdapter.java), consulta SQL.
 - [`validatedGameSession.ts`](../../frontend/src/infrastructure/store/validatedGameSession.ts), comprobación de revisión y reintento.
 
 ### Problema
 
-El backend cuenta recibos no consumidos por `sessionId` y fecha, pero no por revisión. Una solicitud creada en la revisión `0` queda sin posibilidad de consumo cuando la partida avanza a la revisión `1`, porque `GameSessionsService` la rechaza como `HINT_STALE`. Sin embargo, el mismo recibo continúa bloqueando nuevas solicitudes durante la ventana de 30 segundos.
+El backend cuenta recibos no consumidos por `sessionId` y revisión. Una solicitud creada en la revisión `0` queda sin posibilidad de consumo cuando la partida avanza a la revisión `1`, porque `GameSessionsService` la rechaza como `HINT_STALE`; al solicitar una nueva pista se limpian esos recibos obsoletos.
 
 El frontend también valida la revisión de la sesión antes de encolar la acción, pero no comprueba de forma independiente que `hint.revision` coincida con la revisión capturada para esa solicitud.
 
@@ -88,13 +90,15 @@ La eliminación automática de recibos pendientes después de 30 segundos tambi�
 - Un reintento de red de la misma solicitud conserva su recibo y su `requestId`.
 - Una acción obsoleta debe dejar la cola disponible para movimientos posteriores.
 
-### Corrección pendiente
+### Corrección aplicada
 
-- Cambiar `countPendingSince(sessionId, since)` por una operación que también reciba `revision`.
-- Filtrar la consulta SQL por `session_id`, `revision`, `consumed_at IS NULL` y la ventana de concurrencia.
-- Validar `hint.revision` antes de aceptar la respuesta en el frontend.
-- Reutilizar el mismo `requestId` durante reintentos de red.
-- Revisar la purga por TTL para no contradecir la idempotencia del contrato. Si se conserva una política de retención, debe documentarse como una limitación explícita.
+- `countPending()` recibe `sessionId` y `revision`.
+- La consulta SQL filtra la revisión vigente.
+- El frontend valida la revisión de la respuesta antes de encolar `HELP`.
+- El mismo `requestId` se conserva durante fallos de red.
+- Los recibos de revisiones anteriores se limpian cuando se solicita una pista nueva.
+- Solo puede existir una solicitud pendiente por revisión; el mismo `requestId` permite reintentarla.
+- Una solicitud pendiente devuelve `409` con código `HINT_PENDING`.
 
 ## TUTOR-FE-003: alcance incompleto del piloto
 
@@ -121,37 +125,47 @@ La eliminación automática de recibos pendientes después de 30 segundos tambi�
 - La política de combinación actividad-grupo queda definida antes de activar el piloto.
 - Un recibo fuera de la política vigente no debe convertirse en una ayuda contextual aceptada.
 
-### Corrección pendiente
+### Corrección aplicada
 
-- Restringir `enabled` en el hook a Neon Flow, actividad presente, reto no diario y plantilla oficial.
-- Añadir una validación backend explícita para `dailyChallengeId != null`.
-- Añadir pruebas de práctica, diario, actividad no habilitada, grupo no habilitado, actividad/grupo cruzados, plantilla no canónica y sesión no activa.
-- Decidir si la configuración continuará como intersección de listas o pasará a pares actividad-grupo.
-- Evaluar una reautorización al consumir recibos si la configuración puede cambiar durante una partida.
+- El hook separa la sesión verificada de `contextualHintsEnabled`; no cambia el flujo de sesiones TetriLogic.
+- El backend rechaza explícitamente `dailyChallengeId != null`.
+- El consumo vuelve a verificar piloto habilitado, curso `c001`, actividad, plantilla canónica y pertenencia a un grupo permitido.
+- La pertenencia verifica también la asignación explícita de `group_activities`.
+- La configuración conserva la intersección de `allowedActivityIds` y `allowedGroupIds`; no usa pares específicos.
+- Las pruebas cubren recibos fuera del grupo autorizado y sesiones diarias.
 
 ## TUTOR-FE-004: cobertura de pruebas pendiente
 
-La implementación tiene pruebas del caso positivo, locale, idempotencia básica y flujo contextual exitoso. Todavía faltan pruebas enfocadas en los fallos de esta guía.
+La implementación ahora tiene pruebas del caso positivo, locale, idempotencia básica, timeout, reintento de acción, respuesta obsoleta, revisión pendiente, sesión diaria y alcance de grupo. Continúa pendiente una comprobación E2E contra el endpoint real y una prueba específica de doble clic desde el navegador.
+
+## Hallazgos adicionales corregidos
+
+- Recibos inexistentes ahora devuelven error sin avanzar la revisión; recibos de otra sesión devuelven acceso denegado.
+- `hintId` solo puede acompañar `HELP`; las ayudas estáticas deben declarar `source=STATIC`.
+- Una repetición idempotente se rechaza si la sesión ya no está `ACTIVE`.
+- `revision` es obligatoria y `maxHints` debe ser al menos 1.
+- La persistencia de recibos usa SQL portable y la migración V29 añade el índice de solicitudes pendientes.
+- El diagnóstico y la comprobación de victoria Neon Flow comparten el mismo recorrido de raycast.
 
 ### Frontend
 
-- Dos clics rápidos con una solicitud contextual rechazada: una sola ayuda estática.
-- Timeout durante `POST /hints`: no duplicar `HELP` y reutilizar `requestId`.
-- Respuesta del hint perdida después de crear el recibo: reconciliar antes del fallback.
-- Fallo al enviar la acción con `hintId`: reintentar la misma secuencia y el mismo `hintId`.
-- Respuesta con revisión antigua después de un movimiento local: descartar sin `HELP` contextual obsoleto.
-- Solicitud durante una partida diaria o de práctica: conservar únicamente la ayuda estática.
-- Botón `Pista` deshabilitado durante una solicitud activa.
+- [ ] Dos clics rápidos con una solicitud contextual rechazada comprobados desde una prueba de navegador dedicada.
+- [x] Timeout durante `POST /hints`: no duplicar `HELP` y reutilizar `requestId`.
+- [x] Respuesta del hint perdida después de crear el recibo: reconciliar antes del fallback.
+- [x] Fallo al enviar la acción con `hintId`: reintentar la misma secuencia y el mismo `hintId`.
+- [x] Respuesta con revisión antigua después de un movimiento local: descartar sin `HELP` contextual obsoleto.
+- [x] Solicitud durante una partida diaria o de práctica: conservar únicamente la ayuda estática.
+- [x] Botón `Pista` deshabilitado durante una solicitud activa.
 
 ### Backend
 
-- Un recibo pendiente de la revisión anterior no bloquea la revisión actual.
-- Un recibo de revisión incorrecta no puede consumirse.
-- Una solicitud repetida con el mismo `requestId` devuelve el mismo recibo.
-- Una solicitud con el mismo `requestId` y contenido distinto se rechaza.
-- Las sesiones diarias, prácticas, no oficiales, no activas o de otro estudiante no reciben pistas contextuales.
-- La actividad y el grupo se validan según la política aprobada del piloto.
-- Una acción contextual rechazada deja avanzar la secuencia sin incrementar `helps`.
+- [x] Un recibo pendiente de la revisión anterior no bloquea la revisión actual.
+- [x] Un recibo de revisión incorrecta no puede consumirse.
+- [x] Una solicitud repetida con el mismo `requestId` devuelve el mismo recibo.
+- [x] Una solicitud con el mismo `requestId` y contenido distinto se rechaza.
+- [x] Las sesiones diarias, prácticas, no oficiales, no activas o de otro estudiante no reciben pistas contextuales.
+- [x] La actividad y el grupo se validan según la política aprobada del piloto.
+- [x] Una acción contextual rechazada deja avanzar la secuencia sin incrementar `helps`.
 
 ### Verificación final
 
@@ -166,14 +180,11 @@ pnpm vitest run
 
 Registrar en el informe de implementación la fecha, los comandos y los resultados reales. No reutilizar resultados históricos como evidencia de una nueva ejecución.
 
-## Orden recomendado de corrección
+## Validación restante
 
-1. Corregir la clasificación de resultados y el fallback del frontend para impedir el doble `HELP`.
-2. Preservar `requestId` y `hintId` en reintentos y validar la revisión de la respuesta.
-3. Filtrar recibos pendientes por revisión y resolver la política de retención.
-4. Cerrar el alcance de práctica, diario y actividad en frontend y backend.
-5. Definir la política actividad-grupo y aplicarla con pruebas.
-6. Ejecutar la suite completa y realizar una prueba E2E del flujo pista, movimiento y victoria.
+1. Añadir la prueba E2E del flujo pista, movimiento y victoria contra el endpoint real.
+2. Añadir la prueba de doble clic desde el componente montado.
+3. Ejecutar el piloto únicamente después de revisar autorización, retención y resultados con docentes.
 
 ## Referencias
 

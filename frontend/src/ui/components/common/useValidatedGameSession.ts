@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { getAuthState } from "../../../infrastructure/store/authStore";
 import { ValidatedGameSession } from "../../../infrastructure/store/validatedGameSession";
-import type { GameAction, GameSessionContext } from "../../../infrastructure/api/models/gameProgressModels";
+import type { GameAction, GameHintResult, GameSessionContext } from "../../../infrastructure/api/models/gameProgressModels";
 import { isOfficialGameTemplate } from "../../../infrastructure/api/models/gameProgressModels";
 
 export function useValidatedGameSession(context: Omit<GameSessionContext, "studentId"> | null) {
   const user = getAuthState().user;
-  const enabled = user?.role === "student" && context && isOfficialGameTemplate(context.game, context.levelTemplate);
-  const key = JSON.stringify(enabled ? { ...context, studentId: user.id } : null);
+  const enabled = Boolean(user?.role === "student" && context && isOfficialGameTemplate(context.game, context.levelTemplate));
+  const contextualHintsEnabled = Boolean(enabled && context?.game === "neonflow" && context.activityId && !context.dailyChallengeId);
+  const key = JSON.stringify(enabled ? { ...context, studentId: user!.id } : null);
   const [round, setRound] = useState(0);
   const controller = useMemo(() => {
     void round;
@@ -20,12 +21,15 @@ export function useValidatedGameSession(context: Omit<GameSessionContext, "stude
   }, [controller]);
   const state = useSyncExternalStore(controller?.subscribe ?? (() => () => {}), controller?.getSnapshot ?? (() => null));
   return {
-    enabled: Boolean(controller), state, ready: !controller || Boolean(state?.session),
+    enabled: Boolean(controller), contextualHintsEnabled, hintBusy: Boolean(state?.hintBusy), state, ready: !controller || Boolean(state?.session),
     verifying: state?.phase === "verifying",
-    action: (action: GameAction) => controller?.action(action),
-    requestHint: (locale = "es") => controller?.requestHint(locale) ?? Promise.resolve(null),
+    action: (action: GameAction) => controller?.action(action) ?? false,
+    submitAction: (action: GameAction) => controller?.submitAction(action) ?? Promise.resolve(false),
+    requestHint: (locale = "es"): Promise<GameHintResult> => contextualHintsEnabled
+      ? controller?.requestHint(locale) ?? Promise.resolve({ status: "STALE" })
+      : Promise.resolve({ status: "FALLBACK_ALLOWED", reason: "UNAVAILABLE" }),
     complete: controller?.complete ?? (() => Promise.resolve(null)),
-    retry: controller?.retry ?? (() => {}),
+    retry: () => controller?.retry() ?? Promise.resolve(null),
     restart: () => setRound(value => value + 1),
     reset: () => { if (state?.victory || state?.phase === "verifying" || state?.phase === "error") setRound(value => value + 1); else controller?.action({ type: "RESET" }); },
   };

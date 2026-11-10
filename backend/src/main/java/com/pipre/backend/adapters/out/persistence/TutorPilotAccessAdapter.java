@@ -22,7 +22,8 @@ public class TutorPilotAccessAdapter implements TutorPilotAccessPort {
                     SELECT 1
                     FROM group_students gs
                     JOIN group_courses gc ON gc.id_group=gs.id_group
-                    JOIN activities a ON a.id_activity=?
+                    JOIN group_activities ga ON ga.id_group=gs.id_group AND ga.id_activity=?
+                    JOIN activities a ON a.id_activity=ga.id_activity
                     JOIN lessons l ON l.id_lesson=a.id_lesson
                     JOIN modules m ON m.id_module=l.id_module AND m.id_course=gc.id_course
                     WHERE gs.id_student=?

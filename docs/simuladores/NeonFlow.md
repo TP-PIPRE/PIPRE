@@ -33,7 +33,7 @@ Los prototipos `neonflow-1/2` conservan sus geometrías anteriores 5×5 y se ide
 
 ## Telemetría y límites
 
-Se observan selección, colocación, giro, comprobación, reinicio, ayuda estática y cierre del episodio. La ayuda estática registra `source=STATIC` y no incrementa `pistasIa`. El resultado es declarado por el cliente; no concede puntos ni progreso académico. La pérdida de conexión no bloquea el juego, pero la entrega de observaciones no está garantizada ante cierre forzado.
+Se observan selección, colocación, giro, comprobación, reinicio, ayuda estática y cierre del episodio. La ayuda estática registra `source=STATIC`, cuenta como `HELP` en la rúbrica vigente y no consume el cupo contextual. El resultado es declarado por el cliente; no concede puntos ni progreso académico. La pérdida de conexión no bloquea el juego, pero la entrega de observaciones no está garantizada ante cierre forzado.
 
 Desde el 02/11, las partidas estudiantiles oficiales usan además una sesión verificada: el servidor reproduce acciones y raycast, confirma la victoria y calcula las mejores estrellas y [logros](../guias/Sistema_35_Logros.md). El tablero espera al inicio de sesión; un fallo de red muestra reintento pendiente sin simular progreso. Reiniciar después de una victoria abre otro intento para mejorar la calificación. La pista estática cuenta como ayuda en la rúbrica, sin convertirse en IA. La vista previa docente y los prototipos permanecen fuera del progreso de los 60 niveles oficiales.
 

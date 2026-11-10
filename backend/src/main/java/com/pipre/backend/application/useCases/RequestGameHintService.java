@@ -17,9 +17,12 @@ import com.pipre.backend.domain.entities.game.BoardRules;
 import com.pipre.backend.domain.entities.game.GameSession;
 import com.pipre.backend.domain.entities.game.NeonHintDiagnosis;
 import com.pipre.backend.domain.exceptions.BusinessException;
+import com.pipre.backend.domain.exceptions.GameHintPendingException;
 import com.pipre.backend.domain.exceptions.GameHintStaleException;
+import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
 import com.pipre.backend.infrastructure.configuration.TutorPilotProperties;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +53,9 @@ public class RequestGameHintService implements RequestGameHintUseCase {
         if (!properties.isEnabled()) throw new BusinessException("El tutor contextual no está habilitado.");
         validateUuid(command.requestId());
         GameSession session = ownedSession(studentId, sessionId);
+        if (session.dailyChallengeId() != null) {
+            throw new BusinessException("Los retos diarios conservan únicamente la ayuda estática.");
+        }
         if (!"neonflow".equals(session.game()) || session.activityId() == null) {
             throw new BusinessException("La pista contextual solo está disponible para Neon Flow oficial.");
         }
@@ -75,6 +81,7 @@ public class RequestGameHintService implements RequestGameHintUseCase {
             throw new BusinessException("El estudiante no pertenece al grupo habilitado para el piloto.");
         }
         if (!"es".equalsIgnoreCase(command.locale())) throw new BusinessException("El piloto solo admite locale es.");
+        if (!"ACTIVE".equals(session.status())) throw new BusinessException("La sesión ya no está activa.");
         String locale = command.locale().toLowerCase(Locale.ROOT);
         String hash = hash(command.requestId() + "|" + command.revision() + "|" + locale);
         var previous = hints.findByRequest(sessionId, command.requestId());
@@ -82,12 +89,11 @@ public class RequestGameHintService implements RequestGameHintUseCase {
             if (!hash.equals(previous.get().requestHash())) throw new BusinessException("La solicitud ya fue utilizada con otros datos.");
             return dto(previous.get());
         }
-        if (!"ACTIVE".equals(session.status())) throw new BusinessException("La sesión ya no está activa.");
         if (command.revision() != session.revision()) throw new GameHintStaleException(command.revision(), session.revision());
         Instant now = Instant.now();
-        hints.purgePendingBefore(now.minusSeconds(30));
-        if (hints.countPendingSince(sessionId, now.minusSeconds(30)) > 0) {
-            throw new BusinessException("Ya existe una solicitud de pista en curso.");
+        hints.purgePendingExceptRevision(sessionId, command.revision());
+        if (hints.countPending(sessionId, command.revision()) > 0) {
+            throw new GameHintPendingException();
         }
 
         JsonNode config = neonTemplates.findById(session.levelTemplate())
@@ -112,8 +118,8 @@ public class RequestGameHintService implements RequestGameHintUseCase {
     private GameSession ownedSession(String studentId, String sessionId) {
         sessions.lockStudent(studentId);
         GameSession session = sessions.lockSession(sessionId)
-                .orElseThrow(() -> new BusinessException("La sesión no existe."));
-        if (!studentId.equals(session.studentId())) throw new BusinessException("La sesión no pertenece al estudiante.");
+                .orElseThrow(() -> new ResourceNotFoundException("La sesión no existe."));
+        if (!studentId.equals(session.studentId())) throw new AccessDeniedException("La sesión no pertenece al estudiante.");
         return session;
     }
 

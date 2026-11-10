@@ -41,27 +41,51 @@ public class GameSessionHintRepositoryAdapter implements GameSessionHintReposito
     }
 
     @Override
-    public long countPendingSince(String sessionId, Instant since) {
-        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM game_session_hints WHERE session_id=? AND consumed_at IS NULL AND created_at>?", Long.class, sessionId, utc(since));
+    public long countPending(String sessionId, int revision) {
+        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM game_session_hints WHERE session_id=? AND revision=? AND consumed_at IS NULL", Long.class, sessionId, revision);
         return count == null ? 0 : count;
     }
 
     @Override
-    public void purgePendingBefore(Instant before) {
-        jdbc.update("DELETE FROM game_session_hints WHERE consumed_at IS NULL AND created_at<?", utc(before));
+    public void purgePendingExceptRevision(String sessionId, int revision) {
+        jdbc.update("DELETE FROM game_session_hints WHERE session_id=? AND revision<>? AND consumed_at IS NULL", sessionId, revision);
     }
 
     @Override
-    public boolean consume(String hintId, String sessionId, int revision, int maxHints, Instant consumedAt) {
-        return jdbc.update("UPDATE game_session_hints SET consumed_at=? WHERE hint_id=? AND session_id=? AND revision=? AND source='RULE_BASED' AND consumed_at IS NULL AND (SELECT COUNT(*) FROM game_session_hints WHERE session_id=? AND source='RULE_BASED' AND consumed_at IS NOT NULL) < ?", utc(consumedAt), hintId, sessionId, revision, sessionId, maxHints) == 1;
+    public boolean consume(String hintId, String sessionId, int revision, int maxHints, Instant consumedAt,
+                           String studentId, String activityId, java.util.Set<String> allowedGroupIds) {
+        if (allowedGroupIds.isEmpty()) return false;
+        String groups = allowedGroupIds.stream().map(value -> "?").collect(java.util.stream.Collectors.joining(","));
+        String sql = """
+                UPDATE game_session_hints SET consumed_at=?
+                WHERE hint_id=? AND session_id=? AND revision=? AND source='RULE_BASED' AND consumed_at IS NULL
+                  AND (SELECT COUNT(*) FROM game_session_hints WHERE session_id=? AND source='RULE_BASED' AND consumed_at IS NOT NULL) < ?
+                  AND EXISTS(
+                      SELECT 1 FROM group_students gs
+                      JOIN group_courses gc ON gc.id_group=gs.id_group
+                      JOIN group_activities ga ON ga.id_group=gs.id_group AND ga.id_activity=?
+                      JOIN activities a ON a.id_activity=ga.id_activity
+                      JOIN lessons l ON l.id_lesson=a.id_lesson
+                      JOIN modules m ON m.id_module=l.id_module AND m.id_course=gc.id_course
+                      WHERE gs.id_student=? AND gc.id_group IN (%s)
+                  )
+                """.formatted(groups);
+        java.util.ArrayList<Object> args = new java.util.ArrayList<>(java.util.List.of(
+                utc(consumedAt), hintId, sessionId, revision, sessionId, maxHints, activityId, studentId));
+        args.addAll(allowedGroupIds);
+        return jdbc.update(sql, args.toArray()) == 1;
     }
 
     @Override
     public void save(HintReceipt receipt) {
-        jdbc.update("INSERT INTO game_session_hints(hint_id,session_id,request_id,request_hash,diagnosis_key,revision,locale,source,hint_level,hint_type,message,target_x,target_y,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (session_id,request_id) DO NOTHING",
-                receipt.hintId(), receipt.sessionId(), receipt.requestId(), receipt.requestHash(), receipt.diagnosisKey(),
-                receipt.revision(), receipt.locale(), receipt.source(), receipt.hintLevel(), receipt.type(), receipt.message(),
-                receipt.targetX(), receipt.targetY(), utc(receipt.createdAt()));
+        try {
+            jdbc.update("INSERT INTO game_session_hints(hint_id,session_id,request_id,request_hash,diagnosis_key,revision,locale,source,hint_level,hint_type,message,target_x,target_y,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    receipt.hintId(), receipt.sessionId(), receipt.requestId(), receipt.requestHash(), receipt.diagnosisKey(),
+                    receipt.revision(), receipt.locale(), receipt.source(), receipt.hintLevel(), receipt.type(), receipt.message(),
+                    receipt.targetX(), receipt.targetY(), utc(receipt.createdAt()));
+        } catch (org.springframework.dao.DuplicateKeyException ignored) {
+            // Session and student locks serialize normal retries; the unique key covers concurrent adapter calls.
+        }
     }
 
     private HintReceipt map(ResultSet rs, int row) throws SQLException {
