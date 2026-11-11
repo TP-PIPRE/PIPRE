@@ -11,6 +11,7 @@ import com.pipre.backend.infrastructure.configuration.ProgressiveTutorProperties
 import com.pipre.backend.infrastructure.security.JwtUtils;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -102,6 +103,86 @@ class BackendPersistenceIntegrationTest {
         if(group!=null)jdbc.update("DELETE FROM groups WHERE id_group=? AND group_name='Audit group'",group);
         if(course!=null)jdbc.update("DELETE FROM courses WHERE id_course=? AND name='Audit course'",course);
     }
+
+    @Test
+    @EnabledIfEnvironmentVariable(named = "PIPRE_AUDIT_POSTGRES", matches = "true")
+    void educationalMetricsAggregateVerifiedDataWithinClassroomAndPeriod() throws Exception {
+        String otherGroup = UUID.randomUUID().toString();
+        jdbc.update("INSERT INTO groups(id_group,group_name) VALUES (?,?)", otherGroup, "Metrics other group");
+        try {
+            rankings.execute(new AddStudentRankingCommand(group, student));
+            rankings.execute(new AddStudentRankingCommand(otherGroup, student));
+            String date = java.time.LocalDate.now(java.time.ZoneId.of("America/Lima")).toString();
+            String report = "/api/v1/educational-metrics";
+            mvc.perform(get(report + "/options").cookie(owner)).andExpect(status().isForbidden());
+            mvc.perform(get(report).cookie(teacher).param("group", otherGroup)).andExpect(status().isForbidden());
+            mvc.perform(get(report).cookie(teacher).param("student", teacherId)).andExpect(status().isForbidden());
+            mvc.perform(get(report).cookie(teacher).param("from", "2026-05-02").param("to", "2026-05-01"))
+                    .andExpect(status().isBadRequest());
+            mvc.perform(get(report + "/options").cookie(teacher)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.groups.length()").value(1)).andExpect(jsonPath("$.students[0].id").value(student));
+            mvc.perform(get(report).cookie(teacher).param("from", date).param("to", date))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.summary.students").value(1))
+                    .andExpect(jsonPath("$.summary.active").value(0)).andExpect(jsonPath("$.summary.sessions").value(0))
+                    .andExpect(jsonPath("$.tutor.total").value(0));
+
+            String first = startTetriTutorAttempt();
+            sessions.action(student, first, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
+            sessions.action(student, first, new GameSessionAction(2, "HELP", null, null, null, null, null, null, "STATIC"));
+            mvc.perform(get(report).cookie(teacher).param("from", date).param("to", date))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.summary.active").value(1))
+                    .andExpect(jsonPath("$.summary.initiated").value(1)).andExpect(jsonPath("$.summary.completed").value(0))
+                    .andExpect(jsonPath("$.summary.stars").value(0)).andExpect(jsonPath("$.summary.achievements").value(0))
+                    .andExpect(jsonPath("$.timeline[0].sessions").value(1)).andExpect(jsonPath("$.timeline[0].active").value(1))
+                    .andExpect(jsonPath("$.tutor.fixed").value(1));
+            String tetri = startTetriTutorAttempt();
+            sessions.action(student, tetri, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
+            placeRemainingTetriPieces(tetri);
+            sessions.complete(student, tetri);
+            String tetriReplay = startTetriTutorAttempt();
+            sessions.action(student, tetriReplay, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
+            placeRemainingTetriPieces(tetriReplay);
+            sessions.complete(student, tetriReplay);
+
+            progressiveProperties.setEnabled(true);
+            var neon = startProgressiveLevel(1);
+            when(hintGenerator.generate(any())).thenThrow(new ProgressiveHintUnavailableException()).thenReturn(
+                    "Comprueba la dirección del haz.", "Observa dónde se detiene el haz.",
+                    "Compara el recorrido con lo que esperabas.", "Revisa el primer giro que podría cambiar el recorrido.");
+            for (int ordinal = 1; ordinal <= 9; ordinal++) {
+                var request = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, ordinal > 8);
+                if (ordinal == 6) assertThrows(ProgressiveHintUnavailableException.class, () -> progressiveTutor.request(student, neon.sessionId(), request));
+                var delivered = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, ordinal > 8);
+                assertEquals(ordinal, progressiveTutor.request(student, neon.sessionId(), delivered).ordinal());
+            }
+            solveProgressiveNeonLevelOne(neon.sessionId());
+            sessions.complete(student, neon.sessionId());
+
+            jdbc.update("INSERT INTO teacher_groups(id_teacher,id_group) VALUES (?,?)", teacherId, otherGroup);
+            mvc.perform(get(report).cookie(teacher).param("from", date).param("to", date).param("grade", "QA"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.summary.students").value(1))
+                    .andExpect(jsonPath("$.summary.active").value(1)).andExpect(jsonPath("$.summary.sessions").value(4))
+                    .andExpect(jsonPath("$.summary.initiated").value(2)).andExpect(jsonPath("$.summary.completed").value(2))
+                    .andExpect(jsonPath("$.summary.averageAttempts").value(1.5)).andExpect(jsonPath("$.summary.stars").value(6))
+                    .andExpect(jsonPath("$.summary.achievements").value(1)).andExpect(jsonPath("$.unclassifiedAttempts").value(1))
+                    .andExpect(jsonPath("$.dimensions[?(@.dimension == 'Reconocimiento de patrones')].solved").value(org.hamcrest.Matchers.contains(1)))
+                    .andExpect(jsonPath("$.dimensions[?(@.dimension == 'Reconocimiento de patrones')].timeline[0].sessions").value(org.hamcrest.Matchers.contains(3)))
+                    .andExpect(jsonPath("$.tutor.fixed").value(6)).andExpect(jsonPath("$.tutor.generated").value(4))
+                    .andExpect(jsonPath("$.tutor.studentsOverFreeLimit").value(1)).andExpect(jsonPath("$.tutor.aiStudentRate").value(100));
+            mvc.perform(get(report).cookie(administrator).param("group", otherGroup).param("game", "tetrilogic")
+                            .param("student", student).param("from", date).param("to", date))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.summary.stars").value(3))
+                    .andExpect(jsonPath("$.summary.completed").value(1)).andExpect(jsonPath("$.tutor.generated").value(0))
+                    .andExpect(jsonPath("$.courses.length()").value(1))
+                    .andExpect(jsonPath("$.courses[0].progress").value(org.hamcrest.Matchers.closeTo(100.0 / 30, 0.001), Double.class));
+            mvc.perform(get(report).cookie(teacher).param("from", "2026-01-01").param("to", "2026-01-02"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.summary.sessions").value(0))
+                    .andExpect(jsonPath("$.summary.completionRate").value(org.hamcrest.Matchers.nullValue()));
+        } finally {
+            progressiveProperties.setEnabled(false);
+            jdbc.update("DELETE FROM groups WHERE id_group=?", otherGroup);
+        }
+    }
     @Test void progressiveNeonAdvicePersistsAndChargesOnlyDeliveredExtrasInTheirAttempt() throws Exception {
         progressiveProperties.setEnabled(true);
         try {
@@ -132,7 +213,9 @@ class BackendPersistenceIntegrationTest {
                 return "Comprueba si el color del haz coincide con el receptor.";
             }).doReturn("Sigue el tramo visible desde el emisor antes de comprobar.",
                     "Compara la trayectoria del haz con la que imaginaste.",
-                    "Revisa dónde termina el haz y explica por qué llega hasta allí.").when(hintGenerator).generate(any());
+                    "Revisa dónde termina el haz y explica por qué llega hasta allí.",
+                    "Observa el primer tramo y revisa qué lo detiene.",
+                    "Compara la orientación de los espejos con el sentido del haz.").when(hintGenerator).generate(any());
             var sixth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 6, false);
             try (var executor = Executors.newSingleThreadExecutor()) {
                 var delivery = executor.submit(() -> progressiveTutor.request(student, first.sessionId(), sixth));
@@ -179,12 +262,24 @@ class BackendPersistenceIntegrationTest {
             var ninth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 9, true);
             assertEquals(9, progressiveTutor.request(student, replay.sessionId(), ninth).ordinal());
             solveProgressiveNeonLevelOne(replay.sessionId());
-            assertEquals(2, sessions.complete(student, replay.sessionId()).stars());
-            var another = startProgressiveLevel(1);
-            assertEquals(9, progressiveTutor.status(student, another.sessionId()).deliveredCount());
-            solveProgressiveNeonLevelOne(another.sessionId());
-            assertEquals(3, sessions.complete(student, another.sessionId()).stars());
-            assertEquals(9L, jdbc.queryForObject("SELECT COUNT(*) FROM neonflow_tutor_requests WHERE student_id=? AND status='DELIVERED'", Long.class, student));
+            assertEquals(3, sessions.complete(student, replay.sessionId()).stars());
+
+            var withTwoExtras = startProgressiveLevel(1);
+            assertEquals(9, progressiveTutor.status(student, withTwoExtras.sessionId()).deliveredCount());
+            for (int ordinal = 10; ordinal <= 11; ordinal++) {
+                var request = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, true);
+                assertEquals(ordinal, progressiveTutor.request(student, withTwoExtras.sessionId(), request).ordinal());
+            }
+            solveProgressiveNeonLevelOne(withTwoExtras.sessionId());
+            var twoExtraVictory = sessions.complete(student, withTwoExtras.sessionId());
+            assertEquals(2, twoExtraVictory.stars());
+            assertEquals(3, twoExtraVictory.bestStars());
+
+            var clean = startProgressiveLevel(1);
+            assertEquals(11, progressiveTutor.status(student, clean.sessionId()).deliveredCount());
+            solveProgressiveNeonLevelOne(clean.sessionId());
+            assertEquals(3, sessions.complete(student, clean.sessionId()).stars());
+            assertEquals(11L, jdbc.queryForObject("SELECT COUNT(*) FROM neonflow_tutor_requests WHERE student_id=? AND status='DELIVERED'", Long.class, student));
         } finally {
             progressiveProperties.setEnabled(false);
         }
@@ -271,7 +366,7 @@ class BackendPersistenceIntegrationTest {
             assertEquals(progressiveTutor.request(student, second, ninth), progressiveTutor.request(student, second, ninth));
             sessions.action(student, second, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
             placeRemainingTetriPieces(second);
-            assertEquals(2, sessions.complete(student, second).stars());
+            assertEquals(3, sessions.complete(student, second).stars());
             assertEquals(9, progressiveTutor.status(student, startTetriTutorAttempt()).deliveredCount());
         } finally {
             progressiveProperties.setEnabled(false);

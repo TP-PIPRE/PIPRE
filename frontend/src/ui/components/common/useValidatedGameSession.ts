@@ -21,6 +21,7 @@ export function useValidatedGameSession(context: Omit<GameSessionContext, "stude
   const state = useSyncExternalStore(controller?.subscribe ?? (() => () => {}), controller?.getSnapshot ?? (() => null));
   return {
     enabled: Boolean(controller), state, ready: !controller || Boolean(state?.session),
+    hintScope: enabled ? key : undefined,
     verifying: state?.phase === "verifying",
     action: (action: GameAction) => controller?.action(action) ?? false,
     requestStaticHint: (): Promise<GameHintResult> => controller?.requestStaticHint()

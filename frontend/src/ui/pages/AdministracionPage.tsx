@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {Link} from "react-router-dom";
 import {useAsyncResource} from "../../application/hooks/useAsyncResource";
 import {administrationService,type StudentRankingVisibility} from "../../infrastructure/api/administrationService";
 import {apiService} from "../../infrastructure/api/apiService";
@@ -28,7 +29,7 @@ export function AdministracionPage() {
   const displayUser=(id:string)=>{const found=data.users.find(row=>row.idUser===id);return found?`${found.firstName} ${found.lastName}`:id;};
   const selectedUser=data.users.find(row=>row.idUser===user);
   const selectedRole=data.roles.find(row=>row.idRole===role);
-  return <main className="lab-shell"><h1>Administración</h1><p className="page-intro">Gestiona aulas, asignaciones y acceso al ranking. Los permisos se comprueban en el servidor.</p>
+  return <main className="lab-shell"><div className="flex flex-wrap items-start justify-between gap-3"><div><h1>Administración</h1><p className="page-intro">Gestiona aulas, asignaciones y acceso al ranking. Los permisos se comprueban en el servidor.</p></div><Link to="/docente/metricas" className="btn-secondary">Ver métricas institucionales</Link></div>
     {error&&<p role="alert" className="border border-danger rounded-lg p-3">{error}</p>}{notice&&<p role="status" className="p-3 text-success">{notice}</p>}
     <div className="grid gap-5 lg:grid-cols-2">
       <form aria-label="Crear aula" className="rounded-lg border border-border p-5 space-y-3" onSubmit={event=>{event.preventDefault();void perform(async()=>{await administrationService.createClassroom(name,description);setName("");setDescription("");},"Aula creada.");}}>

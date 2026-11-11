@@ -69,6 +69,7 @@ class GameSessionsServiceTest {
         var capture=ArgumentCaptor.forClass(VerifiedVictory.class);verify(victories).execute(capture.capture());
         assertEquals(Instant.parse(started.startedAt()),capture.getValue().startedAt());assertEquals(clock.now,capture.getValue().completedAt());
         assertEquals("COMPLETED",repository.rows.get(started.sessionId()).status());
+        assertEquals("game-stars-v2",repository.rows.get(started.sessionId()).state().path("starsRuleset").asText());
         assertEquals(completed,service.complete("student",started.sessionId()));verify(victories,times(1)).execute(any());
     }
     @Test void rejectsUnsolvedAndAnotherStudentsSession() {
@@ -141,13 +142,13 @@ class GameSessionsServiceTest {
 
         assertEquals(accepted,service.action("student",session.sessionId(),action));
     }
-    @Test void serverCountersReduceStarsAndClockRegressionCannotProduceAFastVictory() {
+    @Test void oneHintAndOneResetCanEarnThreeStarsAndClockRegressionStillPreventsVictory() {
         var session=service.start(command(1));
         service.action("student",session.sessionId(),new GameSessionAction(1,"HELP",null,null,null,null,null,null,"STATIC"));
         service.action("student",session.sessionId(),new GameSessionAction(2,"RESET",null,null,null,null,null,null,null));
         clock.now=clock.now.minusSeconds(1);
         assertThrows(BusinessException.class,()->service.complete("student",session.sessionId()));verifyNoInteractions(victories);
-        clock.now=clock.now.plusSeconds(2);assertEquals(2,service.complete("student",session.sessionId()).stars());
+        clock.now=clock.now.plusSeconds(2);assertEquals(3,service.complete("student",session.sessionId()).stars());
     }
     @Test void rechecksContextualHintScopeBeforeConsumingAReceipt() {
         var session=new GameSession("hint-session",UUID.randomUUID().toString(),"student","neonflow",1,"neonflow-v2-1","activity-1",null,clock.now,null,"ACTIVE",BoardRules.initialState(),0,1,null,null);
@@ -171,16 +172,17 @@ class GameSessionsServiceTest {
         var reused=new StartGameSessionCommand("student",request.clientSessionId(),"neonflow","neonflow-v2-4",null,"2026-11-02");
         assertThrows(BusinessException.class,()->service.start(reused));
     }
-    @Test void failedCompletionProbeReducesStarsUntilANewCleanSession() {
+    @Test void allowsTwoFailedCompletionProbesForThreeStars() {
         var session=service.start(command(2));
-        assertThrows(BusinessException.class,()->service.complete("student",session.sessionId()));
+        for (int i = 0; i < 3; i++) assertThrows(BusinessException.class,()->service.complete("student",session.sessionId()));
         service.action("student",session.sessionId(),new GameSessionAction(1,"PLACE",null,1,2,0,"MIRROR_90",null,null));
         service.action("student",session.sessionId(),new GameSessionAction(2,"PLACE",null,1,0,0,"MIRROR_90",null,null));
         assertEquals(2,service.complete("student",session.sessionId()).stars());
-        var clean=service.start(command(2));
-        service.action("student",clean.sessionId(),new GameSessionAction(1,"PLACE",null,1,2,0,"MIRROR_90",null,null));
-        service.action("student",clean.sessionId(),new GameSessionAction(2,"PLACE",null,1,0,0,"MIRROR_90",null,null));
-        assertEquals(3,service.complete("student",clean.sessionId()).stars());
+        var retry=service.start(command(2));
+        for (int i = 0; i < 2; i++) assertThrows(BusinessException.class,()->service.complete("student",retry.sessionId()));
+        service.action("student",retry.sessionId(),new GameSessionAction(1,"PLACE",null,1,2,0,"MIRROR_90",null,null));
+        service.action("student",retry.sessionId(),new GameSessionAction(2,"PLACE",null,1,0,0,"MIRROR_90",null,null));
+        assertEquals(3,service.complete("student",retry.sessionId()).stars());
     }
     private static final class MutableClock extends Clock {
         Instant now=Instant.parse("2026-11-02T12:00:00Z");

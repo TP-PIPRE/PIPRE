@@ -9,7 +9,7 @@ import java.util.*;
 
 /** Server implementation of the active games. Historical TetriLogic constraints are deliberately ignored. */
 public final class BoardRules {
-    public static final String STARS_VERSION = "game-stars-v1";
+    public static final String STARS_VERSION = "game-stars-v2";
     private static final JsonNodeFactory JSON = JsonNodeFactory.instance;
     private static final Map<String,int[][]> SHAPES = Map.of(
         "O",new int[][]{{0,0},{1,0},{0,1},{1,1}},
@@ -222,10 +222,13 @@ public final class BoardRules {
         return stars(game,config,state,state.path("helps").asInt());
     }
     public static int stars(String game,JsonNode config,JsonNode state,int helps) {
-        int budget=game.equals("tetrilogic")?4*config.path("inventory").size():2*(config.path("width").asInt()+config.path("height").asInt());
-        int resets=state.path("resets").asInt(),moves=state.path("moves").asInt();
-        if(resets==0&&helps==0&&state.path("failedChecks").asInt()==0&&moves<=budget)return 3;
-        if(resets<=2&&helps<=2&&moves<=2*budget)return 2;
+        int budget = game.equals("tetrilogic") ? 4 * config.path("inventory").size()
+                : 2 * (config.path("width").asInt() + config.path("height").asInt());
+        int moves = state.path("moves").asInt();
+        int resets = state.path("resets").asInt();
+        int failedChecks = state.path("failedChecks").asInt();
+        if (resets <= 1 && helps <= 1 && failedChecks <= 2 && moves <= budget + budget / 2) return 3;
+        if (resets <= 2 && helps <= 2 && moves <= 2 * budget) return 2;
         return 1;
     }
 }

@@ -49,7 +49,7 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
   const legacyHint = useBoardHint(gameSession, record, TETRILOGIC_TIPS);
   const session = gameSession.state?.session;
   const progressive = session?.state.progressiveTutor === true;
-  const progressiveHint = useProgressiveHint(progressive ? session.sessionId : undefined, gameSession.prepareProgressiveHint, record);
+  const progressiveHint = useProgressiveHint(progressive ? session.sessionId : undefined, gameSession.hintScope, gameSession.prepareProgressiveHint, record);
   const hint = progressive ? progressiveHint : legacyHint;
   const tutorPaused = progressive && (progressiveHint.busy || progressiveHint.confirmation !== undefined);
   const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));

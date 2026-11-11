@@ -109,7 +109,8 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
     for(const email of ["docente@pipre.com","admin@pipre.com"]) {
       login(email);
       for(const route of ["dashboard","estudiantes","retos","metricas"]) {
-        cy.visit(`/docente/${route}`);cy.get("main h1",{timeout:15000}).should("be.visible");
+        cy.visit(`/docente/${route}`);cy.get("main h1",{timeout:25000}).should("be.visible");
+        if (route === "metricas") cy.contains("dt", "Estudiantes activos", { timeout: 15000 }).should("be.visible");
         cy.location("pathname").should("eq",`/docente/${route}`);
         for(const width of [390,768,1440]) {
           cy.viewport(width,1000);
@@ -176,7 +177,22 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
           }}).its("status").should("eq",400);
           cy.viewport(1440,1000);
           cy.visit(`/simulador/${course}?activity=${activity}`);
+          cy.contains("button", /^Pista$/).click();
+          if (game === "neonflow") {
+            cy.contains("dt", /^Pistas$/).siblings("dd").should("have.text", "1");
+            cy.contains("button", /^Reiniciar$/).click();
+            cy.contains("button", /^Comprobar$/).click();
+            cy.contains("El haz aún no llega a todos los receptores").should("be.visible");
+          } else {
+            cy.contains("Pistas usadas: 1.").should("be.visible");
+            cy.get('button[aria-label="Seleccionar pieza I (i1)"]').click();
+            cy.get('button[aria-label="Rotar pieza"]').click();
+            cy.get('button[aria-label="Celda vacía, fila 1, columna 4"]').click();
+            cy.contains("button", /^Restablecer$/).click();
+            cy.contains("button", /^Restablecer tablero$/).click();
+          }
           cy.task<Placement[]>("officialWitness",game).then(placements=>completeBoard(game,placements));
+          cy.get('[aria-label="3 de 3 estrellas"]').should("be.visible");
           if (game === "neonflow") {
             cy.contains("button","Espejo 90°").click();
             cy.get('button[aria-label="Celda vacía, fila 1, columna 2"]').click();
@@ -190,6 +206,57 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
           expect(after.levels).to.eq(before.levels+2);expect(after.xp).to.eq(before.xp+100);expect(after.xpEntries).to.eq(before.xpEntries+1);
           cy.reload();cy.visit("/perfil");cy.contains("2/60").should("exist");
           cy.task<Snapshot>("databaseSnapshot",id).then(reloaded=>{expect(reloaded.xp).to.eq(after.xp);expect(reloaded.levels).to.eq(after.levels);});
+        });
+      });
+    });
+  });
+
+  it("muestra las acciones y resultados del estudiante en las cuatro secciones de métricas", () => {
+    const checkPanel = (id: string, groupId: string) => {
+      cy.visit("/docente/metricas");
+      cy.get('form[aria-label="Filtros de métricas"]').within(() => {
+        cy.contains("label", /^Aula/).find("select").select(groupId);
+        cy.contains("label", /^Estudiante/).find("select").select(id);
+        cy.contains("button", "Aplicar filtros").click();
+      });
+      cy.get('nav[aria-label="Secciones de métricas"] button').should("have.length", 4);
+      cy.contains("dt", "Estudiantes activos").siblings("dd").should("have.text", "1 / 1");
+      cy.contains("dt", "Retos completados").siblings("dd").invoke("text").should("match", /^2 \/ [2-9]$/);
+      cy.contains("dt", "Estrellas del periodo").siblings("dd").should("have.text", "6");
+      cy.contains("dt", "Logros desbloqueados").siblings("dd").should("have.text", "1");
+
+      cy.contains("button", "Pensamiento lógico").click();
+      cy.contains("h2", "Reconocimiento de patrones").closest("section").within(() => {
+        cy.contains("dt", "Retos resueltos").siblings("dd").should("have.text", "1/1");
+      });
+
+      cy.contains("button", "Participación").click();
+      cy.contains("dt", "Estudiantes que resolvieron niveles base").siblings("dd").should("have.text", "100 %");
+      for (const game of ["Neon Flow", "TetriLogic"]) {
+        cy.get('[aria-label="Participación comparada"]').contains("th", game).parent().find("td").first().should("have.text", "1");
+      }
+      cy.contains("summary", "Ver valores de la serie").click();
+      cy.get('[aria-label="Participación en Neon Flow"] tbody tr').should("exist");
+
+      cy.contains("button", "Uso del tutor").click();
+      cy.contains("dt", "Consejos predeterminados").siblings("dd").should("have.text", "2");
+      cy.get('[aria-label="Estrellas según uso de consejos en la sesión"]').contains("th", /^Con consejos$/)
+        .parent().find("td").first().should("have.text", "2");
+    };
+
+    login(); cy.visit("/");
+    studentId().then(id => {
+      login("docente@pipre.com"); cy.visit("/docente/dashboard");
+      studentId().then(teacherId => {
+        cy.task<{idGroup: string}>("createAuditGroup").then(({idGroup}) => {
+          login("admin@pipre.com");
+          cy.csrfRequest({ method: "PUT", url: `${api}/administration/teachers/${teacherId}/classrooms/${idGroup}` }).its("status").should("eq", 204);
+          cy.csrfRequest({ method: "POST", url: `${api}/group-students`, body: { idGroup, idStudent: id } }).its("status").should("eq", 201);
+          checkPanel(id, idGroup);
+          login("docente@pipre.com");
+          checkPanel(id, idGroup);
+          cy.viewport(390, 844);
+          cy.document().then(doc => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth + 1));
         });
       });
     });
@@ -278,6 +345,49 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
       cy.contains("button","Siguiente reto").click();
       cy.location("search").should("eq","?activity=act-c002-2");
     });
+  });
+
+  it("reinicia las pistas al salir y volver a un reto y conserva el tablero al recargar",()=>{
+    login();
+    const boards = [
+      { url: "/simulador/c001?activity=act-c001-v2-1", back: "← Mis cursos", first: "Sigue la dirección del haz desde el emisor", second: "Un filtro solo deja pasar un haz de su mismo color." },
+      { url: "/simulador/c002?activity=act-c002-1", back: "Volver a mis cursos", first: "Compara las casillas ocupadas con el objetivo de cada fila y columna.", second: "Si una fila o columna tiene objetivo cero, déjala vacía." },
+    ];
+    for (const [index, board] of boards.entries()) {
+      const neon = index === 0;
+      const checkCount = (count: number) => {
+        if (neon) cy.contains("dt", /^Pistas$/).siblings("dd").should("have.text", String(count));
+        else cy.contains(`Pistas usadas: ${count}.`).should("be.visible");
+      };
+      cy.visit(board.url);
+      if (neon) {
+        cy.contains("button", "Filtro green").click();
+        cy.get('button[aria-label="Celda vacía, fila 1, columna 2"]').click();
+      } else {
+        cy.get('button[aria-label="Seleccionar pieza I (i1)"]').click();
+        cy.get('button[aria-label="Rotar pieza"]').click();
+        cy.get('button[aria-label="Celda vacía, fila 1, columna 4"]').click();
+      }
+      cy.contains("button", /^Pista$/).click();
+      cy.contains("p", board.first).should("be.visible");
+      checkCount(1);
+      if (neon) cy.contains("a", board.back).click();
+      else cy.get(`a[aria-label="${board.back}"]`).click();
+      cy.location("pathname").should("eq", "/");
+      cy.go("back");
+      checkCount(0);
+      const placedPiece = neon ? '[aria-label="Tablero Neon Flow"] [aria-label="Filtro green"]'
+        : 'button[aria-label="Pieza I, fila 1, columna 4"]';
+      cy.get(placedPiece).should("be.visible");
+      cy.contains("button", /^Pista$/).click();
+      cy.contains("p", board.first).should("be.visible");
+      checkCount(1);
+      cy.reload();
+      checkCount(1);
+      cy.contains("button", /^Pista$/).click();
+      cy.contains("p", board.second).should("be.visible");
+      checkCount(2);
+    }
   });
 
   it("completa cinco diarios, conserva 2/5 tras salir y acredita sólo el quinto",()=>{

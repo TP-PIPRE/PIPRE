@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { gameProgressService } from "../../../infrastructure/api/gameProgressService";
 import type { ProgressiveHintProgress, ProgressiveHintRequest } from "../../../infrastructure/api/models/gameProgressModels";
 import type { useAttemptTrace } from "./useAttemptTrace";
+import { useHintVisitBaseline } from "./useHintVisitBaseline";
 
 const loadError = "No pudimos consultar las ayudas de este reto. Pulsa Pista para reintentar.";
 const providerError = "No pudimos preparar el consejo. Puedes volver a intentarlo.";
@@ -17,6 +18,7 @@ function readPending(key: string): ProgressiveHintRequest | null {
 
 export function useProgressiveHint(
   sessionId: string | undefined,
+  scope: string | undefined,
   prepare: () => Promise<number | null>,
   record: ReturnType<typeof useAttemptTrace>["record"],
 ) {
@@ -29,6 +31,7 @@ export function useProgressiveHint(
   const inFlight = useRef(false);
   const lifetime = useRef<AbortController | null>(null);
   const storageKey = `pipre.progressive-hint.${sessionId}`;
+  const { baseline, rememberBaseline } = useHintVisitBaseline(sessionId ? scope : undefined, progress?.deliveredCount);
 
   const remember = useCallback((request: ProgressiveHintRequest | null) => {
     pending.current = request;
@@ -56,14 +59,17 @@ export function useProgressiveHint(
     lifetime.current = controller;
     pending.current = readPending(storageKey);
     void gameProgressService.progressiveHintProgress(sessionId, controller.signal).then(next => {
-      if (!controller.signal.aborted) acceptProgress(next, true);
+      if (!controller.signal.aborted) {
+        const initialCount = rememberBaseline(next.deliveredCount);
+        acceptProgress(next, next.deliveredCount > initialCount);
+      }
     }).catch(() => {
       if (!controller.signal.aborted) setMessage(loadError);
     }).finally(() => {
       if (!controller.signal.aborted) setLoading(false);
     });
     return () => controller.abort();
-  }, [sessionId, storageKey, acceptProgress]);
+  }, [sessionId, storageKey, acceptProgress, rememberBaseline]);
 
   const generating = progress?.generating ?? false;
   useEffect(() => {
@@ -136,7 +142,7 @@ export function useProgressiveHint(
 
   const close = () => setMessage(null);
   return {
-    count: progress?.deliveredCount ?? "—" as const,
+    count: progress ? Math.max(0, progress.deliveredCount - (baseline ?? progress.deliveredCount)) : "—" as const,
     busy: loading || working || generating,
     message, close, reset: close,
     request: () => request(),

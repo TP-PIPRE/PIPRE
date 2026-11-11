@@ -25,13 +25,15 @@ Repetir una victoria no duplica progreso, logro ni XP. Una calificación inferio
 
 ## Rúbrica de estrellas implementada
 
-No existía una rúbrica integrada y verificable para los simuladores. La versión nueva `game-stars-v1` usa acciones y contadores de la sesión del servidor:
+La rúbrica `game-stars-v2`, vigente desde el 11/11/2026, usa las acciones y contadores de la sesión del servidor. Cada victoria guarda la versión aplicada en `state.starsRuleset`. Los resultados ya confirmados conservan su calificación.
 
 | Estrellas | Condición sobre una solución válida |
 |---|---|
-| 3 | Sin reinicios, ayudas ni comprobaciones fallidas; coste dentro del presupuesto base. |
-| 2 | Hasta dos reinicios y dos ayudas; coste dentro del doble del presupuesto base, cuando no cumple tres estrellas. |
+| 3 | Hasta un reinicio, una ayuda computable y dos comprobaciones fallidas. El coste puede llegar a una vez y media el presupuesto base. |
+| 2 | Hasta dos reinicios y dos ayudas computables. El coste puede llegar al doble del presupuesto base. Se asignan cuando el intento queda fuera de los límites de tres estrellas. |
 | 1 | Cualquier otra solución válida. |
+
+El modo general cuenta cada ayuda confirmada. El tutor progresivo cuenta desde la novena ayuda del reto, en el intento en que se entrega. La primera ayuda computable cabe dentro del límite de tres estrellas. [Reglas del tutor progresivo](Ayudas_Progresivas_Neon_Flow.md)
 
 Presupuesto base: TetriLogic `4 × cantidad de piezas del inventario`; Neon Flow `2 × (ancho + alto)`. El coste suma colocaciones, rotaciones de piezas colocadas y devoluciones confirmadas. Los giros de previsualización en bandeja o con `source=DRAFT` no mueven una pieza colocada ni aumentan ese coste; la colocación final valida el giro absoluto. Las acciones rechazadas se cuentan aparte, sin penalizar estrellas. Un conteo intermedio excesivo de TetriLogic no es un fallo. Es una regla de gamificación reproducible, no una medida validada de aprendizaje ni un óptimo matemático.
 

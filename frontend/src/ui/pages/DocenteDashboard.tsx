@@ -1,12 +1,11 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {getAuthState} from "../../infrastructure/store/authStore";
 import { apiService } from "../../infrastructure/api/apiService";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import { useAsyncResource } from "../../application/hooks/useAsyncResource";
 import { loadTeacherDashboard } from "../../application/usecases/loadTeacherDashboard";
-import { RiaBentoGrid } from "../components/ria-bento-grid/RiaBentoGrid";
 import { CirclePlus as BsPlusCircleFill, GraduationCap as BsMortarboardFill, Users as BsPeopleFill, TrendingUp as BsGraphUpArrow } from "lucide-react";
 import { Modal } from "../components/common/Modal";
 const EMPTY_RANKING: Awaited<ReturnType<typeof loadTeacherDashboard>>["ranking"]=[];
@@ -28,15 +27,12 @@ export const DocenteDashboard = () => {
   const resource=useAsyncResource("dashboard",loadTeacherDashboard);
   const [operationError,setOperationError]=useState("");
   const [deleting,setDeleting]=useState(false);
-  const [studentChoice,setSelectedStudentId]=useState("");
   const [rankingModalOpen,setRankingModalOpen]=useState(false);
   const [modalActiveTab,setModalActiveTab]=useState<"global"|"course">("global");
   const [courseChoice,setModalSelectedCourse]=useState("");
   const [deleteConfirmReto,setDeleteConfirmReto]=useState<{id:string;nombre:string}|null>(null);
   const navigate=useNavigate();
   const ranking=resource.data?.ranking??EMPTY_RANKING;
-  const students=ranking.map(row=>({id:row.idStudent,name:row.studentName||`Estudiante #${row.position}`}));
-  const selectedStudentId=students.some(row=>row.id===studentChoice)?studentChoice:students[0]?.id??"";
   const modalCourses=(resource.data?.courses??[]).map(course=>({id:course.idCourse,name:course.name}));
   const modalSelectedCourse=modalCourses.some(course=>course.id===courseChoice)?courseChoice:modalCourses[0]?.id??"";
   const loadModal=async()=>modalActiveTab==="course"
@@ -55,9 +51,6 @@ export const DocenteDashboard = () => {
     ],
     retos:resource.data?.challenges??[],
     estudiantesDestacados:ranking.slice(0,3).map(row=>({id:row.idStudent,nombre:row.studentName||`Estudiante #${row.position}`,xp:row.totalPoints,variacionXP:0,posicion:row.position,avatar:""})),
-  };
-  const handleStudentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStudentId(e.target.value);
   };
 
   if (!metricsReady && studentsLoading && !resource.error)
@@ -92,10 +85,10 @@ export const DocenteDashboard = () => {
             Gestión de retos, estudiantes y seguimiento de progreso
           </p>
         </div>
-        <button onClick={() => navigate("/docente/retos")} className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300  flex items-center gap-2 shrink-0 rounded-lg">
+        <div className="flex flex-wrap items-center gap-3"><Link to="/docente/metricas" className="btn-secondary">Ver métricas educativas</Link><button onClick={() => navigate("/docente/retos")} className="bg-primary text-bg px-6 py-3 font-mono font-bold uppercase tracking-wider text-xs hover:opacity-90 transition-all duration-300  flex items-center gap-2 shrink-0 rounded-lg">
           <BsPlusCircleFill className="text-sm" />
           Nuevo Reto
-        </button>
+        </button></div>
       </div>
 
       {/* Métricas originales (Retos Activos, Estudiantes, Progreso Global) */}
@@ -315,54 +308,6 @@ export const DocenteDashboard = () => {
           </button>
         </div>
       </div>
-
-      {/* --- SECCIÓN DE ANALÍTICA IA (BENTO GRID) --- */}
-      <div className="border-t border-border my-8" />
-
-      {/* Selector de Estudiante */}
-      <div className="mb-8 p-5 border border-border bg-surface rounded-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-lg border border-border flex items-center justify-center" style={{ backgroundColor: "var(--bg)" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <span className="text-xs font-mono font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Estudiante
-            </span>
-          </div>
-          <div className="flex-1 min-w-[200px] relative">
-            <select aria-label="Estudiante para análisis"
-              value={selectedStudentId}
-              onChange={handleStudentChange}
-              disabled={studentsLoading}
-              className="w-full bg-bg border border-border px-10 py-2.5 text-xs font-mono outline-none focus:border-primary transition-all rounded-lg disabled:opacity-50 appearance-none"
-              style={{ color: "var(--text)" }}
-            >
-              <option value="">{studentsLoading ? "Cargando estudiantes..." : "Seleccionar estudiante..."}</option>
-              {students.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <svg className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            {studentsLoading && (
-              <div className="absolute right-10 top-1/2 -translate-y-1/2">
-                <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-          </div>
-          <span className="text-xs font-mono italic shrink-0" style={{ color: "var(--text-muted)" }}>
-            {students.length > 0 ? "Sincronizado" : "Sin datos"}
-          </span>
-        </div>
-      </div>
-
-      <p className="mb-4 text-sm text-text-muted">El puntaje del ranking no permite inferir errores, edad o rendimiento. Los análisis requieren datos verificados y no se calculan a partir del puntos.</p>
-      <RiaBentoGrid
-        student={null}
-        studentId={selectedStudentId}
-      />
 
       {/* Modal Confirmación Eliminar */}
       <Modal isOpen={deleteConfirmReto !== null} onClose={() => setDeleteConfirmReto(null)} maxWidth="max-w-sm">
