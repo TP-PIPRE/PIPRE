@@ -20,6 +20,7 @@ Reorganizada el 30/10 y actualizada el **06/11/2026** para la auditoría integra
 | Revisar la auditoría integral y repetir pruebas UI/API/DB | [Informe del 06/11](informes/Auditoria_Integral_2026_11_06.md) · [Inventario](informes/Inventario_Auditoria_Integral_2026_11_06.md) · [Guía de pruebas](guias/Pruebas_Integrales.md) |
 | Revisar puntos verificados, XP y permisos aprobados | [Contrato actual](guias/Puntaje_Ranking_Acceso.md) · [Implementación y validación](informes/Implementacion_Pendientes_2026_11_06.md) |
 | Consultar fórmulas, permisos y evaluación de pensamiento lógico | [Métricas educativas](guias/Metricas_Educativas.md) |
+| Reproducir el aula ficticia para la presentación | [Datos y carga de demostración](../demo/README.md) |
 | Preparar producción sin credenciales de desarrollo | [Seguridad operativa y aprovisionamiento](guias/Seguridad_Operacion_Produccion.md) |
 | Continuar los pendientes de la auditoría integral | [Pendientes frontend/backend, seguridad y validación](guias/Pendientes_Auditoria_Integral.md) |
 | Continuar los pendientes concretos de implementación backend | [Pendientes del backend](guias/Pendientes_Implementacion_Backend.md) |

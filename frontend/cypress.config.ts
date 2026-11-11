@@ -51,6 +51,13 @@ export default defineConfig({
       mkdirSync(reportDirectory,{recursive:true});
       on("after:run",results=>writeFileSync(resolve("test-results/e2e/latest-run.json"),JSON.stringify({reportDirectory,...results},null,2)));
       on("task", {
+        presentationFixture() {
+          const marker = resolve("node_modules/.cache/pipre-audit/presentation.json");
+          if (!existsSync(marker)) return null;
+          const presentation = JSON.parse(readFileSync(marker, "utf8").replace(/^\uFEFF/, ""));
+          if (presentation.runId !== manifest.runId) return null;
+          return JSON.parse(readFileSync(resolve("../demo/seed_simulador_demo.json"), "utf8"));
+        },
         progressiveTutorEnabled: () => process.env.PIPRE_AUDIT_PROGRESSIVE_ENABLED === "true",
         browserDiagnostics(data) {appendFileSync(`${reportDirectory}/browser-console.jsonl`,JSON.stringify(data)+"\n");return null;},
         browserCheckpoint(data) {appendFileSync(`${reportDirectory}/browser-checkpoints.jsonl`,JSON.stringify({at:new Date().toISOString(),...data})+"\n");return null;},

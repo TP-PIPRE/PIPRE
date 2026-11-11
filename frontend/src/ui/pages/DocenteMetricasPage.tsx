@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { RefreshCw } from "lucide-react";
 import { useAsyncResource } from "../../application/hooks/useAsyncResource";
+import { apiService } from "../../infrastructure/api/apiService";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { educationalMetricsService } from "../../infrastructure/api/educationalMetricsService";
 import type { MetricsFilter, MetricsOptions } from "../../infrastructure/api/models/educationalMetricsModels";
 import { MetricsSections, type MetricsSection } from "../components/metrics/MetricsSections";
+import { HistoryTable } from "../components/Perfil/HistoryTable";
 
 const input = "mt-1 min-h-11 w-full rounded-lg border border-border bg-bg px-3 text-text";
 
@@ -58,6 +60,21 @@ function MetricsFilters({ options, initial, apply }: { options: MetricsOptions; 
   </form>;
 }
 
+function SelectedStudentHistory({ student }: { student: { id: string; name: string } }) {
+  const resource = useAsyncResource(student.id, () => apiService.profile.getHistory(student.id));
+  const verified = resource.data?.filter(entry => entry.source === "SERVER_VERIFIED");
+  return <section className="space-y-3 rounded-xl border border-border bg-surface p-4 sm:p-5">
+    <h2 className="text-lg font-semibold">Historial de {student.name}</h2>
+    <p className="text-sm text-text-muted">Victorias registradas de ambos cursos en el historial completo.</p>
+    {resource.loading && <p role="status" className="text-sm text-text-muted">Consultando historial…</p>}
+    {Boolean(resource.error) && <div role="alert" className="space-y-2">
+      <p>{getApiErrorMessage(resource.error, "No se pudo cargar el historial del estudiante.")}</p>
+      <button className="btn-secondary" onClick={resource.retry}>Reintentar historial</button>
+    </div>}
+    {verified && (verified.length ? <HistoryTable history={verified} /> : <p className="text-sm text-text-muted">Sin victorias verificadas.</p>)}
+  </section>;
+}
+
 export function DocenteMetricasPage() {
   const user = getAuthState().user;
   const [filter, setFilter] = useState(defaultFilter);
@@ -67,6 +84,7 @@ export function DocenteMetricasPage() {
   const report = useAsyncResource(options.data ? reportKey : undefined, () => educationalMetricsService.report(filter));
   const loading = options.loading || report.loading;
   const error = options.error ?? report.error;
+  const selected = filter.student && section === "Resumen" ? report.data?.students.find(student => student.id === filter.student) : undefined;
   const refresh = () => { if (options.error) options.retry(); else report.retry(); };
   return <main className="mx-auto w-full max-w-7xl space-y-6" aria-busy={loading}>
     <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
@@ -82,6 +100,7 @@ export function DocenteMetricasPage() {
       <button className="btn-secondary mt-3" onClick={refresh}>Reintentar</button>
     </div>}
     {report.data && <MetricsSections report={report.data} institution={options.data?.institution === true} section={section} select={setSection} />}
+    {selected && <SelectedStudentHistory student={selected} />}
   </main>;
 }
 
