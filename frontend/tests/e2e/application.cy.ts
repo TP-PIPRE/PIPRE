@@ -109,7 +109,8 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
     for(const email of ["docente@pipre.com","admin@pipre.com"]) {
       login(email);
       for(const route of ["dashboard","estudiantes","retos","metricas"]) {
-        cy.visit(`/docente/${route}`);cy.get("main h1",{timeout:15000}).should("be.visible");
+        cy.visit(`/docente/${route}`);cy.get("main h1",{timeout:25000}).should("be.visible");
+        if (route === "metricas") cy.contains("dt", "Estudiantes activos", { timeout: 15000 }).should("be.visible");
         cy.location("pathname").should("eq",`/docente/${route}`);
         for(const width of [390,768,1440]) {
           cy.viewport(width,1000);
@@ -205,6 +206,57 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
           expect(after.levels).to.eq(before.levels+2);expect(after.xp).to.eq(before.xp+100);expect(after.xpEntries).to.eq(before.xpEntries+1);
           cy.reload();cy.visit("/perfil");cy.contains("2/60").should("exist");
           cy.task<Snapshot>("databaseSnapshot",id).then(reloaded=>{expect(reloaded.xp).to.eq(after.xp);expect(reloaded.levels).to.eq(after.levels);});
+        });
+      });
+    });
+  });
+
+  it("muestra las acciones y resultados del estudiante en las cuatro secciones de métricas", () => {
+    const checkPanel = (id: string, groupId: string) => {
+      cy.visit("/docente/metricas");
+      cy.get('form[aria-label="Filtros de métricas"]').within(() => {
+        cy.contains("label", /^Aula/).find("select").select(groupId);
+        cy.contains("label", /^Estudiante/).find("select").select(id);
+        cy.contains("button", "Aplicar filtros").click();
+      });
+      cy.get('nav[aria-label="Secciones de métricas"] button').should("have.length", 4);
+      cy.contains("dt", "Estudiantes activos").siblings("dd").should("have.text", "1 / 1");
+      cy.contains("dt", "Retos completados").siblings("dd").invoke("text").should("match", /^2 \/ [2-9]$/);
+      cy.contains("dt", "Estrellas del periodo").siblings("dd").should("have.text", "6");
+      cy.contains("dt", "Logros desbloqueados").siblings("dd").should("have.text", "1");
+
+      cy.contains("button", "Pensamiento lógico").click();
+      cy.contains("h2", "Reconocimiento de patrones").closest("section").within(() => {
+        cy.contains("dt", "Retos resueltos").siblings("dd").should("have.text", "1/1");
+      });
+
+      cy.contains("button", "Participación").click();
+      cy.contains("dt", "Estudiantes que resolvieron niveles base").siblings("dd").should("have.text", "100 %");
+      for (const game of ["Neon Flow", "TetriLogic"]) {
+        cy.get('[aria-label="Participación comparada"]').contains("th", game).parent().find("td").first().should("have.text", "1");
+      }
+      cy.contains("summary", "Ver valores de la serie").click();
+      cy.get('[aria-label="Participación en Neon Flow"] tbody tr').should("exist");
+
+      cy.contains("button", "Uso del tutor").click();
+      cy.contains("dt", "Consejos predeterminados").siblings("dd").should("have.text", "2");
+      cy.get('[aria-label="Estrellas según uso de consejos en la sesión"]').contains("th", /^Con consejos$/)
+        .parent().find("td").first().should("have.text", "2");
+    };
+
+    login(); cy.visit("/");
+    studentId().then(id => {
+      login("docente@pipre.com"); cy.visit("/docente/dashboard");
+      studentId().then(teacherId => {
+        cy.task<{idGroup: string}>("createAuditGroup").then(({idGroup}) => {
+          login("admin@pipre.com");
+          cy.csrfRequest({ method: "PUT", url: `${api}/administration/teachers/${teacherId}/classrooms/${idGroup}` }).its("status").should("eq", 204);
+          cy.csrfRequest({ method: "POST", url: `${api}/group-students`, body: { idGroup, idStudent: id } }).its("status").should("eq", 201);
+          checkPanel(id, idGroup);
+          login("docente@pipre.com");
+          checkPanel(id, idGroup);
+          cy.viewport(390, 844);
+          cy.document().then(doc => expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth + 1));
         });
       });
     });

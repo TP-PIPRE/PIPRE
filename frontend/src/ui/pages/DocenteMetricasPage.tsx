@@ -1,26 +1,88 @@
-import {ChartNoAxesCombined,RefreshCw} from "lucide-react";
-import {useAsyncResource} from "../../application/hooks/useAsyncResource";
-import {loadTeacherScoreboard} from "../../application/usecases/loadTeacherScoreboard";
-import {getApiErrorMessage} from "../../infrastructure/api/errors";
-const riskLabels:Record<string,string>={HIGH:"Alto",MEDIUM:"Medio",LOW:"Bajo",ALTO:"Alto",MEDIO:"Medio",BAJO:"Bajo"};
-const dateLabel=(value:string)=>new Date(value).toLocaleString("es-PE");
-export const DocenteMetricasPage=()=>{
-  const resource=useAsyncResource("teacher-scoreboard",loadTeacherScoreboard);
-  const data=resource.data,loading=resource.loading;
-  const partial=data?.students.filter(row=>row.errors.length)??[];
+import { useState, type FormEvent } from "react";
+import { RefreshCw } from "lucide-react";
+import { useAsyncResource } from "../../application/hooks/useAsyncResource";
+import { getApiErrorMessage } from "../../infrastructure/api/errors";
+import { getAuthState } from "../../infrastructure/store/authStore";
+import { educationalMetricsService } from "../../infrastructure/api/educationalMetricsService";
+import type { MetricsFilter, MetricsOptions } from "../../infrastructure/api/models/educationalMetricsModels";
+import { MetricsSections, type MetricsSection } from "../components/metrics/MetricsSections";
+
+const input = "mt-1 min-h-11 w-full rounded-lg border border-border bg-bg px-3 text-text";
+
+function defaultFilter(): MetricsFilter {
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts();
+  const get = (part: string) => day.find(value => value.type === part)?.value;
+  const today = `${get("year")}-${get("month")}-${get("day")}`;
+  const first = new Date(`${today}T00:00:00Z`);
+  first.setUTCDate(first.getUTCDate() - 29);
+  return { from: first.toISOString().slice(0, 10), to: today, group: "", grade: "", game: "", student: "" };
+}
+
+function MetricsFilters({ options, initial, apply }: { options: MetricsOptions; initial: MetricsFilter; apply: (value: MetricsFilter) => void }) {
+  const [draft, setDraft] = useState(initial);
+  const [error, setError] = useState("");
+  const inGroup = options.students.filter(row => !draft.group || row.groups.includes(draft.group));
+  const grades = [...new Set(inGroup.map(row => row.grade).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  const students = inGroup.filter(row => !draft.grade || row.grade === draft.grade);
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (draft.from > draft.to) {
+      setError("La fecha de inicio debe ser anterior o igual a la fecha final.");
+      return;
+    }
+    setError("");
+    apply(draft);
+  };
+  return <form aria-label="Filtros de métricas" onSubmit={submit} className="space-y-4 rounded-xl border border-border bg-surface p-4 sm:p-5">
+    <div className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-3 2xl:grid-cols-6">
+      <label className="min-w-0">Aula<select className={input} value={draft.group} onChange={event => setDraft({ ...draft, group: event.target.value, grade: "", student: "" })}>
+        <option value="">{options.institution ? "Todas las aulas" : "Mis aulas"}</option>
+        {options.groups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
+      </select></label>
+      <label className="min-w-0">Grado<select className={input} value={draft.grade} onChange={event => setDraft({ ...draft, grade: event.target.value, student: "" })}>
+        <option value="">Todos los grados</option>{grades.map(grade => <option key={grade}>{grade}</option>)}
+      </select></label>
+      <label className="min-w-0">Curso<select className={input} value={draft.game} onChange={event => setDraft({ ...draft, game: event.target.value as MetricsFilter["game"] })}>
+        <option value="">Ambos cursos</option><option value="neonflow">Neon Flow</option><option value="tetrilogic">TetriLogic</option>
+      </select></label>
+      <label className="min-w-0">Estudiante<select className={input} value={draft.student} onChange={event => setDraft({ ...draft, student: event.target.value })}>
+        <option value="">Todos los estudiantes</option>{students.map(student => <option key={student.id} value={student.id}>{student.name}</option>)}
+      </select></label>
+      <label className="min-w-0">Desde<input type="date" required className={input} value={draft.from} onChange={event => setDraft({ ...draft, from: event.target.value })} /></label>
+      <label className="min-w-0">Hasta<input type="date" required className={input} value={draft.to} onChange={event => setDraft({ ...draft, to: event.target.value })} /></label>
+    </div>
+    {error && <p role="alert" className="text-sm text-danger">{error}</p>}
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <span className="text-sm text-text-muted">Fechas de Lima</span><button className="btn-premium" type="submit">Aplicar filtros</button>
+    </div>
+  </form>;
+}
+
+export function DocenteMetricasPage() {
+  const user = getAuthState().user;
+  const [filter, setFilter] = useState(defaultFilter);
+  const [section, setSection] = useState<MetricsSection>("Resumen");
+  const options = useAsyncResource(user?.id ?? "metrics-options", educationalMetricsService.options);
+  const reportKey = JSON.stringify([user?.id, filter]);
+  const report = useAsyncResource(options.data ? reportKey : undefined, () => educationalMetricsService.report(filter));
+  const loading = options.loading || report.loading;
+  const error = options.error ?? report.error;
+  const refresh = () => { if (options.error) options.retry(); else report.retry(); };
   return <main className="mx-auto w-full max-w-7xl space-y-6" aria-busy={loading}>
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="page-eyebrow mb-3">Seguimiento de puntajes</p><h1 className="mb-3 font-bold">Métricas y análisis</h1><p className="page-intro">Puntos, XP y progreso confirmados por el servidor. Estas métricas no son notas académicas.</p></div><button disabled={loading} onClick={resource.retry} className="btn-secondary"><RefreshCw size={18} aria-hidden="true"/>Actualizar</button></header>
-    {loading?<p role="status" className="py-12 text-center text-text-muted">Consultando partidas verificadas…</p>:resource.error?<div role="alert" className="rounded-lg border border-danger p-5"><p>{getApiErrorMessage(resource.error,"No se pudieron cargar las métricas.")}</p><button className="btn-secondary mt-3" onClick={resource.retry}>Reintentar</button></div>:data&&<>
-      <section aria-label="Resumen de registros" className="grid gap-4 sm:grid-cols-3">{[["Estudiantes únicos",data.students.length],["Cursos",data.courseCount],["Perfiles disponibles",data.students.filter(row=>row.profile).length]].map(([label,value])=><div key={label} className="rounded-lg border border-border bg-surface p-5"><p className="text-sm text-text-muted">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></div>)}</section>
-      {partial.length>0&&<p role="alert" className="rounded-lg border border-danger p-4 text-sm text-danger">Datos incompletos de {partial.length} estudiantes: {partial.map(row=>`${row.student.studentName} (${row.errors.join(", ")})`).join("; ")}. Puedes reintentar con Actualizar.</p>}
-      <section className="rounded-lg border border-border bg-surface p-4 md:p-6"><h2 className="mb-2 flex items-center gap-2 text-lg font-semibold"><ChartNoAxesCombined size={20} aria-hidden="true"/>Puntajes y progreso verificados</h2><p className="mb-4 text-sm text-text-muted">El ranking suma mejores puntajes. Los reintentos sólo añaden la mejora; el XP por logros y diarios se muestra por separado.</p>
-        {data.students.length?<div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-sm"><caption className="sr-only">Puntaje, XP y niveles validados de cada estudiante</caption><thead><tr className="border-b border-border text-text-muted">{["Estudiante","Puntos","XP","Neon Flow","TetriLogic"].map(label=><th key={label} scope="col" className="px-3 py-3">{label}</th>)}</tr></thead><tbody>{data.students.map(({student,profile,progress})=><tr key={student.idStudent} className="border-b border-border last:border-0"><th scope="row" className="px-3 py-4">{student.studentName}</th><td className="px-3 py-4">{profile?profile.totalPoints:"No disponible"}</td><td className="px-3 py-4">{profile?profile.xpTotal:"No disponible"}</td>{["neonflow","tetrilogic"].map(game=><td key={game} className="px-3 py-4">{progress?`${progress.levels.filter(level=>level.game===game&&level.completed).length}/30`:"No disponible"}</td>)}</tr>)}</tbody></table></div>:<p className="py-6 text-text-muted">No hay estudiantes asignados a las aulas.</p>}
-      </section>
-      <section className="rounded-lg border border-border bg-surface p-4 md:p-6">
-        <h2 className="mb-2 text-lg font-semibold">Análisis de riesgo registrado</h2><p className="mb-4 text-sm text-text-muted">Se muestra el análisis guardado por el sistema y su fecha. Esta vista no ejecuta modelos de IA.</p>
-        {data.students.length ? <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><caption className="sr-only">Último análisis disponible de cada estudiante</caption><thead><tr className="border-b border-border text-text-muted"><th scope="col" className="px-3 py-3">Estudiante</th><th scope="col" className="px-3 py-3">Riesgo registrado</th><th scope="col" className="px-3 py-3">Días sin actividad</th><th scope="col" className="px-3 py-3">Fecha del análisis</th></tr></thead><tbody>{data.students.map(({ student, risk, errors }) => <tr key={student.idStudent} className="border-b border-border last:border-0"><th scope="row" className="px-3 py-4 font-medium">{student.studentName}</th><td className="px-3 py-4">{errors.includes("análisis") ? "No disponible" : risk ? riskLabels[risk.riskLevel.toUpperCase()] ?? risk.riskLevel : "Sin análisis"}</td><td className="px-3 py-4">{risk?.daysInactive ?? "—"}</td><td className="px-3 py-4">{risk ? dateLabel(risk.analysisDate) : "—"}</td></tr>)}</tbody></table></div> : <p className="py-6 text-text-muted">No hay estudiantes asignados a los grupos.</p>}
-      </section>
-    </>}
+    <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
+      <div><h1 className="font-bold">Métricas educativas</h1>
+        <p className="mt-2 text-text-muted">{user?.role === "admin" ? "Vista institucional de aulas, grados y estudiantes." : "Seguimiento de las aulas y estudiantes asignados."}</p>
+      </div>
+      <button className="btn-secondary" onClick={refresh} disabled={loading}><RefreshCw size={18} aria-hidden="true" />Actualizar</button>
+    </header>
+    {options.data && <MetricsFilters options={options.data} initial={filter} apply={setFilter} />}
+    {loading && <p role="status" className="py-12 text-center text-text-muted">Consultando partidas y resultados verificados…</p>}
+    {Boolean(error) && <div role="alert" className="rounded-lg border border-danger p-5">
+      <p>{getApiErrorMessage(error, "No se pudieron cargar las métricas.")}</p>
+      <button className="btn-secondary mt-3" onClick={refresh}>Reintentar</button>
+    </div>}
+    {report.data && <MetricsSections report={report.data} institution={options.data?.institution === true} section={section} select={setSection} />}
   </main>;
-};
+}
+
 export default DocenteMetricasPage;

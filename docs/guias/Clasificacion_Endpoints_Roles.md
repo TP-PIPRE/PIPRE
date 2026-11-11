@@ -50,6 +50,7 @@ Las rutas de `/administration/**`, PUT `/rankings/settings`, PUT `/users/{id}/st
 | Método / recurso | STUDENT | TEACHER | ADMIN |
 |---|---|---|---|
 | GET `/users` | No | No | Sí |
+| GET `/educational-metrics` y `/educational-metrics/options` | No | Aulas asignadas y sus estudiantes | Institucional |
 | GET `/users/{userId}` | Propio | Estudiante asignado o propio | Sí |
 | GET `/profile/{idStudent}`, `/profile/{idStudent}/achievements`, `/profile/{idStudent}/history` | Propio | Estudiante asignado o propio | Sí |
 | GET `/profile/{idStudent}/game-progress`, `/profile/{idStudent}/achievements/export` | Propio | Estudiante asignado o propio | Sí |
