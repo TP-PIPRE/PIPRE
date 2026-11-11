@@ -34,7 +34,7 @@ class GameSessionsServiceTest {
     private final TutorPilotAccessPort tutorPilotAccess=mock(TutorPilotAccessPort.class);
     private final TutorPilotProperties tutorProperties=new TutorPilotProperties();
     private final MutableClock clock=new MutableClock();
-    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification,hintReceipts,tutorProperties,new TutorPilotPolicy(tutorProperties,activities,academicAccess,tutorPilotAccess));
+    private final GameSessionsService service=new GameSessionsService(repository,mock(TetriLogicTemplateRepositoryPort.class),templates,activities,daily,victories,json,clock,mock(ProceduralDailyService.class),mock(VerifiedExercisePointsService.class),academicAccess,gamification,hintReceipts,tutorProperties,new TutorPilotPolicy(tutorProperties,activities,academicAccess,tutorPilotAccess),mock(ProgressiveTutorService.class));
     @BeforeEach void setup() throws Exception {
         JsonNode catalog=json.readTree(getClass().getResourceAsStream("/catalog/neonflow-v2.json"));
         for(JsonNode config:catalog) {
@@ -196,6 +196,7 @@ class GameSessionsServiceTest {
         public GameSession insert(GameSession s){var inserted=new GameSession(s.sessionId(),s.clientSessionId(),s.studentId(),s.game(),s.levelNumber(),s.levelTemplate(),s.activityId(),s.dailyChallengeId(),s.startedAt(),s.completedAt(),s.status(),s.state(),s.revision(),++order,s.stars(),s.completionResponse());rows.put(s.sessionId(),inserted);return inserted;}
         public void update(GameSession s){rows.put(s.sessionId(),s);}
         public Optional<ActionReceipt> findAction(String id,int sequence){return Optional.ofNullable(actions.get(id+":"+sequence));}
+        public List<JsonNode> recentActions(String id){return List.of();}
         public void saveAction(String id,int sequence,String hash,JsonNode payload,Instant received,JsonNode response){actions.put(id+":"+sequence,new ActionReceipt(hash,response));}
     }
 }

@@ -11,8 +11,8 @@ public class GameReferenceMoves {
     private final Map<String,Integer> references;
     public GameReferenceMoves(ObjectMapper json) {
         var values=new HashMap<String,Integer>();
-        for(String game:List.of("neonflow","tetrilogic"))try {
-            var witnesses=json.readTree(getClass().getResourceAsStream("/catalog/"+game+"-daily-witnesses.json"));
+        for(String file:List.of("neonflow-daily-witnesses", "tetrilogic-daily-witnesses", "neonflow-v3-witnesses"))try {
+            var witnesses=json.readTree(getClass().getResourceAsStream("/catalog/"+file+".json"));
             for(var witness:witnesses) {
                 int moves=0;
                 for(var placement:witness.path("placements"))moves+=1+placement.path("rotation").asInt(0)/90;

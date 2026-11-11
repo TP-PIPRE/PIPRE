@@ -13,6 +13,8 @@ import type { Piece } from "../../../shared/types/TetriLogic";
 import { useAttemptTrace } from "../common/useAttemptTrace";
 import { useValidatedGameSession } from "../common/useValidatedGameSession";
 import { useBoardHint } from "../common/useBoardHint";
+import { useProgressiveHint } from "../common/useProgressiveHint";
+import { AdditionalAdviceModal } from "../common/AdditionalAdviceModal";
 import { HintToast } from "../common/HintToast";
 import { GameSessionFeedback } from "../common/GameSessionFeedback";
 import { lineGoalsMet } from "../../../application/usecases/tetrilogic/lineGoals";
@@ -44,9 +46,15 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
   const [initialTrace]=useState(gameSession.state?.session?.state.pieces??[]);
   const templateId=activity?.levelTemplate??level.templateId;
   const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:'tetrilogic',activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:'tetrilogic-counts-v1'}:null,initialTrace);
-  const hint = useBoardHint(gameSession, record, TETRILOGIC_TIPS);
+  const legacyHint = useBoardHint(gameSession, record, TETRILOGIC_TIPS);
+  const session = gameSession.state?.session;
+  const progressive = session?.state.progressiveTutor === true;
+  const progressiveHint = useProgressiveHint(progressive ? session.sessionId : undefined, gameSession.prepareProgressiveHint, record);
+  const hint = progressive ? progressiveHint : legacyHint;
+  const tutorPaused = progressive && (progressiveHint.busy || progressiveHint.confirmation !== undefined);
   const snapshot=(pieces:Piece[])=>pieces.filter(isPlaced).map(p=>({id:p.id,type:p.type,x:p.position.x,y:p.position.y,rotation:p.rotation}));
   const trackedDispatch=(action:FreePlayAction)=>{
+    if (tutorPaused) return;
     const next=freePlayReducer(state,action);
     if(action.type==='select')record('SELECT',action.id?{pieceId:action.id}:{});
     else if(action.type==='reset'){record('RESET',{},snapshot(state.pieces),snapshot(next.pieces));hint.reset();gameSession.reset();}
@@ -66,7 +74,7 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
     } else if(action.type==='message'&&action.message)record('CANCEL');
     dispatch(action);
   };
-  const { boardRef, trayRef, preview, begin, activateCell, activateTray, rotatePiece, returnPiece, reset, rootEvents } = useFreePieceInteraction(state, trackedDispatch,{
+  const { boardRef, trayRef, preview, begin, activateCell, activateTray, rotatePiece, returnPiece, reset, cancelInteraction, rootEvents } = useFreePieceInteraction(state, trackedDispatch,{
     onDraftRotate:(id,rotation)=>{record('ROTATE',{pieceId:id,rotation,source:'DRAFT'});gameSession.action({type:"ROTATE",pieceId:id,rotation,source:"DRAFT"});},
     onRejectedDrop:outside=>{record('REJECT',{errorCode:outside?'OUTSIDE':'BOUNDS_OR_COLLISION'});gameSession.action({type:"REJECT"});},
   });
@@ -82,8 +90,8 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
   const confirmVictory=gameSession.complete;
   useEffect(()=>{if(completed)confirmVictory();},[completed,confirmVictory]);
   if(!gameSession.ready)return <main className="lab-shell"><h1>{activity?.name??"TetriLogic"}</h1><GameSessionFeedback state={gameSession.state} retry={gameSession.retry} onNewAttempt={gameSession.restart}/></main>;
-  return <main className="lab-shell tetri-free" {...rootEvents} onKeyDown={event => {
-    if (!confirmReset) rootEvents.onKeyDown(event);
+  return <main className="lab-shell tetri-free" {...(tutorPaused ? undefined : rootEvents)} onKeyDown={event => {
+    if (!tutorPaused && !confirmReset) rootEvents.onKeyDown(event);
   }}>
     <header className="tetri-free-heading">
       <div className="tetri-free-title"><Link to="/" aria-label="Volver a mis cursos" className="tetri-back" title="Mis cursos"><ArrowLeft size={20} aria-hidden="true" /></Link>
@@ -94,19 +102,19 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
     <section className="tetri-free-workspace" aria-label="Reto de filas y columnas">
       <div className="tetri-free-canvas">
         <h2 className="sr-only">Tablero</h2>
-        <Board board={board} pieces={placed} freePlay lineGoals={level.constraints} boardRef={boardRef}
+        <Board board={board} pieces={placed} freePlay disabled={tutorPaused} lineGoals={level.constraints} boardRef={boardRef}
           pieceNumbers={pieceNumbers} selectedPieceId={state.selectedId}
           hiddenPieceId={preview?.dragging ? preview.piece.id : undefined}
           onPieceDrop={(id, position) => trackedDispatch({ type: "place", id, position })}
-          onRotatePiece={rotatePiece} onCellActivate={activateCell} onPiecePointerDown={begin} />
+          onRotatePiece={rotatePiece} onCellActivate={activateCell} onPiecePointerDown={tutorPaused ? undefined : begin} />
       </div>
       <aside ref={trayRef} className="tetri-free-tray" data-drop-active={preview?.dragging && preview.overTray} aria-label="Bandeja de piezas">
         <h2>Piezas</h2>
         <PieceTray pieces={available} slots={state.pieces} pieceNumbers={pieceNumbers} selectedPieceId={state.selectedId}
-          pointerInteraction onRotatePiece={rotatePiece} onPiecePointerDown={begin} onPieceActivate={activateTray} />
+          disabled={tutorPaused} pointerInteraction onRotatePiece={rotatePiece} onPiecePointerDown={tutorPaused ? undefined : begin} onPieceActivate={activateTray} />
         <div className="tetri-free-piece-tools">
-          <button ref={rotateButton} type="button" className="btn-secondary" aria-label="Rotar pieza" title="Girar (R)" disabled={!selected} onClick={() => rotatePiece()}><RotateCw size={18} aria-hidden="true" />Girar <kbd aria-hidden="true">R</kbd></button>
-          <button ref={returnButton} type="button" className="btn-secondary" aria-label="Devolver pieza" title="Devolver a la bandeja (Supr)" disabled={!selected || !isPlaced(selected)} onClick={returnPiece}><Undo2 size={18} aria-hidden="true" />Devolver</button>
+          <button ref={rotateButton} type="button" className="btn-secondary" aria-label="Rotar pieza" title="Girar (R)" disabled={tutorPaused || !selected} onClick={() => rotatePiece()}><RotateCw size={18} aria-hidden="true" />Girar <kbd aria-hidden="true">R</kbd></button>
+          <button ref={returnButton} type="button" className="btn-secondary" aria-label="Devolver pieza" title="Devolver a la bandeja (Supr)" disabled={tutorPaused || !selected || !isPlaced(selected)} onClick={returnPiece}><Undo2 size={18} aria-hidden="true" />Devolver</button>
         </div>
       </aside>
       <footer className="tetri-free-footer">
@@ -115,14 +123,18 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
           <button ref={hintButton} type="button" className="btn-secondary aria-disabled:opacity-50"
             aria-describedby="tetri-hint-count" aria-disabled={hint.busy || undefined}
             disabled={completed || gameSession.verifying || Boolean(gameSession.state?.victory)}
-            onClick={() => { if (!hint.busy) void hint.request(); }}>
+            onClick={() => {
+              if (tutorPaused || hint.busy) return;
+              if (progressive) cancelInteraction();
+              void hint.request();
+            }}>
             <Lightbulb size={16} aria-hidden="true" />Pista
           </button>
-          <button type="button" className="tetri-free-reset" disabled={(!changed&&!gameSession.state?.victory)||gameSession.verifying} onClick={() => setConfirmReset(true)}><RotateCcw size={16} aria-hidden="true" />Restablecer</button>
+          <button type="button" className="tetri-free-reset" disabled={tutorPaused||(!changed&&!gameSession.state?.victory)||gameSession.verifying} onClick={() => setConfirmReset(true)}><RotateCcw size={16} aria-hidden="true" />Restablecer</button>
         </div>
         <p className="tetri-free-shortcuts"><kbd>R</kbd> girar <span aria-hidden="true">·</span> <kbd>Esc</kbd> cancelar</p>
         <div className="col-span-full space-y-2">
-          <p id="tetri-hint-count" className="text-sm text-text-muted">{gameSession.enabled && "Usar pistas puede afectar las estrellas. "}Pistas usadas: {hint.count}.</p>
+          <p id="tetri-hint-count" className="text-sm text-text-muted">{gameSession.enabled && !progressive && "Usar pistas puede afectar las estrellas. "}Pistas usadas: {hint.count}.</p>
           {hint.busy && <p role="status">Consultando pista…</p>}
           {hint.message && <div ref={hintNotice}><HintToast message={hint.message} onClose={() => {
               hintButton.current?.focus({ preventScroll: true });
@@ -131,7 +143,7 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
         </div>
       </footer>
     </section>
-    <GameSessionFeedback state={gameSession.state} retry={hint.retry} onNewAttempt={gameSession.restart}/>
+    <GameSessionFeedback state={gameSession.state} retry={progressive ? gameSession.retry : legacyHint.retry} onNewAttempt={gameSession.restart}/>
     {gameSession.state?.victory && onNext && <button type="button" className="btn-premium" onClick={onNext}>Siguiente reto</button>}
     {preview && createPortal(<div className="tetri-free-preview-layer" aria-hidden="true"><div className="tetri-free-preview"
       data-valid={preview.valid} data-over-board={Boolean(preview.position)} data-over-tray={preview.overTray}
@@ -139,5 +151,6 @@ function TetriBoardSession({level,levels,index,onLevel,activity,dailyChallengeId
     <Modal title="Restablecer tablero" isOpen={confirmReset} onClose={() => setConfirmReset(false)} maxWidth="max-w-md">
       <div className="tetri-help-content"><h2>¿Restablecer el tablero?</h2><p>Las piezas volverán a la bandeja con su giro inicial.</p><div className="tetri-dialog-actions"><button className="btn-secondary" onClick={() => setConfirmReset(false)}>Continuar</button><button className="btn-premium" onClick={() => { reset(); setConfirmReset(false); }}>Restablecer tablero</button></div></div>
     </Modal>
+    <AdditionalAdviceModal isOpen={progressiveHint.confirmation !== undefined} onCancel={progressiveHint.cancel} onConfirm={progressiveHint.confirm} />
   </main>;
 }

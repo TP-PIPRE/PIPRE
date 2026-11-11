@@ -6,11 +6,11 @@
 
 | Juego | Curso | Actividades oficiales | Plantillas oficiales |
 |---|---|---|---|
-| Neon Flow | `c001` | `act-c001-v2-1`, `act-c001-v2-2`, `act-c001-3`…`30` | `neonflow-v2-1`…`30` |
+| Neon Flow | `c001` | `act-c001-v2-1`, `act-c001-v2-2`, `act-c001-3`…`30` | `neonflow-v3-1`…`30` |
 | TetriLogic | `c002` | `act-c002-1`…`30` | `tetrilogic-v2-1`…`30` |
 | Total | Dos cursos | **60 retos: 30 por juego** | 60 configuraciones oficiales |
 
-Las plantillas `neonflow-1/2` conservan sus tableros anteriores 5×5; `neonflow-3`…`30` son alias compatibles del nuevo catálogo. También se conservan `tetrilogic-1/2`. Ningún alias o prototipo se cuenta otra vez. La base local existente tiene 62 actividades al preservar los dos prototipos Neon Flow; una instalación nueva incorpora 60 oficiales. Las personalizaciones docentes de otros entornos pueden exigir revisión manual.
+Las plantillas `neonflow-1/2` conservan sus tableros anteriores 5×5; `neonflow-3`…`30` siguen resolviendo las geometrías v2. También se conservan `tetrilogic-1/2`. Ningún alias o prototipo se cuenta otra vez. La base local existente tiene 62 actividades al preservar los dos prototipos Neon Flow; una instalación nueva incorpora 60 oficiales. Las personalizaciones docentes de otros entornos pueden exigir revisión manual.
 
 El flujo es **curso → módulo → lección → actividad → plantilla → configuración → simulador**. Los accesos de actividades usan `/simulador/:courseId?activity=:idActivity`. `c001` y `c002` se resuelven por actividad, no por el nombre del curso. `/simulador` abre la práctica TetriLogic independiente. Una actividad desconocida, ajena al curso o sin plantilla compatible muestra un estado explícito. **Vista previa** muestra el tablero y la bandeja del reto bloqueado en solo lectura, sin iniciar una partida. El reto se habilita al completar el nivel anterior. «Siguiente reto» consulta el progreso verificado antes de ofrecer el avance.
 
@@ -20,9 +20,11 @@ El flujo es **curso → módulo → lección → actividad → plantilla → con
 
 El modo activo usa tamaño, inventario y conteos del catálogo publicado. Tras una victoria verificada puede mostrar el puntaje confirmado por el servidor, conforme a la regla aprobada el 06/11. `HistoricalTetriLogicStage` se conserva para pruebas de compatibilidad. Ver [reglas e interacción](simuladores/TetriLogic_Filas_Columnas.md).
 
-**Neon Flow.** Guía el haz con espejos y filtros. El haz se detiene en obstáculos, filtros incompatibles y receptores. Consulta el [funcionamiento](simuladores/NeonFlow.md).
+**Neon Flow.** Guía el haz con espejos y filtros. El haz se detiene en obstáculos, filtros incompatibles y receptores. V32 añade una progresión de dos a siete espejos mínimos y actualiza el catálogo oficial. [Funcionamiento y progresión](simuladores/NeonFlow.md)
 
-**Ayuda de los simuladores.** **Pista** recorre seis consejos predefinidos por juego y presenta el texto del consejo. En partidas verificadas se registra `HELP` con `source=STATIC` para la rúbrica. El piloto por reglas se conserva en la API para pruebas. La interfaz reserva las pistas contextuales para la futura integración con IA generativa.
+**Ayuda general de los simuladores.** **Pista** recorre seis consejos predefinidos por juego y presenta el texto del consejo. En partidas verificadas se registra `HELP` con `source=STATIC` para la rúbrica. El piloto por reglas se conserva en la API para pruebas.
+
+Las partidas nuevas de retos oficiales de Neon Flow y TetriLogic admiten un modo progresivo con Ollama mediante activación explícita. Ofrece cinco consejos fijos y tres generativos sin penalización por ayuda. Desde el noveno solicita confirmación. La migración V31 conserva el contador por estudiante y reto. [Ayudas progresivas con Ollama](guias/Ayudas_Progresivas_Neon_Flow.md)
 
 ## Persistencia y trazabilidad
 

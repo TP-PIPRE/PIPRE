@@ -2,7 +2,7 @@
 
 **Propuesta técnica del 08/11/2026.** Describe el alcance y los pasos de una implementación futura.
 
-**Estado de la interfaz al 10/11/2026.** El botón **Pista** recorre consejos predefinidos en ambos juegos. Las pistas contextuales se reservan para la futura integración generativa. Los apartados sobre el piloto por reglas documentan el diseño que se conserva en la API para pruebas.
+**Estado de la interfaz al 10/11/2026.** Los retos oficiales de Neon Flow y TetriLogic pueden activar el tutor progresivo con Ollama. Esta guía documenta el diseño del piloto por reglas. La guía de ayudas progresivas describe la activación, el conteo y la rúbrica de la integración generativa. [Ayudas progresivas](Ayudas_Progresivas_Neon_Flow.md)
 
 ## Objetivo y alcance
 

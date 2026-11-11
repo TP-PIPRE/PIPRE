@@ -1,9 +1,10 @@
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
-import { NEONFLOW_LEVELS, LEGACY_NEONFLOW_LEVELS, TETRILOGIC_LEVELS, LEGACY_TETRILOGIC_LEVELS } from "../../shared/constants/levelConfigs";
+import { PROGRESSIVE_NEONFLOW_LEVELS, NEONFLOW_LEVELS, LEGACY_NEONFLOW_LEVELS, TETRILOGIC_LEVELS, LEGACY_TETRILOGIC_LEVELS } from "../../shared/constants/levelConfigs";
 import type { LevelProgressDTO } from "../../infrastructure/api/models/gameProgressModels";
 
 export const LEVEL_TEMPLATES = [
-  ...NEONFLOW_LEVELS.map(config => ({ id: config.templateId!, game: "neonflow" as const, label: `Neon Flow · ${config.level}. ${config.width} × ${config.height}`, config })),
+  ...PROGRESSIVE_NEONFLOW_LEVELS.map(config => ({ id: config.templateId!, game: "neonflow" as const, label: `Neon Flow · ${config.level}. ${config.width} × ${config.height}`, config })),
+  ...NEONFLOW_LEVELS.map(config => ({ id: config.templateId!, game: "neonflow" as const, label: `Neon Flow · Nivel ${config.level} (anterior)`, config })),
   ...NEONFLOW_LEVELS.filter(config => config.level >= 3).map(config => ({ id: `neonflow-${config.level}`, game: "neonflow" as const, label: `Neon Flow · Nivel ${config.level} (compatible)`, config })),
   { id: "neonflow-1", game: "neonflow", label: "Neon Flow · Haz directo", config: { ...LEGACY_NEONFLOW_LEVELS[0], templateId: "neonflow-1", version: 1 } },
   { id: "neonflow-2", game: "neonflow", label: "Neon Flow · Esquiva los muros", config: { ...LEGACY_NEONFLOW_LEVELS[1], templateId: "neonflow-2", version: 1 } },

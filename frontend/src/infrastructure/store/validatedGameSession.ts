@@ -96,6 +96,15 @@ export class ValidatedGameSession {
     if (this.disposed) return { status: "STALE" };
     return this.takeAcknowledgedHint() ?? { status: "PENDING" };
   };
+  prepareProgressiveHint = async (): Promise<number | null> => {
+    const lifecycle = this.lifecycle;
+    const state = this.snapshot.session?.state;
+    if (this.disposed || this.closing || !(state?.progressiveTutor || state?.neonFlowProgressiveTutor)) return null;
+    if (this.snapshot.phase === "error") this.update({ phase: "ready", error: "" });
+    await this.drain();
+    if (!this.isCurrent(lifecycle) || this.closing || this.commands.length || this.snapshot.phase === "error") return null;
+    return this.snapshot.session?.revision ?? null;
+  };
   complete = (): Promise<GameVictoryDTO | null> => {
     if (this.disposed || !this.snapshot.session || this.snapshot.victory || this.closing) return Promise.resolve(this.snapshot.victory);
     this.closing = true;

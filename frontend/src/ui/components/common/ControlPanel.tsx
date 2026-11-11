@@ -1,9 +1,9 @@
 import { Timer, Move, RotateCcw, Lightbulb, CircleCheck } from "lucide-react";
 import type { Ref } from "react";
 import { useGameStore } from "../../../infrastructure/store/gameStore";
-export interface ControlPanelProps { onCheck: () => void; onReset?: () => void; onHint?: () => void; hintKind?: 'static'|'ai'; hintCount?: number; allowResetAfterCompletion?: boolean; resetDisabled?:boolean; hintDisabled?: boolean; hintBusy?: boolean; hintButtonRef?: Ref<HTMLButtonElement>; }
+export interface ControlPanelProps { onCheck: () => void; onReset?: () => void; onHint?: () => void; hintKind?: 'static'|'ai'; hintCount?: number | "—"; allowResetAfterCompletion?: boolean; checkDisabled?: boolean; resetDisabled?:boolean; hintDisabled?: boolean; hintBusy?: boolean; hintButtonRef?: Ref<HTMLButtonElement>; }
 const formatTime = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-export const ControlPanel = ({ onCheck, onReset, onHint, hintKind='ai', hintCount, allowResetAfterCompletion=false, resetDisabled=false, hintDisabled=false, hintBusy=false, hintButtonRef }: ControlPanelProps) => {
+export const ControlPanel = ({ onCheck, onReset, onHint, hintKind='ai', hintCount, allowResetAfterCompletion=false, checkDisabled=false, resetDisabled=false, hintDisabled=false, hintBusy=false, hintButtonRef }: ControlPanelProps) => {
   const status = useGameStore(s => s.status);
   const time = useGameStore(s => s.tiempoResolucion);
   const moves = useGameStore(s => s.movimientos);
@@ -14,7 +14,7 @@ export const ControlPanel = ({ onCheck, onReset, onHint, hintKind='ai', hintCoun
   const playing = status === "PLAYING";
   return <section aria-label="Controles de la partida" className="w-full border-t border-border pt-4">
     <div className="flex flex-wrap justify-center gap-3">
-      <button onClick={onCheck} disabled={!playing} className="btn-premium"><CircleCheck size={18} aria-hidden="true" />Comprobar</button>
+      <button onClick={onCheck} disabled={!playing || checkDisabled} className="btn-premium"><CircleCheck size={18} aria-hidden="true" />Comprobar</button>
       <button onClick={() => { resetGame(); onReset?.(); }} disabled={resetDisabled||(!playing && !(allowResetAfterCompletion && (status === "SUCCESS" || status === "FAILED")))} className="btn-secondary"><RotateCcw size={18} aria-hidden="true" />Reiniciar</button>
       <button ref={hintButtonRef} type="button" aria-disabled={hintBusy || undefined} disabled={!playing || hintDisabled}
         onClick={() => { if(hintBusy)return; if(hintKind==='ai')requestHint(); onHint?.(); }}

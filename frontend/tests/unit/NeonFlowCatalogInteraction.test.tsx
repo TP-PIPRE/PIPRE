@@ -2,19 +2,21 @@ import {afterEach,describe,expect,it,vi} from 'vitest';
 import {cleanup,fireEvent,render,screen} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import {NeonFlowStage} from '../../src/ui/components/NeonFlow/NeonFlowStage';
-import {NEONFLOW_LEVELS,LEGACY_NEONFLOW_LEVELS} from '../../src/shared/constants/levelConfigs';
+import {NEONFLOW_LEVELS,PROGRESSIVE_NEONFLOW_LEVELS,LEGACY_NEONFLOW_LEVELS} from '../../src/shared/constants/levelConfigs';
 import {resolveActivityLevel} from '../../src/application/usecases/activityLevels';
 import {useGameStore} from '../../src/infrastructure/store/gameStore';
 import {createNeonGrid,neonSolved} from '../../src/application/usecases/neonflow/board';
 import {raycast} from '../../src/application/usecases/neonflow/raycast';
 import witnesses from '../fixtures/neonFlowSolutions.json';
+import progressiveWitnesses from '../../../backend/src/main/resources/catalog/neonflow-v3-witnesses.json';
 vi.mock('../../src/infrastructure/api/axiosInstance',()=>({default:{post:vi.fn().mockResolvedValue({status:201})}}));
 afterEach(()=>{cleanup();useGameStore.getState().stopGame();});
 describe('Integrated Neon Flow catalog',()=>{
   it('keeps both published geometries and separates 30 official versioned boards without runtime solutions',()=>{
     expect(LEGACY_NEONFLOW_LEVELS.map(l=>l.width)).toEqual([5,5]);
     expect(NEONFLOW_LEVELS).toHaveLength(30);
-    for(const level of NEONFLOW_LEVELS) {
+    expect(PROGRESSIVE_NEONFLOW_LEVELS).toHaveLength(30);
+    for(const level of [...NEONFLOW_LEVELS,...PROGRESSIVE_NEONFLOW_LEVELS]) {
       expect(level).not.toHaveProperty('solution');
       expect(resolveActivityLevel({idActivity:'test',name:'test',environment:'neonflow',levelTemplate:level.templateId})?.config).toBe(level);
     }
@@ -27,10 +29,11 @@ describe('Integrated Neon Flow catalog',()=>{
     expect(neonSolved(grid,path,level.emitter.color)).toBe(false);
     expect(path.at(-1)?.type).toBe('RECEPTOR');
   });
-  it.each(NEONFLOW_LEVELS)('opens and completes official board $level with the actual controls',level=>{
+  it.each([...NEONFLOW_LEVELS,...PROGRESSIVE_NEONFLOW_LEVELS])('opens and completes $templateId with the actual controls',level=>{
     render(<MemoryRouter><NeonFlowStage levels={[level]}/></MemoryRouter>);
-    for(const placement of witnesses.find(w=>w.templateId===level.templateId)!.placements) {
-      fireEvent.click(screen.getByRole('button',{name:placement.type==='MIRROR_90'?'Espejo 90°':`Filtro ${placement.color}`}));
+    const catalog = level.version === 3 ? progressiveWitnesses : witnesses;
+    for(const placement of catalog.find(w=>w.templateId===level.templateId)!.placements) {
+      fireEvent.click(screen.getByRole('button',{name:placement.type==='MIRROR_90'?'Espejo 90°':`Filtro ${"color" in placement ? placement.color : ""}`}));
       fireEvent.click(screen.getByRole('button',{name:`Celda vacía, fila ${placement.position.y+1}, columna ${placement.position.x+1}`}));
       for(let angle=0;angle<(placement.rotation??0);angle+=90)fireEvent.click(screen.getByRole('button',{name:new RegExp(`^Rotar espejo, fila ${placement.position.y+1}, columna ${placement.position.x+1},`)}));
     }

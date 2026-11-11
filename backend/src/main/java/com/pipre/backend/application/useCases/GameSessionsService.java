@@ -43,6 +43,7 @@ public class GameSessionsService implements GameSessionsUseCase {
     private final GameSessionHintRepositoryPort hintReceipts;
     private final TutorPilotProperties tutorProperties;
     private final TutorPilotPolicy tutorPilot;
+    private final ProgressiveTutorService progressiveTutor;
 
     @Override @Transactional
     public java.util.Optional<GameSessionDTO> active(String studentId,String game,String template,String activityId,String dailyChallengeId) {
@@ -93,8 +94,12 @@ public class GameSessionsService implements GameSessionsUseCase {
         if(command.dailyChallengeId()!=null&&!ProceduralDailyService.procedural(command.dailyChallengeId()))daily.validate(command.studentId(),command.dailyChallengeId(),command.game(),canonical);
         Instant now=clock.instant();sessions.abandonActive(command.studentId(),now);
         if(ProceduralDailyService.procedural(command.dailyChallengeId()))procedural.start(command.dailyChallengeId(),now);
+        var state=BoardRules.initialState();
+        if (progressiveTutor.applies(command.game(), level, command.activityId(), command.dailyChallengeId())) {
+            state.put("neonflow".equals(command.game()) ? "neonFlowProgressiveTutor" : "progressiveTutor", true);
+        }
         return dto(sessions.insert(new GameSession(UUID.randomUUID().toString(),clientId,command.studentId(),command.game(),level,canonical,
-            command.activityId(),command.dailyChallengeId(),now,null,"ACTIVE",BoardRules.initialState(),0,0,null,null)));
+            command.activityId(),command.dailyChallengeId(),now,null,"ACTIVE",state,0,0,null,null)));
     }
 
     private void requireUnlocked(String studentId, String game, int level, String activityId) {
@@ -120,6 +125,10 @@ public class GameSessionsService implements GameSessionsUseCase {
             return json.convertValue(receipt.get().response(),GameSessionDTO.class);
         }
         if(!session.status().equals("ACTIVE"))throw new BusinessException("La sesión ya terminó. Inicia otra partida para registrar progreso.");
+        progressiveTutor.requireIdle(session);
+        if (ProgressiveTutorService.governed(session) && "HELP".equals(action.type())) {
+            throw new BusinessException("Solicita las ayudas desde el tutor progresivo de esta partida.");
+        }
         if(action.sequence()<1||action.sequence()!=session.revision()+1)throw new BusinessException("La secuencia de acciones no es consecutiva.");
         if(action.sequence()>20000)throw new BusinessException("Se alcanzó el límite de acciones. Inicia otra sesión.");
         JsonNode config=sessionConfig(session);
@@ -164,6 +173,7 @@ public class GameSessionsService implements GameSessionsUseCase {
         if(session.status().equals("COMPLETED")&&session.completionResponse()!=null)
             return json.convertValue(session.completionResponse(),GameCompletionDTO.class);
         if(!session.status().equals("ACTIVE"))throw new BusinessException("La sesión fue abandonada. Inicia otra partida.");
+        progressiveTutor.requireIdle(session);
         JsonNode config=sessionConfig(session);
         if(!BoardRules.isSolved(session.game(),config,session.state())) {
             var checked=BoardRules.apply(session.game(),config,session.state(),new BoardAction("CHECK",null,null,null,null,null,null,null));
@@ -172,11 +182,13 @@ public class GameSessionsService implements GameSessionsUseCase {
         }
         Instant now=clock.instant();
         if(now.isBefore(session.startedAt()))throw new BusinessException("El reloj del servidor requiere sincronización. Inténtalo de nuevo.");
-        int stars=BoardRules.stars(session.game(),config,session.state());
+        boolean progressive=ProgressiveTutorService.governed(session);
+        int stars=progressive ? BoardRules.stars(session.game(),config,session.state(),progressiveTutor.penalizedHelps(session))
+                : BoardRules.stars(session.game(),config,session.state());
         var completed=session.change(session.state(),session.revision(),"COMPLETED",now,stars,null);
         sessions.update(completed);
         var awards=victories.execute(new VerifiedVictory(studentId,sessionId,session.game(),session.levelNumber(),session.levelTemplate(),session.activityId(),session.startedAt(),now,stars,session.dailyChallengeId(),session.startedOrder()));
-        var score=points.award(completed,config);
+        var score=progressive ? points.award(completed,config,progressiveTutor.pausedMillis(session,now)) : points.award(completed,config);
         var response=new GameCompletionDTO(sessionId,session.game(),session.levelNumber(),stars,awards.bestStars(),now.toString(),Duration.between(session.startedAt(),now).toMillis(),awards.newAchievements(),awards.daily(),score);
         sessions.update(completed.change(completed.state(),completed.revision(),completed.status(),now,stars,json.valueToTree(response)));
         return response;

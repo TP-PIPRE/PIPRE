@@ -23,7 +23,7 @@ Las colecciones paginadas se recorren al pedir todos sus elementos. No asumir qu
 
 El catálogo señala los niveles bloqueados con un candado. Para jugar una actividad de curso de nivel superior a 1, el estudiante debe tener una victoria verificada en el nivel anterior del mismo juego. El simulador vuelve a consultar ese progreso después de una victoria confirmada y ofrece el siguiente nivel disponible. La práctica independiente, el diario y la prueba local de docentes y administradores tienen sus propios flujos.
 
-Las plantillas oficiales son `neonflow-v2-1`…`30` y `tetrilogic-v2-1`…`30`. Los alias/prototipos se detallan en el [estado actual](../ESTADO_ACTUAL.md) y no cuentan como otros retos. Una plantilla desconocida no recibe un tablero alternativo por defecto.
+El catálogo oficial vincula las actividades a `neonflow-v3-1`…`30` y `tetrilogic-v2-1`…`30`. El servidor conserva las plantillas `neonflow-v2-1`…`30` y sus referencias. Una plantilla desconocida sigue mostrando un estado pendiente. [Estado actual del catálogo](../ESTADO_ACTUAL.md)
 
 ```text
 GET /api/v1/neonflow/templates/{templateId}

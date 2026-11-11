@@ -14,7 +14,7 @@
 
 **Pista** recorre seis consejos sobre los conteos, las intersecciones y la colocación de piezas. En partidas verificadas, las ayudas confirmadas cuentan en la rúbrica de estrellas y determinan cuál será el siguiente consejo al reanudar la partida.
 
-El piloto por reglas se conserva en la API para pruebas. La interfaz reserva las pistas contextuales para la futura integración con IA generativa. [Diseño del tutor](../guias/Tutor_IA_Simulador.md)
+Con el tutor progresivo habilitado, los retos oficiales ofrecen cinco consejos fijos sobre los objetivos del tablero y tres generados por Ollama a partir de los conteos comprobados. Desde la novena ayuda, el tutor pide confirmación antes de que esa entrega cuente en la rúbrica de estrellas del intento. [Activación y reglas del tutor progresivo](../guias/Ayudas_Progresivas_Neon_Flow.md)
 
 ## Cambios visuales
 

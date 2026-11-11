@@ -27,6 +27,7 @@ Reorganizada el 30/10 y actualizada el **06/11/2026** para la auditoría integra
 | Revisar PATCH y actividades asignadas a aulas | [PATCH y asignación de actividades a grupos](guias/Pendientes_Endpoints_Backend.md) |
 | Contrastar endpoints IA con sus datos y consumidores | [Requisitos IA y agregación](req-ia-endpoints.md) |
 | Preparar el piloto de pistas contextuales | [Propuesta de tutor IA para el simulador](guias/Tutor_IA_Simulador.md) |
+| Activar cinco consejos fijos y tres generativos en ambos juegos | [Ayudas progresivas de Neon Flow y TetriLogic](guias/Ayudas_Progresivas_Neon_Flow.md) |
 | Revisar errores pendientes del tutor contextual | [Pendientes del tutor contextual en frontend](guias/Pendientes_Tutor_IA_Frontend.md) |
 | Preparar ML antes de modificar el servicio de IA | [Plan gradual de implementación ML](guias/Plan_Implementacion_ML.md) |
 | Consultar las pruebas de integración del 30/10 | [Informe de integración y preparación ML](informes/Integracion_TetriLogic_NeonFlow_ML.md) |

@@ -135,16 +135,16 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
     const name=`QA browser ${Date.now()}`;
     field("Título").type(name);field("Orden").type("{selectall}1").should("have.value","1");
     cy.get('select:has(option[value="neonflow"])').select("neonflow");
-    field("Tablero del reto").select("neonflow-v2-2");
+    field("Tablero del reto").select("neonflow-v3-2");
     field("Lección").should("not.have.value","").invoke("val").then(lesson=>{
       cy.intercept("POST",`${api}/activities`).as("createActivity");cy.contains("button",/^Crear Reto$/i).click();
       cy.wait("@createActivity").its("response.statusCode").should("eq",201);
       cy.request(`${api}/activities/lesson/${lesson}?page=0&size=100`).then(response=>{
-        const saved=response.body.content.find((row:{name:string})=>row.name===name);expect(saved).to.be.an("object");expect(saved.levelTemplate).to.eq("neonflow-v2-2");
+        const saved=response.body.content.find((row:{name:string})=>row.name===name);expect(saved).to.be.an("object");expect(saved.levelTemplate).to.eq("neonflow-v3-2");
         cy.reload();openCourse();
         cy.contains("p",name).parent().parent().contains("button",/^Editar$/).click();field("Título").clear().type(name+" edited");
         cy.intercept("PUT",`${api}/activities/${saved.idActivity}`).as("updateActivity");cy.contains("button",/^Guardar Cambios$/i).click();cy.wait("@updateActivity").its("response.statusCode").should("eq",200);
-        cy.request(`${api}/activities/${saved.idActivity}`).its("body").should("include",{name:name+" edited",idLesson:lesson,levelTemplate:"neonflow-v2-2"});
+        cy.request(`${api}/activities/${saved.idActivity}`).its("body").should("include",{name:name+" edited",idLesson:lesson,levelTemplate:"neonflow-v3-2"});
         cy.intercept("DELETE",`${api}/activities/${saved.idActivity}`).as("deleteActivity");cy.contains("p",name+" edited").parent().parent().contains("button",/^Eliminar$/).click();cy.wait("@deleteActivity").its("response.statusCode").should("eq",204);
         cy.request({url:`${api}/activities/${saved.idActivity}`,failOnStatusCode:false}).its("status").should("eq",403);
         login("admin@pipre.com");cy.request({url:`${api}/activities/${saved.idActivity}`,failOnStatusCode:false}).its("status").should("eq",404);
@@ -172,7 +172,7 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
           cy.document().then(doc=>expect(doc.documentElement.scrollWidth).to.be.at.most(doc.documentElement.clientWidth+1));
           cy.screenshot(`locked-preview-${game}-390`);
           cy.csrfRequest({method:"POST",url:`${api}/game-sessions`,failOnStatusCode:false,body:{
-            studentId:id,clientSessionId:crypto.randomUUID(),game,levelTemplate:`${game}-v2-2`,activityId:lockedActivity,
+            studentId:id,clientSessionId:crypto.randomUUID(),game,levelTemplate:`${game}-${game === "neonflow" ? "v3" : "v2"}-2`,activityId:lockedActivity,
           }}).its("status").should("eq",400);
           cy.viewport(1440,1000);
           cy.visit(`/simulador/${course}?activity=${activity}`);
@@ -205,9 +205,9 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
       cy.contains("button","Neon Flow").click();
       cy.get('[role="dialog"]').contains("button","Iniciar").first().click();
       cy.location("search").should("eq","?activity=act-c001-v2-1");
-      cy.get('button[aria-label="Celda vacía, fila 3, columna 2"]',{timeout:15000}).should("be.visible");
+      cy.get('button[aria-label="Celda vacía, fila 1, columna 2"]',{timeout:15000}).should("be.visible");
       cy.contains("button","Filtro green").click();
-      cy.get('button[aria-label="Celda vacía, fila 3, columna 2"]').click();
+      cy.get('button[aria-label="Celda vacía, fila 1, columna 2"]').click();
       cy.contains("button","Pista").click();
       const firstTip = "Sigue la dirección del haz desde el emisor y comprueba hacia dónde lo desvía cada espejo.";
       cy.contains("p", firstTip,{timeout:15000}).should("have.text", firstTip);
@@ -226,8 +226,7 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
       cy.get("@contextualHint.all").should("have.length",0);
       cy.task("tutorSnapshot",{studentId:id,game:"neonflow"}).should("deep.equal",{receipts:0,consumed:0,ruleBased:0,lineHints:0});
       cy.contains("button","Reiniciar").click();
-      cy.contains("button",/^Comprobar$/).click();
-      cy.contains("Resultado guardado",{timeout:15000}).should("be.visible");
+      cy.task<Placement[]>("officialWitness","neonflow").then(placements=>completeBoard("neonflow",placements));
     });
   });
 
@@ -356,7 +355,7 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
     studentId().then(id=>cy.task<Snapshot>("databaseSnapshot",id).then(before=>{
     for(const game of ["tetrilogic","neonflow"]) {
       const recovery=`recover-${game}`,move=`move-${game}`;
-      cy.intercept({method:"GET",pathname:"/api/v1/game-sessions/active",query:{game,levelTemplate:`${game}-v2-2`}}).as(recovery);
+      cy.intercept({method:"GET",pathname:"/api/v1/game-sessions/active",query:{game,levelTemplate:`${game}-${game === "neonflow" ? "v3" : "v2"}-2`}}).as(recovery);
       cy.intercept("POST","**/api/v1/game-sessions/*/actions").as(move);
       if(game==="tetrilogic") {
         cy.visit("/simulador");
@@ -372,9 +371,11 @@ describe("Aplicación real con PostgreSQL desechable",()=>{
           cy.get(`button[data-cell-x="${first.position.x}"][data-cell-y="${first.position.y}"]`).click();
         } else {
           cy.contains("button","Espejo 90°").click();cy.get(`button[aria-label="Celda vacía, fila ${first.position.y+1}, columna ${first.position.x+1}"]`).click();
+          for(let angle=0;angle<(first.rotation??0);angle+=90)cy.get(`button[aria-label^="Rotar espejo, fila ${first.position.y+1}, columna ${first.position.x+1}"]`).click();
         }
         // Wait for the final PLACE acknowledgement; draft rotations may produce earlier requests.
-        const waitPlaced=():void=>{cy.wait(`@${move}`).then(({request})=>{if(request.body.type!=="PLACE")waitPlaced();});};waitPlaced();
+        const committed = game === "neonflow" && first.rotation ? "ROTATE" : "PLACE";
+        const waitPlaced=():void=>{cy.wait(`@${move}`).then(({request})=>{if(request.body.type!==committed)waitPlaced();});};waitPlaced();
         cy.reload();cy.wait(`@${recovery}`).then(({response})=>{expect(response?.statusCode).to.eq(200);expect(response?.body.state.pieces).to.have.length(1);});
         if(game==="tetrilogic")cy.get(`aside[aria-label="Bandeja de piezas"] button[aria-label$="(${first.id})"]`).should("not.exist");
         else cy.get(`button[aria-label^="Rotar espejo, fila ${first.position.y+1}, columna ${first.position.x+1}"]`).should("exist");

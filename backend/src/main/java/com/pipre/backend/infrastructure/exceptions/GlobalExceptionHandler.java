@@ -3,6 +3,8 @@ package com.pipre.backend.infrastructure.exceptions;
 import com.pipre.backend.domain.exceptions.ResourceNotFoundException;
 import com.pipre.backend.domain.exceptions.GameHintStaleException;
 import com.pipre.backend.domain.exceptions.GameHintPendingException;
+import com.pipre.backend.domain.exceptions.HintConfirmationRequiredException;
+import com.pipre.backend.domain.exceptions.ProgressiveHintUnavailableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -50,6 +52,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                 "code", "HINT_PENDING",
                 "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(HintConfirmationRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handleHintConfirmation(HintConfirmationRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("code", "HINT_CONFIRMATION_REQUIRED", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ProgressiveHintUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleHintUnavailable(ProgressiveHintUnavailableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("code", "HINT_UNAVAILABLE", "message", ex.getMessage()));
     }
 
     @ExceptionHandler({org.springframework.http.converter.HttpMessageNotReadableException.class,

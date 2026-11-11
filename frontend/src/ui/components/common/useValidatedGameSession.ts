@@ -25,6 +25,7 @@ export function useValidatedGameSession(context: Omit<GameSessionContext, "stude
     action: (action: GameAction) => controller?.action(action) ?? false,
     requestStaticHint: (): Promise<GameHintResult> => controller?.requestStaticHint()
       ?? Promise.resolve({ status: "STALE" }),
+    prepareProgressiveHint: controller?.prepareProgressiveHint ?? (() => Promise.resolve(null)),
     complete: controller?.complete ?? (() => Promise.resolve(null)),
     retry: () => controller?.retry() ?? Promise.resolve(null),
     restart: () => setRound(value => value + 1),

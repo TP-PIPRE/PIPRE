@@ -1,5 +1,5 @@
 import axiosInstance from "./axiosInstance";
-import type { DailySetDTO, DailyChallengeDTO, GameAction, GameHintRequest, GameHintResponse, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "./models/gameProgressModels";
+import type { DailySetDTO, DailyChallengeDTO, GameAction, GameHintRequest, GameHintResponse, GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO, ProgressiveHint, ProgressiveHintProgress, ProgressiveHintRequest } from "./models/gameProgressModels";
 
 export const gameProgressService = {
   active: async (context:GameSessionContext):Promise<GameSessionDTO|null> => {
@@ -12,6 +12,10 @@ export const gameProgressService = {
     (await axiosInstance.post<GameSessionDTO>(`game-sessions/${encodeURIComponent(sessionId)}/actions`, action)).data,
   hint: async (sessionId: string, request: GameHintRequest): Promise<GameHintResponse> =>
     (await axiosInstance.post<GameHintResponse>(`game-sessions/${encodeURIComponent(sessionId)}/hints`, request, { timeout: 1500 })).data,
+  progressiveHintProgress: async (sessionId: string, signal: AbortSignal): Promise<ProgressiveHintProgress> =>
+    (await axiosInstance.get<ProgressiveHintProgress>(`game-sessions/${encodeURIComponent(sessionId)}/progressive-hints`, { signal, timeout: 5000 })).data,
+  progressiveHint: async (sessionId: string, request: ProgressiveHintRequest, signal: AbortSignal): Promise<ProgressiveHint> =>
+    (await axiosInstance.post<ProgressiveHint>(`game-sessions/${encodeURIComponent(sessionId)}/progressive-hints`, request, { signal, timeout: 30_000 })).data,
   complete: async (sessionId: string): Promise<GameVictoryDTO> =>
     (await axiosInstance.post<GameVictoryDTO>(`game-sessions/${encodeURIComponent(sessionId)}/complete`)).data,
   dailySet: async (studentId: string, signal?: AbortSignal): Promise<DailySetDTO> =>

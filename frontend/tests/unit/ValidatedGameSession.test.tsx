@@ -12,14 +12,14 @@ import { useGameStore } from "../../src/infrastructure/store/gameStore";
 import { useAchievementStore } from "../../src/infrastructure/store/achievementStore";
 import { ValidatedGameSession } from "../../src/infrastructure/store/validatedGameSession";
 import type { ActivityResponseDTO } from "../../src/infrastructure/api/models/apiModels";
-import type { GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO } from "../../src/infrastructure/api/models/gameProgressModels";
+import type { GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO, ProgressiveHint, ProgressiveHintRequest } from "../../src/infrastructure/api/models/gameProgressModels";
 import { Simulador } from "../../src/ui/pages/Simulador";
 import { loadCourseActivities } from "../../src/application/usecases/loadCourseActivities";
 import axiosInstance from "../../src/infrastructure/api/axiosInstance";
 import tetriSolutions from "../fixtures/tetrilogicSolutions.json";
 
 vi.mock("../../src/infrastructure/store/authStore", () => ({ getAuthState: vi.fn() }));
-vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn(), hint: vi.fn(), progress: vi.fn() } }));
+vi.mock("../../src/infrastructure/api/gameProgressService", () => ({ gameProgressService: { active:vi.fn().mockResolvedValue(null), start: vi.fn(), action: vi.fn(), complete: vi.fn(), hint: vi.fn(), progress: vi.fn(), progressiveHint: vi.fn(), progressiveHintProgress: vi.fn() } }));
 vi.mock("../../src/infrastructure/api/axiosInstance", () => ({ default: { get: vi.fn(), post: vi.fn().mockResolvedValue({ status: 201 }) } }));
 vi.mock("../../src/application/usecases/loadCourseActivities", () => ({ loadCourseActivities: vi.fn() }));
 const sessions = new Map<string, GameSessionDTO>();
@@ -68,6 +68,123 @@ function solveTetriLevelOne() {
     fireEvent.click(screen.getByRole("button", { name: `Celda vacía, fila ${placement.position.y + 1}, columna ${placement.position.x + 1}` }));
   }
 }
+
+function openProgressiveGame(game: "neonflow" | "tetrilogic" = "neonflow") {
+  let lastHint: ProgressiveHint | null = null;
+  const deliver = (request: ProgressiveHintRequest) => {
+    lastHint = { requestId: request.requestId, ordinal: request.ordinal, message: `Consejo ${request.ordinal}`, source: request.ordinal <= 5 ? "STATIC" : "GENERATIVE" };
+    return lastHint;
+  };
+  vi.mocked(gameProgressService.start).mockImplementationOnce(async value => {
+    const session = sessionDTO(value);
+    if (game === "tetrilogic") session.state.progressiveTutor = true;
+    else session.state.neonFlowProgressiveTutor = true;
+    sessions.set(session.sessionId, session);
+    return session;
+  });
+  vi.mocked(gameProgressService.progressiveHintProgress).mockImplementation(async () => ({ deliveredCount: lastHint?.ordinal ?? 0, lastHint, generating: false }));
+  vi.mocked(gameProgressService.progressiveHint).mockImplementation(async (_id, request) => deliver(request));
+  const stage = <MemoryRouter>{game === "tetrilogic"
+    ? <TetriLogicStage levels={[TETRILOGIC_LEVELS[0]]} activity={{ idActivity: "act-c002-1", name: "TetriLogic", environment: game, levelTemplate: "tetrilogic-v2-1" }} />
+    : <NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} activity={officialActivity} />}</MemoryRouter>;
+  return { deliver, stage, ...render(stage) };
+}
+
+describe("Progressive advice", () => {
+  it.each(["neonflow", "tetrilogic"] as const)("shows the warning only at the ninth tip in %s", async game => {
+    openProgressiveGame(game);
+    const hintButton = await screen.findByRole("button", { name: "Pista" });
+    await waitFor(() => expect(hintButton).not.toHaveAttribute("aria-disabled"));
+    for (let ordinal = 1; ordinal <= 8; ordinal++) {
+      fireEvent.click(hintButton);
+      expect(await screen.findByText(`Consejo ${ordinal}`)).toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(gameProgressService.progressiveHint).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ ordinal, acceptPenalty: false }), expect.any(AbortSignal));
+    }
+
+    fireEvent.click(hintButton);
+    const warning = await screen.findByRole("dialog", { name: "Consejo adicional" });
+    fireEvent.click(within(warning).getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(gameProgressService.progressiveHint).toHaveBeenCalledTimes(8);
+
+    fireEvent.click(hintButton);
+    fireEvent.click(await screen.findByRole("button", { name: "Recibir consejo" }));
+    expect(await screen.findByText("Consejo 9")).toBeInTheDocument();
+    expect(gameProgressService.progressiveHint).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ ordinal: 9, acceptPenalty: true }), expect.any(AbortSignal));
+    expect(gameProgressService.action).not.toHaveBeenCalled();
+  });
+
+  it("freezes the board during generation and recovers a lost delivery without charging it twice", async () => {
+    const { deliver } = openProgressiveGame();
+    for (let ordinal = 1; ordinal <= 5; ordinal++) deliver({ requestId: crypto.randomUUID(), ordinal, revision: 0, acceptPenalty: false });
+    const hintButton = await screen.findByRole("button", { name: "Pista" });
+    await waitFor(() => expect(hintButton).not.toHaveAttribute("aria-disabled"));
+    let finish!: () => void;
+    vi.mocked(gameProgressService.progressiveHint).mockImplementationOnce((_id, request) => new Promise((_resolve, reject) => {
+      finish = () => {
+        deliver(request);
+        reject(new Error("Respuesta perdida"));
+      };
+    }));
+
+    fireEvent.click(hintButton);
+    await waitFor(() => expect(gameProgressService.progressiveHint).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("button", { name: "Comprobar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reiniciar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Espejo 90°" })).toBeDisabled();
+    fireEvent.click(hintButton);
+    finish();
+
+    expect(await screen.findByText("Consejo 6")).toBeInTheDocument();
+    expect(gameProgressService.progressiveHint).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Espejo 90°" })).toBeEnabled();
+  });
+
+  it("pauses TetriLogic pieces and keyboard shortcuts during generation", async () => {
+    const { deliver } = openProgressiveGame("tetrilogic");
+    deliver({ requestId: crypto.randomUUID(), ordinal: 5, revision: 0, acceptPenalty: false });
+    const hintButton = await screen.findByRole("button", { name: "Pista" });
+    await waitFor(() => expect(hintButton).not.toHaveAttribute("aria-disabled"));
+    const piece = screen.getByRole("button", { name: "Seleccionar pieza I (i1)" });
+    fireEvent.click(piece);
+    let completeHint!: () => void;
+    vi.mocked(gameProgressService.progressiveHint).mockImplementationOnce((_id, request) => new Promise(resolve => {
+      completeHint = () => resolve(deliver(request));
+    }));
+    fireEvent.click(hintButton);
+    await waitFor(() => expect(gameProgressService.progressiveHint).toHaveBeenCalledTimes(1));
+    expect(piece).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Rotar pieza" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Celda vacía, fila 1, columna 1" })).toBeDisabled();
+    fireEvent.keyDown(hintButton, { key: "r" });
+    expect(gameProgressService.action).not.toHaveBeenCalled();
+    completeHint();
+    await screen.findByText("Consejo 6");
+    expect(piece).toBeEnabled();
+    fireEvent.keyDown(hintButton, { key: "r" });
+    await waitFor(() => expect(gameProgressService.action).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ type: "ROTATE" })));
+  });
+
+  it("keeps the same request when retrying an uncertain result after remounting the board", async () => {
+    const { stage, unmount } = openProgressiveGame();
+    vi.mocked(gameProgressService.progressiveHint).mockRejectedValueOnce(new Error("Conexión perdida"));
+    const hintButton = await screen.findByRole("button", { name: "Pista" });
+    await waitFor(() => expect(hintButton).not.toHaveAttribute("aria-disabled"));
+    fireEvent.click(hintButton);
+    await screen.findByText("No pudimos preparar el consejo. Puedes volver a intentarlo.");
+    const [id, original] = vi.mocked(gameProgressService.progressiveHint).mock.calls[0];
+
+    unmount();
+    vi.mocked(gameProgressService.active).mockResolvedValueOnce(sessions.get(id)!);
+    render(stage);
+    const resumed = await screen.findByRole("button", { name: "Pista" });
+    await waitFor(() => expect(resumed).not.toHaveAttribute("aria-disabled"));
+    fireEvent.click(resumed);
+    expect(await screen.findByText("Consejo 1")).toBeInTheDocument();
+    expect(gameProgressService.progressiveHint).toHaveBeenLastCalledWith(id, original, expect.any(AbortSignal));
+  });
+});
 
 describe("Official course progression and access", () => {
   it.each([["neonflow", "c001", "Neon Flow"], ["tetrilogic", "c002", "TetriLogic"]] as const)(

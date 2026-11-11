@@ -24,13 +24,16 @@ public final class BoardRules {
     public static String canonicalTemplate(String game, String template) {
         if (!Set.of("neonflow","tetrilogic").contains(game) || template==null)
             throw new BusinessException("Juego o plantilla no válidos.");
-        String prefix=game+"-v2-";
+        String prefix=game.equals("neonflow") && template.startsWith("neonflow-v3-") ? "neonflow-v3-" : game+"-v2-";
         String value=template;
         if (game.equals("neonflow") && template.matches("neonflow-([3-9]|[12][0-9]|30)"))
             value=prefix+template.substring("neonflow-".length());
         if (!value.matches(java.util.regex.Pattern.quote(prefix)+"([1-9]|[12][0-9]|30)"))
-            throw new BusinessException("Esta plantilla anterior se conserva como práctica; los logros requieren un nivel oficial v2.");
+            throw new BusinessException("Esta plantilla se conserva como práctica. Los logros requieren un nivel oficial.");
         return value;
+    }
+    public static String exerciseTemplate(String template) {
+        return template.startsWith("neonflow-v3-") ? template.replace("neonflow-v3-", "neonflow-v2-") : template;
     }
     public static String ruleset(String game) { return game.equals("neonflow") ? "neonflow-raycast-v1" : "tetrilogic-counts-v1"; }
     public static ObjectNode initialState() {
@@ -216,8 +219,11 @@ public final class BoardRules {
         return new NeonTrace(true,"SOLVED",null,null);
     }
     public static int stars(String game,JsonNode config,JsonNode state) {
+        return stars(game,config,state,state.path("helps").asInt());
+    }
+    public static int stars(String game,JsonNode config,JsonNode state,int helps) {
         int budget=game.equals("tetrilogic")?4*config.path("inventory").size():2*(config.path("width").asInt()+config.path("height").asInt());
-        int resets=state.path("resets").asInt(),helps=state.path("helps").asInt(),moves=state.path("moves").asInt();
+        int resets=state.path("resets").asInt(),moves=state.path("moves").asInt();
         if(resets==0&&helps==0&&state.path("failedChecks").asInt()==0&&moves<=budget)return 3;
         if(resets<=2&&helps<=2&&moves<=2*budget)return 2;
         return 1;

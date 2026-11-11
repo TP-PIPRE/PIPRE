@@ -46,7 +46,11 @@ public class Activity {
             List<String> allowed = switch (this.environment == null ? "" : this.environment) {
                 case "neonflow" -> {
                     var templates = new ArrayList<String>();
-                    for (int i = 1; i <= 30; i++) { templates.add("neonflow-" + i); templates.add("neonflow-v2-" + i); }
+                    for (int i = 1; i <= 30; i++) {
+                        templates.add("neonflow-" + i);
+                        templates.add("neonflow-v2-" + i);
+                        templates.add("neonflow-v3-" + i);
+                    }
                     yield templates;
                 }
                 case "tetrilogic" -> {

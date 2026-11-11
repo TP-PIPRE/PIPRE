@@ -30,12 +30,23 @@ class BoardRulesTest {
                 cases.add(Arguments.of(game,catalog.get(i),witnesses.get(i)));
             }
         }
+        try (var configs = BoardRulesTest.class.getResourceAsStream("/catalog/neonflow-v3.json");
+             var solutions = BoardRulesTest.class.getResourceAsStream("/catalog/neonflow-v3-witnesses.json")) {
+            JsonNode revised = JSON.readTree(configs), witnesses = JSON.readTree(solutions);
+            assertEquals(30, revised.size());
+            assertEquals(30, witnesses.size());
+            for (int i = 0; i < revised.size(); i++) {
+                assertEquals(revised.get(i).path("templateId"), witnesses.get(i).path("templateId"));
+                cases.add(Arguments.of("neonflow", revised.get(i), witnesses.get(i)));
+            }
+        }
         return cases.stream();
     }
     @ParameterizedTest(name="server verifies {0} official level {index}")
     @MethodSource("officialSolutions")
-    void verifiesAllSixtyOfficialSolutionsThroughLegalActions(String game,JsonNode config,JsonNode witness) {
+    void verifiesPublishedSolutionsThroughLegalActions(String game,JsonNode config,JsonNode witness) {
         ObjectNode state=BoardRules.initialState();
+        if (config.path("version").asInt() == 3) assertFalse(BoardRules.isSolved(game,config,state));
         for(JsonNode piece:witness.path("placements")) {
             state=BoardRules.apply(game,config,state,new BoardAction("PLACE",piece.path("id").asText(null),
                 piece.path("position").path("x").asInt(),piece.path("position").path("y").asInt(),piece.path("rotation").asInt(0),

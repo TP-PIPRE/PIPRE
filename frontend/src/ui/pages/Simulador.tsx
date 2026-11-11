@@ -16,6 +16,7 @@ import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiMod
 import { isOfficialGameTemplate } from "../../infrastructure/api/models/gameProgressModels";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { isOfficialCourse } from "../../shared/constants/officialCourses";
+import { PROGRESSIVE_NEONFLOW_LEVELS } from "../../shared/constants/levelConfigs";
 
 const NEONFLOW_IDS = new Set(["1", "neonflow", "logica"]);
 const TETRILOGIC_IDS = new Set(["2", "tetrilogic", "patrones"]);
@@ -28,7 +29,7 @@ export const Simulador = () => {
 
   if (search.get("daily") === "true") return <DailyChallengeStage />;
   if (!search.has("activity")) {
-    if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage />;
+    if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage levels={PROGRESSIVE_NEONFLOW_LEVELS} />;
     if (!courseId || TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
   }
   if (!isOfficialCourse(courseId)) return <section className={noticeClass}>
@@ -94,7 +95,7 @@ function CourseSimulator({ courseId, studentId, canManage }: { courseId: string;
     : null;
   const board = activity && template && (available || preview) && (
     template.game === "neonflow"
-      ? template.config.version === 2
+      ? template.config.version === 2 || template.config.version === 3
         ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} preview={preview} />
         : preview ? <NeonFlowPreview config={template.config} />
           : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />

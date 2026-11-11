@@ -1,0 +1,212 @@
+{
+  "neonflow-v2-1": [
+    "Ubica el emisor rojo y mira hacia dónde apunta su flecha.",
+    "Busca el receptor rojo. Iluminarlo exige que el haz lo alcance con ese mismo color.",
+    "Observa los obstáculos en las esquinas y distingue las casillas por las que sí puede pasar la luz.",
+    "Antes de añadir un componente, pregúntate qué parte de la trayectoria necesitas cambiar y por qué.",
+    "Al comprobar una idea, sigue el haz desde el emisor hasta donde termina y compara ese punto con el receptor."
+  ],
+  "neonflow-v2-2": [
+    "Sigue con la vista la flecha del emisor rojo en la tercera fila.",
+    "El receptor está en la primera fila. Compara su altura con la del emisor.",
+    "Mira los dos obstáculos de la tercera columna. ¿Cuál interrumpe el trayecto inicial?",
+    "Imagina un cambio de dirección antes del obstáculo. Comprueba mentalmente si el nuevo tramo tiene espacio libre.",
+    "Si el haz aún se detiene, observa dónde termina y cambia una sola cosa antes de volver a probar."
+  ],
+  "neonflow-v2-3": [
+    "El emisor rojo apunta a lo largo de la primera fila. Imagina el haz avanzando en línea recta.",
+    "Localiza el obstáculo al final de esa fila y el receptor unas filas más abajo.",
+    "Piensa desde qué lado podría recibir el haz el receptor. El color tiene que seguir siendo rojo.",
+    "Un espejo desvía el haz. Antes de probar una orientación, anticipa hacia qué fila o columna lo enviaría.",
+    "Revisa el primer punto en que la trayectoria que ves se aparta de la que imaginaste."
+  ],
+  "neonflow-v2-4": [
+    "Identifica el emisor verde y el receptor del mismo color en la fila inferior.",
+    "Observa el obstáculo al comienzo de la fila inferior. ¿Qué parte de esa fila queda disponible para el haz?",
+    "Dibuja mentalmente el último tramo hacia el receptor y revisa qué celdas tendría que atravesar.",
+    "Al elegir cómo orientar un espejo, considera tanto la dirección de llegada del haz como la de salida.",
+    "Si el receptor sigue apagado, distingue si el haz se corta antes de llegar o si pasa por otra fila."
+  ],
+  "neonflow-v2-5": [
+    "El emisor es azul y el receptor está en la fila superior. Ubica ambos antes de colocar componentes.",
+    "Examina la última casilla de la tercera fila. Un obstáculo detiene el haz al entrar en ella.",
+    "Sigue la dirección inicial e identifica dónde dejaría de avanzar. Usa ese punto para evaluar tu plan.",
+    "Prueba una orientación de espejo y predice qué borde alcanzaría el haz si continuara en esa dirección.",
+    "Si colocas un filtro, compara su color con el azul del haz y revisa si sigue avanzando después de atravesarlo."
+  ],
+  "neonflow-v2-6": [
+    "Mira el emisor rojo de la fila inferior y señala la fila donde está el receptor.",
+    "Observa el obstáculo en la primera columna. Comprueba si la ruta que imaginas lo atravesaría.",
+    "Sigue con la vista la fila del receptor hacia atrás y busca tramos despejados.",
+    "Si dos tramos de tu plan se cruzan, pregúntate qué orientación del espejo conectaría sus direcciones.",
+    "Al comprobar, localiza el primer giro que no se comporta como esperabas y revisa ese componente."
+  ],
+  "neonflow-v2-7": [
+    "Sigue el comienzo del haz verde por la primera fila y localiza su receptor.",
+    "El obstáculo está en la primera columna, en la misma fila que el receptor. Identifica qué accesos deja libres.",
+    "Imagina el recorrido como varios segmentos rectos. Cada cambio de dirección necesita un espejo.",
+    "Antes de girar un espejo, compara el lado por el que le llega el haz con el lado al que quieres enviarlo.",
+    "Si el haz termina en un borde, vuelve al último tramo visible y busca dónde se desvió de tu plan."
+  ],
+  "neonflow-v2-8": [
+    "Identifica el haz azul en la segunda fila y el receptor en la fila inferior.",
+    "En la segunda fila hay un obstáculo junto al borde derecho. Observa qué pasaría si el haz llegara hasta allí.",
+    "Piensa en el tramo de entrada al receptor. Comprueba que sea recto y que no atraviese un obstáculo.",
+    "Al probar un giro, observa si el haz se acerca al tramo de entrada o sale hacia un borde.",
+    "Si añadiste filtros, recuerda que solo dejan pasar su propio color y no cambian la dirección del haz."
+  ],
+  "neonflow-v2-9": [
+    "Ubica la salida roja en la tercera fila y el receptor en la primera.",
+    "La esquina superior izquierda tiene un obstáculo. Comprueba qué parte del borde superior sigue libre.",
+    "Compara el tramo inicial con el tramo que podría llegar al receptor. ¿Dónde tendría sentido evaluar un cambio de dirección?",
+    "Si tu idea necesita más de un giro, sigue los segmentos en orden desde la flecha del emisor.",
+    "Cuando un cambio no acerque el haz al receptor, ajusta solo el giro que produjo ese desvío."
+  ],
+  "neonflow-v2-10": [
+    "El emisor verde parte de la fila inferior y apunta hacia la derecha. Sigue primero ese tramo.",
+    "Observa el obstáculo de la esquina inferior derecha y la altura del receptor.",
+    "Identifica una trayectoria posible que no llegue al obstáculo ni salga por un borde.",
+    "Antes de poner otro espejo, revisa si el primer giro ya envía el haz en la dirección que imaginaste.",
+    "Compara la trayectoria comprobada con tu plan, empezando por el primer lugar en el que difieren."
+  ],
+  "neonflow-v2-11": [
+    "En este tablero de cinco columnas, ubica el emisor azul en la fila superior y su receptor en la cuarta.",
+    "Revisa los dos obstáculos en esquinas opuestas. ¿Alguno queda en la dirección de salida del haz?",
+    "Divide tu recorrido en tramos para poder comprobar por separado la salida y la llegada.",
+    "Antes de probar una orientación, sigue con el dedo el tramo que produciría el espejo.",
+    "Usa el recorrido visible para decidir si conviene ajustar el primer giro o uno posterior."
+  ],
+  "neonflow-v2-12": [
+    "El haz rojo comienza en la segunda fila. Busca su receptor en la esquina inferior derecha.",
+    "Localiza el obstáculo de la primera columna y observa qué trayectorias no podrían pasar por ahí.",
+    "Imagina un tramo recto de entrada al receptor. Compáralo con la dirección inicial del haz.",
+    "Si una orientación llevaría el haz al borde inferior sin tocar el receptor, prueba otra hipótesis de giro.",
+    "Comprueba el efecto de cada espejo por separado para saber qué cambio hizo avanzar al haz."
+  ],
+  "neonflow-v2-13": [
+    "El emisor verde apunta por la tercera fila y el receptor se encuentra en la primera.",
+    "Identifica el obstáculo al final de la fila de salida. ¿Qué ocurriría sin un cambio en el trayecto?",
+    "Busca con la vista un tramo despejado que llegue al receptor y mantenlo como objetivo de tus pruebas.",
+    "Cuando el haz se desvíe, fíjate en si el espejo lo dirige hacia el tramo que habías elegido.",
+    "Si el haz se corta en un filtro, comprueba que coincida con el verde del emisor antes de modificar los espejos."
+  ],
+  "neonflow-v2-14": [
+    "Ubica el emisor azul de la cuarta fila y compara su posición con la del receptor de la segunda.",
+    "La primera casilla de la fila del receptor está bloqueada. Observa por dónde sí podría avanzar un tramo hacia él.",
+    "Sigue la flecha del emisor y piensa qué cambio necesita la dirección para alcanzar otra fila.",
+    "Para evaluar un espejo, identifica de dónde viene el haz y predice si saldrá hacia el borde o seguirá por el tablero.",
+    "Si el haz pasa por la fila correcta pero el receptor sigue apagado, revisa en qué columna entra y dónde termina."
+  ],
+  "neonflow-v2-15": [
+    "Sigue el haz rojo que sale por la fila inferior e identifica el receptor en la fila central.",
+    "La última casilla inferior es un obstáculo. Revisa hasta dónde avanzaría el tramo inicial.",
+    "Imagina una llegada al receptor y recorre ese tramo hacia atrás para comprobar que esté libre.",
+    "Si el haz gira hacia el exterior, examina la orientación del último espejo que alcanzó.",
+    "Conserva los tramos que ya coinciden con tu plan y prueba un solo cambio en el tramo que falta."
+  ],
+  "neonflow-v2-16": [
+    "El haz verde parte arriba y el receptor está abajo. Localiza ambos extremos del recorrido.",
+    "Observa el obstáculo de la esquina inferior izquierda antes de planear un tramo por la última fila.",
+    "En un tablero más alto, puede ayudar imaginar primero el último segmento de llegada al receptor.",
+    "Ensaya mentalmente la dirección de salida de cada espejo y comprueba si el siguiente segmento quedaría dentro del tablero.",
+    "Sigue el haz visible desde el emisor. ¿En qué segmento deja de acercarse al receptor?"
+  ],
+  "neonflow-v2-17": [
+    "El emisor azul está en la segunda fila y el receptor en la cuarta.",
+    "Al final de la fila de salida hay un obstáculo. Identifica el primer lugar donde el haz se detendría si siguiera recto.",
+    "Antes de colocar un espejo, piensa en los dos sentidos posibles por los que podría continuar el haz al desviarse.",
+    "Comprueba si el tramo nuevo puede conectar con un segmento que apunte al receptor.",
+    "Si el recorrido termina pronto, revisa el último componente alcanzado en vez de cambiar piezas por las que el haz todavía no pasó."
+  ],
+  "neonflow-v2-18": [
+    "Localiza el emisor rojo de la tercera fila y el receptor en el borde superior.",
+    "La primera casilla del borde superior está bloqueada. Distingue ese extremo del punto donde está el receptor.",
+    "Imagina por dónde entraría el haz al receptor y comprueba si ese tramo coincide con la dirección que planeas.",
+    "Si necesitas dos giros, predice el resultado del primero antes de ajustar el segundo.",
+    "Cuando compruebes tu idea, confirma que el haz sigue siendo rojo y observa su último punto visible."
+  ],
+  "neonflow-v2-19": [
+    "Identifica el emisor verde de la cuarta fila y el receptor de la segunda.",
+    "Observa el obstáculo del borde derecho en la fila de salida. El haz no puede atravesarlo.",
+    "Revisa qué trayectorias permitirían cambiar de fila antes de llegar a ese borde.",
+    "Antes de mover una pieza, decide si necesitas cambiar la dirección del haz o resolver dónde se detuvo.",
+    "Si el primer tramo funciona, mantén su orientación y examina el tramo que todavía no alcanza el receptor."
+  ],
+  "neonflow-v2-20": [
+    "Ubica el emisor azul de la fila inferior y busca el receptor en la fila central.",
+    "Hay un obstáculo en el extremo izquierdo de la fila del receptor. Piensa qué zonas siguen accesibles desde el interior.",
+    "Traza mentalmente una entrada recta al receptor y compárala con el tramo que sale del emisor.",
+    "Cuando un espejo cambie la dirección, comprueba si el haz pasa a una fila o columna útil para tu plan.",
+    "Si el haz deja de verse antes de alcanzar el destino, identifica la primera casilla o pieza que lo detiene."
+  ],
+  "neonflow-v2-21": [
+    "El emisor rojo está arriba, mientras que el receptor está en la fila inferior, cerca del borde derecho.",
+    "Revisa las esquinas bloqueadas. La superior derecha está en la dirección inicial del haz.",
+    "Como el receptor no está en la última columna, localiza su casilla exacta antes de imaginar el tramo final.",
+    "Comprueba con la vista que todos los segmentos de tu plan se mantienen dentro del tablero de seis por seis.",
+    "Si el haz llega a la fila inferior pero no ilumina el receptor, compara su columna de llegada con la del objetivo."
+  ],
+  "neonflow-v2-22": [
+    "Ubica el emisor verde de la segunda fila y el receptor en la esquina inferior derecha.",
+    "Observa el obstáculo de la primera columna cerca de la parte inferior. ¿La ruta que imaginas pasa por esa zona?",
+    "Para no perderte en un tablero grande, separa tu idea en salida, cambios de dirección y llegada.",
+    "Predice qué tramo verías si orientaras un espejo de otra manera. Luego compara tu predicción con el recorrido.",
+    "Si una parte ya funciona, céntrate en la primera desviación inesperada en vez de rehacer todo el tablero."
+  ],
+  "neonflow-v2-23": [
+    "El emisor azul parte de la tercera fila y el receptor está en el borde superior.",
+    "Mira el obstáculo de la tercera fila junto al borde derecho. Un tramo recto desde el emisor se toparía con él.",
+    "Ubica un tramo despejado que alcance el receptor y piensa cómo conectarlo con el trayecto de salida.",
+    "Comprueba que la orientación del espejo dirija el haz hacia el interior y no hacia un borde sin receptor.",
+    "Si el haz atraviesa una fila superior sin llegar al destino, revisa el punto en el que cambió de dirección."
+  ],
+  "neonflow-v2-24": [
+    "El emisor rojo está en la cuarta fila y el receptor en la segunda. Identifica sus posiciones antes de elegir una ruta.",
+    "Observa el obstáculo del extremo izquierdo de la fila del receptor. Ese punto no puede formar parte del tramo final.",
+    "Sigue la fila del receptor hacia atrás e imagina cómo podría llegar el haz desde otra fila.",
+    "Para cada giro, predice la dirección de salida y qué casilla alcanzaría primero el haz.",
+    "Cuando compruebes tu plan, distingue un giro inesperado de un filtro incompatible. Corrige solo la causa que observes."
+  ],
+  "neonflow-v2-25": [
+    "Sigue el comienzo del haz verde por la quinta fila y localiza el receptor en la tercera.",
+    "El obstáculo del extremo derecho está en la fila de salida. Elige qué parte del trayecto revisar antes de llegar a él.",
+    "Piensa qué segmentos podrían conectar la salida del emisor con la entrada del receptor sin pasar por casillas bloqueadas.",
+    "Antes de probar un segundo espejo, comprueba que el primer giro mande el haz hacia donde esperas.",
+    "Si el haz se pierde por un borde, busca el último punto en el que cambió de dirección y contrástalo con tu plan."
+  ],
+  "neonflow-v2-26": [
+    "El haz azul empieza en la fila inferior y su receptor está en la cuarta.",
+    "Mira el obstáculo en la primera columna de esa cuarta fila. Revisa las casillas libres del interior.",
+    "Compara la dirección del tramo inicial con la dirección de un tramo que pueda alcanzar el receptor.",
+    "Si el haz pasa de largo, identifica la fila y la columna en las que te habría interesado revisar un cambio de dirección.",
+    "Prueba solo un giro por vez para observar qué componente modifica el tramo final."
+  ],
+  "neonflow-v2-27": [
+    "Identifica el emisor rojo de la primera fila y el receptor de la quinta.",
+    "Revisa el obstáculo en el extremo izquierdo de la fila del receptor y distingue ese punto del destino.",
+    "Imagina el tramo final y calcula con la vista qué distancia vertical tiene que salvar el haz.",
+    "Si un giro parece prometedor, sigue todo el segmento que produciría antes de añadir otra pieza.",
+    "Al comprobar, localiza la primera diferencia entre tu plan y el recorrido mostrado. Empieza por corregirla."
+  ],
+  "neonflow-v2-28": [
+    "El emisor verde parte de la segunda fila. Su receptor está en la esquina inferior derecha.",
+    "Localiza el obstáculo al final de la fila de salida y piensa qué pasaría si el haz siguiera recto.",
+    "Separa los tramos que cambian de fila de los que recorren una fila. Comprueba que juntos puedan alcanzar el receptor.",
+    "Al cambiar un espejo, compara el nuevo recorrido con el anterior para saber qué tramo afectó el giro.",
+    "Si el haz alcanza la zona inferior pero no ilumina el receptor, comprueba la casilla en la que acaba y el color con que llega."
+  ],
+  "neonflow-v2-29": [
+    "El haz azul parte de la tercera fila y el objetivo está en el extremo derecho de la primera.",
+    "Observa el obstáculo de la esquina superior izquierda. Tenlo en cuenta al imaginar un tramo por la primera fila.",
+    "Busca desde el receptor un tramo de entrada libre y compáralo con la dirección inicial del emisor.",
+    "Si un espejo manda el haz hacia la parte alta del tablero, comprueba qué ocurre al llegar allí.",
+    "Si el haz pasa cerca del receptor, revisa si entra exactamente en su casilla y si conserva el color azul."
+  ],
+  "neonflow-v2-30": [
+    "Ubica el emisor rojo en la cuarta fila y el receptor en la esquina inferior derecha.",
+    "El extremo derecho de la cuarta fila está bloqueado. Mira dónde se detendría el tramo inicial si no cambiara de dirección.",
+    "Imagina un segmento de entrada al receptor y comprueba cómo se podría conectar con la salida.",
+    "Al ensayar un giro, revisa hacia qué borde se dirige el haz y si ese tramo sigue dentro del tablero.",
+    "Compara tu recorrido con el que muestra el tablero. Corrige el primer tramo que se desvía o se detiene antes de lo previsto."
+  ]
+}

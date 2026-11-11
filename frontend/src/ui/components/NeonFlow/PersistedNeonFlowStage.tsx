@@ -15,7 +15,7 @@ export function PersistedNeonFlowStage({ config, activity, dailyChallengeId, onN
     useGameStore.getState().stopGame();
     const controller = new AbortController();
     apiService.neonflow.getTemplate(config.templateId!, controller.signal).then(data => {
-      if (data?.templateId!==config.templateId || data?.version!==2 || !sameConfig(config,data?.config)) throw new Error("Incompatible template");
+      if (data?.templateId!==config.templateId || data?.version!==config.version || !sameConfig(config,data?.config)) throw new Error("Incompatible template");
       if (active) setState({expected:config,config:data.config});
     }).catch(()=>{ if (active) setState({expected:config,error:true}); });
     return ()=>{active=false;controller.abort();};

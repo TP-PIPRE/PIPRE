@@ -51,6 +51,7 @@ export default defineConfig({
       mkdirSync(reportDirectory,{recursive:true});
       on("after:run",results=>writeFileSync(resolve("test-results/e2e/latest-run.json"),JSON.stringify({reportDirectory,...results},null,2)));
       on("task", {
+        progressiveTutorEnabled: () => process.env.PIPRE_AUDIT_PROGRESSIVE_ENABLED === "true",
         browserDiagnostics(data) {appendFileSync(`${reportDirectory}/browser-console.jsonl`,JSON.stringify(data)+"\n");return null;},
         browserCheckpoint(data) {appendFileSync(`${reportDirectory}/browser-checkpoints.jsonl`,JSON.stringify({at:new Date().toISOString(),...data})+"\n");return null;},
         databaseSnapshot,
@@ -97,7 +98,8 @@ export default defineConfig({
           const level=typeof input==="string"?1:input.levelNumber;
           if (!["tetrilogic", "neonflow"].includes(game)) throw new Error("Unknown game");
           if(!Number.isInteger(level)||level<1||level>30)throw new Error("Unknown official level");
-          return JSON.parse(readFileSync(resolve(`../backend/src/main/resources/catalog/${game}-daily-witnesses.json`), "utf8"))[level-1].placements;
+          const file = game === "neonflow" ? "neonflow-v3-witnesses" : "tetrilogic-daily-witnesses";
+          return JSON.parse(readFileSync(resolve(`../backend/src/main/resources/catalog/${file}.json`), "utf8"))[level-1].placements;
         },
       });
     },

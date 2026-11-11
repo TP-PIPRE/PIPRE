@@ -53,6 +53,11 @@ pipre:
     max-hints: ${PIPRE_TUTOR_MAX_HINTS:3}
     allowed-activity-ids: ${PIPRE_TUTOR_ACTIVITY_IDS:}
     allowed-group-ids: ${PIPRE_TUTOR_GROUP_IDS:}
+    progressive:
+      enabled: ${PIPRE_TUTOR_PROGRESSIVE_ENABLED:false}
+      base-url: ${PIPRE_TUTOR_PROGRESSIVE_BASE_URL:http://localhost:11434}
+      model: ${PIPRE_TUTOR_PROGRESSIVE_MODEL:qwen3:4b}
+      timeout: ${PIPRE_TUTOR_PROGRESSIVE_TIMEOUT:15s}
     tetrilogic:
       enabled: ${PIPRE_TUTOR_TETRILOGIC_ENABLED:false}
       allowed-activity-ids: ${PIPRE_TUTOR_TETRILOGIC_ACTIVITY_IDS:}

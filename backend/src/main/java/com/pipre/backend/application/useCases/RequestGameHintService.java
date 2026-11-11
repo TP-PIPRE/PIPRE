@@ -47,6 +47,9 @@ public class RequestGameHintService implements RequestGameHintUseCase {
     public GameHintDTO execute(String studentId, String sessionId, RequestGameHintCommand command) {
         validateUuid(command.requestId());
         GameSession session = ownedSession(studentId, sessionId);
+        if (ProgressiveTutorService.governed(session)) {
+            throw new BusinessException("Solicita las ayudas desde el tutor progresivo de esta partida.");
+        }
         if (session.dailyChallengeId() != null) {
             throw new BusinessException("Los retos diarios conservan únicamente la ayuda estática.");
         }

@@ -9,12 +9,14 @@ import { NeonBoard } from "./NeonBoard";
 import { ComponentTray } from "./ComponentTray";
 import { ControlPanel } from "../common/ControlPanel";
 import { HintToast } from "../common/HintToast";
+import { AdditionalAdviceModal } from "../common/AdditionalAdviceModal";
 import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 
 import { createNeonGrid, neonSolved } from "../../../application/usecases/neonflow/board";
 import { useAttemptTrace } from "../common/useAttemptTrace";
 import { useValidatedGameSession } from "../common/useValidatedGameSession";
 import { useBoardHint } from "../common/useBoardHint";
+import { useProgressiveHint } from "../common/useProgressiveHint";
 import { GameSessionFeedback } from "../common/GameSessionFeedback";
 import {restoreNeonBoard} from "../../../application/usecases/restoreBoard";
 import {useBoardSelection} from "../common/useBoardSelection";
@@ -39,7 +41,11 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
   const level = LEVELS[currentLevelIndex];
   const templateId=activity?.levelTemplate??level.templateId;
   const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null,initialSession?.state.pieces??[]);
-  const hint = useBoardHint(gameSession, record, NEON_FLOW_TIPS);
+  const legacyHint = useBoardHint(gameSession, record, NEON_FLOW_TIPS);
+  const progressive = gameSession.state?.session?.state.neonFlowProgressiveTutor === true;
+  const progressiveHint = useProgressiveHint(progressive ? gameSession.state?.session?.sessionId : undefined, gameSession.prepareProgressiveHint, record);
+  const hint = progressive ? progressiveHint : legacyHint;
+  const waitingForTutor = progressive && progressiveHint.busy;
 
   const status = useGameStore((s) => s.status);
   const startGame = useGameStore((s) => s.startGame);
@@ -144,7 +150,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
         <label className="text-sm font-semibold text-text-muted">Nivel</label>
         <select
           value={currentLevelIndex}
-          disabled={gameSession.verifying || (gameSession.enabled && status === "SUCCESS" && !gameSession.state?.victory)}
+          disabled={waitingForTutor || gameSession.verifying || (gameSession.enabled && status === "SUCCESS" && !gameSession.state?.victory)}
           onChange={(e) => handleLevelChange(Number(e.target.value))}
           aria-label="Seleccionar nivel"
           className="rounded-lg bg-surface border border-border px-3 py-1.5 text-sm font-semibold text-text">
@@ -164,14 +170,16 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
         onRotateComponent={handleRotateComponent}
         selectedComponent={selectedComponent}
         emitter={level.emitter.position}
+        disabled={waitingForTutor}
       />
       <p className="text-sm text-text-muted text-center">Selecciona un componente y una celda vacía. Pulsa un espejo para rotarlo; también puedes arrastrar.</p>
-      <ComponentTray selected={selectedComponent} onSelect={component=>{setSelectedComponent(component);record("SELECT",{component:component.type,...(component.color?{color:component.color}:{})});}} />
+      <ComponentTray disabled={waitingForTutor} selected={selectedComponent} onSelect={component=>{setSelectedComponent(component);record("SELECT",{component:component.type,...(component.color?{color:component.color}:{})});}} />
       <p role="status" className="lab-status">{feedback || "Prepara el tablero y pulsa Comprobar para validar tu solución."}</p>
       <ControlPanel
         onCheck={handleCheck}
         allowResetAfterCompletion
-        resetDisabled={gameSession.verifying}
+        checkDisabled={waitingForTutor}
+        resetDisabled={waitingForTutor || gameSession.verifying}
         hintDisabled={gameSession.verifying || Boolean(gameSession.state?.victory)}
         hintBusy={hint.busy}
         hintButtonRef={hintButton}
@@ -225,7 +233,8 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
         </div>
       )}
       </section>
-      <GameSessionFeedback state={gameSession.state} retry={hint.retry} onNewAttempt={gameSession.restart}/>
+      <AdditionalAdviceModal isOpen={progressiveHint.confirmation !== undefined} onCancel={progressiveHint.cancel} onConfirm={progressiveHint.confirm} />
+      <GameSessionFeedback state={gameSession.state} retry={progressive ? gameSession.retry : legacyHint.retry} onNewAttempt={gameSession.restart}/>
     </main>
   );
 }
