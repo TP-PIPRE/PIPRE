@@ -1,11 +1,17 @@
 package com.pipre.backend.adapters.in.web.controller;
 
 import com.pipre.backend.application.commands.GameSessionAction;
+import com.pipre.backend.application.commands.RequestGameHintCommand;
+import com.pipre.backend.application.commands.RequestProgressiveHintCommand;
 import com.pipre.backend.application.commands.StartGameSessionCommand;
 import com.pipre.backend.application.dto.GameCompletionDTO;
+import com.pipre.backend.application.dto.GameHintDTO;
 import com.pipre.backend.application.dto.GameSessionDTO;
+import com.pipre.backend.application.dto.ProgressiveHintDTO;
 import com.pipre.backend.application.ports.input.GameSessionsUseCase;
+import com.pipre.backend.application.ports.input.RequestGameHintUseCase;
 import com.pipre.backend.application.ports.output.UserRepositoryPort;
+import com.pipre.backend.application.useCases.ProgressiveTutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +25,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class GameSessionController {
     private final GameSessionsUseCase sessions;
+    private final RequestGameHintUseCase hints;
     private final UserRepositoryPort users;
+    private final ProgressiveTutorService progressiveTutor;
 
     @GetMapping("/active")
     @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER') and @securityService.isCurrentUser(#studentId)")
@@ -42,6 +50,24 @@ public class GameSessionController {
     @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER')")
     public ResponseEntity<GameCompletionDTO> complete(@PathVariable String sessionId,Authentication authentication) {
         return ResponseEntity.ok(sessions.complete(current(authentication),sessionId));
+    }
+    @PostMapping("/{sessionId}/hints")
+    @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER')")
+    public ResponseEntity<GameHintDTO> hint(@PathVariable String sessionId,
+                                            @Valid @RequestBody RequestGameHintCommand request,
+                                            Authentication authentication) {
+        return ResponseEntity.ok(hints.execute(current(authentication), sessionId, request));
+    }
+    @GetMapping("/{sessionId}/progressive-hints")
+    @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER')")
+    public ProgressiveHintDTO.Status progressiveHintStatus(@PathVariable String sessionId, Authentication authentication) {
+        return progressiveTutor.status(current(authentication), sessionId);
+    }
+    @PostMapping("/{sessionId}/progressive-hints")
+    @PreAuthorize("hasRole('STUDENT') and !hasAnyRole('ADMIN','TEACHER')")
+    public ProgressiveHintDTO progressiveHint(@PathVariable String sessionId,
+            @Valid @RequestBody RequestProgressiveHintCommand request, Authentication authentication) {
+        return progressiveTutor.request(current(authentication), sessionId, request);
     }
     private String current(Authentication authentication) {
         return users.findByEmail(authentication.getName()).orElseThrow(()->new AccessDeniedException("Inicia sesión como estudiante.")).getIdUser();

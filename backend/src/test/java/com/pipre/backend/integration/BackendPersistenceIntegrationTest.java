@@ -3,6 +3,11 @@ package com.pipre.backend.integration;
 import com.fasterxml.jackson.databind.*;
 import com.pipre.backend.application.commands.*;
 import com.pipre.backend.application.useCases.*;
+import com.pipre.backend.application.ports.output.ProgressiveHintGeneratorPort;
+import com.pipre.backend.domain.entities.game.ExercisePointsRules;
+import com.pipre.backend.domain.exceptions.GameHintPendingException;
+import com.pipre.backend.domain.exceptions.ProgressiveHintUnavailableException;
+import com.pipre.backend.infrastructure.configuration.ProgressiveTutorProperties;
 import com.pipre.backend.infrastructure.security.JwtUtils;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.*;
@@ -14,13 +19,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import java.math.BigDecimal;
 import java.nio.file.*;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -53,6 +62,10 @@ class BackendPersistenceIntegrationTest {
     @Autowired ProceduralDailyService daily;
     @Autowired ProceduralDailyGenerator generator;
     @Autowired GameSessionsService sessions;
+    @Autowired ProgressiveTutorService progressiveTutor;
+    @Autowired ProgressiveTutorProperties progressiveProperties;
+    @MockitoBean ProgressiveHintGeneratorPort hintGenerator;
+    @Autowired com.pipre.backend.application.ports.output.TutorPilotAccessPort tutorPilotAccess;
     @Autowired com.pipre.backend.infrastructure.security.LoginAttemptLimiter loginLimiter;
     @Autowired AcademicAdministrationService administration;
     @Autowired @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping mapping;
@@ -88,6 +101,196 @@ class BackendPersistenceIntegrationTest {
         if(adminId!=null)jdbc.update("DELETE FROM users WHERE id_user=? AND email=?",adminId,adminEmail);
         if(group!=null)jdbc.update("DELETE FROM groups WHERE id_group=? AND group_name='Audit group'",group);
         if(course!=null)jdbc.update("DELETE FROM courses WHERE id_course=? AND name='Audit course'",course);
+    }
+    @Test void progressiveNeonAdvicePersistsAndChargesOnlyDeliveredExtrasInTheirAttempt() throws Exception {
+        progressiveProperties.setEnabled(true);
+        try {
+            var first = startProgressiveLevel(1);
+            assertTrue(first.state().path("neonFlowProgressiveTutor").asBoolean());
+            String path = "/api/v1/game-sessions/" + first.sessionId() + "/progressive-hints";
+            for (int ordinal = 1; ordinal <= 5; ordinal++) {
+                var request = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, false);
+                requestProgressive(path, request).andExpect(status().isOk())
+                        .andExpect(jsonPath("$.ordinal").value(ordinal)).andExpect(jsonPath("$.source").value("STATIC"));
+                if (ordinal == 5) requestProgressive(path, request).andExpect(status().isOk())
+                        .andExpect(jsonPath("$.requestId").value(request.requestId()));
+            }
+            verifyNoInteractions(hintGenerator);
+            mvc.perform(get(path).cookie(owner)).andExpect(status().isOk()).andExpect(jsonPath("$.deliveredCount").value(5));
+            mvc.perform(get(path).cookie(teacher)).andExpect(status().isForbidden());
+
+            when(hintGenerator.generate(any())).thenThrow(new ProgressiveHintUnavailableException());
+            requestProgressive(path, new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 6, false))
+                    .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.code").value("HINT_UNAVAILABLE"));
+            assertEquals(5, progressiveTutor.status(student, first.sessionId()).deliveredCount());
+
+            var entered = new CountDownLatch(1);
+            var release = new CountDownLatch(1);
+            doAnswer(invocation -> {
+                entered.countDown();
+                if (!release.await(8, TimeUnit.SECONDS)) throw new AssertionError("Timed out waiting for the concurrent request");
+                return "Comprueba si el color del haz coincide con el receptor.";
+            }).doReturn("Sigue el tramo visible desde el emisor antes de comprobar.",
+                    "Compara la trayectoria del haz con la que imaginaste.",
+                    "Revisa dónde termina el haz y explica por qué llega hasta allí.").when(hintGenerator).generate(any());
+            var sixth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 6, false);
+            try (var executor = Executors.newSingleThreadExecutor()) {
+                var delivery = executor.submit(() -> progressiveTutor.request(student, first.sessionId(), sixth));
+                try {
+                    assertTrue(entered.await(8, TimeUnit.SECONDS));
+                    assertThrows(GameHintPendingException.class, () -> progressiveTutor.request(student, first.sessionId(), sixth));
+                    assertThrows(GameHintPendingException.class, () -> sessions.complete(student, first.sessionId()));
+                    assertTrue(progressiveTutor.status(student, first.sessionId()).generating());
+                } finally {
+                    release.countDown();
+                }
+                assertEquals(6, delivery.get(8, TimeUnit.SECONDS).ordinal());
+            }
+            for (int ordinal = 7; ordinal <= 8; ordinal++) {
+                requestProgressive(path, new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, false))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.source").value("GENERATIVE"));
+            }
+            requestProgressive(path, new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 9, false))
+                    .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("HINT_CONFIRMATION_REQUIRED"));
+            assertEquals(8, progressiveTutor.status(student, first.sessionId()).deliveredCount());
+
+            // Simulate three measured waits without slowing down the integration test.
+            OffsetDateTime startedAt = OffsetDateTime.now(ZoneOffset.UTC).minusSeconds(65);
+            jdbc.update("UPDATE game_sessions SET started_at=? WHERE session_id=?", startedAt, first.sessionId());
+            jdbc.update("UPDATE neonflow_tutor_requests SET finished_at=started_at WHERE session_id=? AND status='FAILED'", first.sessionId());
+            for (int ordinal = 6; ordinal <= 8; ordinal++) {
+                OffsetDateTime requestedAt = startedAt.plusSeconds(10L + 13L * (ordinal - 6));
+                jdbc.update("""
+                        UPDATE neonflow_tutor_requests SET started_at=?, finished_at=?, expires_at=?
+                        WHERE session_id=? AND delivered_ordinal=?
+                        """, requestedAt, requestedAt.plusSeconds(12), requestedAt.plusSeconds(20), first.sessionId(), ordinal);
+            }
+            solveProgressiveNeonLevelOne(first.sessionId());
+            var firstVictory = sessions.complete(student, first.sessionId());
+            assertEquals(3, firstVictory.stars());
+            assertTrue(firstVictory.durationMs() >= 65_000);
+            assertEquals(ExercisePointsRules.points(2, 2, firstVictory.durationMs() - 36_000), firstVictory.score().points());
+            assertNotEquals(ExercisePointsRules.points(2, 2, firstVictory.durationMs()), firstVictory.score().points());
+
+            var other = startProgressiveLevel(2);
+            assertEquals(0, progressiveTutor.status(student, other.sessionId()).deliveredCount());
+            var replay = startProgressiveLevel(1);
+            assertEquals(8, progressiveTutor.status(student, replay.sessionId()).deliveredCount());
+            var ninth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 9, true);
+            assertEquals(9, progressiveTutor.request(student, replay.sessionId(), ninth).ordinal());
+            solveProgressiveNeonLevelOne(replay.sessionId());
+            assertEquals(2, sessions.complete(student, replay.sessionId()).stars());
+            var another = startProgressiveLevel(1);
+            assertEquals(9, progressiveTutor.status(student, another.sessionId()).deliveredCount());
+            solveProgressiveNeonLevelOne(another.sessionId());
+            assertEquals(3, sessions.complete(student, another.sessionId()).stars());
+            assertEquals(9L, jdbc.queryForObject("SELECT COUNT(*) FROM neonflow_tutor_requests WHERE student_id=? AND status='DELIVERED'", Long.class, student));
+        } finally {
+            progressiveProperties.setEnabled(false);
+        }
+    }
+
+    private com.pipre.backend.application.dto.GameSessionDTO startProgressiveLevel(int level) {
+        return sessions.start(new StartGameSessionCommand(student, UUID.randomUUID().toString(), "neonflow",
+                "neonflow-v3-" + level, "act-c001-v2-" + level, null));
+    }
+
+    private void solveProgressiveNeonLevelOne(String sessionId) throws Exception {
+        try (var stream = getClass().getResourceAsStream("/catalog/neonflow-v3-witnesses.json")) {
+            int sequence = 0;
+            for (JsonNode placement : json.readTree(stream).get(0).path("placements")) {
+                var position = placement.path("position");
+                sessions.action(student, sessionId, new GameSessionAction(++sequence, "PLACE", null,
+                        position.path("x").asInt(), position.path("y").asInt(), placement.path("rotation").asInt(), "MIRROR_90", null, null));
+            }
+        }
+    }
+
+    @Test void neonRevisionReplacesOfficialBindingsAndSharesBestPointsWithTheOriginal() throws Exception {
+        var legacy = sessions.start(new StartGameSessionCommand(student, UUID.randomUUID().toString(), "neonflow", "neonflow-v2-1", null, null));
+        var previous = sessions.complete(student, legacy.sessionId());
+        assertEquals(30, jdbc.queryForObject("SELECT COUNT(*) FROM activities WHERE environment='neonflow' AND level_template LIKE 'neonflow-v3-%'", Integer.class));
+        mvc.perform(get("/api/v1/activities/act-c001-v2-1").cookie(owner)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.levelTemplate").value("neonflow-v3-1"));
+        mvc.perform(get("/api/v1/neonflow/templates/neonflow-v3-1").cookie(owner)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(3));
+        var revised = startProgressiveLevel(1);
+        assertThrows(com.pipre.backend.domain.exceptions.IncompleteGameBoardException.class, () -> sessions.complete(student, revised.sessionId()));
+        solveProgressiveNeonLevelOne(revised.sessionId());
+        var victory = sessions.complete(student, revised.sessionId());
+        assertEquals(Math.max(previous.score().points(), victory.score().points()), victory.score().totalPoints());
+        assertEquals(1, jdbc.queryForObject("SELECT COUNT(*) FROM game_best_scores WHERE student_id=?", Integer.class, student));
+    }
+
+    @Test void progressiveTetriAdviceUsesVerifiedCountsAndChargesOnlyTheAttemptWithAnExtra() throws Exception {
+        progressiveProperties.setEnabled(true);
+        try {
+            String first = startTetriTutorAttempt();
+            assertTrue(sessions.active(student, "tetrilogic", "tetrilogic-v2-1", "act-c002-1", null)
+                    .orElseThrow().state().path("progressiveTutor").asBoolean());
+            var fixed = new HashSet<String>();
+            for (int ordinal = 1; ordinal <= 5; ordinal++) {
+                var hint = progressiveTutor.request(student, first,
+                        new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, false));
+                assertEquals("STATIC", hint.source());
+                assertTrue(fixed.add(hint.message()));
+            }
+            assertTrue(fixed.stream().anyMatch(message -> message.contains("fila 1 tiene un objetivo de 3")));
+            verifyNoInteractions(hintGenerator);
+
+            sessions.action(student, first, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
+            when(hintGenerator.generate(any())).thenThrow(new ProgressiveHintUnavailableException()).thenReturn(
+                    "Observa las casillas ocupadas en la primera fila.",
+                    "Recuerda que el objetivo indica cuántas casillas deben quedar ocupadas.",
+                    "¿Qué pasaría si cambiara el total de una columna?",
+                    "Compara los objetivos de las filas con sus conteos actuales.");
+            assertThrows(ProgressiveHintUnavailableException.class, () -> progressiveTutor.request(student, first,
+                    new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 1, 6, false)));
+            assertEquals(5, progressiveTutor.status(student, first).deliveredCount());
+            for (int ordinal = 6; ordinal <= 8; ordinal++) {
+                var hint = progressiveTutor.request(student, first,
+                        new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 1, ordinal, false));
+                assertEquals("GENERATIVE", hint.source());
+            }
+            verify(hintGenerator, times(4)).generate(argThat(context -> "tetrilogic".equals(context.game())
+                    && context.diagnosis().contains("fila uno hay una casilla ocupada y el objetivo es tres")
+                    && context.recentActions().contains("Intentó colocar una pieza")));
+
+            String firstPath = "/api/v1/game-sessions/" + first + "/progressive-hints";
+            requestProgressive(firstPath, new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 1, 9, false))
+                    .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("HINT_CONFIRMATION_REQUIRED"));
+            assertEquals(8, progressiveTutor.status(student, first).deliveredCount());
+            placeRemainingTetriPieces(first);
+            assertEquals(3, sessions.complete(student, first).stars());
+
+            var neon = startProgressiveLevel(1);
+            assertEquals(0, progressiveTutor.status(student, neon.sessionId()).deliveredCount());
+            String second = startTetriTutorAttempt();
+            assertEquals(8, progressiveTutor.status(student, second).deliveredCount());
+            var ninth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 9, true);
+            assertEquals(progressiveTutor.request(student, second, ninth), progressiveTutor.request(student, second, ninth));
+            sessions.action(student, second, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
+            placeRemainingTetriPieces(second);
+            assertEquals(2, sessions.complete(student, second).stars());
+            assertEquals(9, progressiveTutor.status(student, startTetriTutorAttempt()).deliveredCount());
+        } finally {
+            progressiveProperties.setEnabled(false);
+        }
+    }
+
+    private String startTetriTutorAttempt() {
+        return sessions.start(new StartGameSessionCommand(student, UUID.randomUUID().toString(), "tetrilogic",
+                "tetrilogic-v2-1", "act-c002-1", null)).sessionId();
+    }
+
+    private void placeRemainingTetriPieces(String sessionId) {
+        sessions.action(student, sessionId, new GameSessionAction(2, "PLACE", "s1", 0, 0, 0, null, null, null));
+        sessions.action(student, sessionId, new GameSessionAction(3, "PLACE", "o1", 0, 2, 0, null, null, null));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions requestProgressive(String path, RequestProgressiveHintCommand request) throws Exception {
+        return mvc.perform(post(path).with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner)
+                .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(request)));
     }
     @Test void closedCatalogRejectsCreatingCoursesAndDeletingOfficialOnes() throws Exception {
         Integer before = jdbc.queryForObject("SELECT count(*) FROM courses",Integer.class);
@@ -364,6 +567,14 @@ class BackendPersistenceIntegrationTest {
         assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM group_activities WHERE id_group=?",Integer.class,group));
         administration.groupCourse(group,course,false);
         assertThrows(com.pipre.backend.domain.exceptions.BusinessException.class,()->administration.groupActivity(group,activity,true));
+    }
+    @Test void tutorPilotRequiresTheExplicitActivityAssignmentForTheStudentGroup() throws Exception {
+        String activity=createTestActivity();
+        administration.groupCourse(group,course,true);
+        rankings.execute(new AddStudentRankingCommand(group,student));
+        assertFalse(tutorPilotAccess.isStudentAssignedToActivity(student,activity,Set.of(group)));
+        administration.groupActivity(group,activity,true);
+        assertTrue(tutorPilotAccess.isStudentAssignedToActivity(student,activity,Set.of(group)));
     }
     @Test void movingAnAssignedActivityDoesNotExposeAnotherCourseThroughTheClassroom() throws Exception {
         String activity=createTestActivity();administration.groupCourse(group,course,true);administration.groupActivity(group,activity,true);

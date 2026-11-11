@@ -10,6 +10,12 @@
 - Se mantienen arrastre con punto de agarre, giro con R/botón/clic derecho, devolución a bandeja, selección por clic/toque, desplazamiento con flechas y cancelación con Escape.
 - No se restauran bloqueos, celdas obligatorias, precedencias, contactos, orientaciones exigidas, pistas condicionadas ni temporizador visible. La confirmación local no escribe calificaciones académicas. Desde el 02/11, una sesión estudiantil oficial reproduce las acciones y valida la victoria en servidor para guardar mejores estrellas y evaluar los [35 logros](../guias/Sistema_35_Logros.md), con XP sólo por desbloqueos nuevos. Esto no añade restricciones de colocación ni notas de curso.
 
+## Consejos y tutor contextual
+
+**Pista** recorre seis consejos sobre los conteos, las intersecciones y la colocación de piezas. En partidas verificadas, las ayudas confirmadas cuentan en la rúbrica de estrellas y determinan cuál será el siguiente consejo al reanudar la partida.
+
+Con el tutor progresivo habilitado, los retos oficiales ofrecen cinco consejos fijos sobre los objetivos del tablero y tres generados por Ollama a partir de los conteos comprobados. Desde la novena ayuda, el tutor pide confirmación antes de que esa entrega cuente en la rúbrica de estrellas del intento. [Activación y reglas del tutor progresivo](../guias/Ayudas_Progresivas_Neon_Flow.md)
+
 ## Cambios visuales
 
 El relleno plano y el contorno negro grueso se sustituyen por una silueta continua de esquinas redondeadas, borde tonal fino y cuatro superficies interiores sutiles que permiten reconocer las casillas. La selección usa el primario de PIPRE. Se mantiene un número discreto por pieza, sin tipos técnicos repetidos.

@@ -6,27 +6,33 @@
 
 | Juego | Curso | Actividades oficiales | Plantillas oficiales |
 |---|---|---|---|
-| Neon Flow | `c001` | `act-c001-v2-1`, `act-c001-v2-2`, `act-c001-3`…`30` | `neonflow-v2-1`…`30` |
+| Neon Flow | `c001` | `act-c001-v2-1`, `act-c001-v2-2`, `act-c001-3`…`30` | `neonflow-v3-1`…`30` |
 | TetriLogic | `c002` | `act-c002-1`…`30` | `tetrilogic-v2-1`…`30` |
 | Total | Dos cursos | **60 retos: 30 por juego** | 60 configuraciones oficiales |
 
-Las plantillas `neonflow-1/2` conservan sus tableros anteriores 5×5; `neonflow-3`…`30` son alias compatibles del nuevo catálogo. También se conservan `tetrilogic-1/2`. Ningún alias o prototipo se cuenta otra vez. La base local existente tiene 62 actividades al preservar los dos prototipos Neon Flow; una instalación nueva incorpora 60 oficiales. Las personalizaciones docentes de otros entornos pueden exigir revisión manual.
+Las plantillas `neonflow-1/2` conservan sus tableros anteriores 5×5; `neonflow-3`…`30` siguen resolviendo las geometrías v2. También se conservan `tetrilogic-1/2`. Ningún alias o prototipo se cuenta otra vez. La base local existente tiene 62 actividades al preservar los dos prototipos Neon Flow; una instalación nueva incorpora 60 oficiales. Las personalizaciones docentes de otros entornos pueden exigir revisión manual.
 
-El flujo es **curso → módulo → lección → actividad → plantilla → configuración → simulador**. Los accesos de actividades usan `/simulador/:courseId?activity=:idActivity`. `c001` y `c002` se resuelven por actividad, no por el nombre del curso. `/simulador` abre la práctica TetriLogic independiente. Una actividad desconocida, ajena al curso o sin plantilla compatible muestra un estado explícito. Los retos bloqueados muestran un candado y se habilitan al completar el nivel anterior. «Siguiente reto» consulta el progreso verificado antes de ofrecer el avance.
+El flujo es **curso → módulo → lección → actividad → plantilla → configuración → simulador**. Los accesos de actividades usan `/simulador/:courseId?activity=:idActivity`. `c001` y `c002` se resuelven por actividad, no por el nombre del curso. `/simulador` abre la práctica TetriLogic independiente. Una actividad desconocida, ajena al curso o sin plantilla compatible muestra un estado explícito. **Vista previa** muestra el tablero y la bandeja del reto bloqueado en solo lectura, sin iniciar una partida. El reto se habilita al completar el nivel anterior. «Siguiente reto» consulta el progreso verificado antes de ofrecer el avance.
 
 ## Mecánicas vigentes
 
 **TetriLogic:** manipulación directa con bandeja externa; selección, arrastre, giro de 90°, devolución y teclado. Se mantienen límites y colisiones. Se completa automáticamente cuando todos los objetivos definidos de filas y columnas coinciden, incluidos ceros. Durante la exploración se permite superar un objetivo. No exige llenar toda la cuadrícula.
 
-El modo activo sólo consume tamaño, inventario y conteos del catálogo publicado. No evalúa bloqueos de reto, puntos obligatorios, precedencias, contactos ni giros finales exigidos. No presenta temporizador ni pistas condicionadas. Tras una victoria verificada puede mostrar el puntaje confirmado por el servidor, conforme a la regla aprobada el 06/11; el navegador no lo calcula como autoridad. `HistoricalTetriLogicStage` se conserva sólo para compatibilidad en pruebas. Ver [reglas e interacción](simuladores/TetriLogic_Filas_Columnas.md).
+El modo activo usa tamaño, inventario y conteos del catálogo publicado. Tras una victoria verificada puede mostrar el puntaje confirmado por el servidor, conforme a la regla aprobada el 06/11. `HistoricalTetriLogicStage` se conserva para pruebas de compatibilidad. Ver [reglas e interacción](simuladores/TetriLogic_Filas_Columnas.md).
 
-**Neon Flow:** guiar el haz con espejos y filtros; comprobar el recorrido y el color de los receptores. El haz se detiene en obstáculos, filtros incompatibles y receptores, con un límite de iteraciones para evitar ciclos. El botón Pista muestra una ayuda estática, no una respuesta del servicio IA. Ver [funcionamiento](simuladores/NeonFlow.md).
+**Neon Flow.** Guía el haz con espejos y filtros. El haz se detiene en obstáculos, filtros incompatibles y receptores. V32 añade una progresión de dos a siete espejos mínimos y actualiza el catálogo oficial. [Funcionamiento y progresión](simuladores/NeonFlow.md)
+
+**Ayuda general de los simuladores.** **Pista** recorre seis consejos predefinidos por juego y presenta el texto del consejo. En partidas verificadas se registra `HELP` con `source=STATIC` para la rúbrica. El piloto por reglas se conserva en la API para pruebas.
+
+Las partidas nuevas de retos oficiales de Neon Flow y TetriLogic admiten un modo progresivo con Ollama mediante activación explícita. Ofrece cinco consejos fijos y tres generativos sin penalización por ayuda. Desde el noveno solicita confirmación. La migración V31 conserva el contador por estudiante y reto. [Ayudas progresivas con Ollama](guias/Ayudas_Progresivas_Neon_Flow.md)
 
 ## Persistencia y trazabilidad
 
 Las migraciones aplicadas localmente son **V1…V21**. V13 incorpora metadatos de actividad, V14/V15 el catálogo TetriLogic y compatibilidad de prototipos, V16 Neon Flow, V17 contexto de intentos, V18 logros/progreso, V19 sesiones verificadas, V20 conjuntos diarios y V21 inicio de cada ejercicio diario. No reescribirlas. V22–V26 añaden asignaciones, puntos/XP, límite compartido, únicos y recibos de reintentos; se probaron en bases desechables y todavía no se aplicaron a la base de la aplicación. Antes de actualizar una instalación existente ejecutar el [preflight de duplicados](../scripts/preflight-integrity.sql). Los generadores se usan con `--check`.
 
 V27 elimina los cursos distintos de `c001` y `c002` y sus dependencias curriculares. La base desechable conservó los dos cursos oficiales con sus 30 actividades cada uno.
+
+V28 añade `game_session_hints`, vinculada a la partida verificada. V29 indexa los recibos pendientes por revisión y V30 añade el eje y el índice opcionales para las pistas de TetriLogic. El servidor registra la emisión por separado del consumo de la pista, que se confirma junto con la acción `HELP`.
 
 La autorización del 30/10 permite registrar intentos y acciones de ambos juegos en `telemetry_attempts`. Incluyen estudiante autorizado, actividad opcional, plantilla, versión de reglas, tiempos, eventos y estado inicial/final. Los reintentos aceptados son idempotentes. La práctica independiente admite actividad nula; los registros anteriores conservan contexto nulo.
 

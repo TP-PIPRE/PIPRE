@@ -7,8 +7,8 @@ import { PieceSurface } from "./PieceSurface";
 export interface BoardProps {
   board: BoardState;
   pieces: Piece[];
-  onPieceDrop: (pieceId: string, cell: Cell) => void;
-  onRotatePiece: (pieceId: string, cell?: Cell) => void;
+  onPieceDrop?: (pieceId: string, cell: Cell) => void;
+  onRotatePiece?: (pieceId: string, cell?: Cell) => void;
   selectedPieceId?: string | null;
   onSelectPiece?: (pieceId: string) => void;
   level?: LevelConfig;
@@ -48,7 +48,7 @@ export const Board = ({board,pieces,onPieceDrop,onRotatePiece,selectedPieceId,on
       const {pieceId,offset}=JSON.parse(raw) as {pieceId:unknown;offset?:Cell};
       if(typeof pieceId!=="string")return;
       if(offset && (!Number.isInteger(offset.x) || !Number.isInteger(offset.y)))return;
-      if(pieceId)onPieceDrop(pieceId,{x:cell.x-(offset?.x??0),y:cell.y-(offset?.y??0)});
+      if(pieceId)onPieceDrop?.(pieceId,{x:cell.x-(offset?.x??0),y:cell.y-(offset?.y??0)});
     } catch { /* Discard malformed drag payloads. */ }
   }
   function dragOver(e:React.DragEvent) {e.preventDefault();e.dataTransfer.dropEffect="move";}
@@ -78,14 +78,14 @@ export const Board = ({board,pieces,onPieceDrop,onRotatePiece,selectedPieceId,on
             onClick={e=>{
               if(freePlay)onCellActivate?.(e,cell.position,placed?.pieceId);
               else if(official && placed && placed.pieceId!==selectedPieceId && pieces.some(p=>p.id===selectedPieceId))onSelectPiece?.(placed.pieceId);
-              else if(selectedPieceId)onPieceDrop(selectedPieceId,cell.position);
+              else if(selectedPieceId)onPieceDrop?.(selectedPieceId,cell.position);
               else if(placed)onSelectPiece?.(placed.pieceId);
             }}
             onPointerDown={e=>{if(placed && freePlay)onPiecePointerDown?.(e,placed.pieceId,cell.position);}}
             onDragStart={e=>{if(placed && piece){onSelectPiece?.(placed.pieceId);e.dataTransfer.setData(TETRIMINO_DND_TYPE,JSON.stringify({pieceId:placed.pieceId,offset:{x:cell.position.x-piece.position.x,y:cell.position.y-piece.position.y}}));e.dataTransfer.effectAllowed="move";}}}
-            onDragOver={dragOver} onDrop={e=>drop(e,cell.position)}
-            onKeyDown={e=>{if(!freePlay && placed && e.key.toLowerCase()==="r"){e.preventDefault();e.stopPropagation();onRotatePiece(placed.pieceId);}}}
-            onContextMenu={e=>{e.preventDefault();if(placed&&!disabled){if(freePlay)e.stopPropagation();onRotatePiece(placed.pieceId,freePlay?cell.position:undefined);}}}>
+            onDragOver={disabled ? undefined : dragOver} onDrop={disabled ? undefined : e=>drop(e,cell.position)}
+            onKeyDown={e=>{if(!disabled && !freePlay && placed && e.key.toLowerCase()==="r"){e.preventDefault();e.stopPropagation();onRotatePiece?.(placed.pieceId);}}}
+            onContextMenu={disabled ? undefined : e=>{e.preventDefault();if(placed){if(freePlay)e.stopPropagation();onRotatePiece?.(placed.pieceId,freePlay?cell.position:undefined);}}}>
             {cell.blocked?<LockKeyhole size={16} aria-hidden="true"/>:placed?<span className={pieceNumbers?"tetri-board-piece-number":undefined} aria-hidden="true">{pieceNumbers?(showNumber?pieceNumbers[placed.pieceId]:null):placed.type}</span>:required?<span className="tetri-required" aria-hidden="true">●</span>:official?<span className="tetri-cell-center" aria-hidden="true"/>:null}
           </button>;
         }))}

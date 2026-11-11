@@ -4,7 +4,7 @@
 
 ## Objetivo y catálogo actual
 
-La meta de contenido es **30 retos por juego, 60 en total**. Está implementada en el catálogo integrado: Neon Flow `neonflow-v2-1`…`30` y TetriLogic `tetrilogic-v2-1`…`30`. El [informe de integración](../informes/Integracion_TetriLogic_NeonFlow_ML.md) recoge las verificaciones por tablero y su conexión persistida.
+La meta de contenido es **30 retos por juego, 60 en total**. El catálogo oficial vigente usa Neon Flow `neonflow-v3-1`…`30` y TetriLogic `tetrilogic-v2-1`…`30`. La revisión de Neon Flow conserva los identificadores de actividad y aumenta el mínimo de espejos necesarios por bloques. [Progresión de Neon Flow](../simuladores/NeonFlow.md)
 
 Neon Flow usa actividades `act-c001-v2-1/2` y `act-c001-3`…`30`; TetriLogic usa `act-c002-1`…`30`. Los prototipos Neon Flow conservados y las plantillas/alias compatibles no se cuentan otra vez. Una base local existente puede tener 62 actividades, de las cuales 60 son oficiales del catálogo integrado.
 
@@ -81,7 +81,7 @@ Mantener los algoritmos existentes al crear contenido. Si un objetivo requiere n
 
 ### 3. Conectar frontend y backend
 
-Registrar la plantilla en `activityLevels.ts` y ampliar la validación de `Activity.java` en el mismo lote. Las familias oficiales actuales son `neonflow-v2-N` y `tetrilogic-v2-N`; los alias/prototipos anteriores conservan su significado; el ID es una clave del contrato, no un texto decorativo.
+Registrar la plantilla en `activityLevels.ts` y ampliar la validación de `Activity.java` en el mismo lote. Las familias oficiales actuales son `neonflow-v3-N` y `tetrilogic-v2-N`. Cada ID identifica una geometría concreta, incluidos los alias y las versiones anteriores.
 
 Ejemplo de los campos que ya soporta una actividad (el ID de lección debe existir):
 
@@ -92,7 +92,7 @@ Ejemplo de los campos que ya soporta una actividad (el ID de lección debe exist
   "description": "Objetivo e instrucciones coherentes con el tablero",
   "displayOrder": 2,
   "environment": "neonflow",
-  "levelTemplate": "neonflow-v2-2",
+  "levelTemplate": "neonflow-v3-2",
   "difficulty": "MEDIUM",
   "logicLevel": 2,
   "missions": []

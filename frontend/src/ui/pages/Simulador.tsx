@@ -6,15 +6,17 @@ import { NeonFlowStage } from "../components/NeonFlow/NeonFlowStage";
 import { TetriLogicStage } from "../components/TetriLogic/TetriLogicStage";
 import { PersistedTetriLogicStage } from "../components/TetriLogic/PersistedTetriLogicStage";
 import { CourseProgressFeedback } from "../components/common/CourseProgressFeedback";
+import { NeonFlowPreview, TetriLogicPreview } from "../components/common/ChallengeBoardPreview";
 import { DailyChallengeStage } from "../components/common/DailyChallengeStage";
 import { useCourseProgress } from "../components/common/useCourseProgress";
 import { loadCourseActivities } from "../../application/usecases/loadCourseActivities";
-import { activityDisplayName, challengeAccess, resolveActivityLevel } from "../../application/usecases/activityLevels";
+import { activityDescription, activityDisplayName, challengeAccess, resolveActivityLevel } from "../../application/usecases/activityLevels";
 import { getApiErrorMessage } from "../../infrastructure/api/errors";
 import type { ActivityResponseDTO } from "../../infrastructure/api/models/apiModels";
 import { isOfficialGameTemplate } from "../../infrastructure/api/models/gameProgressModels";
 import { getAuthState } from "../../infrastructure/store/authStore";
 import { isOfficialCourse } from "../../shared/constants/officialCourses";
+import { PROGRESSIVE_NEONFLOW_LEVELS } from "../../shared/constants/levelConfigs";
 
 const NEONFLOW_IDS = new Set(["1", "neonflow", "logica"]);
 const TETRILOGIC_IDS = new Set(["2", "tetrilogic", "patrones"]);
@@ -27,7 +29,7 @@ export const Simulador = () => {
 
   if (search.get("daily") === "true") return <DailyChallengeStage />;
   if (!search.has("activity")) {
-    if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage />;
+    if (NEONFLOW_IDS.has(normalized)) return <NeonFlowStage levels={PROGRESSIVE_NEONFLOW_LEVELS} />;
     if (!courseId || TETRILOGIC_IDS.has(normalized)) return <TetriLogicStage />;
   }
   if (!isOfficialCourse(courseId)) return <section className={noticeClass}>
@@ -79,6 +81,7 @@ function CourseSimulator({ courseId, studentId, canManage }: { courseId: string;
   const template = selected?.template;
   const locked = selected?.access === "locked";
   const unconfirmed = selected?.access === "unconfirmed";
+  const preview = locked || unconfirmed;
   const available = selected?.access === "available";
   const next = available && studentId && template && isOfficialGameTemplate(template.game, template.id)
     ? challenges.filter(candidate => candidate.template && candidate.template.game === template.game
@@ -90,6 +93,17 @@ function CourseSimulator({ courseId, studentId, canManage }: { courseId: string;
   const manage = canManage && (!activityId || activity)
     ? <Link to="/docente/retos" state={{ courseId }} className="btn-secondary">{challenges.length ? "Configurar tablero" : "Crear un reto"}</Link>
     : null;
+  const board = activity && template && (available || preview) && (
+    template.game === "neonflow"
+      ? template.config.version === 2 || template.config.version === 3
+        ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} preview={preview} />
+        : preview ? <NeonFlowPreview config={template.config} />
+          : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+      : template.config.version === 2
+        ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} preview={preview} />
+        : preview ? <TetriLogicPreview config={template.config} />
+          : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
+  );
 
   return <div>
     <CourseProgressFeedback {...progress} />
@@ -97,28 +111,29 @@ function CourseSimulator({ courseId, studentId, canManage }: { courseId: string;
       <label htmlFor="simulator-activity">{template?.game === "tetrilogic" ? "Tablero del curso" : "Reto del curso"}</label>
       <select id="simulator-activity" value={activity?.idActivity ?? ""} onChange={event => setSearch({ activity: event.target.value })}>
         {!activity && <option value="" disabled>Selecciona un reto</option>}
-        {challenges.map(item => <option key={item.activity.idActivity} value={item.activity.idActivity}
-          disabled={item.access === "locked" || item.access === "unconfirmed"}>
+        {challenges.map(item => <option key={item.activity.idActivity} value={item.activity.idActivity}>
           {activityDisplayName(item.activity)}{item.access === "pending" ? " · tablero pendiente" : item.access === "locked" ? " · bloqueado" : item.access === "unconfirmed" ? " · progreso por confirmar" : ""}
         </option>)}
       </select>
     </div>}
-    {activity && template && available
-      ? template.game === "neonflow"
-        ? template.config.version === 2
-          ? <PersistedNeonFlowStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} />
-          : <NeonFlowStage key={activity.idActivity} activity={activity} levels={[template.config]} />
-        : template.config.version === 2
-          ? <PersistedTetriLogicStage key={`${activity.idActivity}:${template.id}`} activity={activity} config={template.config} onNext={goToNext} />
-          : <TetriLogicStage key={activity.idActivity} activity={activity} levels={[template.config]} />
-      : locked || unconfirmed ? <section className={noticeClass}>
-        <h1 className="flex items-center justify-center gap-2 text-xl font-bold">
-          {locked && <LockKeyhole size={20} aria-hidden="true" />}
-          {locked ? "Nivel bloqueado" : "Progreso por confirmar"}
-        </h1>
-        {locked && <p className="text-text-muted">Completa el nivel anterior para jugar este reto.</p>}
-        <Link to="/" className="btn-secondary">Ver mis cursos</Link>
-      </section> : <section className={noticeClass}>
+    {board ? <div className={preview ? "lab-shell" : undefined}>
+      {preview && activity && <header className="lab-heading">
+        <div>
+          <Link to="/" className="text-sm font-semibold text-primary">← Mis cursos</Link>
+          <p className="page-eyebrow">Vista previa · Solo lectura</p>
+          <h1 className="flex items-center gap-2">
+            <LockKeyhole size={20} className="shrink-0" aria-hidden="true" />
+            {locked ? "Nivel bloqueado" : "Progreso por confirmar"}
+          </h1>
+          <h2 className="font-semibold">{activityDisplayName(activity)}</h2>
+          <p className="text-text-muted">{activityDescription(activity, template)}</p>
+          <p className="page-intro">{locked
+            ? "Completa el nivel anterior para desbloquear este tablero."
+            : "Podrás jugar cuando se confirme que este reto está desbloqueado."}</p>
+        </div>
+      </header>}
+      {board}
+    </div> : <section className={noticeClass}>
       <h1 className="text-xl font-bold">{activity
         ? "Este reto aún no está listo para jugar"
         : activityId ? "No encontramos este reto" : "Este curso aún no tiene retos"}</h1>

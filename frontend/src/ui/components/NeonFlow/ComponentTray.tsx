@@ -1,7 +1,7 @@
 import type { OpticalComponent } from "../../../shared/types/NeonFlow";
 import { NEON_DND_TYPE, OPTICAL_COLORS } from "../../../shared/constants/neonFlow";
 
-export const ComponentTray = ({ selected, onSelect }: { selected?: OpticalComponent | null; onSelect?: (component: OpticalComponent) => void }) => {
+export const ComponentTray = ({ selected, onSelect, disabled = false }: { selected?: OpticalComponent | null; onSelect?: (component: OpticalComponent) => void; disabled?: boolean }) => {
   const handleDragStart = (e: React.DragEvent, component: OpticalComponent) => {
     e.dataTransfer.setData(NEON_DND_TYPE, JSON.stringify(component));
     e.dataTransfer.effectAllowed = "move";
@@ -10,12 +10,13 @@ export const ComponentTray = ({ selected, onSelect }: { selected?: OpticalCompon
   return (
     <div className="lab-tray" aria-label="Componentes ópticos">
       <button type="button"
-        draggable
+        disabled={disabled}
+        draggable={!disabled}
         aria-pressed={selected?.type === "MIRROR_90"}
         onClick={() => onSelect?.({ type: "MIRROR_90" })}
-        onDragStart={(e) => handleDragStart(e, { type: "MIRROR_90" })}
-        className="lab-piece cursor-grab active:cursor-grabbing"
-        title="Espejo 90° - arrastra al tablero, click derecho para rotar">
+        onDragStart={disabled ? undefined : (e) => handleDragStart(e, { type: "MIRROR_90" })}
+        className="lab-piece enabled:cursor-grab enabled:active:cursor-grabbing"
+        title={disabled ? undefined : "Espejo 90° - arrastra al tablero, click derecho para rotar"}>
         <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-border">
           <div className="h-[2px] w-[70%] -rotate-45 rounded-full bg-cyan-300" />
         </div>
@@ -25,12 +26,13 @@ export const ComponentTray = ({ selected, onSelect }: { selected?: OpticalCompon
       {OPTICAL_COLORS.map((color) => (
         <button type="button"
           key={color}
+          disabled={disabled}
           aria-pressed={selected?.type === "FILTER" && selected.color === color}
           onClick={() => onSelect?.({ type: "FILTER", color })}
-          draggable
-          onDragStart={(e) => handleDragStart(e, { type: "FILTER", color })}
-          className="lab-piece cursor-grab active:cursor-grabbing"
-          title={`Filtro ${color} - arrastra al tablero`}>
+          draggable={!disabled}
+          onDragStart={disabled ? undefined : (e) => handleDragStart(e, { type: "FILTER", color })}
+          className="lab-piece enabled:cursor-grab enabled:active:cursor-grabbing"
+          title={disabled ? undefined : `Filtro ${color} - arrastra al tablero`}>
           <div
             className="flex h-10 w-10 items-center justify-center rounded-full border-2"
             style={{ borderColor: color }}>

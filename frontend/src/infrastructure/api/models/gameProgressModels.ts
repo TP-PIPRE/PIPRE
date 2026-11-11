@@ -8,12 +8,27 @@ export interface GameSessionContext {
 export interface GameSessionDTO {
   sessionId: string; game: SimulatorGame; levelNumber: number; levelTemplate: string; ruleset: string;
   startedAt: string; status: "ACTIVE" | "COMPLETED" | "ABANDONED"; revision: number;
-  state: { pieces: GamePieceState[]; moves: number; resets: number; helps: number; failedChecks: number; rejections: number; lastActionRejected?: boolean };
+  state: { pieces: GamePieceState[]; moves: number; resets: number; helps: number; failedChecks: number; rejections: number; lastActionRejected?: boolean; lastActionRejectionCode?: string; neonFlowProgressiveTutor?: boolean; progressiveTutor?: boolean };
 }
 export interface GameAction {
   type: "PLACE" | "ROTATE" | "RETURN" | "RESET" | "HELP" | "CHECK" | "REJECT";
-  pieceId?: string; x?: number; y?: number; rotation?: number; component?: string; color?: string; source?: string;
+  pieceId?: string; x?: number; y?: number; rotation?: number; component?: string; color?: string; source?: string; hintId?: string;
 }
+export interface GameHintRequest { requestId: string; revision: number; locale: string; }
+export interface GameHintResponse {
+  requestId: string; hintId: string; revision: number; source: "RULE_BASED" | "GENERATIVE" | "STATIC";
+  hintLevel: 1 | 2 | 3; type: string; message: string; targetCell?: { x: number; y: number } | null;
+  targetLine?: { axis: "row" | "column"; index: number } | null;
+}
+export type GameHintResult =
+  | { status: "DELIVERED"; hint: GameHintResponse }
+  | { status: "STATIC_DELIVERED"; helpCount: number }
+  | { status: "FALLBACK_ALLOWED"; reason: "UNAVAILABLE" | "REJECTED" }
+  | { status: "PENDING" }
+  | { status: "STALE" };
+export interface ProgressiveHintRequest { requestId: string; revision: number; ordinal: number; acceptPenalty: boolean; }
+export interface ProgressiveHint { requestId: string; ordinal: number; message: string; source: "STATIC" | "GENERATIVE"; }
+export interface ProgressiveHintProgress { deliveredCount: number; lastHint?: ProgressiveHint | null; generating: boolean; }
 export interface DailyChallengeDTO {
   id: string; date: string; timeZone: "America/Lima"; game: SimulatorGame; levelNumber: number; levelTemplate: string;
   completed: boolean; currentStreak: number; bestStreak: number;
@@ -33,7 +48,8 @@ export interface GameProgressDTO {
 
 export function isOfficialGameTemplate(game: SimulatorGame, template: string | undefined): template is string {
   if (!template) return false;
-  const canonical = new RegExp(`^${game}-v2-([1-9]|[12]\\d|30)$`);
+  const version = game === "neonflow" ? "[23]" : "2";
+  const canonical = new RegExp(`^${game}-v${version}-([1-9]|[12]\\d|30)$`);
   return canonical.test(template) || (game === "neonflow" && /^neonflow-([3-9]|[12]\d|30)$/.test(template));
 }
 

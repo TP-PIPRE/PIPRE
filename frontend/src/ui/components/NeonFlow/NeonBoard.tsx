@@ -6,10 +6,11 @@ export interface NeonBoardProps {
   grid: Grid;
   laserPath: Cell[];
   laserColor: string;
-  onComponentDrop: (cell: Cell, component: OpticalComponent) => void;
-  onRotateComponent: (cell: Cell) => void;
+  onComponentDrop?: (cell: Cell, component: OpticalComponent) => void;
+  onRotateComponent?: (cell: Cell) => void;
   selectedComponent?: OpticalComponent | null;
   emitter?: Cell;
+  disabled?: boolean;
 }
 
 interface CellHandlers {
@@ -22,7 +23,7 @@ interface CellHandlers {
 const isInPath = (laserPath: Cell[], cell: Cell): boolean =>
   laserPath.some((c) => c.x === cell.x && c.y === cell.y);
 
-const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitter?: Cell, laserColor?: string): React.ReactNode => {
+const renderCell = (cell: Cell, laserPath: Cell[], handlers?: CellHandlers, emitter?: Cell, laserColor?: string): React.ReactNode => {
   const isEmitter = cell.x === emitter?.x && cell.y === emitter?.y;
   switch (cell.type as CellType) {
     case "EMPTY":
@@ -30,9 +31,10 @@ const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitt
         <button type="button"
           key={`${cell.x},${cell.y}`}
           aria-label={`${isEmitter ? "Emisor" : "Celda vacía"}, fila ${cell.y + 1}, columna ${cell.x + 1}`}
-          onClick={() => handlers.onPlace(cell)}
-          onDragOver={handlers.onDragOver}
-          onDrop={(e) => handlers.onDrop(e, cell)}
+          disabled={!handlers}
+          onClick={handlers && (() => handlers.onPlace(cell))}
+          onDragOver={handlers?.onDragOver}
+          onDrop={handlers && ((e) => handlers.onDrop(e, cell))}
           className="rounded-sm bg-surface-brighter border border-border flex items-center justify-center text-primary"
         >{isEmitter && <ArrowRight size={24} aria-hidden="true" />}</button>
       );
@@ -49,11 +51,12 @@ const renderCell = (cell: Cell, laserPath: Cell[], handlers: CellHandlers, emitt
         <button type="button"
           key={`${cell.x},${cell.y}`}
           aria-label={`Rotar espejo, fila ${cell.y + 1}, columna ${cell.x + 1}, ${cell.rotation ?? 0} grados`}
-          onClick={() => handlers.onRotate(cell)}
-          onContextMenu={(e) => {
+          disabled={!handlers}
+          onClick={handlers && (() => handlers.onRotate(cell))}
+          onContextMenu={handlers && ((e) => {
             e.preventDefault();
             handlers.onRotate(cell);
-          }}
+          })}
           className="flex cursor-pointer items-center justify-center rounded-sm bg-surface-brighter border border-border"
           title="Click derecho para rotar">
           <div className="h-[3px] w-[70%] rounded-full bg-primary" style={{ transform: `rotate(${(cell.rotation ?? 0)-45}deg)` }} />
@@ -108,12 +111,13 @@ export const NeonBoard: React.FC<NeonBoardProps> = ({
   onRotateComponent,
   selectedComponent,
   emitter,
+  disabled = false,
 }) => {
   const points = laserPath
     .map((c) => `${c.x + 0.5},${c.y + 0.5}`)
     .join(" ");
 
-  const handlers: CellHandlers = {
+  const handlers: CellHandlers | undefined = disabled ? undefined : {
     onDragOver: (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
@@ -124,16 +128,18 @@ export const NeonBoard: React.FC<NeonBoardProps> = ({
       const raw = e.dataTransfer.getData(NEON_DND_TYPE);
       if (!raw) return;
       try {
-        const component = JSON.parse(raw) as OpticalComponent;
-        if (component.type === "MIRROR_90" || component.type === "FILTER") {
-          onComponentDrop(cell, component);
+        const component = JSON.parse(raw) as OpticalComponent | null;
+        if (component?.type === "MIRROR_90") onComponentDrop?.(cell, { type: component.type });
+        else if (component?.type === "FILTER" &&
+            (component.color === "red" || component.color === "green" || component.color === "blue")) {
+          onComponentDrop?.(cell, { type: component.type, color: component.color });
         }
       } catch {
         /* ignore malformed payload */
       }
     },
-    onRotate: onRotateComponent,
-    onPlace: cell => { if (selectedComponent && cell.type === "EMPTY") onComponentDrop(cell, selectedComponent); },
+    onRotate: cell => onRotateComponent?.(cell),
+    onPlace: cell => { if (selectedComponent && cell.type === "EMPTY") onComponentDrop?.(cell, selectedComponent); },
   };
 
   return (

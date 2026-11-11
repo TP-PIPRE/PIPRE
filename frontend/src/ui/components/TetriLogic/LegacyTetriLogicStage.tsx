@@ -7,7 +7,7 @@ import { useGameStore } from "../../../infrastructure/store/gameStore";
 import { Board as BoardView } from "./Board";
 import { PieceTray } from "./PieceTray";
 import { ControlPanel } from "../common/ControlPanel";
-import { AiFeedbackToast } from "../common/AiFeedbackToast";
+import { HintToast } from "../common/HintToast";
 import type { ActivityResponseDTO } from "../../../infrastructure/api/models/apiModels";
 
 const HINT_MESSAGE = "IA: Intenta rotar la pieza T (click derecho) para encajarla en la esquina superior.";
@@ -221,7 +221,7 @@ export const LegacyTetriLogicStage = ({ levels: LEVELS = LEGACY_TETRILOGIC_LEVEL
         ))}
       {hint && (
         <div className="w-full flex justify-center">
-          <AiFeedbackToast message={hint} onClose={() => setHint(null)} />
+          <HintToast message={hint} onClose={() => setHint(null)} />
         </div>
       )}
       </section>

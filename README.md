@@ -13,8 +13,6 @@ Plataforma educativa para practicar lógica y razonamiento espacial mediante sim
 | **Neon Flow** | Guiar un haz de luz con espejos y filtros hasta el receptor del color correcto. | 30 |
 | **TetriLogic** | Colocar y girar piezas hasta igualar los objetivos de ocupación de cada fila y columna. | 30 |
 
-En TetriLogic puedes mover, girar y devolver piezas libremente, respetando límites y colisiones. Los conteos pueden superarse mientras experimentas; el reto se completa cuando todos coinciden, incluidos los ceros. No es necesario llenar todo el tablero.
-
 Para empezar: **Iniciar sesión → Mis cursos → Elegir un curso → Seleccionar un reto → Iniciar**.
 
 ## Inicio local con Docker

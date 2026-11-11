@@ -181,6 +181,7 @@ export function useFreePieceInteraction(state: FreePlayState, dispatch: Dispatch
     }
   }
   return { boardRef, trayRef, preview, begin, activateCell, activateTray, rotatePiece, returnPiece, reset,
+    cancelInteraction: () => cancel(""),
     rootEvents: { onPointerMove: move, onPointerUp: finish,
       onPointerCancel: (event: PointerEvent<HTMLElement>) => { if (pickup.current?.id === event.pointerId) cancel(); },
       onLostPointerCapture: (event: PointerEvent<HTMLElement>) => { if (pickup.current?.id === event.pointerId) cancel(); },

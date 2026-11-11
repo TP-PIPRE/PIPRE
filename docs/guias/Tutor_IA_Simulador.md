@@ -2,6 +2,8 @@
 
 **Propuesta técnica del 08/11/2026.** Describe el alcance y los pasos de una implementación futura.
 
+**Estado de la interfaz al 10/11/2026.** Los retos oficiales de Neon Flow y TetriLogic pueden activar el tutor progresivo con Ollama. Esta guía documenta el diseño del piloto por reglas. La guía de ayudas progresivas describe la activación, el conteo y la rúbrica de la integración generativa. [Ayudas progresivas](Ayudas_Progresivas_Neon_Flow.md)
+
 ## Objetivo y alcance
 
 Ayudar al estudiante a identificar qué observar y qué comprobar mientras resuelve un reto. Las pistas orientan el siguiente paso y dejan la decisión en manos del estudiante. El piloto evaluará si esta ayuda facilita continuar y resolver otro reto equivalente de forma autónoma.
@@ -143,7 +145,7 @@ Activar el piloto únicamente para el grupo y los retos acordados cuando pasen l
 
 ## Segunda etapa: TetriLogic
 
-La ayuda guiará al estudiante para que interprete los conteos de las dos dimensiones antes de elegir dónde colocar, mover o devolver una pieza. La primera versión de esta etapa ofrecerá pistas redactadas a partir del tablero confirmado. Depende de que el flujo de sesión, recibos y ayudas de Neon Flow pase sus criterios técnicos y de que se revisen sus resultados con docentes.
+El piloto de TetriLogic usa los conteos del tablero confirmado para orientar al estudiante antes de que decida dónde colocar, mover o devolver una pieza. La habilitación para aulas y actividades se configura por separado. [Ayuda en el simulador](../simuladores/TetriLogic_Filas_Columnas.md#consejos-y-tutor-contextual)
 
 ### Diagnóstico y grados de ayuda
 

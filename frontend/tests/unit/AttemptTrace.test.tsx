@@ -18,12 +18,12 @@ vi.mock('../../src/ui/components/common/useValidatedGameSession',()=>{
 afterEach(async()=>{cleanup();useGameStore.getState().stopGame();await flushAttemptOutbox();vi.clearAllMocks();});
 const context={game:'tetrilogic' as const,activityId:'act-c002-1',levelTemplate:'tetrilogic-v2-1',templateVersion:2,ruleset:'tetrilogic-counts-v1'};
 describe('Learning process trace',()=>{
-  it('sends once, separates static help from IA and starts another episode with the actual prior board',()=>{
+   it('sends once, counts delivered static help and starts another episode with the actual prior board',()=>{
     const send=vi.fn(),t=new AttemptTrace(context,'student-test',[],send);
     const piece={id:'o1',type:'O',x:0,y:0,rotation:0};
     t.record('PLACE',{pieceId:'o1'},[],[piece]);t.record('HELP',{source:'STATIC'});t.finish('SUCCESS');t.finish('SUCCESS');
     expect(send).toHaveBeenCalledTimes(1);
-    const first=send.mock.calls[0][0];expect(first.pistasIa).toBe(0);expect(first.trace.events.map((e:{sequence:number})=>e.sequence)).toEqual([1,2,3]);
+     const first=send.mock.calls[0][0];expect(first.pistasIa).toBe(1);expect(first.trace.events.map((e:{sequence:number})=>e.sequence)).toEqual([1,2,3]);
     t.record('SELECT',{pieceId:'o1'});t.record('RETURN',{pieceId:'o1'},[piece],[]);t.finish('ABANDONED');
     expect(send).toHaveBeenCalledTimes(2);expect(send.mock.calls[1][0].trace.initialState).toEqual([piece]);
     expect(send.mock.calls[1][0].trace.clientAttemptId).not.toBe(first.trace.clientAttemptId);
@@ -36,7 +36,7 @@ describe('Learning process trace',()=>{
   it('records Neon Flow success with its selected activity and no duplicate legacy submission',async()=>{
     render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} activity={{idActivity:'act-c001-v2-1',name:'First',environment:'neonflow',levelTemplate:'neonflow-v2-1'}}/></MemoryRouter>);
     fireEvent.click(screen.getByRole('button',{name:'Pista'}));fireEvent.click(screen.getByRole('button',{name:'Comprobar'}));await flushAttemptOutbox();
-    expect(axios.post).toHaveBeenCalledTimes(1);expect(axios.post).toHaveBeenCalledWith('telemetry',expect.objectContaining({result:'SUCCESS',pistasIa:0,trace:expect.objectContaining({activityId:'act-c001-v2-1',ruleset:'neonflow-raycast-v1'})}),{skipAuthRedirect:true});
+     expect(axios.post).toHaveBeenCalledTimes(1);expect(axios.post).toHaveBeenCalledWith('telemetry',expect.objectContaining({result:'SUCCESS',pistasIa:1,trace:expect.objectContaining({activityId:'act-c001-v2-1',ruleset:'neonflow-raycast-v1'})}),{skipAuthRedirect:true});
   });
   it('starts a distinct observed episode when restarting a solved Neon Flow activity',async()=>{
     render(<MemoryRouter><NeonFlowStage levels={[NEONFLOW_LEVELS[0]]} activity={{idActivity:'act-c001-v2-1',name:'First',environment:'neonflow',levelTemplate:'neonflow-v2-1'}}/></MemoryRouter>);
@@ -73,8 +73,10 @@ describe('Learning process trace',()=>{
     outdated.record('SELECT');outdated.finish('ABANDONED');
     valid.record('SELECT');valid.finish('ABANDONED');
     await vi.waitFor(()=>expect(post.mock.calls.some(call=>call[1].trace.activityId===context.activityId)).toBe(true));
-    expect(post).toHaveBeenCalledTimes(2);
     const rejected=post.mock.calls[0][1];
+    expect(rejected.trace.activityId).toBe('outdated-activity');
+    expect(post.mock.calls.filter(call=>call[1].trace.activityId===context.activityId)).toHaveLength(1);
+    expect(post.mock.calls.filter(call=>call[1].trace.activityId==='outdated-activity').every(call=>call[1]===rejected)).toBe(true);
     post.mockClear();post.mockResolvedValue({status:201});
     await flushAttemptOutbox();
     expect(post).toHaveBeenCalledTimes(1);

@@ -1,5 +1,5 @@
 import type { NeonFlowLevelConfig } from "../types/NeonFlow";
-export { NEONFLOW_LEVELS } from "./neonFlowLevels";
+export { NEONFLOW_LEVELS, PROGRESSIVE_NEONFLOW_LEVELS } from "./neonFlowLevels";
 import type { LevelConfig } from "../types/TetriLogic";
 import catalog from "./tetrilogicCatalog.json";
 

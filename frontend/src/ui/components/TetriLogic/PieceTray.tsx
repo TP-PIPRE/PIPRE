@@ -41,7 +41,7 @@ export const PieceTray: React.FC<PieceTrayProps> = ({ pieces, selectedPieceId, o
             disabled={disabled}
             draggable={!disabled && !pointerInteraction}
             onContextMenu={e=>{if(onRotatePiece){e.preventDefault();if(!disabled)onRotatePiece(piece.id);}}}
-            onKeyDown={e=>{if(e.key.toLowerCase()==="r" && onRotatePiece){e.preventDefault();e.stopPropagation();if(!disabled && !e.repeat)onRotatePiece(piece.id);}}}
+            onKeyDown={e=>{if(!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase()==="r" && onRotatePiece){e.preventDefault();e.stopPropagation();if(!disabled && !e.repeat)onRotatePiece(piece.id);}}}
             onDragStart={(e) => {
               if (disabled) return;
               e.dataTransfer.setData(

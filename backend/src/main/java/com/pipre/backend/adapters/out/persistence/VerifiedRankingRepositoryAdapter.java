@@ -18,7 +18,8 @@ public class VerifiedRankingRepositoryAdapter implements VerifiedRankingReposito
     public List<RankingDTO> course(String course) {return curricular("m.id_course",course);}
     public List<RankingDTO> module(String module) {return curricular("m.id_module",module);}
     private List<RankingDTO> curricular(String column,String id) {
-        String matching="s.exercise_key LIKE 'official:%' AND EXISTS(SELECT 1 FROM activities a JOIN lessons l ON l.id_lesson=a.id_lesson JOIN modules m ON m.id_module=l.id_module WHERE "+column+"=? AND (a.level_template=s.level_template OR (s.game='neonflow' AND s.level_template NOT IN ('neonflow-v2-1','neonflow-v2-2') AND a.level_template=REPLACE(s.level_template,'-v2-','-'))))";
+        String neonTemplate="REPLACE(s.level_template,'neonflow-v3-','neonflow-v2-')";
+        String matching="s.exercise_key LIKE 'official:%' AND EXISTS(SELECT 1 FROM activities a JOIN lessons l ON l.id_lesson=a.id_lesson JOIN modules m ON m.id_module=l.id_module WHERE "+column+"=? AND (a.level_template=s.level_template OR (s.game='neonflow' AND (REPLACE(a.level_template,'neonflow-v3-','neonflow-v2-')="+neonTemplate+" OR ("+neonTemplate+" NOT IN ('neonflow-v2-1','neonflow-v2-2') AND a.level_template=REPLACE("+neonTemplate+",'-v2-','-'))))))";
         String sum="(SELECT COALESCE(SUM(s.best_points),0) FROM game_best_scores s WHERE s.student_id=u.id_user AND "+matching+")";
         return rows(sum,STUDENTS+" AND EXISTS(SELECT 1 FROM game_best_scores s WHERE s.student_id=u.id_user AND "+matching+")",id,id);
     }

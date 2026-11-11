@@ -7,10 +7,15 @@ import { randomUUID } from "node:crypto";
 const manifestPath = resolve("node_modules/.cache/pipre-audit/environment.json");
 const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf8").replace(/^\uFEFF/, "")) : null;
 const reportDirectory=resolve(`test-results/e2e/${manifest?.runId??"unstarted"}/${Date.now()}`);
+const tutorFixtures = {
+  neonflow: { group: "00000000-0000-4000-8000-000000000029", course: "c001", activity: "act-c001-v2-1" },
+  tetrilogic: { group: "00000000-0000-4000-8000-000000000030", course: "c002", activity: "act-c002-1" },
+};
 
 function auditSql(sql:string) {
   if (!manifest || !/^[a-f0-9]{32}$/.test(manifest.runId)) throw new Error("Only isolated audit fixtures may be inspected.");
-  const label = execFileSync("docker", ["inspect", "--format", '{{index .Config.Labels "pipre.audit.run"}}', manifest.dbContainer], { encoding: "utf8", windowsHide: true }).trim();
+   const labels = JSON.parse(execFileSync("docker", ["inspect", "--format", "{{json .Config.Labels}}", manifest.dbContainer], { encoding: "utf8", windowsHide: true }).trim());
+   const label = labels["pipre.audit.run"];
   if (label !== manifest.runId) throw new Error("Database is not this audit's disposable container.");
   return execFileSync("docker", ["exec", manifest.dbContainer, "psql", "-U", "audit", "-d", "pipre_audit", "-v", "ON_ERROR_STOP=1", "-tAc", sql], { encoding: "utf8", windowsHide: true });
 }
@@ -46,6 +51,7 @@ export default defineConfig({
       mkdirSync(reportDirectory,{recursive:true});
       on("after:run",results=>writeFileSync(resolve("test-results/e2e/latest-run.json"),JSON.stringify({reportDirectory,...results},null,2)));
       on("task", {
+        progressiveTutorEnabled: () => process.env.PIPRE_AUDIT_PROGRESSIVE_ENABLED === "true",
         browserDiagnostics(data) {appendFileSync(`${reportDirectory}/browser-console.jsonl`,JSON.stringify(data)+"\n");return null;},
         browserCheckpoint(data) {appendFileSync(`${reportDirectory}/browser-checkpoints.jsonl`,JSON.stringify({at:new Date().toISOString(),...data})+"\n");return null;},
         databaseSnapshot,
@@ -53,6 +59,24 @@ export default defineConfig({
           const idGroup=randomUUID(),groupName=`QA group ${idGroup.slice(0,8)}`;
           auditSql(`INSERT INTO groups(id_group,group_name) VALUES ('${idGroup}','${groupName}')`);
           return {idGroup,groupName};
+        },
+        configureTutorPilot({ studentId, game }: { studentId: string; game: keyof typeof tutorFixtures }) {
+          if(!/^[A-Za-z0-9-]{1,36}$/.test(studentId) || !Object.hasOwn(tutorFixtures, game))throw new Error("Invalid tutor fixture");
+          const { group, course, activity } = tutorFixtures[game];
+          auditSql(`INSERT INTO groups(id_group,group_name) VALUES ('${group}','Tutor audit ${game}') ON CONFLICT DO NOTHING;
+            INSERT INTO group_courses(id_group,id_course) VALUES ('${group}','${course}') ON CONFLICT DO NOTHING;
+            INSERT INTO group_activities(id_group,id_activity) VALUES ('${group}','${activity}') ON CONFLICT DO NOTHING;
+            INSERT INTO group_students(id_ranking,id_group,id_student,total_points,position) VALUES ('${randomUUID()}','${group}','${studentId}',0,1) ON CONFLICT DO NOTHING;`);
+          return group;
+        },
+        tutorSnapshot({ studentId, game }: { studentId: string; game: keyof typeof tutorFixtures }) {
+          if(!/^[A-Za-z0-9-]{1,36}$/.test(studentId) || !Object.hasOwn(tutorFixtures, game))throw new Error("Invalid tutor fixture");
+          return JSON.parse(auditSql(`SELECT json_build_object(
+            'receipts', count(*), 'consumed', count(h.consumed_at),
+            'ruleBased', count(h.consumed_at) FILTER (WHERE h.source='RULE_BASED'),
+            'lineHints', count(h.consumed_at) FILTER (WHERE h.target_axis IS NOT NULL AND h.target_line IS NOT NULL))
+            FROM game_session_hints h JOIN game_sessions s ON s.session_id=h.session_id
+            WHERE s.student_id='${studentId}' AND s.game='${game}'`));
         },
         membershipCount({studentId,groupId}) {
           if(![studentId,groupId].every(id=>typeof id==='string'&&/^[A-Za-z0-9-]{1,36}$/.test(id)))throw new Error("Invalid fixture identifiers");
@@ -74,7 +98,8 @@ export default defineConfig({
           const level=typeof input==="string"?1:input.levelNumber;
           if (!["tetrilogic", "neonflow"].includes(game)) throw new Error("Unknown game");
           if(!Number.isInteger(level)||level<1||level>30)throw new Error("Unknown official level");
-          return JSON.parse(readFileSync(resolve(`../backend/src/main/resources/catalog/${game}-daily-witnesses.json`), "utf8"))[level-1].placements;
+          const file = game === "neonflow" ? "neonflow-v3-witnesses" : "tetrilogic-daily-witnesses";
+          return JSON.parse(readFileSync(resolve(`../backend/src/main/resources/catalog/${file}.json`), "utf8"))[level-1].placements;
         },
       });
     },

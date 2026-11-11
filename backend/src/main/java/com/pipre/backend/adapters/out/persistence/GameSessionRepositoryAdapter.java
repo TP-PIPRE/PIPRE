@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -50,6 +51,10 @@ public class GameSessionRepositoryAdapter implements GameSessionRepositoryPort {
     public Optional<ActionReceipt> findAction(String sessionId,int sequence) {
         return jdbc.query("SELECT payload_hash,response FROM game_session_actions WHERE session_id=? AND sequence=?",
             (rs,row)->new ActionReceipt(rs.getString(1),decode(rs.getString(2))),sessionId,sequence).stream().findFirst();
+    }
+    public List<JsonNode> recentActions(String sessionId) {
+        return jdbc.query("SELECT payload FROM game_session_actions WHERE session_id=? ORDER BY sequence DESC LIMIT 6",
+                (rs,row)->decode(rs.getString(1)),sessionId);
     }
     public void saveAction(String sessionId,int sequence,String hash,JsonNode payload,Instant receivedAt,JsonNode response) {
         jdbc.update("INSERT INTO game_session_actions(session_id,sequence,payload_hash,payload,received_at,response) VALUES (?,?,?,"+jsonParameter()+",?,"+jsonParameter()+")",

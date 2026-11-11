@@ -46,7 +46,7 @@ describe("Catalog entry to TetriLogic row/column challenges", () => {
     expect(screen.getAllByRole("button", { name: "Iniciar" })).toHaveLength(2);
     expect(screen.queryByRole("button", { name: /Vista previa/ })).not.toBeInTheDocument();
   });
-  it("shows a lock beside the blocked level and offers no action", async () => {
+  it("shows a lock and offers only a preview for the blocked level", async () => {
     vi.mocked(loadCourseActivities).mockResolvedValue([
       { idActivity: "a2", name: "Segundo reto", environment: "tetrilogic", levelTemplate: "tetrilogic-v2-2" },
     ]);
@@ -55,6 +55,7 @@ describe("Catalog entry to TetriLogic row/column challenges", () => {
     expect(await screen.findByText(/Bloqueado · Completa el nivel anterior/)).toBeInTheDocument();
     expect(screen.getByText("Nivel 2 · Filas y columnas").querySelector("svg.lucide-lock-keyhole")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Iniciar" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Vista previa/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Vista previa" }));
+    expect(screen.getByText("Destino /simulador/c002?activity=a2")).toBeInTheDocument();
   });
 });

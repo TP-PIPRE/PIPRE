@@ -3,6 +3,7 @@ package com.pipre.backend.application.ports.output;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.pipre.backend.domain.entities.game.GameSession;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface GameSessionRepositoryPort {
@@ -14,6 +15,7 @@ public interface GameSessionRepositoryPort {
     GameSession insert(GameSession session);
     void update(GameSession session);
     Optional<ActionReceipt> findAction(String sessionId, int sequence);
+    List<JsonNode> recentActions(String sessionId);
     void saveAction(String sessionId, int sequence, String hash, JsonNode payload, Instant receivedAt, JsonNode response);
     record ActionReceipt(String hash, JsonNode response) {}
 }

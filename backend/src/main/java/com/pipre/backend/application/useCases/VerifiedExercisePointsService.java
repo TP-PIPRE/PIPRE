@@ -19,15 +19,20 @@ public class VerifiedExercisePointsService {
     private final GameReferenceMoves references;
     @Transactional
     public GameScoreDTO award(GameSession session,JsonNode config) {
+        return award(session,config,0);
+    }
+    @Transactional
+    public GameScoreDTO award(GameSession session,JsonNode config,long tutorPauseMillis) {
         if(!"COMPLETED".equals(session.status())||session.completedAt()==null)throw new IllegalArgumentException("Only verified victories may award points");
         gamification.lockStudent(session.studentId());
         var receipt=scores.receipt(session.sessionId());if(receipt.isPresent())return receipt.get();
         long duration=Duration.between(session.startedAt(),session.completedAt()).toMillis();
         if(!session.levelTemplate().equals(config.path("templateId").asText()))throw new IllegalArgumentException("Score configuration does not match the verified session");
         int moves=session.state().path("moves").asInt(-1),reference=references.forTemplate(session.levelTemplate());
-        int points=ExercisePointsRules.points(moves,reference,duration);
+        long scoringDuration=Math.max(0,duration-tutorPauseMillis);
+        int points=ExercisePointsRules.points(moves,reference,scoringDuration);
         boolean generated=ProceduralDailyService.procedural(session.dailyChallengeId());
-        String key=generated?"daily:"+session.dailyChallengeId():"official:"+session.levelTemplate();
+        String key=generated?"daily:"+session.dailyChallengeId():"official:"+BoardRules.exerciseTemplate(session.levelTemplate());
         int previous=scores.best(session.studentId(),key);
         if(points>previous)scores.improve(session,key,points);
         int xp=0;LocalDate date=session.completedAt().atZone(GamificationService.DAILY_ZONE).toLocalDate();

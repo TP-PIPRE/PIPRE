@@ -30,12 +30,23 @@ class BoardRulesTest {
                 cases.add(Arguments.of(game,catalog.get(i),witnesses.get(i)));
             }
         }
+        try (var configs = BoardRulesTest.class.getResourceAsStream("/catalog/neonflow-v3.json");
+             var solutions = BoardRulesTest.class.getResourceAsStream("/catalog/neonflow-v3-witnesses.json")) {
+            JsonNode revised = JSON.readTree(configs), witnesses = JSON.readTree(solutions);
+            assertEquals(30, revised.size());
+            assertEquals(30, witnesses.size());
+            for (int i = 0; i < revised.size(); i++) {
+                assertEquals(revised.get(i).path("templateId"), witnesses.get(i).path("templateId"));
+                cases.add(Arguments.of("neonflow", revised.get(i), witnesses.get(i)));
+            }
+        }
         return cases.stream();
     }
     @ParameterizedTest(name="server verifies {0} official level {index}")
     @MethodSource("officialSolutions")
-    void verifiesAllSixtyOfficialSolutionsThroughLegalActions(String game,JsonNode config,JsonNode witness) {
+    void verifiesPublishedSolutionsThroughLegalActions(String game,JsonNode config,JsonNode witness) {
         ObjectNode state=BoardRules.initialState();
+        if (config.path("version").asInt() == 3) assertFalse(BoardRules.isSolved(game,config,state));
         for(JsonNode piece:witness.path("placements")) {
             state=BoardRules.apply(game,config,state,new BoardAction("PLACE",piece.path("id").asText(null),
                 piece.path("position").path("x").asInt(),piece.path("position").path("y").asInt(),piece.path("rotation").asInt(0),
@@ -57,8 +68,14 @@ class BoardRulesTest {
             """);
         var state=BoardRules.apply("tetrilogic",config,BoardRules.initialState(),new BoardAction("PLACE","o1",0,0,0,null,null,null));
         assertTrue(BoardRules.isSolved("tetrilogic",config,state));
+        assertTrue(BoardRules.diagnoseTetri(config,state).isEmpty());
+        assertEquals(new BoardRules.TetriHintDiagnosis("row",0,0,2),BoardRules.diagnoseTetri(config,BoardRules.initialState()).orElseThrow());
         var overshoot=BoardRules.apply("tetrilogic",config,state,new BoardAction("PLACE","i1",0,2,0,null,null,null));
         assertFalse(overshoot.path("lastActionRejected").asBoolean());assertFalse(BoardRules.isSolved("tetrilogic",config,overshoot));
+        assertEquals(new BoardRules.TetriHintDiagnosis("row",2,4,0),BoardRules.diagnoseTetri(config,overshoot).orElseThrow());
+        var sparseConfig = (ObjectNode) config.deepCopy();
+        sparseConfig.putArray("constraints").addObject().put("orientation","column").put("line",0).put("targetCount",3);
+        assertEquals(new BoardRules.TetriHintDiagnosis("column",0,2,3),BoardRules.diagnoseTetri(sparseConfig,state).orElseThrow());
         var collision=BoardRules.apply("tetrilogic",config,state,new BoardAction("PLACE","i1",0,0,0,null,null,null));
         assertTrue(collision.path("lastActionRejected").asBoolean());assertEquals(state.path("pieces"),collision.path("pieces"));
         var outside=BoardRules.apply("tetrilogic",config,state,new BoardAction("PLACE","o1",Integer.MAX_VALUE,0,0,null,null,null));

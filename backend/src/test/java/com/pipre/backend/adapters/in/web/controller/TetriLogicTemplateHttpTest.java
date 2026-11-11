@@ -35,7 +35,7 @@ class TetriLogicTemplateHttpTest {
 
     @Test void activityCanBeMappedOutsideAServiceTransactionForTelemetryValidation() {
         var activity=activities.findById("act-c001-v2-1").orElseThrow();
-        assertEquals("neonflow-v2-1",activity.getLevelTemplate());
+        assertEquals("neonflow-v3-1",activity.getLevelTemplate());
         assertFalse(activity.getMissions().isEmpty());
         assertNotNull(activity.getIdSimulationList());
     }

@@ -21,8 +21,9 @@
 .tetri-free .tetri-count-unset { color: var(--text-muted); font-size: 12px; }
 .tetri-free .game-board { position: relative; width: 100%; max-width: none; margin: 0; gap: 0; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface-brighter); box-shadow: none; overflow: hidden; }
 .tetri-free .game-board button { position: relative; border: 0; border-radius: 0; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
-.tetri-free .game-board .tetri-cell-empty { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--border) 42%,transparent); cursor: crosshair; }
-.tetri-free .game-board .tetri-cell-empty:hover { background: var(--primary-low); }
+.tetri-free .game-board .tetri-cell-empty { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--border) 42%,transparent); }
+.tetri-free .game-board .tetri-cell-empty:enabled { cursor: crosshair; }
+.tetri-free .game-board .tetri-cell-empty:enabled:hover { background: var(--primary-low); }
 .tetri-free .game-board .tetri-cell-filled { background: transparent; cursor: grab; touch-action: none; }
 .tetri-free .game-board .tetri-cell-filled:active { cursor: grabbing; }
 .tetri-free .game-board [aria-pressed="true"] { outline: 0; box-shadow: none; }

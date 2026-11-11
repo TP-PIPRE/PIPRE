@@ -4,6 +4,7 @@ import com.pipre.backend.application.commands.VerifiedVictory;
 import com.pipre.backend.application.dto.*;
 import com.pipre.backend.application.ports.input.*;
 import com.pipre.backend.application.ports.output.*;
+import com.pipre.backend.domain.entities.game.BoardRules;
 import com.pipre.backend.domain.entities.gamification.Achievement;
 import com.pipre.backend.domain.entities.gamification.AchievementRules;
 import com.pipre.backend.domain.exceptions.BusinessException;
@@ -37,7 +38,7 @@ public class GamificationService implements RecordVerifiedVictoryUseCase,DailyCh
                 || v.studentId()==null || v.studentId().isBlank() || v.sessionId()==null || v.sessionId().isBlank()
                 || v.stars()<1 || v.stars()>3 || v.startedAt()==null || v.completedAt()==null
                 || v.completedAt().isBefore(v.startedAt()) || v.startedOrder()<1
-                || !(v.game()+"-v2-"+v.levelNumber()).equals(v.levelTemplate()))
+                || v.levelTemplate()==null || !(v.game()+"-v2-"+v.levelNumber()).equals(BoardRules.exerciseTemplate(v.levelTemplate())))
             throw new BusinessException("La victoria verificada no es válida.");
         repository.lockStudent(v.studentId());
         if(!repository.recordVictory(v)) return new VictoryAwardsDTO(bestStars(v),List.of(),today(v.studentId()));
