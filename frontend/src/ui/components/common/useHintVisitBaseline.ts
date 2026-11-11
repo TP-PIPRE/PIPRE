@@ -1,18 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
-import { rememberHintBaseline } from "../../../infrastructure/store/hintVisit";
+import { getHintBaseline, rememberHintBaseline, subscribeToHintVisit } from "../../../infrastructure/store/hintVisit";
 
 export function useHintVisitBaseline(scope: string | undefined, total: number | undefined) {
   const { pathname, search } = useLocation();
   const route = pathname + search;
-  const [visit, setVisit] = useState<{ route: string; scope: string; baseline: number }>();
-  const baseline = visit?.route === route && visit.scope === scope ? visit.baseline : undefined;
-  const rememberBaseline = useCallback((count: number) => {
-    if (!scope) return count;
-    const baseline = rememberHintBaseline(route, scope, count);
-    setVisit({ route, scope, baseline });
-    return baseline;
-  }, [route, scope]);
+  const baseline = useSyncExternalStore(subscribeToHintVisit, () => scope ? getHintBaseline(route, scope) : undefined);
+  const rememberBaseline = useCallback((count: number) => scope ? rememberHintBaseline(route, scope, count) : count, [route, scope]);
 
   useEffect(() => {
     if (scope && total !== undefined && baseline === undefined) rememberBaseline(total);
