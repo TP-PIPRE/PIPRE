@@ -1,0 +1,2082 @@
+{
+  "metadata": {
+    "id": "pipre-presentacion-3a-v1",
+    "tipo": "DEMOSTRACION_SINTETICA",
+    "nota": "Cuentas y partidas ficticias. Los consejos GENERATIVE provienen de un proveedor simulado, no de Ollama ni de una medición de tesis.",
+    "fuente": "Adaptación de una muestra del grado Tercero de seed_simulador_demo.json. Las acciones sustituyen los totales declarados.",
+    "zona": "America/Lima"
+  },
+  "classroom": {
+    "name": "[DEMO] 3.º de secundaria · Sección A",
+    "description": "Aula ficticia para la presentación de PIPRE. Base desechable.",
+    "courseIds": [
+      "c001",
+      "c002"
+    ]
+  },
+  "credentials": {
+    "password": "Pipre-Demo-2026!"
+  },
+  "administrator": {
+    "firstName": "Administración",
+    "lastName": "PIPRE [DEMO]",
+    "email": "admin.demo@pipre.test",
+    "age": 31,
+    "grade": null
+  },
+  "teacher": {
+    "firstName": "Elena",
+    "lastName": "Soto [DEMO]",
+    "email": "docente.demo@pipre.test",
+    "age": 33,
+    "grade": null
+  },
+  "students": [
+    {
+      "firstName": "Ada",
+      "lastName": "Vela [DEMO]",
+      "email": "alumno01@pipre.test",
+      "age": 14,
+      "grade": "3.º de secundaria",
+      "profile": "Alto",
+      "attempts": [
+        {
+          "key": "alumno01-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 510,
+          "durationSeconds": 86,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 9,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno01-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 15,
+          "startMinute": 517,
+          "durationSeconds": 76,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-3",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 14,
+          "startMinute": 524,
+          "durationSeconds": 105,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 13,
+          "startMinute": 531,
+          "durationSeconds": 95,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":6,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno01-5",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 12,
+          "startMinute": 538,
+          "durationSeconds": 124,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"CHECK"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-6",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 11,
+          "startMinute": 545,
+          "durationSeconds": 114,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":3,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno01-7",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-4",
+          "activityId": "act-c001-4",
+          "daysAgo": 10,
+          "startMinute": 552,
+          "durationSeconds": 143,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 8,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-4",
+          "activityId": "act-c002-4",
+          "daysAgo": 8,
+          "startMinute": 559,
+          "durationSeconds": 121,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":1,"y":1,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno01-9",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-4",
+          "activityId": "act-c002-4",
+          "daysAgo": 8,
+          "startMinute": 566,
+          "durationSeconds": 136,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":1,"y":1,"rotation":90},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180},
+            {"sequence":4,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-10",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-5",
+          "activityId": "act-c001-5",
+          "daysAgo": 7,
+          "startMinute": 573,
+          "durationSeconds": 153,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno01-11",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-5",
+          "activityId": "act-c001-5",
+          "daysAgo": 7,
+          "startMinute": 580,
+          "durationSeconds": 168,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno01-12",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-5",
+          "activityId": "act-c002-5",
+          "daysAgo": 6,
+          "startMinute": 587,
+          "durationSeconds": 158,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":3,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"l1","x":2,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno01-13",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-6",
+          "activityId": "act-c001-6",
+          "daysAgo": 5,
+          "startMinute": 594,
+          "durationSeconds": 187,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":1,"y":3,"rotation":0},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":1,"y":1,"rotation":0},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":3,"y":1,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-14",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-6",
+          "activityId": "act-c002-6",
+          "daysAgo": 4,
+          "startMinute": 601,
+          "durationSeconds": 177,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"l1","x":3,"y":1,"rotation":0},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":1,"y":4,"rotation":180},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":1,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno01-15",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-7",
+          "activityId": "act-c001-7",
+          "daysAgo": 3,
+          "startMinute": 608,
+          "durationSeconds": 206,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 7,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":1,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":1,"y":2,"rotation":90},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":3,"y":2,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno01-16",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-7",
+          "activityId": "act-c002-7",
+          "daysAgo": 2,
+          "startMinute": 615,
+          "durationSeconds": 196,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"l1","x":1,"y":2,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"z1","x":2,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"t1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"j1","x":3,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno01-17",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-8",
+          "activityId": "act-c002-8",
+          "daysAgo": 1,
+          "startMinute": 622,
+          "durationSeconds": 212,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":0,"y":3,"rotation":90},
+            {"sequence":4,"type":"PLACE","pieceId":"z1","x":0,"y":0,"rotation":90},
+            {"sequence":5,"type":"PLACE","pieceId":"t1","x":2,"y":3,"rotation":0},
+            {"sequence":6,"type":"PLACE","pieceId":"l1","x":3,"y":0,"rotation":180}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Bruno",
+      "lastName": "Solís [DEMO]",
+      "email": "alumno02@pipre.test",
+      "age": 15,
+      "grade": "3.º de secundaria",
+      "profile": "Alto",
+      "attempts": [
+        {
+          "key": "alumno02-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 513,
+          "durationSeconds": 125,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno02-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 14,
+          "startMinute": 520,
+          "durationSeconds": 115,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno02-3",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 13,
+          "startMinute": 527,
+          "durationSeconds": 144,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno02-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 12,
+          "startMinute": 534,
+          "durationSeconds": 134,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno02-5",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 11,
+          "startMinute": 541,
+          "durationSeconds": 163,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 2,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno02-6",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 9,
+          "startMinute": 548,
+          "durationSeconds": 141,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270}
+          ]
+        },
+        {
+          "key": "alumno02-7",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 9,
+          "startMinute": 555,
+          "durationSeconds": 156,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":3,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno02-8",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-4",
+          "activityId": "act-c001-4",
+          "daysAgo": 7,
+          "startMinute": 562,
+          "durationSeconds": 173,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno02-9",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-4",
+          "activityId": "act-c001-4",
+          "daysAgo": 7,
+          "startMinute": 569,
+          "durationSeconds": 188,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno02-10",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-4",
+          "activityId": "act-c002-4",
+          "daysAgo": 6,
+          "startMinute": 576,
+          "durationSeconds": 178,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"z1","x":1,"y":1,"rotation":90},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180},
+            {"sequence":5,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno02-11",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-5",
+          "activityId": "act-c001-5",
+          "daysAgo": 5,
+          "startMinute": 583,
+          "durationSeconds": 90,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"CHECK"},
+            {"sequence":4,"type":"HELP","source":"STATIC"},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":6,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno02-12",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-5",
+          "activityId": "act-c002-5",
+          "daysAgo": 4,
+          "startMinute": 590,
+          "durationSeconds": 197,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"o1","x":0,"y":1,"rotation":270},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":0,"y":3,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"l1","x":2,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno02-13",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-6",
+          "activityId": "act-c002-6",
+          "daysAgo": 3,
+          "startMinute": 597,
+          "durationSeconds": 96,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"l1","x":3,"y":1,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":1,"y":4,"rotation":180},
+            {"sequence":6,"type":"PLACE","pieceId":"o1","x":1,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno02-14",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-6",
+          "activityId": "act-c001-6",
+          "daysAgo": 1,
+          "startMinute": 604,
+          "durationSeconds": 100,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":1,"y":3,"rotation":0}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Celia",
+      "lastName": "Prado [DEMO]",
+      "email": "alumno03@pipre.test",
+      "age": 14,
+      "grade": "3.º de secundaria",
+      "profile": "Alto",
+      "attempts": [
+        {
+          "key": "alumno03-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 516,
+          "durationSeconds": 164,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno03-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 14,
+          "startMinute": 523,
+          "durationSeconds": 154,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno03-3",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 13,
+          "startMinute": 530,
+          "durationSeconds": 66,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 8,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"CHECK"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno03-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 11,
+          "startMinute": 537,
+          "durationSeconds": 161,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270}
+          ]
+        },
+        {
+          "key": "alumno03-5",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 11,
+          "startMinute": 544,
+          "durationSeconds": 176,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":4,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno03-6",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 9,
+          "startMinute": 551,
+          "durationSeconds": 76,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno03-7",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 9,
+          "startMinute": 558,
+          "durationSeconds": 91,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno03-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 8,
+          "startMinute": 565,
+          "durationSeconds": 81,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"HELP","source":"STATIC"},
+            {"sequence":5,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":6,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":7,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno03-9",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-4",
+          "activityId": "act-c001-4",
+          "daysAgo": 7,
+          "startMinute": 572,
+          "durationSeconds": 110,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno03-10",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-4",
+          "activityId": "act-c002-4",
+          "daysAgo": 6,
+          "startMinute": 579,
+          "durationSeconds": 100,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":1,"y":1,"rotation":90},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180},
+            {"sequence":4,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno03-11",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-5",
+          "activityId": "act-c001-5",
+          "daysAgo": 5,
+          "startMinute": 586,
+          "durationSeconds": 129,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 7,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno03-12",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-5",
+          "activityId": "act-c002-5",
+          "daysAgo": 4,
+          "startMinute": 593,
+          "durationSeconds": 119,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":3,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"l1","x":2,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno03-13",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-6",
+          "activityId": "act-c001-6",
+          "daysAgo": 3,
+          "startMinute": 600,
+          "durationSeconds": 148,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"CHECK"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":1,"y":3,"rotation":0},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":1,"y":1,"rotation":0},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":3,"y":1,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno03-14",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-6",
+          "activityId": "act-c002-6",
+          "daysAgo": 1,
+          "startMinute": 607,
+          "durationSeconds": 126,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"l1","x":3,"y":1,"rotation":0}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Dante",
+      "lastName": "Ríos [DEMO]",
+      "email": "alumno04@pipre.test",
+      "age": 15,
+      "grade": "3.º de secundaria",
+      "profile": "Intermedio",
+      "attempts": [
+        {
+          "key": "alumno04-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 519,
+          "durationSeconds": 144,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 2,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno04-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 14,
+          "startMinute": 526,
+          "durationSeconds": 134,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":3,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":4,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno04-3",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 12,
+          "startMinute": 533,
+          "durationSeconds": 163,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"HELP","source":"STATIC"},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":6,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno04-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 8,
+          "startMinute": 540,
+          "durationSeconds": 83,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270}
+          ]
+        },
+        {
+          "key": "alumno04-5",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 8,
+          "startMinute": 547,
+          "durationSeconds": 156,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno04-6",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 5,
+          "startMinute": 554,
+          "durationSeconds": 115,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno04-7",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 5,
+          "startMinute": 561,
+          "durationSeconds": 188,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"CHECK"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"HELP","source":"STATIC"},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":6,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno04-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 3,
+          "startMinute": 568,
+          "durationSeconds": 178,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":6,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno04-9",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-4",
+          "activityId": "act-c002-4",
+          "daysAgo": 1,
+          "startMinute": 575,
+          "durationSeconds": 194,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"z1","x":1,"y":1,"rotation":90},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180},
+            {"sequence":6,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":0}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Eva",
+      "lastName": "Niebla [DEMO]",
+      "email": "alumno05@pipre.test",
+      "age": 14,
+      "grade": "3.º de secundaria",
+      "profile": "Intermedio",
+      "attempts": [
+        {
+          "key": "alumno05-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 522,
+          "durationSeconds": 183,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno05-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 12,
+          "startMinute": 529,
+          "durationSeconds": 103,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno05-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 12,
+          "startMinute": 536,
+          "durationSeconds": 176,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":3,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":4,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno05-4",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 8,
+          "startMinute": 543,
+          "durationSeconds": 135,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno05-5",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 8,
+          "startMinute": 550,
+          "durationSeconds": 208,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno05-6",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 7,
+          "startMinute": 557,
+          "durationSeconds": 198,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno05-7",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 5,
+          "startMinute": 564,
+          "durationSeconds": 227,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 7,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno05-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 3,
+          "startMinute": 571,
+          "durationSeconds": 217,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":6,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno05-9",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-4",
+          "activityId": "act-c002-4",
+          "daysAgo": 1,
+          "startMinute": 578,
+          "durationSeconds": 163,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"z1","x":1,"y":1,"rotation":90}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Fabio",
+      "lastName": "Lira [DEMO]",
+      "email": "alumno06@pipre.test",
+      "age": 15,
+      "grade": "3.º de secundaria",
+      "profile": "Intermedio",
+      "attempts": [
+        {
+          "key": "alumno06-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 14,
+          "startMinute": 525,
+          "durationSeconds": 152,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno06-2",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 14,
+          "startMinute": 532,
+          "durationSeconds": 225,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno06-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 12,
+          "startMinute": 539,
+          "durationSeconds": 215,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno06-4",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 10,
+          "startMinute": 546,
+          "durationSeconds": 127,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 11,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"CHECK"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno06-5",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 8,
+          "startMinute": 553,
+          "durationSeconds": 234,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":6,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno06-6",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 7,
+          "startMinute": 560,
+          "durationSeconds": 146,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno06-7",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 3,
+          "startMinute": 567,
+          "durationSeconds": 66,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270}
+          ]
+        },
+        {
+          "key": "alumno06-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 3,
+          "startMinute": 574,
+          "durationSeconds": 139,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno06-9",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-4",
+          "activityId": "act-c001-4",
+          "daysAgo": 1,
+          "startMinute": 581,
+          "durationSeconds": 98,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Gina",
+      "lastName": "Olmo [DEMO]",
+      "email": "alumno07@pipre.test",
+      "age": 14,
+      "grade": "3.º de secundaria",
+      "profile": "Intermedio",
+      "attempts": [
+        {
+          "key": "alumno07-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 528,
+          "durationSeconds": 144,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 7,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno07-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 13,
+          "startMinute": 535,
+          "durationSeconds": 134,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"HELP","source":"STATIC"},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":6,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":7,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno07-3",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 11,
+          "startMinute": 542,
+          "durationSeconds": 163,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno07-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 7,
+          "startMinute": 549,
+          "durationSeconds": 83,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270}
+          ]
+        },
+        {
+          "key": "alumno07-5",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 7,
+          "startMinute": 556,
+          "durationSeconds": 156,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":4,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno07-6",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 3,
+          "startMinute": 563,
+          "durationSeconds": 115,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno07-7",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 3,
+          "startMinute": 570,
+          "durationSeconds": 188,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"CHECK"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno07-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 1,
+          "startMinute": 577,
+          "durationSeconds": 178,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Hugo",
+      "lastName": "Brisa [DEMO]",
+      "email": "alumno08@pipre.test",
+      "age": 15,
+      "grade": "3.º de secundaria",
+      "profile": "Intermedio",
+      "attempts": [
+        {
+          "key": "alumno08-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 531,
+          "durationSeconds": 183,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno08-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 12,
+          "startMinute": 538,
+          "durationSeconds": 103,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno08-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 12,
+          "startMinute": 545,
+          "durationSeconds": 176,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno08-4",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 8,
+          "startMinute": 552,
+          "durationSeconds": 135,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno08-5",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 8,
+          "startMinute": 559,
+          "durationSeconds": 208,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno08-6",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 7,
+          "startMinute": 566,
+          "durationSeconds": 198,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":3,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":4,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno08-7",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-3",
+          "activityId": "act-c001-3",
+          "daysAgo": 5,
+          "startMinute": 573,
+          "durationSeconds": 227,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 10,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno08-8",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 3,
+          "startMinute": 580,
+          "durationSeconds": 217,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"t1","x":0,"y":1,"rotation":270},
+            {"sequence":5,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno08-9",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-4",
+          "activityId": "act-c001-4",
+          "daysAgo": 1,
+          "startMinute": 587,
+          "durationSeconds": 176,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Iris",
+      "lastName": "Roble [DEMO]",
+      "email": "alumno09@pipre.test",
+      "age": 14,
+      "grade": "3.º de secundaria",
+      "profile": "Inicial",
+      "attempts": [
+        {
+          "key": "alumno09-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 13,
+          "startMinute": 534,
+          "durationSeconds": 152,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno09-2",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 13,
+          "startMinute": 541,
+          "durationSeconds": 282,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno09-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 10,
+          "startMinute": 548,
+          "durationSeconds": 272,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":3,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":4,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno09-4",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 7,
+          "startMinute": 555,
+          "durationSeconds": 184,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 6,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"RESET"},
+            {"sequence":3,"type":"CHECK"},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0},
+            {"sequence":5,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno09-5",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 4,
+          "startMinute": 562,
+          "durationSeconds": 291,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":5,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno09-6",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 1,
+          "startMinute": 569,
+          "durationSeconds": 63,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Joel",
+      "lastName": "Miró [DEMO]",
+      "email": "alumno10@pipre.test",
+      "age": 15,
+      "grade": "3.º de secundaria",
+      "profile": "Inicial",
+      "attempts": [
+        {
+          "key": "alumno10-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 537,
+          "durationSeconds": 201,
+          "complete": true,
+          "progressive": true,
+          "progressiveHints": 10,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"CHECK"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":4,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno10-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 11,
+          "startMinute": 544,
+          "durationSeconds": 191,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":5,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":6,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno10-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 1,
+          "startMinute": 551,
+          "durationSeconds": 80,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270}
+          ]
+        },
+        {
+          "key": "alumno10-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 1,
+          "startMinute": 558,
+          "durationSeconds": 210,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"RESET"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"HELP","source":"STATIC"},
+            {"sequence":5,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":6,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":7,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Kiara",
+      "lastName": "Valle [DEMO]",
+      "email": "alumno11@pipre.test",
+      "age": 14,
+      "grade": "3.º de secundaria",
+      "profile": "Inicial",
+      "attempts": [
+        {
+          "key": "alumno11-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 15,
+          "startMinute": 540,
+          "durationSeconds": 240,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno11-2",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 8,
+          "startMinute": 547,
+          "durationSeconds": 103,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno11-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 8,
+          "startMinute": 554,
+          "durationSeconds": 233,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"HELP","source":"STATIC"},
+            {"sequence":4,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":5,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":6,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno11-4",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-2",
+          "activityId": "act-c002-2",
+          "daysAgo": 5,
+          "startMinute": 561,
+          "durationSeconds": 249,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"z1","x":0,"y":1,"rotation":270},
+            {"sequence":2,"type":"PLACE","pieceId":"i1","x":0,"y":0,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"j1","x":2,"y":1,"rotation":180}
+          ]
+        },
+        {
+          "key": "alumno11-5",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-3",
+          "activityId": "act-c002-3",
+          "daysAgo": 1,
+          "startMinute": 568,
+          "durationSeconds": 138,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":2,"y":1,"rotation":270}
+          ]
+        }
+      ]
+    },
+    {
+      "firstName": "Leo",
+      "lastName": "Mar [DEMO]",
+      "email": "alumno12@pipre.test",
+      "age": 15,
+      "grade": "3.º de secundaria",
+      "profile": "Inicial",
+      "attempts": [
+        {
+          "key": "alumno12-1",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 11,
+          "startMinute": 543,
+          "durationSeconds": 152,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno12-2",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-1",
+          "activityId": "act-c001-v2-1",
+          "daysAgo": 11,
+          "startMinute": 550,
+          "durationSeconds": 282,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"PLACE","component":"MIRROR_90","x":2,"y":0,"rotation":90},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":3,"rotation":90}
+          ]
+        },
+        {
+          "key": "alumno12-3",
+          "game": "tetrilogic",
+          "levelTemplate": "tetrilogic-v2-1",
+          "activityId": "act-c002-1",
+          "daysAgo": 6,
+          "startMinute": 557,
+          "durationSeconds": 272,
+          "complete": true,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"PLACE","pieceId":"i1","x":3,"y":0,"rotation":90},
+            {"sequence":2,"type":"PLACE","pieceId":"s1","x":0,"y":0,"rotation":0},
+            {"sequence":3,"type":"PLACE","pieceId":"o1","x":0,"y":2,"rotation":0}
+          ]
+        },
+        {
+          "key": "alumno12-4",
+          "game": "neonflow",
+          "levelTemplate": "neonflow-v3-2",
+          "activityId": "act-c001-v2-2",
+          "daysAgo": 1,
+          "startMinute": 564,
+          "durationSeconds": 57,
+          "complete": false,
+          "progressive": false,
+          "progressiveHints": 0,
+          "actions": [
+            {"sequence":1,"type":"HELP","source":"STATIC"},
+            {"sequence":2,"type":"HELP","source":"STATIC"},
+            {"sequence":3,"type":"PLACE","component":"MIRROR_90","x":2,"y":2,"rotation":0}
+          ]
+        }
+      ]
+    }
+  ]
+}
