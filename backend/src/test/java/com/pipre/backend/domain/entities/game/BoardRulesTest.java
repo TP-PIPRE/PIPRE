@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -100,13 +101,27 @@ class BoardRulesTest {
         JsonNode target=config.path("receptors").get(0).path("position");
         assertTrue(BoardRules.apply("neonflow",config,state,new BoardAction("PLACE",null,target.path("x").asInt(),target.path("y").asInt(),0,"MIRROR_90",null,null)).path("lastActionRejected").asBoolean());
     }
-    @Test void starsUseServerCountersAndNeverAwardThreeForEveryVictory() throws Exception {
-        var config=catalog("neonflow").get(0);var state=BoardRules.initialState();
-        assertEquals(3,BoardRules.stars("neonflow",config,state));
-        state.put("helps",1);assertEquals(2,BoardRules.stars("neonflow",config,state));
-        state.put("helps",3);assertEquals(1,BoardRules.stars("neonflow",config,state));
-        state.put("helps",0).put("failedChecks",1);assertEquals(2,BoardRules.stars("neonflow",config,state));
-        state.put("failedChecks",0).put("moves",1000);assertEquals(1,BoardRules.stars("neonflow",config,state));
+    @ParameterizedTest
+    @CsvSource({"neonflow, 24, 32", "tetrilogic, 18, 24"})
+    void starsUseInclusiveLimitsForEachGame(String game, int threeStarLimit, int twoStarLimit) throws Exception {
+        var config = catalog(game).get(0);
+        var state = BoardRules.initialState().put("helps", 1).put("resets", 1).put("failedChecks", 2);
+        state.put("moves", threeStarLimit);
+        assertEquals(3, BoardRules.stars(game, config, state));
+        assertEquals(2, BoardRules.stars(game, config, state.put("moves", threeStarLimit + 1)));
+        state.put("moves", threeStarLimit);
+        assertEquals(2, BoardRules.stars(game, config, state.put("helps", 2)));
+        state.put("helps", 1);
+        assertEquals(2, BoardRules.stars(game, config, state.put("resets", 2)));
+        state.put("resets", 1);
+        assertEquals(2, BoardRules.stars(game, config, state.put("failedChecks", 3)));
+
+        state.put("moves", twoStarLimit).put("helps", 2).put("resets", 2);
+        assertEquals(2, BoardRules.stars(game, config, state));
+        assertEquals(1, BoardRules.stars(game, config, state.put("moves", twoStarLimit + 1)));
+        state.put("moves", twoStarLimit);
+        assertEquals(1, BoardRules.stars(game, config, state.put("helps", 3)));
+        assertEquals(1, BoardRules.stars(game, config, state.put("helps", 2).put("resets", 3)));
     }
     @Test void aliasesAreCanonicalButPrototypesNeverBecomeOfficialAchievements() {
         assertEquals("neonflow-v2-30",BoardRules.canonicalTemplate("neonflow","neonflow-30"));

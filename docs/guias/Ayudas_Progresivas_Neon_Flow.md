@@ -45,7 +45,7 @@ Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:11434/api/generate' `
 
 - V31 guarda entregas y reservas de generación de ambos juegos. El identificador canónico de la plantilla incluye el juego y el nivel, de modo que los contadores son independientes. La API verifica el propietario, la revisión, el orden y la aceptación antes de avanzar. Si se pierde la respuesta, el mismo identificador o una consulta al estado recuperan el consejo registrado.
 - El proveedor recibe el diagnóstico y las acciones recientes del juego fuera de la transacción. El formato distingue la observación, la explicación, la pregunta y la comparación. Si el texto resulta inválido o repetido, el adaptador pide una alternativa dentro del mismo plazo. Una solicitud fallida deja libre el mismo número. El servidor mantiene la pausa mientras la reserva está vigente y descuenta de los puntos el intervalo acreditado, limitado por su vencimiento.
-- La rúbrica de estrellas recibe solo las ayudas adicionales del intento. Los cambios de tablero y las recargas recuperan el contador desde la base de datos.
+- La rúbrica de estrellas recibe solo las ayudas adicionales del intento. Con `game-stars-v2`, una ayuda adicional todavía permite obtener tres estrellas si el intento cumple los demás límites. El contador visible muestra las ayudas de la visita al reto y vuelve a cero al salir. Una recarga conserva ese contador. El servidor mantiene el cupo acumulado y la secuencia por estudiante y plantilla. [Rúbrica de estrellas](Sistema_35_Logros.md#rúbrica-de-estrellas-implementada)
 
 Para verificar el flujo en el navegador con Ollama precargado, ejecuta esta prueba desde la raíz del repositorio. Usa un estudiante de prueba y PostgreSQL desechable.
 

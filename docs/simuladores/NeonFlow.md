@@ -46,7 +46,7 @@ Los prototipos `neonflow-1/2` conservan sus geometrías anteriores 5×5 y se ide
 
 ## Tutor contextual
 
-**Pista** presenta un consejo por pulsación y recorre seis consejos sobre el recorrido del haz, los espejos y los filtros. En una partida verificada, cada entrega confirmada se registra como `HELP` con `source=STATIC`. Al recargar la partida se retoma la secuencia según el contador de ayudas confirmadas.
+**Pista** presenta un consejo por pulsación y recorre seis consejos sobre el recorrido del haz, los espejos y los filtros. Al salir del reto y volver, el contador visible y la secuencia de consejos generales empiezan de nuevo. Una recarga conserva ambos. En una partida verificada, cada entrega confirmada queda registrada como `HELP` con `source=STATIC` para las estrellas del intento.
 
 Con el tutor progresivo habilitado, los retos oficiales ofrecen cinco consejos fijos y tres generados por Ollama. Las ocho ayudas son gratuitas para la rúbrica de estrellas. A partir de la novena, el estudiante confirma si desea otra ayuda y el servidor registra la penalización cuando la entrega. [Tutor progresivo y activación local](../guias/Ayudas_Progresivas_Neon_Flow.md)
 

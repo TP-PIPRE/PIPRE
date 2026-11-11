@@ -54,7 +54,7 @@ class GameSessionHttpTest {
             assertEquals(json.readTree(first),json.readTree(retry));
         }
         var first=mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()))
-            .andExpect(status().isOk()).andExpect(jsonPath("$.stars").value(2)).andExpect(jsonPath("$.levelNumber").value(2)).andReturn().getResponse().getContentAsString();
+            .andExpect(status().isOk()).andExpect(jsonPath("$.stars").value(3)).andExpect(jsonPath("$.levelNumber").value(2)).andReturn().getResponse().getContentAsString();
         var retry=mvc.perform(post("/api/v1/game-sessions/"+id+"/complete").with(com.pipre.backend.support.BrowserRequests.csrf()).cookie(owner.cookie()))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertEquals(json.readTree(first),json.readTree(retry));

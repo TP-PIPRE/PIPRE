@@ -2,6 +2,7 @@ package com.pipre.backend.application.useCases;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pipre.backend.application.commands.*;
 import com.pipre.backend.application.dto.*;
 import com.pipre.backend.application.ports.input.*;
@@ -185,7 +186,9 @@ public class GameSessionsService implements GameSessionsUseCase {
         boolean progressive=ProgressiveTutorService.governed(session);
         int stars=progressive ? BoardRules.stars(session.game(),config,session.state(),progressiveTutor.penalizedHelps(session))
                 : BoardRules.stars(session.game(),config,session.state());
-        var completed=session.change(session.state(),session.revision(),"COMPLETED",now,stars,null);
+        ObjectNode completedState = session.state().deepCopy();
+        completedState.put("starsRuleset", BoardRules.STARS_VERSION);
+        var completed=session.change(completedState,session.revision(),"COMPLETED",now,stars,null);
         sessions.update(completed);
         var awards=victories.execute(new VerifiedVictory(studentId,sessionId,session.game(),session.levelNumber(),session.levelTemplate(),session.activityId(),session.startedAt(),now,stars,session.dailyChallengeId(),session.startedOrder()));
         var score=progressive ? points.award(completed,config,progressiveTutor.pausedMillis(session,now)) : points.award(completed,config);

@@ -43,7 +43,7 @@ function NeonBoardSession({levels:LEVELS,currentLevelIndex,setCurrentLevelIndex,
   const {record,finish}=useAttemptTrace(templateId && dailyChallengeId?.length !== 36 ?{game:"neonflow",activityId:activity?.idActivity,levelTemplate:templateId,templateVersion:level.version??1,ruleset:"neonflow-raycast-v1"}:null,initialSession?.state.pieces??[]);
   const legacyHint = useBoardHint(gameSession, record, NEON_FLOW_TIPS);
   const progressive = gameSession.state?.session?.state.neonFlowProgressiveTutor === true;
-  const progressiveHint = useProgressiveHint(progressive ? gameSession.state?.session?.sessionId : undefined, gameSession.prepareProgressiveHint, record);
+  const progressiveHint = useProgressiveHint(progressive ? gameSession.state?.session?.sessionId : undefined, gameSession.hintScope, gameSession.prepareProgressiveHint, record);
   const hint = progressive ? progressiveHint : legacyHint;
   const waitingForTutor = progressive && progressiveHint.busy;
 

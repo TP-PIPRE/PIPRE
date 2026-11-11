@@ -1,6 +1,7 @@
-import React, {lazy,Suspense} from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, {lazy,Suspense,useLayoutEffect} from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Navbar } from "../components/common/Navbar";
+import { updateHintVisitRoute } from "../../infrastructure/store/hintVisit";
 const PaginaInicio=lazy(()=>import("../pages/PaginaInicio").then(module=>({default:module.PaginaInicio})));
 const Simulador=lazy(()=>import("../pages/Simulador").then(module=>({default:module.Simulador})));
 const LoginPage=lazy(()=>import("../pages/LoginPage").then(module=>({default:module.LoginPage})));
@@ -46,6 +47,9 @@ const DocenteRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const AppRouter = () => {
+  const { pathname, search } = useLocation();
+  useLayoutEffect(() => updateHintVisitRoute(pathname + search), [pathname, search]);
+
   return (
     <Suspense fallback={<main className="lab-shell"><p role="status">Cargando página…</p></main>}><Routes>
       {/* Ruta pública para el Login */}

@@ -12,7 +12,7 @@
 
 ## Consejos y tutor contextual
 
-**Pista** recorre seis consejos sobre los conteos, las intersecciones y la colocación de piezas. En partidas verificadas, las ayudas confirmadas cuentan en la rúbrica de estrellas y determinan cuál será el siguiente consejo al reanudar la partida.
+**Pista** recorre seis consejos sobre los conteos, las intersecciones y la colocación de piezas. Salir del reto reinicia el contador visible y la secuencia general para la próxima visita. Una recarga conserva ambos. En partidas verificadas, las ayudas confirmadas cuentan en la rúbrica de estrellas del intento.
 
 Con el tutor progresivo habilitado, los retos oficiales ofrecen cinco consejos fijos sobre los objetivos del tablero y tres generados por Ollama a partir de los conteos comprobados. Desde la novena ayuda, el tutor pide confirmación antes de que esa entrega cuente en la rúbrica de estrellas del intento. [Activación y reglas del tutor progresivo](../guias/Ayudas_Progresivas_Neon_Flow.md)
 

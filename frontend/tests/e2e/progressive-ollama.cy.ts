@@ -108,6 +108,17 @@ describe("Tutor progresivo con Ollama real", () => {
       cy.contains("button", /^Pista$/).click();
       cy.contains("button", /^Recibir consejo$/).click();
       assertGeneratedAdvice(9, true);
+
+      if (game === "TetriLogic") cy.get('a[aria-label="Volver a mis cursos"]').click();
+      else cy.contains("a", "← Mis cursos").click();
+      cy.location("pathname").should("eq", "/");
+      cy.go("back");
+      assertCount(game, 0);
+      cy.get(restoredPiece).should("be.visible");
+      cy.contains("button", /^Pista$/).click();
+      cy.get('[role="dialog"]').should("contain.text", "Has utilizado las 8 ayudas disponibles sin penalización");
+      cy.contains("button", /^Cancelar$/).click();
+      assertCount(game, 0);
     });
   });
 });

@@ -11,6 +11,7 @@ import { gameProgressService } from "../../src/infrastructure/api/gameProgressSe
 import { useGameStore } from "../../src/infrastructure/store/gameStore";
 import { useAchievementStore } from "../../src/infrastructure/store/achievementStore";
 import { ValidatedGameSession } from "../../src/infrastructure/store/validatedGameSession";
+import { updateHintVisitRoute } from "../../src/infrastructure/store/hintVisit";
 import type { ActivityResponseDTO } from "../../src/infrastructure/api/models/apiModels";
 import type { GameProgressDTO, GameSessionContext, GameSessionDTO, GameVictoryDTO, ProgressiveHint, ProgressiveHintRequest } from "../../src/infrastructure/api/models/gameProgressModels";
 import { Simulador } from "../../src/ui/pages/Simulador";
@@ -92,7 +93,7 @@ function openProgressiveGame(game: "neonflow" | "tetrilogic" = "neonflow") {
 
 describe("Progressive advice", () => {
   it.each(["neonflow", "tetrilogic"] as const)("shows the warning only at the ninth tip in %s", async game => {
-    openProgressiveGame(game);
+    const { stage, unmount } = openProgressiveGame(game);
     const hintButton = await screen.findByRole("button", { name: "Pista" });
     await waitFor(() => expect(hintButton).not.toHaveAttribute("aria-disabled"));
     for (let ordinal = 1; ordinal <= 8; ordinal++) {
@@ -113,6 +114,24 @@ describe("Progressive advice", () => {
     expect(await screen.findByText("Consejo 9")).toBeInTheDocument();
     expect(gameProgressService.progressiveHint).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({ ordinal: 9, acceptPenalty: true }), expect.any(AbortSignal));
     expect(gameProgressService.action).not.toHaveBeenCalled();
+
+    const [sessionId] = vi.mocked(gameProgressService.progressiveHint).mock.lastCall!;
+    unmount();
+    updateHintVisitRoute("/perfil");
+    vi.mocked(gameProgressService.active).mockResolvedValueOnce(sessions.get(sessionId)!);
+    render(stage);
+    const reopened = await screen.findByRole("button", { name: "Pista" });
+    const verifyCount = (count: number) => {
+      if (game === "neonflow") expect(screen.getByText("Pistas").nextElementSibling?.textContent).toBe(String(count));
+      else expect(screen.getByText(`Pistas usadas: ${count}.`)).toBeInTheDocument();
+    };
+    await waitFor(() => verifyCount(0));
+    expect(screen.queryByText("Consejo 9")).not.toBeInTheDocument();
+    fireEvent.click(reopened);
+    fireEvent.click(await screen.findByRole("button", { name: "Recibir consejo" }));
+    await screen.findByText("Consejo 10");
+    verifyCount(1);
+    expect(gameProgressService.progressiveHint).toHaveBeenLastCalledWith(sessionId, expect.objectContaining({ ordinal: 10, acceptPenalty: true }), expect.any(AbortSignal));
   });
 
   it("freezes the board during generation and recovers a lost delivery without charging it twice", async () => {

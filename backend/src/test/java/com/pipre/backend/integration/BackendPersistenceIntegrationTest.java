@@ -132,7 +132,9 @@ class BackendPersistenceIntegrationTest {
                 return "Comprueba si el color del haz coincide con el receptor.";
             }).doReturn("Sigue el tramo visible desde el emisor antes de comprobar.",
                     "Compara la trayectoria del haz con la que imaginaste.",
-                    "Revisa dónde termina el haz y explica por qué llega hasta allí.").when(hintGenerator).generate(any());
+                    "Revisa dónde termina el haz y explica por qué llega hasta allí.",
+                    "Observa el primer tramo y revisa qué lo detiene.",
+                    "Compara la orientación de los espejos con el sentido del haz.").when(hintGenerator).generate(any());
             var sixth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 6, false);
             try (var executor = Executors.newSingleThreadExecutor()) {
                 var delivery = executor.submit(() -> progressiveTutor.request(student, first.sessionId(), sixth));
@@ -179,12 +181,24 @@ class BackendPersistenceIntegrationTest {
             var ninth = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, 9, true);
             assertEquals(9, progressiveTutor.request(student, replay.sessionId(), ninth).ordinal());
             solveProgressiveNeonLevelOne(replay.sessionId());
-            assertEquals(2, sessions.complete(student, replay.sessionId()).stars());
-            var another = startProgressiveLevel(1);
-            assertEquals(9, progressiveTutor.status(student, another.sessionId()).deliveredCount());
-            solveProgressiveNeonLevelOne(another.sessionId());
-            assertEquals(3, sessions.complete(student, another.sessionId()).stars());
-            assertEquals(9L, jdbc.queryForObject("SELECT COUNT(*) FROM neonflow_tutor_requests WHERE student_id=? AND status='DELIVERED'", Long.class, student));
+            assertEquals(3, sessions.complete(student, replay.sessionId()).stars());
+
+            var withTwoExtras = startProgressiveLevel(1);
+            assertEquals(9, progressiveTutor.status(student, withTwoExtras.sessionId()).deliveredCount());
+            for (int ordinal = 10; ordinal <= 11; ordinal++) {
+                var request = new RequestProgressiveHintCommand(UUID.randomUUID().toString(), 0, ordinal, true);
+                assertEquals(ordinal, progressiveTutor.request(student, withTwoExtras.sessionId(), request).ordinal());
+            }
+            solveProgressiveNeonLevelOne(withTwoExtras.sessionId());
+            var twoExtraVictory = sessions.complete(student, withTwoExtras.sessionId());
+            assertEquals(2, twoExtraVictory.stars());
+            assertEquals(3, twoExtraVictory.bestStars());
+
+            var clean = startProgressiveLevel(1);
+            assertEquals(11, progressiveTutor.status(student, clean.sessionId()).deliveredCount());
+            solveProgressiveNeonLevelOne(clean.sessionId());
+            assertEquals(3, sessions.complete(student, clean.sessionId()).stars());
+            assertEquals(11L, jdbc.queryForObject("SELECT COUNT(*) FROM neonflow_tutor_requests WHERE student_id=? AND status='DELIVERED'", Long.class, student));
         } finally {
             progressiveProperties.setEnabled(false);
         }
@@ -271,7 +285,7 @@ class BackendPersistenceIntegrationTest {
             assertEquals(progressiveTutor.request(student, second, ninth), progressiveTutor.request(student, second, ninth));
             sessions.action(student, second, new GameSessionAction(1, "PLACE", "i1", 3, 0, 90, null, null, null));
             placeRemainingTetriPieces(second);
-            assertEquals(2, sessions.complete(student, second).stars());
+            assertEquals(3, sessions.complete(student, second).stars());
             assertEquals(9, progressiveTutor.status(student, startTetriTutorAttempt()).deliveredCount());
         } finally {
             progressiveProperties.setEnabled(false);
